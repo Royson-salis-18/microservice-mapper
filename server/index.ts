@@ -24,7 +24,7 @@ async function main() {
   const incidentManager = new IncidentManager(graphStore);
   app.use('/api', createRouter(graphStore, wsManager, incidentManager));
 
-  const dockerCollector = new DockerCollector();
+  // Adapters parse the baseline architecture from compose files
   const adapters = [
     new VertikalAdapter(),
     new SockShopAdapter(),
@@ -33,7 +33,8 @@ async function main() {
 
   // Initial collection before starting server
   try {
-    await graphStore.updateFromCollectors(dockerCollector, adapters);
+    // Pass undefined/null for dockerCollector to disable local discovery
+    await graphStore.updateFromCollectors(null as any, adapters);
     console.log(`Initial discovery: ${graphStore.getGraph().nodes.length} nodes, ${graphStore.getGraph().edges.length} edges`);
   } catch (e) {
     console.error('Initial collection failed:', e);
@@ -41,13 +42,13 @@ async function main() {
 
   server.listen(Number(config.PORT), '0.0.0.0', () => {
     console.log(`Microservice Mapper server started on port ${config.PORT}`);
-    console.log(`Polling interval: ${config.POLLING_INTERVAL_MS}ms`);
+    console.log(`Polling interval: ${config.POLLING_INTERVAL_MS}ms (Remote Ingestion Mode)`);
   });
 
-  // Periodic collection & RCA Evaluation Cycle
+  // Periodic RCA Evaluation Cycle & Broadcast
   setInterval(async () => {
     try {
-      await graphStore.updateFromCollectors(dockerCollector, adapters);
+      await graphStore.updateFromCollectors(null as any, adapters);
       wsManager.broadcast('graph-update', graphStore.getGraph());
 
       // Target-isolated RCA Evaluation

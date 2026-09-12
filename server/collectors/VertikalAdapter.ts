@@ -40,7 +40,34 @@ const VERTIKAL_NODE_TYPES: Record<string, ServiceNode['type']> = {
 
 export class VertikalAdapter extends BaseCollector {
   async discover(): Promise<ServiceNode[]> {
-    return [];
+    if (!config.VERTIKAL_COMPOSE_PATH || !fs.existsSync(config.VERTIKAL_COMPOSE_PATH)) return [];
+    try {
+      const content = fs.readFileSync(config.VERTIKAL_COMPOSE_PATH, 'utf8');
+      const doc = yaml.parse(content);
+      const nodes: ServiceNode[] = [];
+
+      if (doc && doc.services) {
+        for (const [serviceName, serviceDef] of Object.entries(doc.services) as [string, any][]) {
+          const containerName = VERTIKAL_SERVICE_TO_CONTAINER[serviceName] || `vertikal-${serviceName}`;
+          nodes.push({
+            id: containerName,
+            name: serviceName,
+            type: VERTIKAL_NODE_TYPES[serviceName] || 'service',
+            project: 'vertikal',
+            status: 'unknown',
+            metrics: null,
+            metadata: {
+              image: serviceDef?.image,
+              declaredInCompose: true
+            }
+          });
+        }
+      }
+      return nodes;
+    } catch (e) {
+      console.error('Failed to parse Vertikal compose for discovery:', e);
+      return [];
+    }
   }
 
   async collectMetrics(): Promise<MetricSnapshot | null> { return null; }

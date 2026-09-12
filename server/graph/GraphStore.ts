@@ -75,10 +75,12 @@ export class GraphStore {
       }
     }
 
-    const dockerNodes = await dockerCollector.discover();
-    for (const node of dockerNodes) {
-      if (!node.project) node.project = localTargetId;
-      discoveredNodes.set(node.id, node);
+    if (dockerCollector) {
+      const dockerNodes = await dockerCollector.discover();
+      for (const node of dockerNodes) {
+        if (!node.project) node.project = localTargetId;
+        discoveredNodes.set(node.id, node);
+      }
     }
 
     const currentIdsByTarget = new Map<string, Set<string>>();
@@ -93,7 +95,10 @@ export class GraphStore {
       }
       currentIdsByTarget.get(targetId)!.add(node.id);
 
-      const metrics = await dockerCollector.collectMetrics(node.id);
+      let metrics = null;
+      if (dockerCollector) {
+        metrics = await dockerCollector.collectMetrics(node.id);
+      }
       if (metrics) {
         this.metricStore.push(node.id, metrics);
         node.metrics = {

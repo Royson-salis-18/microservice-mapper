@@ -88,6 +88,11 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             maxDistance={120}
             maxPolarAngle={Math.PI / 2 - 0.1} 
             dampingFactor={0.05}
+            mouseButtons={{
+              LEFT: THREE.MOUSE.PAN,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: THREE.MOUSE.ROTATE
+            }}
           />
           
           {/* High-contrast Neon Lighting */}
@@ -115,6 +120,10 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               <DragControls 
                 key={node.id} 
                 axisLock="y" 
+                onDragStart={() => {
+                  // Select node immediately when interacting/clicking
+                  onNodeClick(node.id);
+                }}
                 onDrag={(localMatrix, deltaLocalMatrix, worldMatrix, deltaWorldMatrix) => {
                   const newPos = new THREE.Vector3().setFromMatrixPosition(worldMatrix);
                   setPositions(prev => ({
@@ -127,7 +136,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
                   node={node as any} 
                   position={pos} 
                   isSelected={node.id === selectedNodeId}
-                  onClick={() => onNodeClick(node.id)}
+                  onClick={() => {}} // Handled by DragControls onDragStart
                 />
               </DragControls>
             );

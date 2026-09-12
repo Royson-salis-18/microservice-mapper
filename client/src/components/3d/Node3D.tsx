@@ -30,11 +30,20 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
 
   const data = node.data;
   
-  let color = '#00d4ff'; // default cyan
-  let emissiveColor = '#00d4ff';
-  if (data.status === 'degraded') { color = '#ffab00'; emissiveColor = '#ffab00'; }
-  if (data.status === 'critical') { color = '#ff1744'; emissiveColor = '#ff1744'; }
-  if (data.status === 'unknown') { color = '#64748b'; emissiveColor = '#475569'; }
+  // Base colors: Green for databases/queues, Light Blue for everything else
+  let baseColor = '#00d4ff'; // Light Blue / Neon Cyan
+  
+  if (data.type === 'database' || data.type === 'queue') {
+    baseColor = '#00e676'; // Neon Green
+  }
+  
+  const nodeIdentityColor = baseColor;
+  
+  // Status color dictates the outer rings, beams, and HUD badges
+  let statusColor = '#00e676'; // healthy
+  if (data.status === 'degraded') statusColor = '#ffab00'; 
+  if (data.status === 'critical') statusColor = '#ff1744'; 
+  if (data.status === 'unknown') statusColor = '#64748b';  
 
   const cpuPercent = data.metrics ? ((data.metrics as any).cpu || 0) : 0;
   const memPercent = data.metrics ? ((data.metrics as any).memoryPercent || 0) : 0;
@@ -62,16 +71,16 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
 
   return (
     <group position={position} onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerOver={() => setHover(true)} onPointerOut={() => setHover(false)}>
-      {/* Outer Orbiting Halo Ring */}
+      {/* Outer Orbiting Halo Ring shows STATUS */}
       <mesh ref={outerRingRef} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[2.2 * scale, 0.04, 16, 64]} />
-        <meshBasicMaterial color={color} transparent opacity={isSelected || hovered ? 0.9 : 0.4} />
+        <meshBasicMaterial color={statusColor} toneMapped={false} transparent opacity={isSelected || hovered ? 1.0 : 0.8} />
       </mesh>
 
-      {/* Secondary Rotating Halo */}
+      {/* Secondary Rotating Halo shows NODE IDENTITY */}
       <mesh ref={haloRef} position={[0, 0, 0]}>
         <torusGeometry args={[2.6 * scale, 0.02, 12, 48]} />
-        <meshBasicMaterial color="#e040fb" transparent opacity={isSelected ? 0.8 : 0.2} />
+        <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} transparent opacity={isSelected ? 1.0 : 0.5} />
       </mesh>
 
       {/* Main 3D Node Core - Cyberpunk Floating Platforms */}
@@ -84,7 +93,7 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
         </mesh>
         <mesh position={[0, -0.6, 0]}>
           <cylinderGeometry args={[2.05, 2.25, 0.32, 16]} />
-          <meshBasicMaterial color={color} wireframe transparent opacity={isSelected ? 0.6 : 0.2} />
+          <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} wireframe transparent opacity={isSelected ? 0.9 : 0.4} />
         </mesh>
 
         {isDatabase ? (
@@ -93,13 +102,13 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
             {[-0.6, 0, 0.6].map((y, i) => (
               <mesh key={i} position={[0, y, 0]}>
                 <boxGeometry args={[1.6, 0.4, 1.4]} />
-                <meshPhysicalMaterial color="#111827" roughness={0.2} metalness={0.8} transparent opacity={0.9} />
+                <meshPhysicalMaterial color="#0b1020" roughness={0.1} metalness={0.9} transparent opacity={0.95} />
               </mesh>
             ))}
             {[-0.6, 0, 0.6].map((y, i) => (
               <mesh key={`glow-${i}`} position={[0, y, 0]}>
                 <boxGeometry args={[1.65, 0.45, 1.45]} />
-                <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
+                <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} wireframe transparent opacity={0.8} />
               </mesh>
             ))}
           </group>
@@ -108,15 +117,15 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
           <group position={[0, 0.8, 0]}>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[2.2, 1.8, 0.4]} />
-              <meshPhysicalMaterial color="#111827" roughness={0.8} metalness={0.2} transparent opacity={0.9} />
+              <meshPhysicalMaterial color="#0b1020" roughness={0.8} metalness={0.2} transparent opacity={0.95} />
             </mesh>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[2.25, 1.85, 0.45]} />
-              <meshBasicMaterial color={emissiveColor} wireframe transparent opacity={0.8} />
+              <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} wireframe transparent opacity={0.9} />
             </mesh>
             <mesh position={[0, 0, 0.3]}>
               <sphereGeometry args={[0.4, 16, 16]} />
-              <meshBasicMaterial color={emissiveColor} />
+              <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} />
             </mesh>
           </group>
         ) : (
@@ -124,16 +133,16 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
           <group position={[0, 0.8, 0]}>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[1.5, 1.5, 1.5]} />
-              <meshPhysicalMaterial color="#000000" roughness={0.1} metalness={0.2} transmission={0.95} thickness={1.5} />
+              <meshPhysicalMaterial color="#000000" roughness={0.0} metalness={0.1} transmission={0.98} thickness={2.0} />
             </mesh>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[1.55, 1.55, 1.55]} />
-              <meshBasicMaterial color={color} wireframe transparent opacity={0.4} />
+              <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} wireframe transparent opacity={0.7} />
             </mesh>
             {/* Glowing Core */}
             <mesh position={[0, 0, 0]}>
               <icosahedronGeometry args={[0.4, 1]} />
-              <meshBasicMaterial color={emissiveColor} />
+              <meshBasicMaterial color={nodeIdentityColor} toneMapped={false} />
             </mesh>
           </group>
         )}
@@ -143,7 +152,7 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
       {(isCritical || isSelected) && (
         <mesh position={[0, 3, 0]}>
           <cylinderGeometry args={[0.08, 0.4, 6, 16, 1, true]} />
-          <meshBasicMaterial color={color} transparent opacity={0.4} side={2} />
+          <meshBasicMaterial color={statusColor} transparent opacity={0.4} side={2} />
         </mesh>
       )}
 
@@ -157,15 +166,15 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
           background: 'rgba(10, 13, 24, 0.85)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          border: `1px solid ${isSelected ? color : 'rgba(255,255,255,0.12)'}`,
-          borderLeft: `3px solid ${color}`,
+          border: `1px solid ${isSelected ? statusColor : 'rgba(255,255,255,0.12)'}`,
+          borderLeft: `3px solid ${statusColor}`,
           borderRadius: '4px',
           padding: '6px 12px',
           color: '#fff',
           fontFamily: 'Inter, sans-serif',
           fontSize: '11px',
           whiteSpace: 'nowrap',
-          boxShadow: isSelected ? `0 0 20px ${color}60` : '0 4px 20px rgba(0,0,0,0.5)',
+          boxShadow: isSelected ? `0 0 20px ${statusColor}60` : '0 4px 20px rgba(0,0,0,0.5)',
           transform: isSelected || hovered ? 'scale(1.1) translateY(-2px)' : 'scale(1)',
           opacity: isSelected || hovered ? 1 : 0.85,
           display: 'flex',
@@ -180,7 +189,7 @@ export function Node3D({ node, position, isSelected, onClick }: Node3DProps) {
               padding: '1px 5px', 
               borderRadius: '3px', 
               background: 'rgba(255,255,255,0.08)',
-              color: color,
+              color: statusColor,
               fontWeight: 700,
               textTransform: 'uppercase' 
             }}>

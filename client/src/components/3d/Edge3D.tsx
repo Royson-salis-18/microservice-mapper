@@ -58,6 +58,7 @@ export function Edge3D({ edge, startPos, endPos }: Edge3DProps) {
       <mesh geometry={tubeGeometry}>
         <meshBasicMaterial 
           color={color} 
+          toneMapped={false}
           transparent 
           opacity={isObserved ? 0.3 : 0.1}
         />
@@ -69,7 +70,7 @@ export function Edge3D({ edge, startPos, endPos }: Edge3DProps) {
           {Array.from({ length: packetCount }).map((_, i) => (
             <mesh key={i}>
               <boxGeometry args={[0.2, 0.2, 0.2]} />
-              <meshBasicMaterial color={color} />
+              <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
           ))}
         </group>
