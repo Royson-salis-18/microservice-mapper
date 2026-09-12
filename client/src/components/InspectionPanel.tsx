@@ -102,7 +102,7 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
               </div>
               <div style={{ fontSize: '11px', color: '#00d4ff', fontWeight: 600, marginTop: '8px' }}>Remediation Command:</div>
               <div style={{ background: '#000', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px', color: '#00e676', marginTop: '4px' }}>
-                docker restart docker-compose-{node.name}-1
+                docker restart {node.metadata?.containerName || node.metadata?.containerId || node.name}
               </div>
             </div>
           </div>

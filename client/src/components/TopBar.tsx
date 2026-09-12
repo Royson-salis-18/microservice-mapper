@@ -11,9 +11,11 @@ interface TopBarProps {
   onSearchChange: (query: string) => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onToggleTrafficPanel?: () => void;
+  isTrafficPanelOpen?: boolean;
 }
 
-export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, activeTab, onTabChange }: TopBarProps) {
+export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, activeTab, onTabChange, onToggleTrafficPanel, isTrafficPanelOpen }: TopBarProps) {
   const getStatusColor = (s: string | undefined) => {
     if (s === 'healthy') return 'var(--color-healthy)';
     if (s === 'degraded') return 'var(--color-degraded)';
@@ -21,7 +23,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
     return 'var(--color-unknown)';
   };
 
-  const currentTarget = targets.find(t => t.id === selectedProject);
+  const currentTarget = targets.find(t => t.targetId === selectedProject);
 
   return (
     <div style={{
@@ -76,7 +78,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
         </div>
         
         <div style={{ display: 'flex', gap: '8px', height: '100%' }}>
-          {['3D Vision', 'Architecture', 'Telemetry', 'Dependencies', 'Analytics', 'RCA / INCIDENTS'].map(tab => {
+          {['3D Vision', 'Architecture', 'Telemetry', 'Dependencies', 'Analytics', 'RCA / INCIDENTS', 'EXPERIMENTS'].map(tab => {
             const isActive = tab === activeTab;
             const isRcaTab = tab === 'RCA / INCIDENTS';
             const hasActiveIncident = status && (status.critical > 0 || status.degraded > 0);
@@ -166,8 +168,8 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
           >
             <option value="ALL" style={{ background: 'var(--color-bg-panel)' }}>ALL TARGETS</option>
             {targets.map(t => (
-              <option key={t.id} value={t.id} style={{ background: 'var(--color-bg-panel)' }}>
-                {t.name.toUpperCase()}
+              <option key={t.targetId} value={t.targetId} style={{ background: 'var(--color-bg-panel)' }}>
+                {t.displayName ? t.displayName.toUpperCase() : t.targetId.toUpperCase()}
               </option>
             ))}
           </select>
@@ -250,6 +252,32 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
             fontSize: '14px'
           }}>⌕</span>
         </div>
+
+        {onToggleTrafficPanel && (
+          <button
+            onClick={onToggleTrafficPanel}
+            style={{
+              background: isTrafficPanelOpen
+                ? 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-magenta))'
+                : 'rgba(255,255,255,0.03)',
+              color: '#fff',
+              border: `1px solid ${isTrafficPanelOpen ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontWeight: 700,
+              fontSize: '11px',
+              letterSpacing: '1px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: isTrafficPanelOpen ? '0 0 12px rgba(0,212,255,0.4)' : 'none',
+              transition: 'all var(--transition-fast)'
+            }}
+          >
+            <span>⚡</span> TRAFFIC
+          </button>
+        )}
 
         <div style={{ 
           display: 'flex', 

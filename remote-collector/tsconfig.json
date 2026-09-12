@@ -10,7 +10,9 @@
     "rootDir": ".",
     "declaration": true,
     "sourceMap": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "typeRoots": ["../server/node_modules/@types"]
   },
   "include": ["./**/*.ts"],
   "exclude": ["node_modules", "dist"]

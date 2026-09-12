@@ -48,9 +48,9 @@ export function CustomDependencyEdge({
     return {
       color,
       dropShadow,
-      strokeWidth: isDeclaredOnly ? 1 : 2,
-      strokeDasharray: isDeclaredOnly ? '5 5' : 'none',
-      animation: edge.observed ? 'flow-active 2s linear infinite' : 'none'
+      strokeWidth: isDeclaredOnly ? 1 : (edge.observed ? 2.5 : 2),
+      strokeDasharray: edge.observed ? '12 12' : (isDeclaredOnly ? '5 5' : 'none'),
+      animation: edge.observed ? 'flow-active 1s linear infinite' : 'none'
     };
   };
 
@@ -104,7 +104,7 @@ export function CustomDependencyEdge({
           }}
           className="nodrag nopan"
         >
-          <span style={{ letterSpacing: '0.5px' }}>{edgeData?.type?.toUpperCase() ?? 'UNKNOWN'}</span>
+          <span style={{ letterSpacing: '0.5px' }}>DEPENDENCY</span>
           {edgeData?.evidenceSources && edgeData.evidenceSources.length > 0 && (
             <div style={{ display: 'flex', gap: '3px' }}>
               {edgeData.evidenceSources.map((src, i) => (

@@ -1,5 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { DependencyEdge } from '../../types';
 
@@ -25,11 +26,18 @@ export function Edge3D({ edge, startPos, endPos }: Edge3DProps) {
   const curve = useMemo(() => {
     const v1 = new THREE.Vector3(...startPos);
     const v2 = new THREE.Vector3(...endPos);
+    if (v1.distanceTo(v2) < 0.01) {
+      // Offset slightly to prevent TubeGeometry crash on 0-length curves
+      v2.x += 0.01;
+    }
     const dist = v1.distanceTo(v2);
     const mid = v1.clone().lerp(v2, 0.5);
     mid.y += Math.min(dist * 0.2, 5); 
     return new THREE.QuadraticBezierCurve3(v1, mid, v2);
   }, [startPos, endPos]);
+
+  // Midpoint for the label
+  const midPoint = useMemo(() => curve.getPointAt(0.5), [curve]);
 
   // Thin wire geometry for the path
   const tubeGeometry = useMemo(() => {
@@ -75,7 +83,35 @@ export function Edge3D({ edge, startPos, endPos }: Edge3DProps) {
           ))}
         </group>
       )}
+
+      {/* Network Traffic Label */}
+      {isObserved && edgeData?.metrics && (edgeData.metrics.requestRate !== undefined && edgeData.metrics.requestRate !== null) && (
+        <Html position={midPoint} center distanceFactor={15}>
+          <div style={{
+            background: 'rgba(5, 8, 15, 0.8)',
+            border: `1px solid ${color}`,
+            padding: '2px 6px',
+            borderRadius: '4px',
+            color: '#fff',
+            fontSize: '9px',
+            whiteSpace: 'nowrap',
+            fontFamily: 'monospace',
+            textShadow: '0 0 4px rgba(255,255,255,0.5)',
+            boxShadow: `0 0 8px ${color}40`,
+            pointerEvents: 'none',
+            display: 'flex',
+            gap: '6px'
+          }}>
+            <span style={{ color: '#00d4ff' }}>{edgeData.metrics.requestRate.toFixed(1)} req/s</span>
+            {(edgeData.metrics.errorRate && edgeData.metrics.errorRate > 0) ? (
+              <span style={{ color: '#ff1744' }}>{edgeData.metrics.errorRate.toFixed(1)} err/s</span>
+            ) : null}
+            {edgeData.metrics.latency ? (
+              <span style={{ color: '#e040fb' }}>{edgeData.metrics.latency.toFixed(0)}ms</span>
+            ) : null}
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
-

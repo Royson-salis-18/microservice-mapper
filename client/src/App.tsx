@@ -7,10 +7,12 @@ import { InspectionPanel } from './components/InspectionPanel';
 import { GraphControls } from './components/GraphControls';
 import { useGraphData } from './hooks/useGraphData';
 import { EdgeInspectionPanel } from './components/EdgeInspectionPanel';
+import { TrafficControlPanel } from './components/TrafficControlPanel';
 import { TelemetryView } from './components/TelemetryView';
 import { DependenciesView } from './components/DependenciesView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { RCAView } from './components/RCAView';
+import { ExperimentHistoryPanel } from './components/ExperimentHistoryPanel';
 import type { ServiceNode, DependencyEdge } from './types';
 
 export default function App() {
@@ -20,7 +22,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState('architecture');
+  const [viewMode, setViewMode] = useState('combined');
+  const [isTrafficPanelOpen, setIsTrafficPanelOpen] = useState(false);
   
   const [filters, setFilters] = useState<Record<string, boolean>>({
     all: true,
@@ -56,7 +59,11 @@ export default function App() {
   const filteredNodes = useMemo(() => {
     return nodes.filter(node => {
       const data = node.data as unknown as ServiceNode;
-      if (selectedProjectId !== 'ALL' && data.project !== selectedProjectId.toLowerCase()) return false;
+      if (selectedProjectId !== 'ALL' && 
+          data.project !== selectedProjectId && 
+          data.project.toLowerCase() !== selectedProjectId.toLowerCase()) {
+        return false;
+      }
       if (searchQuery && !data.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       
       if (data.type === 'service' && filters.services) return true;
@@ -130,6 +137,8 @@ export default function App() {
         onSearchChange={setSearchQuery}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onToggleTrafficPanel={() => setIsTrafficPanelOpen(!isTrafficPanelOpen)}
+        isTrafficPanelOpen={isTrafficPanelOpen}
       />
       
       <div className="main-content">
@@ -165,6 +174,8 @@ export default function App() {
             edges={filteredEdges}
             selectedProject={selectedProjectId}
           />
+        ) : activeTab === 'EXPERIMENTS' ? (
+          <ExperimentHistoryPanel />
         ) : (
           <ReactFlowProvider>
             <GraphControls 
@@ -207,6 +218,10 @@ export default function App() {
             edge={(edges.find(e => e.id === selectedEdgeId)?.data as unknown as DependencyEdge) || null}
             onClose={() => setSelectedEdgeId(null)}
           />
+        )}
+
+        {isTrafficPanelOpen && (
+          <TrafficControlPanel onClose={() => setIsTrafficPanelOpen(false)} />
         )}
       </div>
       

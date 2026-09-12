@@ -38,7 +38,9 @@ export function DependenciesView({ nodes: _nodes, edges, selectedProject }: Depe
   }, [parsedEdges]);
 
   const getCleanName = (id: string) => {
-    return id.replace(/^(sock-shop|vertikal)-/, '');
+    if (!id) return '';
+    const projPrefix = selectedProject !== 'ALL' ? selectedProject.toLowerCase() : '';
+    return id.replace(new RegExp(`^(${projPrefix}|sock-shop|vertikal)-`, 'i'), '');
   };
 
   return (

@@ -1,14 +1,67 @@
 import type { InteractionEvent } from '../models/InteractionEvent.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
 import { config } from '../config.js';
+import fs from 'fs';
+import path from 'path';
 
 export class MetricStore {
   private store: Map<string, MetricSnapshot[]> = new Map();
   private events: InteractionEvent[] = [];
   private readonly maxSize: number;
+  private storagePath: string;
+  private saveTimeout: NodeJS.Timeout | null = null;
 
   constructor(maxSize: number = config.METRIC_HISTORY_SIZE) {
     this.maxSize = maxSize;
+    this.storagePath = path.resolve(process.cwd(), 'data', 'telemetry_db.json');
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk(): void {
+    try {
+      if (fs.existsSync(this.storagePath)) {
+        const raw = fs.readFileSync(this.storagePath, 'utf8');
+        const data = JSON.parse(raw);
+        if (data.store && typeof data.store === 'object') {
+          for (const [key, val] of Object.entries(data.store)) {
+            if (Array.isArray(val)) {
+              this.store.set(key, val as MetricSnapshot[]);
+            }
+          }
+        }
+        if (Array.isArray(data.events)) {
+          this.events = data.events;
+        }
+        console.log(`[MetricStore] Loaded persistent telemetry state from disk (${this.store.size} nodes, ${this.events.length} events)`);
+      }
+    } catch (e) {
+      console.warn('[MetricStore] Failed to load telemetry state from disk:', e);
+    }
+  }
+
+  private scheduleSave(): void {
+    if (this.saveTimeout) return;
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null;
+      this.saveToDisk();
+    }, 2000);
+  }
+
+  private saveToDisk(): void {
+    try {
+      const dir = path.dirname(this.storagePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      const storeObj: Record<string, MetricSnapshot[]> = {};
+      for (const [k, v] of this.store.entries()) {
+        storeObj[k] = v;
+      }
+      const payload = JSON.stringify({ store: storeObj, events: this.events });
+      fs.writeFileSync(this.storagePath, payload, 'utf8');
+    } catch (e) {
+      console.error('[MetricStore] Failed to save telemetry state to disk:', e);
+    }
   }
 
   push(nodeId: string, snapshot: MetricSnapshot): void {
@@ -20,6 +73,7 @@ export class MetricStore {
     if (history.length > this.maxSize) {
       history.shift();
     }
+    this.scheduleSave();
   }
 
   pushEvent(event: InteractionEvent): void {
@@ -27,6 +81,7 @@ export class MetricStore {
     // Keep last 10,000 events or within a time window (e.g., 1 hour)
     const cutoff = Date.now() - 60 * 60 * 1000;
     this.events = this.events.filter(e => new Date(e.timestamp).getTime() > cutoff).slice(-10000);
+    this.scheduleSave();
   }
 
   getAggregatedEdgeMetrics(source: string, target: string, timeWindowMs: number = 5 * 60 * 1000) {

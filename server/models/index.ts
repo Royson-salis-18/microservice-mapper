@@ -5,3 +5,4 @@ export * from './InteractionEvent.js';
 export * from './Target.js';
 export * from './TelemetryEnvelope.js';
 export * from './Incident.js';
+export * from './EndpointModels.js';

@@ -99,16 +99,23 @@ export interface GraphData {
 }
 
 export interface Target {
-  id: string;
-  name: string;
-  type: string;
-  environment: string;
-  platform: string;
-  region?: string;
-  endpoint?: string;
-  status: 'LIVE' | 'STALE' | 'OFFLINE' | 'NO_DATA';
+  targetId: string;
+  displayName: string;
+  environment: 'local' | 'remote' | 'aws' | string;
+  host?: string;
+  transport?: 'http' | 'ssh-tunnel' | string;
+  status: 'LIVE' | 'STALE' | 'OFFLINE' | 'NO DATA' | 'NO_DATA';
   lastSeen: string | null;
-  metadata?: Record<string, any>;
+  baseUrl?: string;
+  publicPort?: number;
+  endpointStatus?: 'REACHABLE' | 'UNREACHABLE' | 'UNCONFIGURED';
+  capabilities?: {
+    dockerMetrics?: boolean;
+    serviceHealth?: boolean;
+    topology?: boolean;
+    httpInteractions?: boolean;
+    traces?: boolean;
+  };
 }
 
 export interface TelemetryEnvelope {
@@ -192,3 +199,73 @@ export interface Incident {
   explanation: RCAExplanation;
   remediationGuide: string[];
 }
+
+export interface DiscoveredService {
+  serviceId: string;
+  targetId: string;
+  name: string;
+  containerId?: string;
+  image?: string;
+  status: 'healthy' | 'degraded' | 'critical' | 'unknown';
+  health?: string;
+  containerIP?: string;
+  ports: number[];
+  protocols: string[];
+  labels: Record<string, string>;
+  environmentMetadata?: Record<string, string>;
+  restartCount?: number;
+  networks?: string[];
+  lastSeen: string;
+}
+
+export interface DiscoveredEndpoint {
+  endpointId: string;
+  targetId: string;
+  serviceId: string;
+  serviceName: string;
+  host: string;
+  port: number;
+  protocol: 'HTTP' | 'HTTPS' | 'TCP' | 'GRPC' | 'AMQP';
+  basePath?: string;
+  type: 'PUBLIC' | 'INTERNAL';
+  source: string;
+  discoveryMethod: string;
+  reachable: boolean;
+  lastChecked: string;
+  statusCode?: number;
+  latencyMs?: number;
+}
+
+export interface DiscoveredRoute {
+  routeId: string;
+  targetId: string;
+  serviceId: string;
+  endpointId: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'ANY';
+  path: string;
+  protocol: 'HTTP' | 'HTTPS' | 'TCP' | 'AMQP';
+  source: string;
+  declared: boolean;
+  observed: boolean;
+  trafficCapable: boolean;
+  incapableReason?: string;
+  firstSeen?: string;
+  lastSeen?: string;
+  requestCount: number;
+  successCount: number;
+  errorCount: number;
+  latencyMs?: number;
+}
+
+export interface TargetDiscoverySummary {
+  targetId: string;
+  status: 'LIVE' | 'STALE' | 'OFFLINE' | 'NO DATA';
+  lastDiscovery: string;
+  servicesCount: number;
+  publicEndpointsCount: number;
+  internalEndpointsCount: number;
+  routesCount: number;
+  observedRoutesCount: number;
+  trafficCapableRoutesCount: number;
+}
+

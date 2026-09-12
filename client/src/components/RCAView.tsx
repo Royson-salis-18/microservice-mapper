@@ -37,7 +37,10 @@ export function RCAView({ nodes, edges: _edges, selectedProject }: RCAViewProps)
     return activeIncident.candidateCauses[0];
   }, [activeIncident, selectedCandidateId]);
 
-  const getCleanName = (name: string) => name.replace(/^(sock-shop|vertikal)-/, '');
+  const getCleanName = (name: string) => {
+    if (!name) return '';
+    return name.replace(new RegExp(`^(${targetId}|sock-shop|vertikal)-`, 'i'), '');
+  };
 
   return (
     <div style={{

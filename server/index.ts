@@ -11,6 +11,8 @@ import { VertikalAdapter } from './collectors/VertikalAdapter.js';
 import { RuntimeObserver } from './collectors/RuntimeObserver.js';
 
 import { IncidentManager } from './rca/IncidentManager.js';
+import { TrafficController } from './traffic/TrafficController.js';
+import { ExperimentManager } from './traffic/ExperimentManager.js';
 
 async function main() {
   const app = express();
@@ -22,19 +24,24 @@ async function main() {
 
   const graphStore = new GraphStore();
   const incidentManager = new IncidentManager(graphStore);
-  app.use('/api', createRouter(graphStore, wsManager, incidentManager));
+  const trafficController = new TrafficController(graphStore);
+  const experimentManager = new ExperimentManager(graphStore, graphStore.metricStore, trafficController);
+  trafficController.onStatsCallback = (targetId, stats) => experimentManager.updateExperimentStats(targetId, stats);
+  app.use('/api', createRouter(graphStore, wsManager, incidentManager, trafficController, experimentManager));
+
+  const enableLocalDocker = process.env.DISABLE_LOCAL_DOCKER !== 'true';
+  const dockerCollector = enableLocalDocker ? new DockerCollector() : (null as any);
 
   // Adapters parse the baseline architecture from compose files
   const adapters = [
     new VertikalAdapter(),
     new SockShopAdapter(),
-    new RuntimeObserver(graphStore.metricStore)
+    ...(enableLocalDocker ? [new RuntimeObserver(graphStore.metricStore)] : [])
   ];
 
   // Initial collection before starting server
   try {
-    // Pass undefined/null for dockerCollector to disable local discovery
-    await graphStore.updateFromCollectors(null as any, adapters);
+    await graphStore.updateFromCollectors(dockerCollector, adapters);
     console.log(`Initial discovery: ${graphStore.getGraph().nodes.length} nodes, ${graphStore.getGraph().edges.length} edges`);
   } catch (e) {
     console.error('Initial collection failed:', e);
@@ -42,19 +49,19 @@ async function main() {
 
   server.listen(Number(config.PORT), '0.0.0.0', () => {
     console.log(`Microservice Mapper server started on port ${config.PORT}`);
-    console.log(`Polling interval: ${config.POLLING_INTERVAL_MS}ms (Remote Ingestion Mode)`);
+    console.log(`Polling interval: ${config.POLLING_INTERVAL_MS}ms (AWS Remote Mode)`);
   });
 
   // Periodic RCA Evaluation Cycle & Broadcast
   setInterval(async () => {
     try {
-      await graphStore.updateFromCollectors(null as any, adapters);
+      await graphStore.updateFromCollectors(dockerCollector, adapters);
       wsManager.broadcast('graph-update', graphStore.getGraph());
 
       // Target-isolated RCA Evaluation
       const targets = graphStore.getGraph().targets;
       for (const target of targets) {
-        const incident = incidentManager.evaluateTarget(target.id);
+        const incident = incidentManager.evaluateTarget(target.targetId);
         if (incident) {
           wsManager.broadcast('incident.updated', incident);
         }

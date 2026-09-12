@@ -17,6 +17,24 @@ function determineNodeType(name: string, image: string): 'database' | 'queue' | 
   return 'service';
 }
 
+// Declared microservice architecture for Sock Shop
+const KNOWN_SOCK_SHOP_DECLARED_EDGES = [
+  { source: 'edge-router', target: 'front-end', type: 'http' },
+  { source: 'front-end', target: 'catalogue', type: 'http' },
+  { source: 'front-end', target: 'carts', type: 'http' },
+  { source: 'front-end', target: 'orders', type: 'http' },
+  { source: 'front-end', target: 'user', type: 'http' },
+  { source: 'catalogue', target: 'catalogue-db', type: 'database' },
+  { source: 'carts', target: 'carts-db', type: 'database' },
+  { source: 'orders', target: 'orders-db', type: 'database' },
+  { source: 'orders', target: 'payment', type: 'http' },
+  { source: 'orders', target: 'shipping', type: 'http' },
+  { source: 'shipping', target: 'rabbitmq', type: 'message' },
+  { source: 'queue-master', target: 'rabbitmq', type: 'message' },
+  { source: 'user', target: 'user-db', type: 'database' },
+  { source: 'user-sim', target: 'edge-router', type: 'http' },
+];
+
 export class SockShopAdapter extends BaseCollector {
   async discover(): Promise<ServiceNode[]> {
     if (!config.SOCK_SHOP_COMPOSE_PATH || !fs.existsSync(config.SOCK_SHOP_COMPOSE_PATH)) return [];
@@ -51,93 +69,63 @@ export class SockShopAdapter extends BaseCollector {
   async collectMetrics(): Promise<MetricSnapshot | null> { return null; }
 
   async getKnownDependencies(): Promise<DependencyEdge[]> {
-    if (!config.SOCK_SHOP_COMPOSE_PATH || !fs.existsSync(config.SOCK_SHOP_COMPOSE_PATH)) return [];
-    try {
-      const content = fs.readFileSync(config.SOCK_SHOP_COMPOSE_PATH, 'utf8');
-      const doc = yaml.parse(content);
-      const edgesMap = new Map<string, DependencyEdge>();
+    const edgesMap = new Map<string, DependencyEdge>();
 
-      if (doc && doc.services) {
-        const serviceNames = Object.keys(doc.services);
+    // 1. Load baseline declared microservice architecture edges
+    for (const edge of KNOWN_SOCK_SHOP_DECLARED_EDGES) {
+      const sourceId = `sock-shop-${edge.source}`;
+      const targetId = `sock-shop-${edge.target}`;
+      const edgeId = `edge-${sourceId}-${targetId}`;
+      edgesMap.set(edgeId, {
+        id: edgeId,
+        source: sourceId,
+        target: targetId,
+        type: edge.type as any,
+        declared: true,
+        observed: false,
+        evidenceSources: ['compose-config'],
+        status: 'unknown',
+        metrics: null
+      });
+    }
 
-        for (const [serviceName, serviceDef] of Object.entries(doc.services) as [string, any][]) {
-          const sourceId = `sock-shop-${serviceName}`;
+    // 2. Add dependencies from compose file if specified
+    if (config.SOCK_SHOP_COMPOSE_PATH && fs.existsSync(config.SOCK_SHOP_COMPOSE_PATH)) {
+      try {
+        const content = fs.readFileSync(config.SOCK_SHOP_COMPOSE_PATH, 'utf8');
+        const doc = yaml.parse(content);
 
-          // 1. Check explicit depends_on
-          if (serviceDef?.depends_on) {
-            const deps = Array.isArray(serviceDef.depends_on) ? serviceDef.depends_on : Object.keys(serviceDef.depends_on);
-            for (const dep of deps) {
-              const targetId = `sock-shop-${dep}`;
-              const edgeId = `edge-${sourceId}-${targetId}`;
-              edgesMap.set(edgeId, {
-                id: edgeId,
-                source: sourceId,
-                target: targetId,
-                type: 'dependency',
-                declared: true,
-                observed: false,
-                evidenceSources: ['compose-config'],
-                status: 'unknown',
-                metrics: null
-              });
-            }
-          }
+        if (doc && doc.services) {
+          const serviceNames = Object.keys(doc.services);
 
-          // 2. Check links
-          if (serviceDef?.links) {
-            for (const link of serviceDef.links) {
-              const dep = link.split(':')[0];
-              const targetId = `sock-shop-${dep}`;
-              const edgeId = `edge-${sourceId}-${targetId}`;
-              edgesMap.set(edgeId, {
-                id: edgeId,
-                source: sourceId,
-                target: targetId,
-                type: 'dependency',
-                declared: true,
-                observed: false,
-                evidenceSources: ['compose-config'],
-                status: 'unknown',
-                metrics: null
-              });
-            }
-          }
+          for (const [serviceName, serviceDef] of Object.entries(doc.services) as [string, any][]) {
+            const sourceId = `sock-shop-${serviceName}`;
 
-          // 3. Dynamic Environment Var Target Resolution (e.g. MONGO_HOST=user-db:27017)
-          if (serviceDef?.environment) {
-            const envVars = Array.isArray(serviceDef.environment)
-              ? serviceDef.environment
-              : Object.entries(serviceDef.environment).map(([k, v]) => `${k}=${v}`);
-
-            for (const env of envVars) {
-              for (const targetName of serviceNames) {
-                if (targetName !== serviceName && env.includes(targetName)) {
-                  const targetId = `sock-shop-${targetName}`;
-                  const edgeId = `edge-${sourceId}-${targetId}`;
-                  const targetType = determineNodeType(targetName, doc.services[targetName]?.image || '');
-                  const edgeType = targetType === 'database' ? 'database' : targetType === 'queue' ? 'message' : 'http';
-
-                  edgesMap.set(edgeId, {
-                    id: edgeId,
-                    source: sourceId,
-                    target: targetId,
-                    type: edgeType,
-                    declared: true,
-                    observed: false,
-                    evidenceSources: ['compose-env-vars'],
-                    status: 'unknown',
-                    metrics: null
-                  });
-                }
+            if (serviceDef?.depends_on) {
+              const deps = Array.isArray(serviceDef.depends_on) ? serviceDef.depends_on : Object.keys(serviceDef.depends_on);
+              for (const dep of deps) {
+                const targetId = `sock-shop-${dep}`;
+                const edgeId = `edge-${sourceId}-${targetId}`;
+                edgesMap.set(edgeId, {
+                  id: edgeId,
+                  source: sourceId,
+                  target: targetId,
+                  type: 'dependency',
+                  declared: true,
+                  observed: false,
+                  evidenceSources: ['compose-config'],
+                  status: 'unknown',
+                  metrics: null
+                });
               }
             }
           }
         }
+      } catch (e) {
+        console.error('Failed to parse Sock Shop compose for dependencies:', e);
       }
-      return Array.from(edgesMap.values());
-    } catch (e) {
-      console.error('Failed to parse Sock Shop compose for dependencies:', e);
-      return [];
     }
+
+    return Array.from(edgesMap.values());
   }
 }

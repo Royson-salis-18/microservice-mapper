@@ -1,0 +1,19 @@
+{
+  "name": "traffic-generator",
+  "version": "1.0.0",
+  "description": "Real user-journey traffic generator for Sock Shop AWS and Vertikal AWS",
+  "main": "dist/cli.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/cli.ts",
+    "sockshop": "tsx src/cli.ts --target sock-shop-aws",
+    "vertikal": "tsx src/cli.ts --target vertikal-aws",
+    "all": "tsx src/cli.ts --target all"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

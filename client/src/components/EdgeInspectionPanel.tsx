@@ -24,7 +24,7 @@ export function EdgeInspectionPanel({ edge, onClose }: EdgeInspectionPanelProps)
   if (!edge) return null;
 
   const errRate = edge.metrics?.errorRate ?? 0;
-  const isCritical = errRate > 5 || edge.status === 'failed';
+  const isCritical = errRate > 0.05 || edge.status === 'failed';
   const isDegraded = !isCritical && (edge.status === 'degraded' || (edge.metrics?.latency ?? 0) > 500);
   
   const statusColor = isCritical ? statusColors.failed : isDegraded ? statusColors.degraded : edge.observed ? statusColors.healthy : statusColors.unknown;
@@ -136,9 +136,9 @@ export function EdgeInspectionPanel({ edge, onClose }: EdgeInspectionPanelProps)
                 </div>
               </div>
               
-              <div style={{ background: errRate > 5 ? 'linear-gradient(145deg, rgba(255, 23, 68, 0.1), rgba(255, 23, 68, 0.02))' : 'rgba(255,255,255,0.03)', border: `1px solid ${errRate > 5 ? 'rgba(255, 23, 68, 0.3)' : 'rgba(255,255,255,0.05)'}`, padding: '16px', borderRadius: '8px' }}>
-                <div style={{ color: errRate > 5 ? '#ff1744' : 'rgba(255,255,255,0.5)', marginBottom: '8px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Error Rate</div>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: errRate > 5 ? '#ff1744' : '#fff', textShadow: errRate > 5 ? '0 0 10px rgba(255, 23, 68, 0.4)' : 'none' }}>
+              <div style={{ background: errRate > 0.05 ? 'linear-gradient(145deg, rgba(255, 23, 68, 0.1), rgba(255, 23, 68, 0.02))' : 'rgba(255,255,255,0.03)', border: `1px solid ${errRate > 0.05 ? 'rgba(255, 23, 68, 0.3)' : 'rgba(255,255,255,0.05)'}`, padding: '16px', borderRadius: '8px' }}>
+                <div style={{ color: errRate > 0.05 ? '#ff1744' : 'rgba(255,255,255,0.5)', marginBottom: '8px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Error Rate</div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: errRate > 0.05 ? '#ff1744' : '#fff', textShadow: errRate > 0.05 ? '0 0 10px rgba(255, 23, 68, 0.4)' : 'none' }}>
                   {edge.metrics?.errorRate !== undefined && edge.metrics?.errorRate !== null ? `${(errRate * 100).toFixed(2)}%` : 'N/A'}
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, OrbitControls, Sparkles, DragControls } from '@react-three/drei';
 import type { Node, Edge } from '@xyflow/react';
 import * as THREE from 'three';
@@ -124,7 +124,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
                   // Select node immediately when interacting/clicking
                   onNodeClick(node.id);
                 }}
-                onDrag={(localMatrix, deltaLocalMatrix, worldMatrix, deltaWorldMatrix) => {
+                onDrag={(_, __, worldMatrix) => {
                   const newPos = new THREE.Vector3().setFromMatrixPosition(worldMatrix);
                   setPositions(prev => ({
                     ...prev,
