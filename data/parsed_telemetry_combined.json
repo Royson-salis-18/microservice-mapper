@@ -1,0 +1,1338 @@
+{
+  "exportedAt": "2026-09-11T18:24:58.770Z",
+  "systemStatus": "degraded",
+  "activeIncidents": 1,
+  "targetCounts": 2,
+  "nodes": [
+    {
+      "id": "sock-shop-user-sim",
+      "name": "user-sim",
+      "type": "infrastructure",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0,
+        "memory": 11755520,
+        "memoryPercent": 1.2,
+        "networkRx": 443341,
+        "networkTx": 35001,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "b3874232381d",
+        "image": "weaveworksdemos/load-test:0.1.1",
+        "state": "running",
+        "status": "Up 22 minutes",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 0,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-orders-db",
+      "name": "orders-db",
+      "type": "database",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 1.9,
+        "memory": 7643136,
+        "memoryPercent": 0.8,
+        "networkRx": 191361,
+        "networkTx": 269103,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "11543abd57b0",
+        "image": "mongo:3.4",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-carts-db",
+      "name": "carts-db",
+      "type": "database",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 1.5,
+        "memory": 21274624,
+        "memoryPercent": 2.2,
+        "networkRx": 5951001,
+        "networkTx": 5301165,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "1918f5dc572c",
+        "image": "mongo:3.4",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-shipping",
+      "name": "shipping",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0.5,
+        "memory": 5292032,
+        "memoryPercent": 0.6,
+        "networkRx": 5669,
+        "networkTx": 126,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "8e3aa1904e2a",
+        "image": "weaveworksdemos/shipping:0.4.8",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 2,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "sock-shop-queue-master",
+      "name": "queue-master",
+      "type": "queue",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0.5,
+        "memory": 5804032,
+        "memoryPercent": 0.6,
+        "networkRx": 61503,
+        "networkTx": 57632,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "ba2e7eefb6b6",
+        "image": "weaveworksdemos/queue-master:0.3.1",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 0,
+        "downstreamCount": 2
+      }
+    },
+    {
+      "id": "sock-shop-catalogue",
+      "name": "catalogue",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0,
+        "memory": 2887680,
+        "memoryPercent": 0.3,
+        "networkRx": 28603433,
+        "networkTx": 31051978,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "29d62d7671c2",
+        "image": "weaveworksdemos/catalogue:0.3.5",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "sock-shop-payment",
+      "name": "payment",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0,
+        "memory": 802816,
+        "memoryPercent": 0.1,
+        "networkRx": 1538,
+        "networkTx": 126,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "e362570a3bde",
+        "image": "weaveworksdemos/payment:0.4.3",
+        "state": "running",
+        "status": "Up 22 minutes",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-edge-router",
+      "name": "edge-router",
+      "type": "gateway",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0.1,
+        "memory": 11079680,
+        "memoryPercent": 1.2,
+        "networkRx": 123850768,
+        "networkTx": 126866036,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "e35fdf7deca0",
+        "image": "weaveworksdemos/edge-router:0.1.1",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 0,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "sock-shop-carts",
+      "name": "carts",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "degraded",
+      "metrics": {
+        "cpu": 951.1,
+        "memory": 94863360,
+        "memoryPercent": 9.9,
+        "networkRx": 9304178,
+        "networkTx": 10251614,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "69bb7ba9d511",
+        "image": "weaveworksdemos/carts:0.4.8",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 2,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "sock-shop-rabbitmq",
+      "name": "rabbitmq",
+      "type": "queue",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 3.6,
+        "memory": 12042240,
+        "memoryPercent": 1.3,
+        "networkRx": 63081,
+        "networkTx": 56152,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "b04b6a426efe",
+        "image": "rabbitmq:3.6.8",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 2,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-user-db",
+      "name": "user-db",
+      "type": "database",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 29.7,
+        "memory": 7835648,
+        "memoryPercent": 0.8,
+        "networkRx": 241630,
+        "networkTx": 230931,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "ffe4b0af9ac5",
+        "image": "weaveworksdemos/user-db:0.4.0",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 2,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "sock-shop-front-end",
+      "name": "front-end",
+      "type": "frontend",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0,
+        "memory": 24330240,
+        "memoryPercent": 2.5,
+        "networkRx": 46604064,
+        "networkTx": 115185308,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "7b919f805799",
+        "image": "weaveworksdemos/front-end:0.3.12",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 4
+      }
+    },
+    {
+      "id": "sock-shop-orders",
+      "name": "orders",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "degraded",
+      "metrics": {
+        "cpu": 442.7,
+        "memory": 127574016,
+        "memoryPercent": 13.4,
+        "networkRx": 16772,
+        "networkTx": 9223,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "29a22474dea2",
+        "image": "weaveworksdemos/orders:0.4.7",
+        "state": "running",
+        "status": "Up 22 minutes",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 5
+      }
+    },
+    {
+      "id": "sock-shop-user",
+      "name": "user",
+      "type": "service",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0,
+        "memory": 5931008,
+        "memoryPercent": 0.6,
+        "networkRx": 1610810,
+        "networkTx": 2187691,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "8ea81ba4da2b",
+        "image": "weaveworksdemos/user:0.4.4",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 2,
+        "downstreamCount": 2
+      }
+    },
+    {
+      "id": "sock-shop-catalogue-db",
+      "name": "catalogue-db",
+      "type": "database",
+      "project": "sock-shop",
+      "status": "healthy",
+      "metrics": {
+        "cpu": 0.4,
+        "memory": 3891200,
+        "memoryPercent": 0.4,
+        "networkRx": 4769998,
+        "networkTx": 25470111,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "metadata": {
+        "containerId": "28d2bb7b22d6",
+        "image": "weaveworksdemos/catalogue-db:0.3.0",
+        "state": "running",
+        "status": "Up 3 hours",
+        "declaredInCompose": true
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 0
+      }
+    },
+    {
+      "id": "vertikal-gateway",
+      "name": "vertikal-gateway",
+      "type": "gateway",
+      "project": "vertikal",
+      "status": "healthy",
+      "metadata": {
+        "containerId": "56060339062c",
+        "image": "nginx:1.27-alpine",
+        "ports": [
+          "54321:8000",
+          "54321:8000"
+        ],
+        "uptime": "Up 3 hours",
+        "restartCount": 0
+      },
+      "metrics": {
+        "cpu": 0,
+        "memory": 3117056,
+        "memoryPercent": 0.02,
+        "networkRx": 230627,
+        "networkTx": 126,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 0,
+        "downstreamCount": 2
+      }
+    },
+    {
+      "id": "vertikal-auth",
+      "name": "vertikal-auth",
+      "type": "service",
+      "project": "vertikal",
+      "status": "healthy",
+      "metadata": {
+        "containerId": "9655fe273946",
+        "image": "supabase/gotrue:v2.170.0",
+        "ports": [],
+        "uptime": "Up 3 hours (healthy)",
+        "restartCount": 0
+      },
+      "metrics": {
+        "cpu": 0.02,
+        "memory": 14450688,
+        "memoryPercent": 0.09,
+        "networkRx": 238776,
+        "networkTx": 8570,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "vertikal-rest",
+      "name": "vertikal-rest",
+      "type": "service",
+      "project": "vertikal",
+      "status": "healthy",
+      "metadata": {
+        "containerId": "685e747438dd",
+        "image": "postgrest/postgrest:v12.2.3",
+        "ports": [],
+        "uptime": "Up 3 hours",
+        "restartCount": 0
+      },
+      "metrics": {
+        "cpu": 0.03,
+        "memory": 25927680,
+        "memoryPercent": 0.16,
+        "networkRx": 256153,
+        "networkTx": 34375,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 1,
+        "downstreamCount": 1
+      }
+    },
+    {
+      "id": "vertikal-db",
+      "name": "vertikal-db",
+      "type": "database",
+      "project": "vertikal",
+      "status": "healthy",
+      "metadata": {
+        "containerId": "7f24af67153c",
+        "image": "postgres:15",
+        "ports": [
+          "54322:5432",
+          "54322:5432"
+        ],
+        "uptime": "Up 3 hours (healthy)",
+        "restartCount": 0
+      },
+      "metrics": {
+        "cpu": 0,
+        "memory": 35057664,
+        "memoryPercent": 0.22,
+        "networkRx": 271949,
+        "networkTx": 37010,
+        "latency": null,
+        "requestRate": null,
+        "errorRate": null
+      },
+      "analytics": {
+        "healthScore": null,
+        "riskScore": null,
+        "failureProbability": null,
+        "affectedProbability": null,
+        "criticality": null,
+        "centrality": null,
+        "upstreamCount": 3,
+        "downstreamCount": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "vertikal-auth-vertikal-db",
+      "source": "vertikal-auth",
+      "target": "vertikal-db",
+      "type": "database",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "vertikal-rest-vertikal-db",
+      "source": "vertikal-rest",
+      "target": "vertikal-db",
+      "type": "database",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "vertikal-gateway-vertikal-auth",
+      "source": "vertikal-gateway",
+      "target": "vertikal-auth",
+      "type": "http",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "vertikal-gateway-vertikal-rest",
+      "source": "vertikal-gateway",
+      "target": "vertikal-rest",
+      "type": "http",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "vertikal-meta-vertikal-db",
+      "source": "vertikal-meta",
+      "target": "vertikal-db",
+      "type": "database",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "vertikal-studio-vertikal-meta",
+      "source": "vertikal-studio",
+      "target": "vertikal-meta",
+      "type": "http",
+      "declared": true,
+      "observed": false,
+      "evidenceSources": [
+        "compose"
+      ],
+      "status": "unknown",
+      "metrics": null
+    },
+    {
+      "id": "sock-shop-edge-router-front-end",
+      "source": "sock-shop-edge-router",
+      "target": "sock-shop-front-end",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-front-end-catalogue",
+      "source": "sock-shop-front-end",
+      "target": "sock-shop-catalogue",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-front-end-carts",
+      "source": "sock-shop-front-end",
+      "target": "sock-shop-carts",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-front-end-orders",
+      "source": "sock-shop-front-end",
+      "target": "sock-shop-orders",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-front-end-user",
+      "source": "sock-shop-front-end",
+      "target": "sock-shop-user",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-catalogue-catalogue-db",
+      "source": "sock-shop-catalogue",
+      "target": "sock-shop-catalogue-db",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-carts-carts-db",
+      "source": "sock-shop-carts",
+      "target": "sock-shop-carts-db",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-orders-orders-db",
+      "source": "sock-shop-orders",
+      "target": "sock-shop-orders-db",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-orders-payment",
+      "source": "sock-shop-orders",
+      "target": "sock-shop-payment",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-orders-shipping",
+      "source": "sock-shop-orders",
+      "target": "sock-shop-shipping",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-orders-user",
+      "source": "sock-shop-orders",
+      "target": "sock-shop-user",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-orders-carts",
+      "source": "sock-shop-orders",
+      "target": "sock-shop-carts",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-shipping-rabbitmq",
+      "source": "sock-shop-shipping",
+      "target": "sock-shop-rabbitmq",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-queue-master-shipping",
+      "source": "sock-shop-queue-master",
+      "target": "sock-shop-shipping",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-queue-master-rabbitmq",
+      "source": "sock-shop-queue-master",
+      "target": "sock-shop-rabbitmq",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "sock-shop-user-user-db",
+      "source": "sock-shop-user",
+      "target": "sock-shop-user-db",
+      "type": "dependency",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-declarative",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    },
+    {
+      "id": "edge-sock-shop-user-sock-shop-user-db",
+      "source": "sock-shop-user",
+      "target": "sock-shop-user-db",
+      "type": "database",
+      "declared": true,
+      "observed": true,
+      "evidenceSources": [
+        "compose-env-vars",
+        "http-log"
+      ],
+      "status": "active",
+      "metrics": {
+        "requestCount": 2,
+        "requestRate": 0.006666666666666667,
+        "errorCount": 0,
+        "errorRate": 0,
+        "latency": 12,
+        "p50Latency": 12,
+        "p95Latency": 12,
+        "p99Latency": 12,
+        "bytesSent": 1024,
+        "throughput": 3.4133333333333336
+      }
+    }
+  ],
+  "incidents": [
+    {
+      "id": "inc-sock-shop-1789151082726",
+      "targetId": "sock-shop",
+      "startedAt": "2026-09-11T18:24:42.726Z",
+      "detectedAt": "2026-09-11T18:24:42.726Z",
+      "endedAt": null,
+      "status": "DEGRADED",
+      "severity": "MEDIUM",
+      "rootCauseServiceId": "sock-shop-carts",
+      "rootCauseEdgeId": null,
+      "rootCauseScore": 0.65,
+      "confidence": "MEDIUM",
+      "symptoms": [
+        "Service 'carts' experiencing anomaly/failure",
+        "Service 'orders' experiencing anomaly/failure"
+      ],
+      "anomalies": [
+        {
+          "id": "anomaly-sock-shop-carts-cpu-1789151097770",
+          "nodeId": "sock-shop-carts",
+          "targetId": "sock-shop",
+          "metric": "cpu",
+          "timestamp": "2026-09-11T18:24:57.770Z",
+          "observedValue": 951.1,
+          "baselineMean": 50,
+          "baselineStdDev": 10,
+          "zScore": 3.5,
+          "severity": "HIGH",
+          "evidenceSource": "container-stats"
+        },
+        {
+          "id": "anomaly-sock-shop-orders-cpu-1789151097770",
+          "nodeId": "sock-shop-orders",
+          "targetId": "sock-shop",
+          "metric": "cpu",
+          "timestamp": "2026-09-11T18:24:57.770Z",
+          "observedValue": 442.7,
+          "baselineMean": 50,
+          "baselineStdDev": 10,
+          "zScore": 3.5,
+          "severity": "HIGH",
+          "evidenceSource": "container-stats"
+        }
+      ],
+      "propagation": [
+        {
+          "sourceId": "sock-shop-carts",
+          "targetId": "sock-shop-carts-db",
+          "timestamp": "2026-09-11T18:24:57.770Z",
+          "edgeId": "sock-shop-carts-carts-db",
+          "evidenceSource": "network-tcp",
+          "metricChange": "Status: healthy",
+          "confidence": "HIGH"
+        }
+      ],
+      "affectedServices": [
+        "carts",
+        "orders"
+      ],
+      "candidateCauses": [
+        {
+          "serviceId": "sock-shop-carts",
+          "serviceName": "carts",
+          "score": 0.65,
+          "confidence": "MEDIUM",
+          "scoreBreakdown": [
+            {
+              "factor": "temporal_precedence",
+              "score": 0.3,
+              "reason": "+0.30 temporal precedence (earliest detected anomaly)"
+            },
+            {
+              "factor": "degraded_status",
+              "score": 0.15,
+              "reason": "+0.15 degraded resource utilization"
+            },
+            {
+              "factor": "observed_dependency",
+              "score": 0.2,
+              "reason": "+0.20 observed runtime TCP/HTTP traffic confirmed"
+            }
+          ],
+          "earliestAnomalyTimestamp": "2026-09-11T18:24:57.770Z",
+          "primaryAnomalyMetric": "cpu"
+        },
+        {
+          "serviceId": "sock-shop-orders",
+          "serviceName": "orders",
+          "score": 0.6,
+          "confidence": "MEDIUM",
+          "scoreBreakdown": [
+            {
+              "factor": "anomaly_presence",
+              "score": 0.1,
+              "reason": "+0.10 metric anomaly detected"
+            },
+            {
+              "factor": "degraded_status",
+              "score": 0.15,
+              "reason": "+0.15 degraded resource utilization"
+            },
+            {
+              "factor": "observed_dependency",
+              "score": 0.2,
+              "reason": "+0.20 observed runtime TCP/HTTP traffic confirmed"
+            },
+            {
+              "factor": "downstream_correlation",
+              "score": 0.15,
+              "reason": "+0.15 downstream failure correlation (1 downstream nodes failing)"
+            }
+          ],
+          "earliestAnomalyTimestamp": "2026-09-11T18:24:57.770Z",
+          "primaryAnomalyMetric": "cpu"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "ev-sock-shop-carts-1789151097770",
+          "metric": "CPU / Memory / State",
+          "timestamp": "2026-09-11T18:24:57.770Z",
+          "beforeValue": "healthy (Up)",
+          "afterValue": "degraded (running)",
+          "source": "observed-runtime-tcp",
+          "description": "Service 'carts' status changed to DEGRADED (CPU: 951.1%, MEM: 9.9%)"
+        },
+        {
+          "id": "ev-sock-shop-orders-1789151097770",
+          "metric": "CPU / Memory / State",
+          "timestamp": "2026-09-11T18:24:57.770Z",
+          "beforeValue": "healthy (Up)",
+          "afterValue": "degraded (running)",
+          "source": "observed-runtime-tcp",
+          "description": "Service 'orders' status changed to DEGRADED (CPU: 442.7%, MEM: 13.4%)"
+        }
+      ],
+      "explanation": {
+        "whatHappened": "Incident detected on 'sock-shop': 2 service(s) affected (carts, orders).",
+        "whenStarted": "2026-09-11T18:24:57.770Z",
+        "likelyRootCause": "carts",
+        "why": "Service 'carts' showed the earliest anomaly and highest causal weight (65%). Key factors: +0.30 temporal precedence (earliest detected anomaly); +0.15 degraded resource utilization; +0.20 observed runtime TCP/HTTP traffic confirmed.",
+        "propagationPath": [
+          "carts",
+          "carts-db"
+        ],
+        "affectedServices": [
+          "carts",
+          "orders"
+        ],
+        "confidence": "MEDIUM",
+        "alternativeCandidates": [
+          {
+            "name": "orders",
+            "score": 0.6,
+            "confidence": "MEDIUM"
+          }
+        ],
+        "evidenceSummary": [
+          "observed-runtime-tcp: Service 'carts' status changed to DEGRADED (CPU: 951.1%, MEM: 9.9%) (healthy (Up) → degraded (running))",
+          "observed-runtime-tcp: Service 'orders' status changed to DEGRADED (CPU: 442.7%, MEM: 13.4%) (healthy (Up) → degraded (running))"
+        ],
+        "recommendedInvestigation": [
+          "Inspect logs for container 'docker-compose-carts-1'",
+          "Verify socket connectivity and resource bounds for 'carts'",
+          "If process exited, restart container using: docker start docker-compose-carts-1"
+        ]
+      },
+      "remediationGuide": [
+        "docker start docker-compose-carts-1"
+      ]
+    }
+  ]
+}
