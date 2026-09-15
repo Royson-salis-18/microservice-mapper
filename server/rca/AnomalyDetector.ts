@@ -32,39 +32,7 @@ export class AnomalyDetector {
       // 2. Metric History Baseline & Dynamic Z-Score Analysis
       const history = this.metricStore.getHistory(node.id, '15m');
       if (history.length < 3) {
-        // Cold start or insufficient historical data - evaluate absolute bounds only
-        if (node.metrics) {
-          if ((node.metrics.cpu || 0) > 85) {
-            anomalies.push({
-              id: `anomaly-${node.id}-cpu-${Date.now()}`,
-              nodeId: node.id,
-              targetId,
-              metric: 'cpu',
-              timestamp: now,
-              observedValue: node.metrics.cpu || 0,
-              baselineMean: 50,
-              baselineStdDev: 10,
-              zScore: 3.5,
-              severity: 'HIGH',
-              evidenceSource: 'container-stats'
-            });
-          }
-          if ((node.metrics.memoryPercent || 0) > 85) {
-            anomalies.push({
-              id: `anomaly-${node.id}-mem-${Date.now()}`,
-              nodeId: node.id,
-              targetId,
-              metric: 'memoryPercent',
-              timestamp: now,
-              observedValue: node.metrics.memoryPercent || 0,
-              baselineMean: 50,
-              baselineStdDev: 10,
-              zScore: 3.5,
-              severity: 'HIGH',
-              evidenceSource: 'container-stats'
-            });
-          }
-        }
+        // Cold start or insufficient historical data - skip anomaly detection until baseline is established
         continue;
       }
 

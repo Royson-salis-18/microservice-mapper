@@ -3,7 +3,7 @@ export interface DependencyEdge {
   source: string;
   target: string;
   type: 'http' | 'database' | 'message' | 'dependency';
-  protocol?: string;
+  protocol?: 'http' | 'tcp' | 'amqp' | 'rabbitmq' | string;
   
   declared: boolean;
   observed: boolean;

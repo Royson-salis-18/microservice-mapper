@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { TopBar } from './components/TopBar';
 import { GraphCanvas } from './components/GraphCanvas';
@@ -13,17 +13,28 @@ import { DependenciesView } from './components/DependenciesView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { RCAView } from './components/RCAView';
 import { ExperimentHistoryPanel } from './components/ExperimentHistoryPanel';
+import { RemoteConfigPanel } from './components/RemoteConfigPanel';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { Sidebar } from './components/Sidebar';
+import { TerminalPanel } from './components/TerminalPanel';
 import type { ServiceNode, DependencyEdge } from './types';
 
 export default function App() {
-  const { nodes, edges, targets, status, isConnected, lastUpdate, error, onNodesChange } = useGraphData();
+  const { 
+    nodes, edges, targets, status, isConnected, lastUpdate, error, isLoading, onNodesChange,
+    terminalLogs, sendTerminalCommand, reloadGraph
+  } = useGraphData();
   
   const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState('combined');
   const [isTrafficPanelOpen, setIsTrafficPanelOpen] = useState(false);
+  const [isAwsPanelOpen, setIsAwsPanelOpen] = useState(false);
+  const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
+  const [isTerminalVisible, setIsTerminalVisible] = useState(true);
   
   const [filters, setFilters] = useState<Record<string, boolean>>({
     all: true,
@@ -35,6 +46,16 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState('3D Vision');
+
+  // Auto-select newly discovered project
+  useEffect(() => {
+    if (pendingTargetId && targets.some(t => t.targetId === pendingTargetId)) {
+      setSelectedProjectId(pendingTargetId);
+      setPendingTargetId(null);
+      setIsAwsPanelOpen(false);
+      setActiveTab('3D Vision');
+    }
+  }, [targets, pendingTargetId]);
 
   const highlightedNodeIds = useMemo(() => {
     if (!selectedNodeId && !selectedEdgeId) return null;
@@ -95,6 +116,7 @@ export default function App() {
     return edges.filter(edge => {
       if (!validNodeIds.has(edge.source) || !validNodeIds.has(edge.target)) return false;
       const data = edge.data as unknown as DependencyEdge;
+      if (viewMode === 'combined' && !data.observed && !data.declared) return false;
       if (viewMode === 'architecture' && !data.declared) return false;
       if (viewMode === 'runtime' && !data.observed) return false;
       return true;
@@ -116,7 +138,7 @@ export default function App() {
         }
       };
     });
-  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId]);
+  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode]);
 
   const selectedNodeData = useMemo(() => {
     if (!selectedNodeId) return null;
@@ -124,25 +146,47 @@ export default function App() {
     return node ? (node.data as unknown as ServiceNode) : null;
   }, [selectedNodeId, nodes]);
 
+
+
   return (
-    <div className="app-container">
-      <TopBar 
+    <div className="app-container" style={{ display: 'flex', flexDirection: 'row', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
         status={status}
-        targets={targets}
-        isConnected={isConnected}
-        lastUpdate={lastUpdate}
-        selectedProject={selectedProjectId}
-        onProjectChange={setSelectedProjectId}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onToggleTrafficPanel={() => setIsTrafficPanelOpen(!isTrafficPanelOpen)}
-        isTrafficPanelOpen={isTrafficPanelOpen}
+        onAddProject={() => {
+          setEditingProjectId(null);
+          setIsAwsPanelOpen(true);
+        }}
       />
-      
-      <div className="main-content">
-        {activeTab === '3D Vision' ? (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <TopBar 
+          status={status}
+          targets={targets}
+          isConnected={isConnected}
+          lastUpdate={lastUpdate}
+          selectedProject={selectedProjectId}
+          onProjectChange={setSelectedProjectId}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onToggleTrafficPanel={() => { setIsTrafficPanelOpen(!isTrafficPanelOpen); setIsAwsPanelOpen(false); }}
+          isTrafficPanelOpen={isTrafficPanelOpen}
+          onReloadGraph={reloadGraph}
+          onEditProject={(projectId) => { 
+            setEditingProjectId(projectId);
+            setIsAwsPanelOpen(true); 
+            setIsTrafficPanelOpen(false); 
+          }}
+        />
+        
+        <div className="main-content" style={{ flex: 1, position: 'relative' }}>
+        {isLoading ? (
+          <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-cyan)' }}>
+            LOADING TELEMETRY...
+          </div>
+        ) : targets.length === 0 && !error ? (
+          <WelcomeScreen onAddProject={() => { setEditingProjectId(null); setIsAwsPanelOpen(true); }} />
+        ) : activeTab === '3D Vision' ? (
           <Scene3D 
             nodes={filteredNodes}
             edges={filteredEdges}
@@ -223,6 +267,65 @@ export default function App() {
         {isTrafficPanelOpen && (
           <TrafficControlPanel onClose={() => setIsTrafficPanelOpen(false)} />
         )}
+
+        {isAwsPanelOpen && (
+          <RemoteConfigPanel 
+            onClose={() => setIsAwsPanelOpen(false)} 
+            editTargetId={editingProjectId} 
+            onDiscoveryStart={(targetId) => {
+              setPendingTargetId(targetId);
+              setIsTerminalVisible(true);
+            }}
+          />
+        )}
+      </div>
+      
+      {/* GLOBAL TERMINAL PANEL (Bottom Dock) */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: '80px',
+        right: 0,
+        height: isTerminalVisible ? '250px' : '40px',
+        background: 'rgba(12, 12, 24, 0.95)',
+        backdropFilter: 'blur(24px)',
+        borderTop: '1px solid var(--color-border)',
+        zIndex: 50,
+        transition: 'height 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Terminal Header Tab */}
+        <div 
+          onClick={() => setIsTerminalVisible(!isTerminalVisible)}
+          style={{
+            height: '40px',
+            padding: '0 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            borderBottom: isTerminalVisible ? '1px solid var(--color-border)' : 'none',
+            background: 'rgba(255,255,255,0.02)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--color-accent-cyan)' }}>_</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '1px' }}>GLOBAL TERMINAL</span>
+          </div>
+          <span style={{ color: 'var(--color-text-muted)' }}>{isTerminalVisible ? '▼' : '▲'}</span>
+        </div>
+        
+        {/* Terminal Content */}
+        {isTerminalVisible && (
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <TerminalPanel 
+              logs={terminalLogs} 
+              onCommandSubmit={(cmd) => sendTerminalCommand(cmd)} 
+              isActive={true} 
+            />
+          </div>
+        )}
       </div>
       
       {error && (
@@ -230,6 +333,7 @@ export default function App() {
           {error}
         </div>
       )}
+      </div>
     </div>
   );
 }

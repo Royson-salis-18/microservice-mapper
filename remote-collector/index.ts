@@ -1,11 +1,9 @@
 import Docker from 'dockerode';
 import axios from 'axios';
 
-const MAPPER_URL = process.env.MAPPER_URL;
-if (!MAPPER_URL) {
-  console.error("CRITICAL: MAPPER_URL is not defined. Refusing to default to localhost. Must specify explicit backend URL.");
-  process.exit(1);
-}
+// Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
+const MAPPER_URL = process.env.MAPPER_URL || 'http://127.0.0.1:3001';
+console.log(`[collector] MAPPER_URL=${MAPPER_URL}`);
 
 const INGEST_TOKEN = process.env.INGEST_TOKEN || 'mapper-secret-token';
 const TARGET_ID = process.env.TARGET_ID || 'sock-shop-aws';
@@ -109,7 +107,7 @@ function demuxDockerLogs(buffer: Buffer): string[] {
 
 let lastLogCheckTime = Math.floor((Date.now() - 10000) / 1000);
 
-async function extractLogInteractions(): Promise<InteractionEvent[]> {
+async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise<InteractionEvent[]> {
   const interactionEvents: InteractionEvent[] = [];
   const since = lastLogCheckTime;
   lastLogCheckTime = Math.floor(Date.now() / 1000);
@@ -159,13 +157,15 @@ async function extractLogInteractions(): Promise<InteractionEvent[]> {
 
                 if (log.upstream_addr) {
                   let targetName = 'unknown';
-                  if (log.upstream_addr.includes('9999')) targetName = 'vertikal-auth';
-                  else if (log.upstream_addr.includes('3000')) targetName = 'vertikal-rest';
+                  const upstreamIp = log.upstream_addr.split(':')[0];
+                  if (ipToNameMap.has(upstreamIp)) {
+                    targetName = ipToNameMap.get(upstreamIp)!;
+                  }
                   if (targetName !== 'unknown') {
                     interactionEvents.push({
                       timestamp: ts,
-                      source: `${TARGET_ID}-vertikal-gateway`,
-                      target: `${TARGET_ID}-${targetName}`,
+                      source: `${TARGET_ID}:${cleanName}`,
+                      target: `${TARGET_ID}:${targetName}`,
                       protocol: 'HTTP',
                       method,
                       route: path,
@@ -182,21 +182,16 @@ async function extractLogInteractions(): Promise<InteractionEvent[]> {
           }
 
           // Try standard HTTP access log format: "192.168.1.1 - - [10/Oct/2023] "GET /path HTTP/1.1" 200 123"
+          let remoteIp: string | null = null;
           if (!matched) {
             const match = trimmed.match(/^([0-9.]+).*?"([A-Z]+)\s+([^\s]+)\s+HTTP\/[0-9.]+"\s+(\d+|-)?\s+(\d+|-)?/);
             if (match) {
-              const remoteIp = match[1];
+              remoteIp = match[1];
               method = match[2];
               path = match[3];
               if (match[4] && match[4] !== '-') status = parseInt(match[4]);
               if (match[5] && match[5] !== '-') bytes = parseInt(match[5]);
               matched = true;
-              
-              const resolvedSource = ipToNameMap.get(remoteIp);
-              if (resolvedSource) {
-                 sourceName = resolvedSource;
-                 targetName = cleanName;
-              }
             }
           }
 
@@ -205,18 +200,19 @@ async function extractLogInteractions(): Promise<InteractionEvent[]> {
           let targetName = cleanName;
           let sourceName = 'external';
 
-          if (cleanName.includes('gateway')) {
-            sourceName = 'vertikal-gateway';
-            if (path.startsWith('/auth/v1')) targetName = 'vertikal-auth';
-            else if (path.startsWith('/rest/v1')) targetName = 'vertikal-rest';
-            else if (path.startsWith('/storage/v1')) targetName = 'vertikal-storage';
-          } else if (cleanName === 'edge-router' || cleanName === 'front-end') {
+          if (remoteIp && ipToNameMap.has(remoteIp)) {
+            sourceName = ipToNameMap.get(remoteIp)!;
+          } else if (cleanName.includes('gateway') || cleanName.includes('router') || cleanName.includes('front-end')) {
             sourceName = cleanName;
-            if (path.startsWith('/catalogue')) targetName = 'catalogue';
+            if (path.startsWith('/auth')) targetName = 'auth';
+            else if (path.startsWith('/rest') || path.startsWith('/api')) targetName = 'rest';
+            else if (path.startsWith('/catalogue')) targetName = 'catalogue';
             else if (path.startsWith('/cart')) targetName = 'carts';
             else if (path.startsWith('/orders')) targetName = 'orders';
-            else if (path.startsWith('/login') || path.startsWith('/customers') || path.startsWith('/cards') || path.startsWith('/address')) targetName = 'user';
+            else if (path.startsWith('/user') || path.startsWith('/customers') || path.startsWith('/cards') || path.startsWith('/address')) targetName = 'user';
             else if (path.startsWith('/shipping')) targetName = 'shipping';
+          }
+          
           if (targetName === cleanName && sourceName === 'external') {
             sourceName = 'unknown-upstream';
           }
@@ -225,8 +221,8 @@ async function extractLogInteractions(): Promise<InteractionEvent[]> {
           if (targetName !== sourceName) {
             interactionEvents.push({
               timestamp: ts,
-              source: sourceName === 'external' ? 'external' : (sourceName === 'unknown-upstream' ? 'unknown-upstream' : `${TARGET_ID}-${sourceName}`),
-              target: `${TARGET_ID}-${targetName}`,
+              source: sourceName === 'external' ? 'external' : (sourceName === 'unknown-upstream' ? 'unknown-upstream' : `${TARGET_ID}:${sourceName}`),
+              target: `${TARGET_ID}:${targetName}`,
               protocol: 'HTTP',
               method,
               route: path,
@@ -261,7 +257,7 @@ async function discoverAndCollect() {
     if (name.startsWith('docker-compose-')) {
       friendlyName = name.replace('docker-compose-', '').replace(/-\d+$/, '');
     }
-    const id = `${TARGET_ID}-${friendlyName}`;
+    const id = `${TARGET_ID}:${friendlyName}`;
     activeContainerNames.add(friendlyName);
 
     if (containerInfo.NetworkSettings?.Networks) {
@@ -373,12 +369,11 @@ async function discoverAndCollect() {
     } catch (e) {}
   }
 
-  const isSockShop = TARGET_ID.includes('sock');
   for (const pair of observedPairs) {
     const [src, tgt] = pair.split('->');
-    const srcId = isSockShop ? `sock-shop-${src}` : (src.startsWith('vertikal') ? src : `vertikal-${src}`);
-    const tgtId = isSockShop ? `sock-shop-${tgt}` : (tgt.startsWith('vertikal') ? tgt : `vertikal-${tgt}`);
-    const edgeId = `edge-${srcId}-${tgtId}`;
+    const srcId = `${TARGET_ID}:${src}`;
+    const tgtId = `${TARGET_ID}:${tgt}`;
+    const edgeId = `${srcId}->${tgtId}`;
     
     // We only set observed=true and add network-tcp evidence. We DO NOT invent interaction events.
     edgesMap.set(edgeId, {
@@ -394,7 +389,7 @@ async function discoverAndCollect() {
   }
 
   // 3. Extract REAL HTTP interaction log events
-  const realInteractionEvents = await extractLogInteractions();
+  const realInteractionEvents = await extractLogInteractions(ipToNameMap);
 
   return { nodes, edges: Array.from(edgesMap.values()), metrics, events: realInteractionEvents };
 }

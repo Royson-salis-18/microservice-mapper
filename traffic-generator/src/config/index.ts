@@ -62,8 +62,8 @@ export interface TrafficConfig {
 
 export function getConfig(): TrafficConfig {
   return {
-    sockShopBaseUrl: process.env.SOCK_SHOP_BASE_URL || 'http://localhost:80',
-    vertikalBaseUrl: process.env.VERTIKAL_BASE_URL || 'http://localhost:54321',
+    sockShopBaseUrl: process.env.SOCK_SHOP_BASE_URL || '',
+    vertikalBaseUrl: process.env.VERTIKAL_BASE_URL || '',
     defaultProfile: PROFILES[process.env.TRAFFIC_PROFILE || 'normal'] || PROFILES.normal,
     timeoutMs: parseInt(process.env.TRAFFIC_TIMEOUT_MS || '5000', 10),
     maxRetries: parseInt(process.env.TRAFFIC_MAX_RETRIES || '2', 10),

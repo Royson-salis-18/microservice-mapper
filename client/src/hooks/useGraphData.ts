@@ -10,6 +10,11 @@ interface UseGraphDataReturn {
   isConnected: boolean;
   lastUpdate: string | null;
   error: string | null;
+  isLoading: boolean;
+  terminalLogs: string[];
+  sendTerminalCommand: (cmd: string, ip?: string, key?: string) => void;
+  addTerminalLog: (log: string) => void;
+  reloadGraph: (targetId: string) => Promise<void>;
   onNodesChange: (changes: NodeChange[]) => void;
 }
 
@@ -21,6 +26,10 @@ export function useGraphData(): UseGraphDataReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Global Terminal State
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
   const calculateLayout = (backendNodes: ServiceNode[]): Node[] => {
@@ -81,7 +90,19 @@ export function useGraphData(): UseGraphDataReturn {
       setLastUpdate(new Date().toISOString());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const reloadGraph = async (targetId: string): Promise<void> => {
+    const refreshRes = await fetch('/api/discovery/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId }),
+    });
+    if (!refreshRes.ok) throw new Error('Failed to refresh discovery');
+    await fetchInitialData();
   };
 
   const connectWs = useCallback(() => {
@@ -99,15 +120,34 @@ export function useGraphData(): UseGraphDataReturn {
         if (message.type === 'graph-update') {
           const { nodes: newNodes, edges: newEdges, targets: newTargets } = message.data;
           setNodes(prevNodes => {
-            const layouted = calculateLayout(newNodes);
-            return layouted.map(ln => {
-              const prev = prevNodes.find(p => p.id === ln.id);
-              return prev ? { ...ln, position: prev.position } : ln;
-            });
+            // Only recalculate layout if the set of node IDs changed
+            const prevIds = new Set<string>(prevNodes.map(n => n.id));
+            const newIds = new Set<string>(newNodes.map((n: ServiceNode) => n.id));
+            const sameNodeSet = prevIds.size === newIds.size && Array.from(newIds).every((id: string) => prevIds.has(id));
+            
+            if (sameNodeSet && prevNodes.length > 0) {
+              // Same nodes — preserve positions, just update data
+              return prevNodes.map(prev => {
+                const updated = newNodes.find((n: ServiceNode) => n.id === prev.id);
+                if (updated) {
+                  return { ...prev, data: updated as ServiceNode & Record<string, unknown> };
+                }
+                return prev;
+              });
+            } else {
+              // New nodes appeared or removed — recalculate layout but keep existing positions
+              const layouted = calculateLayout(newNodes);
+              return layouted.map(ln => {
+                const prev = prevNodes.find(p => p.id === ln.id);
+                return prev ? { ...ln, position: prev.position } : ln;
+              });
+            }
           });
           setEdges(parseEdges(newEdges));
           if (newTargets) setTargets(newTargets);
           setLastUpdate(new Date().toISOString());
+        } else if (message.type === 'TERMINAL_LOG') {
+          setTerminalLogs(prev => [...prev, message.data]);
         }
       } catch (err) {
         console.error('Error parsing WS message', err);
@@ -124,6 +164,17 @@ export function useGraphData(): UseGraphDataReturn {
     };
   }, []);
 
+  const sendTerminalCommand = useCallback((cmd: string, ip?: string, key?: string) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      setTerminalLogs(prev => [...prev, `$ ${cmd}`]);
+      wsRef.current.send(JSON.stringify({ type: 'TERMINAL_EXEC', data: { cmd, ip, key } }));
+    }
+  }, []);
+
+  const addTerminalLog = useCallback((log: string) => {
+    setTerminalLogs(prev => [...prev, log]);
+  }, []);
+
   useEffect(() => {
     fetchInitialData();
     connectWs();
@@ -132,5 +183,19 @@ export function useGraphData(): UseGraphDataReturn {
     };
   }, [connectWs]);
 
-  return { nodes, edges, targets, status, isConnected, lastUpdate, error, onNodesChange };
+  return { 
+    nodes, 
+    edges, 
+    targets, 
+    status, 
+    isConnected, 
+    lastUpdate, 
+    error, 
+    isLoading, 
+    terminalLogs,
+    sendTerminalCommand,
+    addTerminalLog,
+    reloadGraph,
+    onNodesChange 
+  };
 }

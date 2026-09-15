@@ -106,16 +106,10 @@ export class TrafficController {
     }
 
     if (workloadSource === 'USER_SIM') {
-      console.log(`[TrafficController] Starting USER_SIM container for ${targetId}`);
-      try {
-        import('child_process').then(({ execSync }) => {
-          execSync('docker start sock-shop-user-sim-1 || docker start microservice-mapper-user-sim-1 || true');
-        });
-      } catch(e) {}
+      console.log(`[TrafficController] USER_SIM requested for ${targetId} - execution delegated to environment orchestrator`);
       
       const startTime = new Date().toISOString();
       this.processes.set(targetId, { process: null, startTime, profile, mode, resolvedUrl, workloadSource });
-      this.graphStore?.touchTarget(targetId);
       
       return {
         targetId,
@@ -165,10 +159,8 @@ export class TrafficController {
 
     const startTime = new Date().toISOString();
     this.processes.set(targetId, { process: child, startTime, profile, mode, resolvedUrl, workloadSource });
-    this.graphStore?.touchTarget(targetId);
 
     child.stdout?.on('data', (chunk) => {
-      this.graphStore?.touchTarget(targetId);
       const output = chunk.toString('utf8');
       const lines = output.split('\n');
       for (const line of lines) {
@@ -214,12 +206,7 @@ export class TrafficController {
     const existing = this.processes.get(targetId);
     if (existing) {
       if (existing.workloadSource === 'USER_SIM') {
-        console.log(`[TrafficController] Stopping USER_SIM container for ${targetId}`);
-        try {
-          import('child_process').then(({ execSync }) => {
-            execSync('docker stop sock-shop-user-sim-1 || docker stop microservice-mapper-user-sim-1 || true');
-          });
-        } catch(e) {}
+        console.log(`[TrafficController] Stopping USER_SIM for ${targetId} - delegated to environment orchestrator`);
       } else if (existing.process) {
         console.log(`[TrafficController] Stopping process for ${targetId} (PID: ${existing.process.pid})`);
         existing.process.kill('SIGTERM');

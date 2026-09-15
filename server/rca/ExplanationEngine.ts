@@ -60,9 +60,9 @@ export class ExplanationEngine {
       }));
 
     const recommendations = [
-      `Inspect logs for container 'docker-compose-${cleanRcName}-1'`,
+      `Inspect telemetry logs for node '${cleanRcName}'`,
       `Verify socket connectivity and resource bounds for '${cleanRcName}'`,
-      `If process exited, restart container using: docker start docker-compose-${cleanRcName}-1`
+      `If process exited, investigate orchestration policies for node failure.`
     ];
 
     return {

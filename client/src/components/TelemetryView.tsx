@@ -13,6 +13,19 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
   const [timeRange, setTimeRange] = useState<'5m' | '15m' | '30m' | '1h'>('15m');
   const [history, setHistory] = useState<MetricSnapshot[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [rawEvents, setRawEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchTraffic = () => {
+      fetch('/api/traffic?limit=50')
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setRawEvents(data); })
+        .catch(() => {});
+    };
+    fetchTraffic();
+    const interval = setInterval(fetchTraffic, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const serviceNodes = useMemo(() => {
     return nodes
@@ -111,6 +124,44 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
             ↓ {summary.netRxMb} MB <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>/ ↑ {summary.netTxMb} MB</span>
           </div>
           <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Cumulative socket traffic</div>
+        </div>
+      </div>
+
+      {/* Raw Traffic Stream */}
+      <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
+            <span style={{ color: 'var(--color-healthy)', marginRight: '8px' }}>●</span>
+            RAW TRAFFIC LOGS
+          </h3>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{rawEvents.length} events</div>
+        </div>
+        <div style={{ 
+          background: '#010409', 
+          borderRadius: '8px', 
+          padding: '16px', 
+          height: '200px', 
+          overflowY: 'auto',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          color: '#c9d1d9',
+          border: '1px solid #30363d'
+        }}>
+          {rawEvents.length === 0 ? (
+            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>Waiting for traffic events...</div>
+          ) : (
+            rawEvents.map((evt, i) => (
+              <div key={i} style={{ marginBottom: '8px', display: 'flex', gap: '12px', borderBottom: '1px solid #21262d', paddingBottom: '4px' }}>
+                <span style={{ color: '#8b949e', whiteSpace: 'nowrap' }}>{new Date(evt.timestamp).toISOString().split('T')[1].replace('Z','')}</span>
+                <span style={{ color: '#58a6ff', width: '150px', flexShrink: 0, textOverflow: 'ellipsis', overflow: 'hidden' }}>{evt.source} ➔ {evt.target}</span>
+                <span style={{ color: evt.statusCode >= 400 ? '#ff7b72' : '#3fb950', width: '50px' }}>{evt.statusCode || 200}</span>
+                <span style={{ color: '#d2a8ff', width: '60px' }}>{evt.method || 'TCP'}</span>
+                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '<encrypted>'}</span>
+                {evt.latency && <span style={{ color: '#e3b341', width: '60px', textAlign: 'right' }}>{Math.round(evt.latency)}ms</span>}
+                {evt.bytesSent && <span style={{ color: '#8b949e', width: '70px', textAlign: 'right' }}>{formatBytes(evt.bytesSent)}</span>}
+              </div>
+            ))
+          )}
         </div>
       </div>
 

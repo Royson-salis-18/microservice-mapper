@@ -10,6 +10,8 @@ import { EndpointDiscoveryEngine } from '../discovery/EndpointDiscoveryEngine.js
 import fs from 'fs';
 import path from 'path';
 
+import type { WebSocketManager } from '../api/websocket.js';
+
 export class GraphStore {
   // Target Isolation: Maps targetId -> map of ids to models
   public targets = new Map<string, Target>();
@@ -21,25 +23,74 @@ export class GraphStore {
   public discoveryEngine: EndpointDiscoveryEngine;
   private storagePath: string;
   private saveTimeout: NodeJS.Timeout | null = null;
+  private wsManager?: WebSocketManager;
 
-  constructor() {
+  constructor(wsManager?: WebSocketManager) {
+    this.wsManager = wsManager;
     this.storagePath = path.resolve(process.cwd(), 'data', 'graph_db.json');
     this.discoveryEngine = new EndpointDiscoveryEngine(
       this.endpointRegistry,
+      this.wsManager,
       (targetId: string) => {
         const target = this.targets.get(targetId);
         return target?.host && target.host !== 'unknown' ? target.host : undefined;
+      },
+      (targetId: string, services: any[], dependencies: any[]) => {
+        this.handleTopologyDiscovered(targetId, services, dependencies);
+      },
+      (targetId: string, envelope: any) => {
+        this.ingestRemote(envelope);
       }
     );
 
-    this.initTargets();
     this.loadFromDisk();
+    this.loadTargetsFromConfig();
+    
+    // Initial discovery for loaded targets
     this.discoveryEngine.discoverAll().then(() => this.updateTargetDiscoverySummaries());
+    
     setInterval(() => {
       this.checkTargetStaleness();
       this.pingTargetEndpoints();
       this.updateTargetDiscoverySummaries();
-    }, 5000);
+      // Broadcast current graph state so UI stays in sync with status changes
+      if (this.wsManager) {
+        this.wsManager.broadcast('graph-update', this.getGraph());
+      }
+    }, 10000);
+  }
+
+  private loadTargetsFromConfig() {
+    const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
+    if (fs.existsSync(configPath)) {
+      try {
+        const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        for (const [targetId, tConf] of Object.entries<any>(configData)) {
+          this.registerNewProject(targetId, tConf.displayName || targetId, tConf.ec2PublicIp);
+        }
+      } catch (e) {
+        console.error('[GraphStore] Error loading remote_config.json:', e);
+      }
+    }
+  }
+
+  public registerNewProject(targetId: string, displayName: string, hostIp: string) {
+    const nowIso = new Date().toISOString();
+    this.upsertTarget({
+      targetId,
+      displayName,
+      environment: 'aws',
+      host: hostIp || 'unknown',
+      transport: 'http',
+      status: 'NO DATA',
+      lastSeen: nowIso,
+      baseUrl: hostIp && hostIp !== 'unknown' ? `http://${hostIp}:80` : undefined, // default
+      publicPort: 80,
+      endpointStatus: hostIp && hostIp !== 'unknown' ? 'REACHABLE' : 'UNCONFIGURED',
+      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
+    });
+    // Trigger discovery immediately
+    this.discoveryEngine.discoverTarget(targetId).then(() => this.updateTargetDiscoverySummaries());
   }
 
   private loadFromDisk(): void {
@@ -111,52 +162,7 @@ export class GraphStore {
     }
   }
 
-  private initTargets() {
-    const nowIso = new Date().toISOString();
-    const sockShopUrl = config.SOCK_SHOP_BASE_URL;
-    const vertikalUrl = config.VERTIKAL_BASE_URL;
 
-    const extractHost = (url?: string) => {
-      if (!url) return undefined;
-      try {
-        if (url.startsWith('http')) return new URL(url).hostname;
-        return url.split(':')[0];
-      } catch (e) {
-        return undefined;
-      }
-    };
-
-    const sockHost = extractHost(sockShopUrl) || 'unknown';
-    const vertikalHost = extractHost(vertikalUrl) || 'unknown';
-
-    this.upsertTarget({
-      targetId: 'sock-shop',
-      displayName: 'Sock Shop AWS',
-      environment: 'aws',
-      host: sockHost,
-      transport: 'http',
-      status: 'NO DATA',
-      lastSeen: nowIso,
-      baseUrl: sockShopUrl || (sockHost !== 'unknown' ? `http://${sockHost}:80` : undefined),
-      publicPort: 80,
-      endpointStatus: sockHost !== 'unknown' ? 'REACHABLE' : 'UNCONFIGURED',
-      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
-    });
-
-    this.upsertTarget({
-      targetId: 'vertikal',
-      displayName: 'Vertikal AWS',
-      environment: 'aws',
-      host: vertikalHost,
-      transport: 'http',
-      status: 'NO DATA',
-      lastSeen: nowIso,
-      baseUrl: vertikalUrl || (vertikalHost !== 'unknown' ? `http://${vertikalHost}:54321` : undefined),
-      publicPort: 54321,
-      endpointStatus: vertikalHost !== 'unknown' ? 'REACHABLE' : 'UNCONFIGURED',
-      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
-    });
-  }
 
   private async pingTargetEndpoints() {
     for (const target of this.targets.values()) {
@@ -170,8 +176,8 @@ export class GraphStore {
           clearTimeout(timeoutId);
           if (res && res.status < 500) {
             target.endpointStatus = 'REACHABLE';
+            // Keep target alive if endpoint is reachable
             target.lastSeen = new Date().toISOString();
-            target.status = 'LIVE';
           } else {
             target.endpointStatus = 'UNREACHABLE';
           }
@@ -185,11 +191,7 @@ export class GraphStore {
   }
 
   public touchTarget(targetId: string) {
-    const target = this.targets.get(targetId);
-    if (target) {
-      target.lastSeen = new Date().toISOString();
-      target.status = 'LIVE';
-    }
+    // Deprecated: Target status must only be updated by genuine telemetry (ingestRemote)
   }
 
   private checkTargetStaleness() {
@@ -197,8 +199,9 @@ export class GraphStore {
     for (const target of this.targets.values()) {
       if (target.lastSeen) {
         const diff = now - new Date(target.lastSeen).getTime();
-        if (diff > 60000) target.status = 'OFFLINE';
-        else if (diff > 15000) target.status = 'STALE';
+        // Wider thresholds: STALE after 2min, OFFLINE after 5min
+        if (diff > 300000) target.status = 'OFFLINE';
+        else if (diff > 120000) target.status = 'STALE';
         else target.status = 'LIVE';
       } else {
         target.status = 'NO DATA';
@@ -243,166 +246,84 @@ export class GraphStore {
     this.scheduleSave();
   }
 
-  async updateFromCollectors(dockerCollector: DockerCollector, adapters: BaseCollector[]): Promise<void> {
-    const localTargetId = 'vertikal';
-    const nowIso = new Date().toISOString();
-    this.upsertTarget({
-      targetId: localTargetId,
-      displayName: 'Vertikal AWS',
-      environment: 'local',
-      host: 'localhost',
-      transport: 'http',
-      status: 'LIVE',
-      lastSeen: nowIso,
-      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
-    });
+  private handleTopologyDiscovered(targetId: string, services: any[], dependencies: any[]) {
+    const nodesMap = this.getTargetNodes(targetId);
+    const edgesMap = this.getTargetEdges(targetId);
 
-    const discoveredNodes = new Map<string, ServiceNode>();
-
-    for (const adapter of adapters) {
-      const adapterNodes = await adapter.discover();
-      for (const node of adapterNodes) {
-        if (!node.project) node.project = localTargetId;
-        discoveredNodes.set(node.id, node);
-      }
+    // Update target lastSeen so it stays LIVE
+    const target = this.targets.get(targetId);
+    if (target) {
+      target.lastSeen = new Date().toISOString();
+      target.status = 'LIVE';
     }
 
-    if (dockerCollector) {
-      const dockerNodes = await dockerCollector.discover();
-      for (const node of dockerNodes) {
-        if (!node.project) node.project = localTargetId;
-        discoveredNodes.set(node.id, node);
-      }
-    }
-
-    const currentIdsByTarget = new Map<string, Set<string>>();
-
-    for (const node of discoveredNodes.values()) {
-      const targetId = node.project || localTargetId;
-      const nodesMap = this.getTargetNodes(targetId);
-      const existingNode = nodesMap.get(node.id);
+    for (const svc of services) {
+      if (svc.name.includes('mapper-collector')) continue;
+      const nodeId = svc.serviceId;
+      const existing = nodesMap.get(nodeId);
       
-      if (!currentIdsByTarget.has(targetId)) {
-        currentIdsByTarget.set(targetId, new Set());
-      }
-      currentIdsByTarget.get(targetId)!.add(node.id);
-    }
-
-    const nodeEntries = Array.from(discoveredNodes.values());
-    const metricsResults = await Promise.all(
-      nodeEntries.map(async (node) => {
-        let metrics = null;
-        if (dockerCollector) {
-          metrics = await dockerCollector.collectMetrics(node.id).catch(() => null);
-        }
-        return { node, metrics };
-      })
-    );
-
-    for (const { node, metrics } of metricsResults) {
-      const targetId = node.project || localTargetId;
-      const nodesMap = this.getTargetNodes(targetId);
-      const existingNode = nodesMap.get(node.id);
-
-      if (metrics) {
-        this.metricStore.push(node.id, metrics);
-        node.metrics = {
-          cpu: metrics.cpu,
-          memory: metrics.memory,
-          memoryPercent: metrics.memoryPercent,
-          networkRx: metrics.networkRx,
-          networkTx: metrics.networkTx,
-          latency: null,
-          requestRate: null,
-          errorRate: null,
+      const status = svc.state === 'running' ? 'healthy' : 'unknown';
+      const nodeType = ['gateway', 'service', 'database', 'queue', 'frontend', 'infrastructure', 'external'].includes(svc.type) ? svc.type : 'service';
+      
+      if (existing) {
+        existing.status = status as any;
+        existing.type = nodeType as any;
+        existing.metadata = {
+          ...existing.metadata,
+          containerId: svc.containerId,
+          image: svc.image,
+          ports: svc.ports.map((p: any) => p.containerPort.toString())
         };
-        if (node.status === 'healthy') {
-          if ((metrics.cpu !== undefined && metrics.cpu > 80) ||
-              (metrics.memoryPercent !== undefined && metrics.memoryPercent > 80)) {
-            node.status = 'degraded';
-          }
-        }
-      } else if (existingNode) {
-        if (existingNode.metrics) node.metrics = existingNode.metrics;
-        if (existingNode.status !== 'unknown') node.status = existingNode.status;
-        if (existingNode.metadata) node.metadata = { ...existingNode.metadata, ...node.metadata };
-      }
-      nodesMap.set(node.id, node);
-    }
-
-    for (const [targetId, nodesMap] of this.nodesByTarget.entries()) {
-      if (currentIdsByTarget.has(targetId)) {
-        const currentIds = currentIdsByTarget.get(targetId)!;
-        for (const id of Array.from(nodesMap.keys())) {
-          if (!currentIds.has(id)) {
-            nodesMap.delete(id);
-          }
-        }
+      } else {
+        nodesMap.set(nodeId, {
+          id: nodeId,
+          name: svc.name,
+          type: nodeType as any,
+          project: targetId,
+          status: status as any,
+          metadata: {
+            containerId: svc.containerId,
+            image: svc.image,
+            ports: svc.ports.map((p: any) => p.containerPort.toString())
+          },
+          metrics: null
+        });
       }
     }
 
-    for (const adapter of adapters) {
-      const knownEdges = await adapter.getKnownDependencies();
-      for (const edge of knownEdges) {
-        let edgeTargetId = localTargetId;
-        if (edge.source.startsWith('sock-shop') || edge.target.startsWith('sock-shop')) {
-          edgeTargetId = 'sock-shop';
-        }
-        const edgesMap = this.getTargetEdges(edgeTargetId);
-        const existing = edgesMap.get(edge.id);
-        if (existing) {
-          if (edge.declared) existing.declared = true;
-          if (edge.observed) existing.observed = true;
-          for (const source of edge.evidenceSources) {
-            if (!existing.evidenceSources.includes(source)) {
-              existing.evidenceSources.push(source);
-            }
+    for (const dep of dependencies) {
+      const edgeId = `${dep.sourceServiceId}->${dep.targetServiceId}`;
+      const existing = edgesMap.get(edgeId);
+      if (existing) {
+        existing.declared = existing.declared || dep.declared === true;
+        existing.observed = existing.observed || dep.observed;
+        for (const src of dep.evidenceSources) {
+          if (!existing.evidenceSources.includes(src)) {
+            existing.evidenceSources.push(src);
           }
-          if (edge.status !== 'unknown') existing.status = edge.status;
-          if (edge.metrics) existing.metrics = edge.metrics;
-        } else {
-          edgesMap.set(edge.id, edge);
         }
+      } else {
+        edgesMap.set(edgeId, {
+          id: edgeId,
+          source: dep.sourceServiceId,
+          target: dep.targetServiceId,
+          type: 'dependency',
+          declared: dep.declared === true,
+          observed: dep.observed,
+          evidenceSources: dep.evidenceSources || [],
+          status: dep.observed ? 'active' : 'unknown',
+          metrics: null
+        });
       }
     }
 
-    for (const edgesMap of this.edgesByTarget.values()) {
-      for (const edge of edgesMap.values()) {
-        const edgeMetrics = this.metricStore.getAggregatedEdgeMetrics(edge.source, edge.target);
-        if (edgeMetrics && edgeMetrics.requestCount > 0) {
-          edge.observed = true;
-          if (!edge.evidenceSources.includes('http-log')) {
-            edge.evidenceSources.push('http-log');
-          }
-          edge.metrics = edgeMetrics;
-          if (edgeMetrics.errorRate > 0.05) {
-            edge.status = 'failed';
-          } else if (edgeMetrics.latency !== null && edgeMetrics.latency > 500) {
-            edge.status = 'degraded';
-          } else {
-            edge.status = 'active';
-          }
-        }
-      }
-    }
-
-    for (const nodesMap of this.nodesByTarget.values()) {
-      for (const node of nodesMap.values()) {
-        let upstream = 0;
-        let downstream = 0;
-        const edgesMap = this.getTargetEdges(node.project || localTargetId);
-        for (const edge of edgesMap.values()) {
-          if (edge.target === node.id) upstream++;
-          if (edge.source === node.id) downstream++;
-        }
-        if (!node.analytics) {
-          node.analytics = { healthScore: null, riskScore: null, failureProbability: null, affectedProbability: null, criticality: null, centrality: null };
-        }
-        node.analytics.upstreamCount = upstream;
-        node.analytics.downstreamCount = downstream;
-      }
+    this.scheduleSave();
+    if (this.wsManager) {
+      this.wsManager.broadcast('graph-update', this.getGraph());
     }
   }
+
+
 
   getGraph(): { nodes: ServiceNode[], edges: DependencyEdge[], targets: Target[] } {
     const allNodes: ServiceNode[] = [];
@@ -428,6 +349,7 @@ export class GraphStore {
 
   ingestRemote(payload: TelemetryEnvelope, clientIp?: string) {
     const { targetId, events } = payload;
+    console.log(`[TELEMETRY] target=${targetId} nodes=${events.nodes?.length || 0} metrics=${events.metrics?.length || 0} edges=${events.edges?.length || 0} interactions=${events.interactions?.length || 0}`);
     const cleanClientIp = clientIp ? clientIp.replace(/^.*:/, '') : undefined;
     const remoteHost = (cleanClientIp && cleanClientIp !== '127.0.0.1') ? cleanClientIp : 'unknown';
 
@@ -450,9 +372,16 @@ export class GraphStore {
     const nodesMap = this.getTargetNodes(targetId);
     const edgesMap = this.getTargetEdges(targetId);
     
+    const normalizeId = (rawId: string) => {
+      if (!rawId || rawId === 'external' || rawId === 'unknown-upstream') return rawId;
+      const clean = rawId.replace(new RegExp(`^${targetId}[-:/]`), '');
+      return `${targetId}:${clean}`;
+    };
+
     if (events.nodes) {
       for (const node of events.nodes) {
         if (!node.project) node.project = targetId;
+        node.id = normalizeId(node.id);
         const existing = nodesMap.get(node.id);
         if (existing) {
           existing.status = node.status;
@@ -465,26 +394,41 @@ export class GraphStore {
     
     if (events.edges) {
       for (const edge of events.edges) {
+        edge.source = normalizeId(edge.source);
+        edge.target = normalizeId(edge.target);
+        edge.id = `${edge.source}->${edge.target}`;
         const existing = edgesMap.get(edge.id);
+        if (!edge.observed) {
+          if (!existing) edgesMap.set(edge.id, edge);
+          continue;
+        }
         if (existing) {
           existing.observed = edge.observed || existing.observed;
           existing.declared = edge.declared || existing.declared;
+          existing.protocol = edge.protocol || existing.protocol;
+          existing.lastSeen = edge.lastSeen || new Date().toISOString();
           for (const source of edge.evidenceSources) {
             if (!existing.evidenceSources.includes(source)) {
               existing.evidenceSources.push(source);
             }
           }
           if (edge.status !== 'unknown') existing.status = edge.status;
+          if (!existing.observed) {
+            existing.observed = true;
+            console.log(`[EDGE] target=${targetId} source=${existing.source} target=${existing.target} observed=true`);
+          }
         } else {
           edgesMap.set(edge.id, edge);
+          console.log(`[EDGE] target=${targetId} source=${edge.source} target=${edge.target} observed=true`);
         }
       }
     }
     
     if (events.metrics) {
       for (const m of events.metrics) {
-        this.metricStore.push(m.nodeId, m.snapshot);
-        const node = nodesMap.get(m.nodeId);
+        const normNodeId = normalizeId(m.nodeId);
+        this.metricStore.push(normNodeId, m.snapshot);
+        const node = nodesMap.get(normNodeId);
         if (node) {
           node.metrics = {
             cpu: m.snapshot.cpu !== undefined ? Math.round(m.snapshot.cpu * 10) / 10 : 0,
@@ -496,24 +440,65 @@ export class GraphStore {
             requestRate: null,
             errorRate: null,
           };
-          if (node.status === 'healthy') {
-            if ((m.snapshot.cpu !== undefined && m.snapshot.cpu > 80) ||
-                (m.snapshot.memoryPercent !== undefined && m.snapshot.memoryPercent > 80)) {
-              node.status = 'degraded';
-            }
-          }
         }
       }
     }
     
     if (events.interactions) {
       for (const e of events.interactions) {
+        e.source = normalizeId(e.source);
+        e.target = normalizeId(e.target);
+        e.latencyMs = e.latencyMs ?? e.latency ?? null;
+        e.statusCode = e.statusCode ?? null;
+        e.bytesSent = e.bytesSent ?? null;
+        e.bytesReceived = e.bytesReceived ?? null;
+        e.success = e.success ?? (e.statusCode === null ? null : e.statusCode < 400);
         this.metricStore.pushEvent(e);
+
+        console.log(`[INTERACTION] target=${targetId} source=${e.source} target=${e.target} protocol=${e.protocol ?? 'unknown'} method=${e.method ?? 'unknown'} route=${e.route ?? 'unknown'} evidence=${e.evidenceSource}`);
+
+        if (e.source !== e.target && e.source !== 'external' && e.source !== 'unknown-upstream') {
+          const edgeId = `${e.source}->${e.target}`;
+          const existing = edgesMap.get(edgeId);
+          if (existing) {
+            const wasObserved = existing.observed;
+            existing.observed = true;
+            existing.protocol = e.protocol || existing.protocol;
+            existing.lastSeen = e.timestamp;
+            if (!existing.evidenceSources.includes('http-log')) {
+              existing.evidenceSources.push('http-log');
+            }
+            if (!wasObserved) {
+              console.log(`[EDGE] target=${targetId} source=${existing.source} target=${existing.target} observed=true`);
+            }
+          } else {
+            edgesMap.set(edgeId, {
+              id: edgeId,
+              source: e.source,
+              target: e.target,
+              type: e.protocol === 'amqp' || e.protocol === 'rabbitmq' ? 'message' : 'http',
+              declared: false,
+              observed: true,
+              evidenceSources: ['http-log'],
+              firstSeen: e.timestamp,
+              lastSeen: e.timestamp,
+              status: 'active',
+              metrics: null,
+            });
+            console.log(`[EDGE] target=${targetId} source=${e.source} target=${e.target} observed=true`);
+          }
+        }
+
         const eventRoute = e.route;
         if (eventRoute) {
           const matchedRoute = this.endpointRegistry.getRoutes(targetId).find(r => r.path === eventRoute || eventRoute.startsWith(r.path));
           if (matchedRoute) {
-            this.endpointRegistry.markRouteObserved(targetId, matchedRoute.routeId, e.latency, (e.statusCode || 200) >= 400);
+            this.endpointRegistry.markRouteObserved(
+              targetId,
+              matchedRoute.routeId,
+              e.latencyMs ?? e.latency ?? undefined,
+              e.statusCode !== null && e.statusCode !== undefined ? e.statusCode >= 400 : false,
+            );
           }
         }
       }
@@ -546,5 +531,8 @@ export class GraphStore {
 
     this.updateTargetDiscoverySummaries();
     this.scheduleSave();
+    if (this.wsManager) {
+      this.wsManager.broadcast('graph-update', this.getGraph());
+    }
   }
 }

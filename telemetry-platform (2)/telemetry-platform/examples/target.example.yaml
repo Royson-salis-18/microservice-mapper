@@ -1,0 +1,45 @@
+# Example target configuration. Copy this per-target (sockshop.yaml, vertikal.yaml, ...).
+# Credentials are never embedded here — only a path to a private key file that
+# already exists on the machine running the collector.
+
+target:
+  id: sockshop-aws
+  name: "Sock Shop (AWS)"
+  environment: production
+  region: ap-south-1
+
+connection:
+  type: ssh
+  host: 203.0.113.10      # replace with the real EC2 public IP — never hard-code in code
+  port: 22
+  username: ubuntu
+  privateKeyPath: /home/claude/.ssh/sockshop-key.pem
+  readyTimeoutMs: 15000
+
+application:
+  adapter: sockshop
+  knownServices:
+    - user-sim
+    - edge-router
+    - front-end
+    - catalogue
+    - catalogue-db
+    - carts
+    - carts-db
+    - orders
+    - orders-db
+    - payment
+    - shipping
+    - queue-master
+    - rabbitmq
+    - user
+    - user-db
+
+collector:
+  intervalSeconds: 5
+  logLookbackSeconds: 30
+  windowSeconds: 5
+  logTailLines: 500
+
+storage:
+  outputDirectory: ./data/sockshop-aws

@@ -25,11 +25,33 @@ export function AnalyticsView({ nodes, edges, selectedProject }: AnalyticsViewPr
   }, [edges]);
 
   useEffect(() => {
-    fetch('/api/rca')
+    const url = selectedProject !== 'ALL' ? `/api/incidents?targetId=${selectedProject.toLowerCase()}` : '/api/incidents';
+    fetch(url)
       .then(res => res.json())
-      .then(data => setRcaData(data))
+      .then(incidents => {
+        if (incidents && incidents.length > 0) {
+          const inc = incidents[0];
+          setRcaData({
+            incidentDetected: true,
+            timestamp: inc.startedAt,
+            primaryRootCauses: inc.candidateCauses?.slice(0, 1).map((c: any) => ({
+              nodeId: c.serviceId,
+              name: c.serviceName,
+              status: 'critical',
+              failureReason: inc.explanation?.whatHappened || 'Anomaly detected',
+              evidence: inc.evidence ? inc.evidence.map((ev: any) => ev.description) : []
+            })) || [],
+            blastRadius: {
+              affectedServices: inc.affectedServices ? inc.affectedServices.map((id: string) => id.replace(/^(sock-shop|vertikal)-/, '')) : []
+            },
+            remediationGuide: (inc.remediationGuide && inc.remediationGuide.length > 0) ? inc.remediationGuide.join(' && ') : `docker restart ${inc.rootCauseServiceId}`
+          });
+        } else {
+          setRcaData(null);
+        }
+      })
       .catch(() => setRcaData(null));
-  }, [nodes, edges]);
+  }, [nodes, edges, selectedProject]);
 
   // Compute Analytics Metrics
   const analytics = useMemo(() => {

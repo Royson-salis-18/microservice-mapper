@@ -14,7 +14,7 @@ export class EndpointRegistry {
   // Ensure deterministic, stable IDs
   public static makeServiceId(targetId: string, serviceName: string): string {
     const cleanName = serviceName.replace(/^docker-compose-/, '').replace(/-\d+$/, '').replace(new RegExp(`^${targetId}-`), '');
-    return `${targetId}/${cleanName}`;
+    return `${targetId}:${cleanName}`;
   }
 
   public static makeEndpointId(targetId: string, serviceName: string, protocol: string, port: number): string {

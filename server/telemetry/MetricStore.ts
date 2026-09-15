@@ -84,6 +84,10 @@ export class MetricStore {
     this.scheduleSave();
   }
 
+  getEvents(limit: number = 100): InteractionEvent[] {
+    return this.events.slice(-limit).reverse();
+  }
+
   getAggregatedEdgeMetrics(source: string, target: string, timeWindowMs: number = 5 * 60 * 1000) {
     const cutoff = Date.now() - timeWindowMs;
     const relevant = this.events.filter(e => 
@@ -99,9 +103,10 @@ export class MetricStore {
     const latencies: number[] = [];
     
     for (const e of relevant) {
-      if (e.statusCode && e.statusCode >= 400) errorCount++;
-      if (e.latency !== undefined) latencies.push(e.latency);
-      if (e.bytesSent !== undefined) totalBytesSent += e.bytesSent;
+      if (e.statusCode !== null && e.statusCode !== undefined && e.statusCode >= 400) errorCount++;
+      const latency = e.latencyMs ?? e.latency;
+      if (latency !== null && latency !== undefined) latencies.push(latency);
+      if (e.bytesSent !== null && e.bytesSent !== undefined) totalBytesSent += e.bytesSent;
     }
 
     latencies.sort((a, b) => a - b);
@@ -119,8 +124,10 @@ export class MetricStore {
       p50Latency: p50,
       p95Latency: p95,
       p99Latency: p99,
-      bytesSent: totalBytesSent,
-      throughput: totalBytesSent / (timeWindowMs / 1000),
+      bytesSent: relevant.some(e => e.bytesSent !== null && e.bytesSent !== undefined) ? totalBytesSent : null,
+      throughput: relevant.some(e => e.bytesSent !== null && e.bytesSent !== undefined)
+        ? totalBytesSent / (timeWindowMs / 1000)
+        : null,
     };
   }
 

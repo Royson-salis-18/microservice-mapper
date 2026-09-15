@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { GraphStore } from '../graph/GraphStore.js';
 import { GraphAnalytics } from '../graph/GraphAnalytics.js';
 import type { TelemetryEnvelope } from '../models/index.js';
@@ -28,56 +30,16 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(history);
   });
 
+  router.get('/traffic', (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 100;
+    const events = graphStore.metricStore.getEvents(limit);
+    res.json(events);
+  });
+
   router.get('/analytics', (_req, res) => {
     res.json(analytics.getAnalytics());
   });
 
-  router.get('/rca', (_req, res) => {
-    if (!incidentManager) {
-      return res.json({
-        incidentDetected: false,
-        message: 'Incident manager uninitialized',
-        primaryRootCauses: [],
-        cascadingFailures: [],
-        blastRadius: { totalImpacted: 0, affectedServices: [] }
-      });
-    }
-    const incidents = incidentManager.getAllActiveIncidents();
-    if (incidents.length === 0) {
-      return res.json({
-        incidentDetected: false,
-        message: 'All system components operating within normal telemetry parameters.',
-        primaryRootCauses: [],
-        cascadingFailures: [],
-        blastRadius: { totalImpacted: 0, affectedServices: [] }
-      });
-    }
-    const inc = incidents[0];
-    res.json({
-      incidentDetected: true,
-      timestamp: inc.startedAt,
-      primaryRootCauses: inc.candidateCauses.slice(0, 1).map(c => ({
-        nodeId: c.serviceId,
-        name: c.serviceName,
-        status: 'critical',
-        failureReason: inc.explanation?.whatHappened || 'Anomaly detected',
-        evidence: inc.evidence ? inc.evidence.map(ev => ev.description) : []
-      })),
-      cascadingFailures: inc.candidateCauses.slice(1).map(c => ({
-        nodeId: c.serviceId,
-        name: c.serviceName,
-        status: 'degraded',
-        causedBy: inc.rootCauseServiceId ? [inc.rootCauseServiceId] : [],
-        failureReason: `Upstream dependency failure`,
-        evidence: inc.explanation?.evidenceSummary || []
-      })),
-      blastRadius: {
-        totalImpacted: inc.affectedServices ? inc.affectedServices.length : 0,
-        affectedServices: inc.affectedServices ? inc.affectedServices.map((id: string) => id.replace(/^(sock-shop|vertikal)-/, '')) : []
-      },
-      remediationGuide: (inc.remediationGuide && inc.remediationGuide.length > 0) ? inc.remediationGuide.join(' && ') : `docker restart ${inc.rootCauseServiceId}`
-    });
-  });
 
   router.get('/diagnostics', (_req, res) => {
     const targets = Array.from(graphStore.targets.values());
@@ -136,11 +98,17 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   router.post('/discovery/refresh', async (req, res) => {
     const { targetId } = req.body || {};
     if (targetId) {
-      await graphStore.discoveryEngine.discoverTarget(targetId);
+      await graphStore.discoveryEngine.refreshTarget(targetId);
     } else {
       await graphStore.discoveryEngine.discoverAll();
     }
     res.json({ success: true, message: 'Discovery refreshed' });
+  });
+
+  router.get('/traffic', (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 100;
+    const events = graphStore.metricStore.getEvents(limit);
+    res.json(events);
   });
 
 
@@ -254,14 +222,14 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       }
       // Safety fallback for SSH tunnels overriding remote address
       if (clientIp === '127.0.0.1' || clientIp === '::1') {
-         if (payload.targetId.includes('aws')) clientIp = process.env.AWS_EC2_PUBLIC_IP || '13.200.237.137';
+         if (process.env.AWS_EC2_PUBLIC_IP) clientIp = process.env.AWS_EC2_PUBLIC_IP;
       }
       
       graphStore.ingestRemote(payload, clientIp);
       if (wsManager) {
         wsManager.broadcast('graph-update', graphStore.getGraph());
       }
-      console.log(`[TELEMETRY] targetId=${payload.targetId} eventsReceived=${payload.events?.metrics?.length || 0} + ${payload.events?.interactions?.length || 0} clientIp=${clientIp}`);
+      console.log(`[TELEMETRY] targetId=${payload.targetId} nodes=${payload.events?.nodes?.length || 0} metrics=${payload.events?.metrics?.length || 0} edges=${payload.events?.edges?.length || 0} interactions=${payload.events?.interactions?.length || 0} clientIp=${clientIp}`);
       res.json({ success: true, message: 'Telemetry ingested' });
     } catch (e) {
       console.error('Ingest error:', e);
@@ -392,6 +360,67 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       experimentManager.updateExperimentStats(targetId, stats);
     }
     res.json({ success: true });
+  });
+
+  // --- CONFIGURATION API ENDPOINTS ---
+  const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
+
+  router.get('/config/remote', (_req, res) => {
+    try {
+      if (fs.existsSync(configPath)) {
+        const data = fs.readFileSync(configPath, 'utf8');
+        res.json(JSON.parse(data));
+      } else {
+        res.json({});
+      }
+    } catch (e) {
+      console.error('Error reading remote config:', e);
+      res.status(500).json({ error: 'Failed to read config' });
+    }
+  });
+
+  router.post('/config/remote', (req, res) => {
+    try {
+      const { targetId, projectName, ec2PublicIp, sshKeyPath, sshUsername, composeFilePath } = req.body;
+      let currentConfig: any = {};
+      
+      if (fs.existsSync(configPath)) {
+        try {
+          currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        } catch (e) { /* ignore parse error */ }
+      }
+      
+      const newConfig = {
+        ...currentConfig,
+        [targetId || 'default']: { 
+          ec2PublicIp, 
+          sshKeyPath, 
+          sshUsername,
+          composeFilePath,
+          displayName: projectName || targetId,
+          updatedAt: new Date().toISOString() 
+        }
+      };
+
+      if (!fs.existsSync(path.dirname(configPath))) {
+        fs.mkdirSync(path.dirname(configPath), { recursive: true });
+      }
+
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), 'utf8');
+      
+      // Register in GraphStore immediately (triggering background SSH discovery)
+      graphStore.registerNewProject(targetId, projectName || targetId, ec2PublicIp);
+      
+      // Sync into memory for runtime usage
+      if (ec2PublicIp) {
+        process.env.AWS_EC2_PUBLIC_IP = ec2PublicIp;
+      }
+      
+      res.json({ success: true, config: newConfig });
+    } catch (e) {
+      console.error('Error saving remote config:', e);
+      res.status(500).json({ error: 'Failed to save config' });
+    }
   });
 
   return router;

@@ -8,3 +8,7 @@ build/
 .vite/
 __pycache__/
 *.pyc
+
+# Local runtime data
+data/
+server/data/

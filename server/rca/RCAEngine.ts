@@ -126,7 +126,7 @@ export class RCAEngine {
         id: `ev-${node.id}-${Date.now()}`,
         metric: node.metrics?.cpu !== undefined ? 'CPU / Memory / State' : 'Container Status',
         timestamp: new Date().toISOString(),
-        beforeValue: 'healthy (Up)',
+        beforeValue: 'unknown',
         afterValue: `${node.status} (${node.metadata?.state || 'stopped'})`,
         source: hasObservedEdge ? 'observed-runtime-tcp' : 'container-runtime',
         description: `Service '${node.name}' status changed to ${node.status.toUpperCase()} (CPU: ${node.metrics?.cpu || 0}%, MEM: ${node.metrics?.memoryPercent || 0}%)`

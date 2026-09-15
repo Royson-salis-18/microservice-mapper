@@ -1,0 +1,33 @@
+{
+  "name": "telemetry-platform",
+  "version": "0.1.0",
+  "description": "Standalone microservice observability data collection, cleaning, feature engineering and analytics pipeline (Phase 1: schemas, config, connection, storage, CLI skeleton).",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "collector": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "collector": "tsx src/cli/index.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "ssh2": "^1.15.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "@types/ssh2": "^1.15.0",
+    "@types/uuid": "^9.0.8",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

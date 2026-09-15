@@ -8,14 +8,16 @@ export interface InteractionEvent {
   method?: string;
   route?: string;
 
-  statusCode?: number;
-  latency?: number;
+  statusCode?: number | null;
+  latency?: number | null;
+  latencyMs?: number | null;
 
   traceId?: string;
   spanId?: string;
 
-  bytesSent?: number;
-  bytesReceived?: number;
+  bytesSent?: number | null;
+  bytesReceived?: number | null;
+  success?: boolean | null;
 
   evidenceSource: string;
 }
