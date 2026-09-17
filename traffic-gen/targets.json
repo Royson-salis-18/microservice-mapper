@@ -13,7 +13,7 @@
     ],
     "architecture": null,
     "settings": {
-      "profile": "STRESS",
+      "profile": "BASELINE",
       "endpointPaths": [
         "/"
       ]
@@ -29,6 +29,16 @@
     "settings": {
       "profile": "MODERATE",
       "endpointPaths": []
+    }
+  },
+  "open-telemetry": {
+    "targetId": "open-telemetry",
+    "baseUrl": "http://15.252.240.146:8080",
+    "settings": {
+      "profile": "HEAVY",
+      "endpointPaths": [
+        "/"
+      ]
     }
   }
 }

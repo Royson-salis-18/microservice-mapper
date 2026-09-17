@@ -11,12 +11,14 @@ const sockshop = require('./workflows/sockshop');
 const vertikal = require('./workflows/vertikal');
 const deathstar = require('./workflows/deathstar');
 const trainticket = require('./workflows/trainticket');
+const opentelemetry = require('./workflows/opentelemetry');
 
 const TARGETS = {
   'sock-shop': sockshop,
   vertikal: vertikal,
   'death-star': deathstar,
   'train-ticket': trainticket,
+  'open-telemetry': opentelemetry,
 };
 
 const TARGETS_CONFIG_PATH = path.join(__dirname, 'targets.json');
@@ -88,7 +90,7 @@ async function checkReachable(projectId, baseUrl) {
   }
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
+    const timer = setTimeout(() => controller.abort(), 10000);
     const resp = await fetch(baseUrl, { signal: controller.signal });
     clearTimeout(timer);
     reachability[projectId] = { reachable: resp.status < 500, checkedAt: Date.now(), statusCode: resp.status };
