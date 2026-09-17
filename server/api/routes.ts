@@ -203,7 +203,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     if (!url) return res.json({ status: 'ERROR', message: 'No URL provided' });
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const reachRes = await fetch(url, { method: 'HEAD', signal: controller.signal as any }).catch(() => fetch(url, { method: 'GET', signal: controller.signal as any }));
       clearTimeout(timeoutId);
       if (reachRes) {

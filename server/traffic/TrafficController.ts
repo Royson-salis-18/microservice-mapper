@@ -9,7 +9,7 @@ const TRAFFIC_GEN_URL = `http://localhost:${TRAFFIC_GEN_PORT}`;
 const TRAFFIC_GEN_WS_URL = `ws://localhost:${TRAFFIC_GEN_PORT}/ws`;
 
 // only targets with a workflow file under traffic-gen/workflows/
-const KNOWN_TRAFFIC_GEN_TARGETS = new Set(['sock-shop', 'vertikal', 'death-star', 'train-ticket']);
+const KNOWN_TRAFFIC_GEN_TARGETS = new Set(['sock-shop', 'vertikal', 'death-star', 'train-ticket', 'open-telemetry']);
 
 // old lowercase UI profile names -> traffic-gen's PROFILES keys
 const PROFILE_MAP: Record<string, string> = {
