@@ -1,50 +1,11 @@
-# Hi 👋! I'm Royson Salis
-
-<div align="center">
-  <img align="right" src="https://i.pinimg.com/originals/90/70/32/9070324cdfc07c68d60eed0c39e77573.gif" alt="Coding GIF" width="450" height="270" style="border-radius: 30px; margin-left: 50px; padding-left: 20px;" />
-</div>
-
-### A passionate web developer crafting digital experiences from India 🚀
-
-🌱 Currently exploring the depths of **React.js** and **TypeScript**
-
-💻 Building exciting web projects and learning new technologies
-
-👥 Open to collaborating on innovative web development projects
-
-### 🛠 Tech Stack
-<div align="left">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" height="48" alt="javascript"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" height="48" alt="typescript"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="48" alt="react"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" height="48" alt="html5"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" height="48" alt="css3"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" height="48" alt="python"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg" height="48" alt="csharp"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" height="48" alt="flutter"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="48" alt="nodejs"  />
-</div>
-
-### 📈 GitHub Stats
-![Metrics](https://metrics.lecoq.io/Royson-salis-18?template=classic&base.indepth=true&repositories=1&isocalendar=1&languages=1)
-
-![Streak Stats](https://streak-stats.demolab.com/?user=Royson-salis-18&theme=radical&hide_border=true)
-
-
-
 
 
 
 ### 🌐 Let's Connect!
 <div align="left">
+  <a href="https://github.com/Royson-salis-18" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  </a>
   <a href="https://www.linkedin.com/in/royson-salis-3ab32628a/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
   </a>
@@ -1114,7 +1075,7 @@ For enterprise support, feature requests, or contributions:
 - **GitHub Issues**: https://github.com/yourusername/microservice-mapper/issues
 - **Discussions**: https://github.com/yourusername/microservice-mapper/discussions
 - **Email**: maintainers@microservice-mapper.io
-- **Security**: security@microservice-mapper.io (PGP key available)
+- **Security**: security@microservice-mapper.io
 
 ---
 
