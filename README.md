@@ -1031,8 +1031,9 @@ The platform includes comprehensive self-observability:
 ## 📞 Support & Contact
 
 For enterprise support, feature requests, or contributions:
-- **GitHub Issues**: https://github.com/yourusername/microservice-mapper/issues
-- **Discussions**: https://github.com/yourusername/microservice-mapper/discussions
-- **Email**: maintainers@microservice-mapper.io
-- **Security**: security@microservice-mapper.io
+- **GitHub Issues**: https://github.com/Royson-salis-18/microservice-mapper/issues
+- **Discussions**: https://github.com/Royson-salis-18/microservice-mapper/discussions
+- **Email**: roysonsalis2005@gmail.com
+- **Security**: roysonsalis2005@gmail.com
+
 
