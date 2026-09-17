@@ -159,3 +159,10 @@ If this hangs, the server's terminal will also hang.
 
 **Was:** Containers without Compose labels were named `unknown-<containerIdSlice>`, creating useless graph nodes.
 **Fixed:** `deriveServiceName()` in `remote-collector/index.ts` now uses a priority chain: Compose label first, then name-based parsing.
+
+### Traffic Generator: "Endpoint Unavailable" or "Unreachable" 
+If the traffic generator UI blocks the "Start" button and reports targets as UNREACHABLE:
+1. **Timeouts**: Remote AWS targets (like OpenTelemetry) may have higher latency (>2-3s). The system's reachability checks timeout if latency is too high. This has been increased from 2s/4s to 10s in `server/api/routes.ts` and `traffic-gen/server.js`.
+2. **Port Prioritization**: The UI defaults to the first alphabetical endpoint it discovers. Previously, this caused OpenTelemetry to default to Grafana (`:3000`), which is not externally reachable, blocking traffic. The UI (`TrafficControlPanel.tsx`) now intelligently defaults to common frontend ports (`80`, `8080`, `8000`).
+3. **Stub Targets**: Ensure the target is added to `KNOWN_TRAFFIC_GEN_TARGETS` in `TrafficController.ts` and that its traffic-gen workflow has `STUB: false` (unless injecting dynamic endpoints).
+

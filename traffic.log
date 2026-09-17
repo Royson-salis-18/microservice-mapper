@@ -1,0 +1,2 @@
+traffic-gen control server listening on :4400
+[TRAFFIC] target=open-telemetry project=open-telemetry users=5 maxConcurrency=20 duration=unlimited

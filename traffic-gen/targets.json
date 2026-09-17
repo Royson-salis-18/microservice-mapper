@@ -35,10 +35,8 @@
     "targetId": "open-telemetry",
     "baseUrl": "http://15.252.240.146:8080",
     "settings": {
-      "profile": "HEAVY",
-      "endpointPaths": [
-        "/"
-      ]
+      "profile": "BASELINE",
+      "endpointPaths": []
     }
   }
 }
