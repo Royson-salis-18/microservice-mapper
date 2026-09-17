@@ -32,59 +32,17 @@ export function useGraphData(): UseGraphDataReturn {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Lays each project (target) out as its own side-by-side cluster instead
-  // of merging every project's nodes into shared global rows — with two
-  // projects up at once, interleaving them produced long crossing edges
-  // between unrelated services that just happened to land in the same row.
-  const calculateLayout = (backendNodes: ServiceNode[]): Node[] => {
-    const xSpacing = 250;
-    const ySpacing = 180;
-    const projectGap = 220;
-    const maxPerRow = 6; // wrap a layer instead of stretching it into one huge row
-
-    const layerIndex = (n: ServiceNode) => {
-      if (n.type === 'gateway' || n.type === 'frontend') return 0;
-      if (n.type === 'service') return 1;
-      if (n.type === 'database' || n.type === 'queue') return 2;
-      return 3; // external / infrastructure / unknown
-    };
-
-    const projects = Array.from(new Set(backendNodes.map(n => n.project || 'unknown')));
-    const result: Node[] = [];
-    let cursorX = 0;
-
-    for (const project of projects) {
-      const layers: ServiceNode[][] = [[], [], [], []];
-      for (const n of backendNodes) {
-        if ((n.project || 'unknown') === project) layers[layerIndex(n)].push(n);
-      }
-
-      const blockWidth = Math.max(...layers.map(l => Math.min(l.length, maxPerRow)), 1) * xSpacing;
-
-      let cursorY = 0;
-      for (const layerNodes of layers) {
-        if (layerNodes.length === 0) continue;
-        const rows = Math.ceil(layerNodes.length / maxPerRow);
-        for (let row = 0; row < rows; row++) {
-          const rowNodes = layerNodes.slice(row * maxPerRow, row * maxPerRow + maxPerRow);
-          const startX = cursorX + (blockWidth - (rowNodes.length - 1) * xSpacing) / 2;
-          rowNodes.forEach((node, i) => {
-            result.push({
-              id: node.id,
-              type: 'customServiceNode',
-              data: node as ServiceNode & Record<string, unknown>,
-              position: { x: startX + i * xSpacing, y: cursorY + row * ySpacing },
-            });
-          });
-        }
-        cursorY += rows * ySpacing + 60;
-      }
-
-      cursorX += blockWidth + projectGap;
-    }
-
-    return result;
-  };
+  // Arrangement is owned by the view (App picks a layout from layouts2d,
+  // the 3D scene has its own), so this only wraps the raw nodes for React
+  // Flow. Positions here are placeholders that the selected layout
+  // overwrites — computing a second layout in here would just fight it.
+  const calculateLayout = (backendNodes: ServiceNode[]): Node[] =>
+    backendNodes.map((node, i) => ({
+      id: node.id,
+      type: 'customServiceNode',
+      data: node as ServiceNode & Record<string, unknown>,
+      position: { x: (i % 8) * 260, y: Math.floor(i / 8) * 190 },
+    }));
 
   const parseEdges = (backendEdges: DependencyEdge[]): Edge[] => {
     return backendEdges.map(edge => ({

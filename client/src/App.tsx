@@ -20,6 +20,7 @@ import { TerminalPanel } from './components/TerminalPanel';
 import { TracesView } from './components/TracesView';
 import { MLPipelineView } from './components/MLPipelineView';
 import { ProjectSections } from './components/ProjectSections';
+import { computeLayout2D, type Layout2DId } from './components/layouts2d';
 import type { ServiceNode, DependencyEdge } from './types';
 
 export default function App() {
@@ -34,6 +35,9 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState('combined');
+  const [layout2d, setLayout2d] = useState<Layout2DId>(() => {
+    return (localStorage.getItem('mm.graph.layout2d') as Layout2DId) || 'clusters';
+  });
   const [isTrafficPanelOpen, setIsTrafficPanelOpen] = useState(false);
   const [isAwsPanelOpen, setIsAwsPanelOpen] = useState(false);
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
@@ -155,6 +159,43 @@ export default function App() {
     if (fromNodes.size > 0) return Array.from(fromNodes).sort();
     return targets.map(t => t.targetId).sort();
   }, [nodes, targets]);
+
+  useEffect(() => {
+    try { localStorage.setItem('mm.graph.layout2d', layout2d); } catch { /* private mode */ }
+  }, [layout2d]);
+
+  // Layout only depends on which services and links exist, not on their
+  // metrics. filteredNodes/filteredEdges get fresh identities on every
+  // telemetry poll, so keying the layout off them recomputed every node
+  // position several times a second for no visible change.
+  const layoutSignature2d = useMemo(() => {
+    const nodePart = filteredNodes
+      .map((n) => {
+        const d = n.data as any;
+        return `${n.id}:${d?.type || ''}:${d?.project || ''}`;
+      })
+      .sort()
+      .join('|');
+    const edgePart = filteredEdges.map((e) => `${e.source}>${e.target}`).sort().join('|');
+    return `${nodePart}||${edgePart}`;
+  }, [filteredNodes, filteredEdges]);
+
+  const layoutPositions2d = useMemo(
+    () => computeLayout2D(layout2d, filteredNodes, filteredEdges),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the
+    // signature deliberately; the arrays themselves change every poll.
+    [layout2d, layoutSignature2d]
+  );
+
+  // Positions come from the selected arrangement rather than from the data
+  // fetch, so switching layout rearranges the canvas without waiting for the
+  // next poll — and a poll can't silently snap nodes back to a different shape.
+  const arrangedNodes = useMemo(() => {
+    return filteredNodes.map((n) => {
+      const p = layoutPositions2d[n.id];
+      return p ? { ...n, position: p } : n;
+    });
+  }, [filteredNodes, layoutPositions2d]);
 
   const projectSummary = useCallback((project: string) => {
     const projectNodes = nodes.filter(
@@ -281,11 +322,16 @@ export default function App() {
               setViewMode={setViewMode}
               filters={filters}
               setFilters={setFilters}
+              layout2d={layout2d}
+              setLayout2d={setLayout2d}
+              nodeCount={arrangedNodes.length}
+              edgeCount={filteredEdges.length}
             />
             
-            <GraphCanvas 
-              nodes={filteredNodes} 
+            <GraphCanvas
+              nodes={arrangedNodes}
               edges={filteredEdges}
+              layoutKey={layout2d}
               onNodesChange={onNodesChange}
               onNodeClick={(n) => {
                 setSelectedNodeId(n.id);

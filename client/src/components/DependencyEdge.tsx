@@ -2,6 +2,7 @@ import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
 import type { EdgeProps } from '@xyflow/react';
 import type { DependencyEdge } from '../types';
 import { useState } from 'react';
+import { edgeAppearance } from './shared/edgeHeat';
 
 export function CustomDependencyEdge({
   sourceX,
@@ -26,34 +27,21 @@ export function CustomDependencyEdge({
     targetPosition,
   });
 
+  // Shared with the 3D scene so a link reads the same in both views.
   const getEdgeStyle = (edge: DependencyEdge | undefined) => {
-    if (!edge) return { color: 'rgba(255,255,255,0.12)', strokeWidth: 1, isDashed: true, isAnimated: false };
-
-    const errRate = edge.metrics?.errorRate ?? 0;
-    const latency = edge.metrics?.latency ?? 0;
-    let color = 'rgba(255,255,255,0.15)';
-
-    if (edge.status === 'failed' || errRate > 5) {
-      color = 'rgba(255,23,68,0.8)';
-    } else if (edge.status === 'degraded' || latency > 500) {
-      color = 'rgba(255,171,0,0.8)';
-    } else if (edge.observed) {
-      color = 'rgba(0,212,255,0.7)';
-    } else if (edge.declared) {
-      color = 'rgba(148,163,184,0.35)';
-    }
-
-    const isAnimated = edge.observed && edge.status !== 'failed';
-
+    const a = edgeAppearance(edge);
+    const observed = edge?.observed ?? false;
+    const hot = a.heat === 'busy' || a.heat === 'heavy' || a.heat === 'saturated';
     return {
-      color,
-      strokeWidth: edge.observed ? 2 : 1,
-      isDashed: !edge.observed,
-      isAnimated,
+      color: a.color,
+      strokeWidth: !observed ? 1 : a.heat === 'saturated' || a.heat === 'failed' ? 3.4 : hot || a.heat === 'degraded' ? 2.6 : 2,
+      isDashed: !observed,
+      isAnimated: observed && a.heat !== 'failed',
+      heatLabel: a.label,
     };
   };
 
-  const { color, strokeWidth, isDashed, isAnimated } = getEdgeStyle(edgeData);
+  const { color, strokeWidth, isDashed, isAnimated, heatLabel } = getEdgeStyle(edgeData);
 
   const hasMetrics = edgeData?.metrics && (
     (edgeData.metrics.latency ?? 0) > 0 ||
@@ -132,7 +120,7 @@ export function CustomDependencyEdge({
             </div>
             <div style={{ display: 'flex', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '9px' }}>
               <span>{edgeData?.declared ? '✓ Declared' : '○ Candidate'}</span>
-              <span>{edgeData?.observed ? '● Live' : '○ Not seen'}</span>
+              <span>{edgeData?.observed ? `● ${heatLabel}` : '○ Not seen'}</span>
             </div>
             {hasMetrics && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '4px', display: 'flex', gap: '8px' }}>

@@ -293,12 +293,21 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   router.get('/traffic/entrypoints', (_req, res) => {
     const cfgPath = path.join(process.cwd(), 'data', 'remote_config.json');
     const cfg = readJsonSafe(cfgPath) || {};
-    const result: Record<string, { pinned: string | null; resolved: string | null }> = {};
+    const result: Record<string, { pinned: string | null; resolved: string | null; staleHost?: string }> = {};
     for (const targetId of Object.keys(cfg)) {
-      result[targetId] = {
-        pinned: cfg[targetId]?.trafficBaseUrl ?? null,
+      const pinned = cfg[targetId]?.trafficBaseUrl ?? null;
+      const entry: { pinned: string | null; resolved: string | null; staleHost?: string } = {
+        pinned,
         resolved: trafficController?.resolveBaseUrl(targetId) ?? null,
       };
+      // These instances get a new public IP on every stop/start, so a pin
+      // made yesterday can quietly point at an address that now belongs to
+      // nobody. Flag the mismatch instead of letting traffic fail silently.
+      const currentIp = cfg[targetId]?.ec2PublicIp;
+      if (pinned && currentIp && !/localhost|127\.0\.0\.1/.test(pinned) && !pinned.includes(currentIp)) {
+        entry.staleHost = currentIp;
+      }
+      result[targetId] = entry;
     }
     res.json(result);
   });
@@ -722,15 +731,21 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
         } catch (e) { /* ignore parse error */ }
       }
       
+      const key = targetId || 'default';
       const newConfig = {
         ...currentConfig,
-        [targetId || 'default']: { 
-          ec2PublicIp, 
-          sshKeyPath, 
+        [key]: {
+          // Merge onto the existing entry rather than replacing it: this
+          // record also holds settings the edit form doesn't send, such as
+          // the pinned traffic entry point. Replacing wholesale silently
+          // erased them every time someone updated an IP.
+          ...(currentConfig[key] || {}),
+          ec2PublicIp,
+          sshKeyPath,
           sshUsername,
           composeFilePath,
           displayName: projectName || targetId,
-          updatedAt: new Date().toISOString() 
+          updatedAt: new Date().toISOString()
         }
       };
 

@@ -91,6 +91,14 @@ export interface DependencyEdge {
   } | null;
 
   statusCodeDistribution?: Record<string, number>;
+  /** Observed TCP connection activity — see server DependencyEdge model. */
+  activity?: {
+    /** Socket observations/min — see server DependencyEdge for what this
+     * does and does not mean. */
+    samplesPerMin: number;
+    windowSec: number;
+    lastSeen: string;
+  };
   status: 'active' | 'degraded' | 'failed' | 'unknown';
 }
 

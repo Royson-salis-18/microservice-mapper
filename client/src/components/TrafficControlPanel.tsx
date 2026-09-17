@@ -37,7 +37,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     }>;
   }
   const [trafficHealth, setTrafficHealth] = useState<TrafficHealth | null>(null);
-  const [entryPoints, setEntryPoints] = useState<Record<string, { pinned: string | null; resolved: string | null }>>({});
+  const [entryPoints, setEntryPoints] = useState<Record<string, { pinned: string | null; resolved: string | null; staleHost?: string }>>({});
   const [entryDraft, setEntryDraft] = useState('');
   const [entryBusy, setEntryBusy] = useState(false);
   const [entryMsg, setEntryMsg] = useState<string | null>(null);
@@ -394,6 +394,12 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           in use: {entryPoints[selectedTargetId]?.resolved || 'none resolved'}
           {!entryPoints[selectedTargetId]?.pinned && ' (inferred from discovery)'}
         </div>
+        {entryPoints[selectedTargetId]?.staleHost && (
+          <div style={{ fontSize: '9px', color: 'var(--color-degraded)', lineHeight: 1.4 }}>
+            ⚠ This pin doesn't match the target's current IP ({entryPoints[selectedTargetId]!.staleHost}) — the instance
+            likely restarted with a new address. Probe it, then update or clear the pin.
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '6px' }}>
           <button
             onClick={handleProbeEntry}

@@ -1,7 +1,7 @@
 {
   "sock-shop": {
     "targetId": "sock-shop",
-    "baseUrl": "http://65.2.80.40",
+    "baseUrl": "http://13.201.99.244",
     "endpoints": [
       {
         "path": "/",
@@ -13,7 +13,7 @@
     ],
     "architecture": null,
     "settings": {
-      "profile": "HEAVY",
+      "profile": "STRESS",
       "endpointPaths": [
         "/"
       ]

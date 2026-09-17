@@ -76,6 +76,16 @@ export class MetricStore {
     this.scheduleSave();
   }
 
+  /**
+   * Drops a node's history. Called when the graph prunes a node that has
+   * stopped reporting: without this, every container that restarts onto a
+   * new id leaves its full metric history behind for the lifetime of the
+   * process, and the per-node cap does nothing to bound the map itself.
+   */
+  deleteNode(nodeId: string): void {
+    this.store.delete(nodeId);
+  }
+
   pushEvent(event: InteractionEvent): void {
     this.events.push(event);
     // Keep last 10,000 events or within a time window (e.g., 1 hour)

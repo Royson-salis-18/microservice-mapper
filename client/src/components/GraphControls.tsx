@@ -1,10 +1,16 @@
 import { useReactFlow } from '@xyflow/react';
+import { LayoutPicker2D } from './LayoutPicker2D';
+import type { Layout2DId } from './layouts2d';
 
 interface GraphControlsProps {
   viewMode: string;
   setViewMode: (mode: string) => void;
   filters: Record<string, boolean>;
   setFilters: (filters: Record<string, boolean>) => void;
+  layout2d: Layout2DId;
+  setLayout2d: (layout: Layout2DId) => void;
+  nodeCount: number;
+  edgeCount: number;
 }
 
 const filterColors: Record<string, string> = {
@@ -16,7 +22,7 @@ const filterColors: Record<string, string> = {
   all: '#ffffff'
 };
 
-export function GraphControls({ viewMode, setViewMode, filters, setFilters }: GraphControlsProps) {
+export function GraphControls({ viewMode, setViewMode, filters, setFilters, layout2d, setLayout2d, nodeCount, edgeCount }: GraphControlsProps) {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
   const handleFilterToggle = (key: string) => {
@@ -44,6 +50,8 @@ export function GraphControls({ viewMode, setViewMode, filters, setFilters }: Gr
       left: '20px',
       zIndex: 10,
       width: '220px',
+      maxHeight: 'calc(100vh - 120px)',
+      overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
       padding: '16px',
@@ -170,6 +178,8 @@ export function GraphControls({ viewMode, setViewMode, filters, setFilters }: Gr
           )
         })}
       </div>
+
+      <LayoutPicker2D layout={layout2d} onChange={setLayout2d} nodeCount={nodeCount} edgeCount={edgeCount} />
     </div>
   );
 }

@@ -26,6 +26,8 @@ export class GraphStore {
   private storagePath: string;
   private saveTimeout: NodeJS.Timeout | null = null;
   private wsManager?: WebSocketManager;
+  /** Rolling connection-event counts per edge id, for the activity rate. */
+  private edgeActivity = new Map<string, { count: number; windowStart: number }>();
 
   constructor(wsManager?: WebSocketManager) {
     this.wsManager = wsManager;
@@ -242,6 +244,7 @@ export class GraphStore {
         const age = node.lastSeen ? now - new Date(node.lastSeen).getTime() : Infinity;
         if (age > GraphStore.STALE_NODE_MS) {
           nodesMap.delete(id);
+          this.metricStore.deleteNode(id);
           removedIds.add(id);
         }
       }
@@ -252,6 +255,10 @@ export class GraphStore {
         for (const [edgeId, edge] of edgesMap.entries()) {
           if (removedIds.has(edge.source) || removedIds.has(edge.target)) {
             edgesMap.delete(edgeId);
+            // The activity counter is keyed by edge id and was never
+            // cleaned up, so every pruned edge leaked an entry that grew
+            // for the lifetime of the process.
+            this.edgeActivity.delete(edgeId);
           }
         }
       }
@@ -421,7 +428,41 @@ export class GraphStore {
       }
     }
 
+    this.applyEdgeActivity(allEdges);
+
     return { nodes: allNodes, edges: allEdges, targets: Array.from(this.targets.values()) };
+  }
+
+  /**
+   * Turns the rolling connection counts into a per-minute rate. The window
+   * resets once it has run long enough to be meaningful, so the figure
+   * tracks current activity instead of drifting toward a lifetime average.
+   * Edges with no observations are left without an `activity` field rather
+   * than being given a zero — "never seen" and "measured as idle" are
+   * different claims.
+   */
+  private applyEdgeActivity(edges: DependencyEdge[]): void {
+    const now = Date.now();
+    const WINDOW_RESET_MS = 120_000;
+
+    for (const edge of edges) {
+      const bucket = this.edgeActivity.get(edge.id);
+      if (!bucket) continue;
+
+      const elapsedMs = Math.max(1000, now - bucket.windowStart);
+      const perMin = (bucket.count / elapsedMs) * 60_000;
+      edge.activity = {
+        samplesPerMin: Math.round(perMin * 10) / 10,
+        windowSec: Math.round(elapsedMs / 1000),
+        lastSeen: new Date().toISOString(),
+      };
+
+      if (elapsedMs > WINDOW_RESET_MS) {
+        // Carry half the count forward so the rate decays instead of
+        // snapping to zero the instant a window rolls over.
+        this.edgeActivity.set(edge.id, { count: Math.floor(bucket.count / 2), windowStart: now - WINDOW_RESET_MS / 2 });
+      }
+    }
   }
 
   getNode(id: string): ServiceNode | undefined {
@@ -605,6 +646,21 @@ export class GraphStore {
         });
       }
       console.log(`[TRACES] target=${targetId} connectionEvents=${events.connectionEvents.length}`);
+
+      // Roll up per-edge connection activity. This is the only real
+      // measure of how busy a link is — edge.metrics (latency, errors,
+      // request rate) is null for every edge here because nothing collects
+      // HTTP-level data, so activity is what the heat scale can honestly
+      // be driven by.
+      for (const ev of events.connectionEvents) {
+        const src = normalizeId(ev.sourceServiceId);
+        const dst = normalizeId(ev.destServiceId);
+        if (!src || !dst || src === dst) continue;
+        const key = `${src}->${dst}`;
+        const bucket = this.edgeActivity.get(key) ?? { count: 0, windowStart: Date.now() };
+        bucket.count += 1;
+        this.edgeActivity.set(key, bucket);
+      }
     }
     
     // Edge status/color comes only from evidence measured on that edge
