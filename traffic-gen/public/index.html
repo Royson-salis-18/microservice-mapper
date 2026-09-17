@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Traffic Generator Control</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0f1117; color: #e6e6e6; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  h3 { margin-top: 0; font-size: 14px; color: #ccc; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+  .card { background: #1a1d27; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: #aaa; margin: 10px 0 4px; }
+  select, input[type=text], input[type=number] { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #333; background: #0f1117; color: #eee; }
+  input[type=range] { width: 100%; }
+  button { padding: 8px 14px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-right: 8px; margin-top: 10px; }
+  .start { background: #2ecc71; color: #032; } .stop { background: #e74c3c; color: #300; } .update { background: #3498db; color: #013; } .connect { background: #9b59b6; color: #fff; }
+  .stat { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #262a36; font-size: 13px; } .stat b { color: #fff; }
+  .projectStats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; } .projectCard { background: #11141d; border: 1px solid #303545; border-radius: 8px; padding: 12px; } .projectCard h4 { margin: 0 0 8px; } .projectCard .stat { font-size: 12px; }
+  .mixrow { display: flex; align-items: center; gap: 8px; margin: 6px 0; } .mixrow span { width: 70px; font-size: 12px; color: #ccc; } .mixrow input { flex: 1; } .mixrow output { width: 34px; text-align: right; font-size: 12px; }
+  .pill { display:inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; margin-left: 8px; } .running, .reach-ok { background: #123; color: #2ecc71; } .stopped, .reach-bad { background: #321; color: #e74c3c; } .reach-unknown { background: #222; color: #888; }
+  .note { font-size: 11px; color: #777; margin-top: 6px; } .connectMsg { font-size: 12px; margin-top: 8px; white-space: pre-wrap; } .discovery { max-height: 180px; overflow: auto; font-size: 10px; color: #999; white-space: pre-wrap; }
+  @media (max-width: 760px) { body { padding: 14px; } .grid { grid-template-columns: 1fr; gap: 0; } }
+</style>
+</head>
+<body>
+<h1>Traffic Generator Control <span id="statusPill" class="pill stopped">stopped</span></h1>
+<div class="sub">Generates real HTTP traffic through the actual application gateway. Never fabricates telemetry.</div>
+<div class="grid">
+  <div>
+    <div class="card">
+      <h3>1. Connect to AWS</h3>
+      <label>Project</label><select id="projectSelect"></select>
+      <input id="newProjectId" type="text" placeholder="new-project-id" />
+      <label>New project architecture</label>
+      <select id="newProjectTarget" aria-label="New project architecture"></select>
+      <button class="connect" onclick="addProject()">ADD PROJECT</button>
+      <input id="projectId" type="hidden" value="sock-shop" />
+      <input id="targetId" type="hidden" value="sock-shop" />
+      <div class="note">Architecture is selected when the project is created.</div>
+      <label>Public IP / host</label><input id="host" type="text" placeholder="3.91.12.44" />
+      <label>Base URL override (optional)</label><input id="baseUrlOverride" type="text" placeholder="http://example.com" />
+      <label>SSH user</label><input id="sshUser" type="text" placeholder="ubuntu" value="ubuntu" />
+      <label>Path to key file (.pem)</label><input id="keyPath" type="text" placeholder="/home/you/.ssh/sockshop-key.pem" />
+      <label>Optional Sock Shop username</label><input id="authUsername" type="text" placeholder="used only for this run" />
+      <label>Optional password</label><input id="authPassword" type="password" placeholder="not persisted" />
+      <button class="connect" onclick="connectAws()">CONNECT & DISCOVER</button>
+      <label>Candidate storefront paths</label>
+      <input id="probePaths" type="text" value="/, /catalog, /products, /shop, /api, /health, /healthz" />
+      <button class="connect" onclick="probeEndpoints()">TEST ENDPOINTS</button>
+      <label>Confirmed endpoints used for traffic</label>
+      <div id="endpointChoices" class="note">Run endpoint testing first.</div>
+      <div class="connectMsg" id="connectMsg"></div>
+      <pre class="discovery" id="discoveryDetails"></pre>
+      <div class="note">Only the key path is sent to this local server; key contents never go through the browser.</div>
+      <div style="margin-top:12px;"><span class="pill reach-unknown" id="reachPill">not connected</span> <span id="baseUrlShown" style="font-size:12px;color:#aaa;"></span></div>
+    </div>
+    <div class="card">
+      <h3>2. Traffic controls</h3>
+      <label>Profile</label><select id="profile"></select>
+      <label>Virtual users</label><input id="users" type="number" min="1" max="20" value="1" />
+      <label>Duration (sec, 0 = unlimited)</label><input id="durationSec" type="number" value="0" />
+      <label>Traffic target</label><select id="trafficTarget"><option value="gateway">Project gateway</option></select>
+      <div class="note" id="targetNote">Connect the project to load architecture targets.</div>
+      <div id="mix"></div>
+      <button class="start" onclick="startEngine()">START</button><button class="stop" onclick="stopEngine()">STOP</button><button class="update" onclick="updateEngine()">UPDATE LIVE</button>
+    </div>
+  </div>
+  <div><div class="card"><h3>Live generator stats</h3><div id="stats"></div><div id="projectStats" class="projectStats"></div></div></div>
+</div>
+<script>
+let targets = [], currentMod = null, projectStats = {}, projectCatalog = [];
+async function loadTargets() {
+  targets = await fetch('/api/targets').then(r => r.json());
+  document.getElementById('newProjectTarget').innerHTML = targets.map(t => `<option value="${t.id}">${t.id}</option>`).join('');
+  onTargetChange();
+  await loadProjects();
+}
+async function loadProjects() {
+  const projects = await fetch('/api/projects').then(r => r.json());
+  projectCatalog = projects;
+  const select = document.getElementById('projectSelect');
+  if (!projects.length) { select.innerHTML = '<option>No projects yet</option>'; return; }
+  select.innerHTML = projects.map(p => `<option value="${p.projectId}" data-target="${p.targetId}">${p.projectId}${p.running ? ' (running)' : ''}</option>`).join('');
+    projects.forEach(p => { if (p.stats) projectStats[p.projectId] = { projectId:p.projectId, targetId:p.targetId, running:p.running, ...p.stats }; });
+  renderProjectStats();
+  const current = projects.find(p => p.projectId === document.getElementById('projectId').value) || projects[0];
+  selectProject(current.projectId);
+}
+function selectProject(projectId) {
+  document.getElementById('projectId').value = projectId;
+  const option = [...document.getElementById('projectSelect').options].find(o => o.value === projectId);
+  const project = projectCatalog.find(item => item.projectId === projectId);
+  if (option) { document.getElementById('targetId').value = option.dataset.target; onTargetChange(); renderEndpointChoices(project?.endpoints || []); renderArchitectureTargets(project); applyProjectSettings(project?.settings || {}); }
+}
+function applyProjectSettings(settings) {
+  if (settings.users != null) document.getElementById('users').value = settings.users;
+  if (settings.durationSec != null) document.getElementById('durationSec').value = settings.durationSec;
+  if (settings.endpointPaths?.length) renderEndpointChoices(settings.endpointPaths.map(path => ({ path, statusCode: 200 })));
+    if (settings.profile) document.getElementById('profile').value = settings.profile;
+}
+async function addProject() {
+  const projectId = document.getElementById('newProjectId').value.trim();
+  if (!projectId) return alert('Enter a project ID first.');
+  const targetId = document.getElementById('newProjectTarget').value;
+  const j = await fetch('/api/projects', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ projectId, targetId }) }).then(r => r.json());
+  if (j.error) return alert(j.error);
+  document.getElementById('newProjectId').value = '';
+  await loadProjects();
+  document.getElementById('projectSelect').value = projectId;
+  selectProject(projectId);
+}
+function onTargetChange() {
+  currentMod = targets.find(t => t.id === document.getElementById('targetId').value);
+  document.getElementById('profile').innerHTML = currentMod.profiles.map(p => `<option>${p}</option>`).join('');
+  renderMix(currentMod.workflows); renderConnectionState(currentMod);
+}
+function renderConnectionState(mod) {
+  const pill = document.getElementById('reachPill'), shown = document.getElementById('baseUrlShown');
+  shown.textContent = mod.baseUrl || '';
+  if (!mod.baseUrl) { pill.textContent = 'not connected'; pill.className = 'pill reach-unknown'; return; }
+  const ok = mod.reachability && mod.reachability.reachable;
+  pill.textContent = ok ? 'reachable' : 'unreachable'; pill.className = 'pill ' + (ok ? 'reach-ok' : 'reach-bad');
+}
+function renderMix(workflows) {
+  const defaults = { browse: 65, cart: 20, account: 10, checkout: 5 };
+  document.getElementById('mix').innerHTML = '<label>Workflow mix</label>' + workflows.map(w => { const value = defaults[w] ?? Math.round(100 / workflows.length); return `<div class="mixrow"><span>${w}</span><input type="range" min="0" max="100" value="${value}" id="mix_${w}" oninput="document.getElementById('mixout_${w}').value=this.value"><output id="mixout_${w}">${value}</output></div>`; }).join('');
+}
+function renderArchitectureTargets(project) {
+  const select = document.getElementById('trafficTarget');
+  const targets = [{ value:'gateway', label:'Project gateway', url:project?.baseUrl || '' }];
+  for (const service of project?.architecture?.containers || []) for (const port of service.exposed || []) targets.push({ value:`service:${service.name}:${port.hostPort}`, label:`${service.name} (${port.hostPort})`, url:`${location.protocol}//${project.baseUrl.replace(/^https?:\/\//, '').split('/')[0].split(':')[0]}:${port.hostPort}` });
+  select.innerHTML = targets.map(target => `<option value="${target.value}" data-url="${target.url}">${target.label}</option>`).join('');
+  document.getElementById('targetNote').textContent = targets.length > 1 ? `${targets.length - 1} externally reachable service target(s) discovered.` : 'Only the project gateway is externally reachable.';
+}
+function getWorkflowWeights() { return currentMod.workflows.map(w => ({ key: w, weight: +document.getElementById('mix_' + w).value })); }
+document.getElementById('targetId').addEventListener('change', onTargetChange);
+document.getElementById('projectSelect').addEventListener('change', e => selectProject(e.target.value));
+document.getElementById('trafficTarget').addEventListener('change', e => { const url = e.target.selectedOptions[0]?.dataset.url; if (url) document.getElementById('baseUrlOverride').value = url; });
+async function connectAws() {
+  const msg = document.getElementById('connectMsg'); msg.textContent = 'Connecting...';
+  const body = { projectId: document.getElementById('projectId').value, targetId: document.getElementById('targetId').value, host: document.getElementById('host').value, sshUser: document.getElementById('sshUser').value, keyPath: document.getElementById('keyPath').value };
+  try { const j = await fetch('/api/discover', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }).then(r => r.json()); if (j.error) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = `Connected. Base URL: ${j.baseUrl}\nReachable: ${j.reachable.reachable}`; document.getElementById('discoveryDetails').textContent = j.remoteDiscovery || ''; await loadTargets(); } catch (err) { msg.textContent = 'Request failed: ' + err.message; }
+}
+async function probeEndpoints() {
+  const msg = document.getElementById('connectMsg');
+  msg.textContent = 'Testing endpoints...';
+  const j = await fetch('/api/probe', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ projectId:document.getElementById('projectId').value, baseUrl:document.getElementById('baseUrlOverride').value.trim() || undefined, paths:document.getElementById('probePaths').value }) }).then(r => r.json());
+  if (j.error) { msg.textContent = 'Error: ' + j.error; return; }
+  document.getElementById('discoveryDetails').textContent = j.results.map(r => `${r.path} -> ${r.error || r.statusCode}${r.location ? ` (${r.location})` : ''}${r.contentType ? ` ${r.contentType}` : ''}`).join('\n');
+  renderEndpointChoices(j.endpoints || []);
+  msg.textContent = `Tested ${j.results.length} endpoints against ${j.baseUrl}`;
+}
+function renderEndpointChoices(endpoints) { document.getElementById('endpointChoices').innerHTML = endpoints.length ? endpoints.map(endpoint => `<label><input type="checkbox" class="endpointChoice" value="${endpoint.path}" checked> ${endpoint.path} (${endpoint.statusCode})</label>`).join('') : 'No successful endpoints confirmed.'; }
+function getEndpointPaths() { return [...document.querySelectorAll('.endpointChoice:checked')].map(input => input.value); }
+async function startEngine() { const selectedTarget = document.getElementById('trafficTarget').selectedOptions[0]; const targetId = document.getElementById('targetId').value; const body = { projectId:document.getElementById('projectId').value, targetId, targetUrl:selectedTarget?.dataset.url || undefined, endpointPaths:getEndpointPaths(), useDiscoveredEndpoints:targetId === 'vertikal', profile:document.getElementById('profile').value, users:+document.getElementById('users').value, durationSec:+document.getElementById('durationSec').value || null, authUsername:document.getElementById('authUsername').value || undefined, authPassword:document.getElementById('authPassword').value || undefined, workflowWeights:getWorkflowWeights() }; const j = await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()); if(j.error) alert(j.error); }
+function renderStats(s) {
+  if (!s) return;
+  projectStats[s.projectId || document.getElementById('projectId').value] = s;
+  const anyRunning = Object.values(projectStats).some(project => project.running || (project.startedAt && !project.stoppedAt));
+  const pill = document.getElementById('statusPill'); pill.textContent = anyRunning ? 'running' : 'stopped'; pill.className = 'pill ' + (anyRunning ? 'running' : 'stopped');
+  renderProjectStats();
+}
+function renderProjectStats() {
+  const projects = Object.values(projectStats);
+  document.getElementById('projectStats').innerHTML = projects.length ? projects.map(s => `<div class="projectCard"><h4>${s.projectId || 'project'} <span class="pill ${s.running || (s.startedAt && !s.stoppedAt) ? 'running' : 'stopped'}">${s.running || (s.startedAt && !s.stoppedAt) ? 'running' : 'stopped'}</span></h4><div class="stat"><span>Users</span><b>${s.currentUsers ?? 0}</b></div><div class="stat"><span>Requests</span><b>${s.requestsCompleted ?? 0} / ${s.requestsAttempted ?? 0}</b></div><div class="stat"><span>Successful</span><b>${s.requestsSuccessful ?? 0}</b></div><div class="stat"><span>Failed</span><b>${s.requestsFailed ?? 0}</b></div><div class="stat"><span>Rate</span><b>${s.currentRate ?? 0}/s</b></div><div class="stat"><span>HTTP statuses</span><b>${Object.entries(s.statusCodes || {}).map(([code,count]) => `${code}:${count}`).join(' ') || '-'}</b></div><div class="stat"><span>Elapsed</span><b>${s.elapsedSec ?? 0}s</b></div></div>`).join('') : '<div class="note">No project traffic has started.</div>';
+}
+function connectWS() { const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'); ws.onmessage = ev => { const msg = JSON.parse(ev.data); if(msg.type === 'stats') renderStats(msg.data); }; ws.onclose = () => setTimeout(connectWS, 1500); }
+loadTargets(); connectWS(); setInterval(() => { loadTargets(); loadProjects(); }, 15000);
+</script>
+</body>
+</html>

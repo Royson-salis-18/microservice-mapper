@@ -18,7 +18,6 @@ export class ExperimentManager {
   public experimentStore: ExperimentStore;
 
   private activeExperiments: Map<string, string> = new Map(); // targetId -> experimentId
-  private safetyLimits: Map<string, SafetyLimits> = new Map();
   private monitorInterval: NodeJS.Timeout | null = null;
 
   constructor(graphStore: GraphStore, metricStore: MetricStore, trafficController: TrafficController) {
@@ -34,7 +33,7 @@ export class ExperimentManager {
     workloadSource: 'EXTERNAL' | 'USER_SIM', 
     profile: string, 
     config: { mode: string; rate?: number; concurrency?: number; durationSeconds?: number },
-    limits: SafetyLimits = { cpuThreshold: 90, memoryThreshold: 90, errorRateThreshold: 0.1, latencyThreshold: 2000 }
+    _limits?: SafetyLimits // accepted for API compatibility; no longer enforced, see checkSafetyLimits()
   ): string {
     const experimentId = crypto.randomUUID();
     
@@ -67,7 +66,6 @@ export class ExperimentManager {
 
     this.experimentStore.createRecord(record);
     this.activeExperiments.set(targetId, experimentId);
-    this.safetyLimits.set(targetId, limits);
 
     return experimentId;
   }
@@ -85,7 +83,6 @@ export class ExperimentManager {
     });
 
     this.activeExperiments.delete(targetId);
-    this.safetyLimits.delete(targetId);
   }
 
   public getActiveExperiment(targetId: string): ExperimentRecord | undefined {
@@ -116,55 +113,32 @@ export class ExperimentManager {
     this.monitorInterval = setInterval(() => this.checkSafetyLimits(), 2000);
   }
 
+  // Tracks peak CPU/memory. Does NOT abort on high usage/error rate anymore —
+  // these are failure-injection experiments, services are supposed to break.
   private checkSafetyLimits() {
     for (const [targetId, expId] of this.activeExperiments.entries()) {
-      const limits = this.safetyLimits.get(targetId);
-      if (!limits) continue;
-
       const record = this.experimentStore.getRecord(expId);
       if (!record) continue;
 
       let maxCpu = 0;
       let maxMem = 0;
-      let maxErr = 0;
-      let maxLat = 0;
 
       const graph = this.graphStore.getGraph();
       const nodes = graph.nodes.filter(n => (n as any).targetId === targetId || n.id.startsWith(targetId));
-      
-      let safetyTriggered = false;
-      let reasonStr = '';
 
       for (const node of nodes) {
         const metrics = (node as any).metrics;
         if (metrics) {
           if (metrics.cpu > maxCpu) maxCpu = metrics.cpu;
           if (metrics.memoryPercent > maxMem) maxMem = metrics.memoryPercent;
-          
-          if (metrics.cpu >= limits.cpuThreshold) {
-            safetyTriggered = true;
-            reasonStr = `CPU limit exceeded on ${node.id} (${metrics.cpu.toFixed(1)}% >= ${limits.cpuThreshold}%)`;
-            break;
-          }
-          if (metrics.memoryPercent >= limits.memoryThreshold) {
-            safetyTriggered = true;
-            reasonStr = `Memory limit exceeded on ${node.id} (${metrics.memoryPercent.toFixed(1)}% >= ${limits.memoryThreshold}%)`;
-            break;
-          }
         }
       }
 
-      if (safetyTriggered) {
-        console.warn(`[ExperimentManager] ABORTING EXPERIMENT ${expId} ON ${targetId} DUE TO SAFETY LIMIT: ${reasonStr}`);
-        this.stopExperiment(targetId, 'ABORTED_SAFETY');
-      } else {
-        // Update peak metrics
-        const peaks = { ...record.peakObservedMetrics };
-        if (maxCpu > peaks.cpuPercent) peaks.cpuPercent = maxCpu;
-        if (maxMem > peaks.memoryPercent) peaks.memoryPercent = maxMem;
-        
-        this.experimentStore.updateRecord(expId, { peakObservedMetrics: peaks });
-      }
+      const peaks = { ...record.peakObservedMetrics };
+      if (maxCpu > peaks.cpuPercent) peaks.cpuPercent = maxCpu;
+      if (maxMem > peaks.memoryPercent) peaks.memoryPercent = maxMem;
+
+      this.experimentStore.updateRecord(expId, { peakObservedMetrics: peaks });
     }
   }
 }

@@ -8,10 +8,8 @@
     "server": "cd server && npm run start",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "install:all": "cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-generator && npm install",
-    "traffic:sockshop": "cd traffic-generator && npm run sockshop",
-    "traffic:vertikal": "cd traffic-generator && npm run vertikal",
-    "traffic:all": "cd traffic-generator && npm run all",
+    "install:all": "cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
+    "traffic-gen": "cd traffic-gen && npm start",
     "export-telemetry": "server/node_modules/.bin/tsx scripts/export_vectorized_telemetry.ts"
   },
   "devDependencies": {

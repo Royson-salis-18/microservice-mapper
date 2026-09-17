@@ -58,24 +58,28 @@ export class WebSocketManager {
         let spawnCmd = 'bash';
         let spawnArgs = ['--login'];
         
-        if (data.ip && data.key) {
+        if (data.targetId) {
           let sshUser = 'ubuntu';
-          // Try to look up configured SSH username from data/remote_config.json
+          let targetIp = data.ip;
+          let targetKey = data.key;
+
           try {
             const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
             if (fs.existsSync(configPath)) {
               const remoteConf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-              for (const [tId, tVal] of Object.entries<any>(remoteConf)) {
-                if (tVal.ec2PublicIp === data.ip || (data.targetId && tId === data.targetId)) {
-                  if (tVal.sshUsername) sshUser = tVal.sshUsername;
-                  break;
-                }
+              const tVal = remoteConf[data.targetId];
+              if (tVal) {
+                targetIp = tVal.ec2PublicIp || targetIp;
+                targetKey = tVal.sshKeyPath || targetKey;
+                sshUser = tVal.sshUsername || sshUser;
               }
             }
           } catch (e) {}
 
-          spawnCmd = 'ssh';
-          spawnArgs = ['-tt', '-F', '/dev/null', '-i', resolveKeyPath(data.key), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${data.ip}`];
+          if (targetIp && targetKey) {
+            spawnCmd = 'ssh';
+            spawnArgs = ['-tt', '-F', '/dev/null', '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
+          }
         }
 
         session = spawn(spawnCmd, spawnArgs, {

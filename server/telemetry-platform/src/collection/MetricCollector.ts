@@ -9,6 +9,7 @@ export interface MetricCollectionResult {
   samples: ContainerMetricSample[];
   observedEdges: { source: string; target: string; protocol: 'tcp'; evidenceSources: string[] }[];
   interactions: InteractionEvent[];
+  connectionEvents: any[];
   warnings: string[];
 }
 
@@ -50,14 +51,10 @@ export class MetricCollector {
     const warnings: string[] = [];
     const now = new Date().toISOString();
 
-    const byContainerId = new Map(
-      services.filter((s) => s.containerId).map((s) => [s.containerId as string, s]),
-    );
-
     const statsRes = await this.connection.execute(REMOTE_COMMANDS.dockerStats());
     if (statsRes.error || statsRes.exitCode !== 0) {
       warnings.push(`docker stats failed: ${statsRes.error ?? statsRes.stderr}`);
-      return { samples: [], observedEdges: [], interactions: [], warnings };
+      return { samples: [], observedEdges: [], interactions: [], connectionEvents: [], warnings };
     }
 
     const { entries, skippedLines } = parseDockerStats(statsRes.stdout);
@@ -68,7 +65,7 @@ export class MetricCollector {
     const samples: ContainerMetricSample[] = [];
 
     for (const entry of entries) {
-      const service = byContainerId.get(entry.containerId);
+      const service = services.find(s => s.containerId && (s.containerId.startsWith(entry.containerId) || entry.containerId.startsWith(s.containerId)));
       const serviceId = service?.serviceId ?? `${this.targetId}:unknown-${entry.containerId.slice(0, 12)}`;
       if (!service) {
         warnings.push(
@@ -144,10 +141,10 @@ export class MetricCollector {
       }
     }
 
-    const observedEdges = await this.collectObservedEdges(services, warnings);
+    const { observedEdges, connectionEvents } = await this.collectObservedEdges(services, warnings);
     const interactions = await this.collectHttpInteractions(services, warnings);
 
-    return { samples, observedEdges, interactions, warnings };
+    return { samples, observedEdges, interactions, connectionEvents, warnings };
   }
 
   private async collectHttpInteractions(services: Service[], warnings: string[]): Promise<InteractionEvent[]> {
@@ -196,7 +193,10 @@ export class MetricCollector {
   async collectObservedEdges(
     services: Service[],
     warnings: string[] = [],
-  ): Promise<{ source: string; target: string; protocol: 'tcp'; evidenceSources: string[] }[]> {
+  ): Promise<{ 
+    observedEdges: { source: string; target: string; protocol: 'tcp'; evidenceSources: string[] }[],
+    connectionEvents: any[] 
+  }> {
     if (this.serviceByIp.size === 0) {
       for (const service of services) {
         if (!service.containerId) continue;
@@ -214,13 +214,23 @@ export class MetricCollector {
     }
 
     const observedEdges = new Map<string, { source: string; target: string; protocol: 'tcp'; evidenceSources: string[] }>();
+    const connectionEvents: any[] = [];
+    const timestamp = new Date().toISOString();
+
+    // count TIME_WAIT (06) too, not just ESTABLISHED (01) — it's the ~60s
+    // post-close linger state, so it catches fast request/response cycles
+    // that finish between two 1s snapshots and would otherwise never show
+    // up. We still record which state we actually saw, not a guess.
+    const RELEVANT_TCP_STATES: Record<string, string> = { '01': 'ESTABLISHED', '06': 'TIME_WAIT' };
+
     for (const service of services) {
       if (!service.containerId) continue;
       const tcpRes = await this.connection.execute(REMOTE_COMMANDS.dockerContainerTcp(service.containerId));
       if (tcpRes.exitCode !== 0 || tcpRes.error) continue;
       for (const line of tcpRes.stdout.split('\n')) {
         const parts = line.trim().split(/\s+/);
-        if (parts.length < 4 || parts[3] !== '01') continue;
+        const state = RELEVANT_TCP_STATES[parts[3]];
+        if (parts.length < 4 || !state) continue;
         const remoteIp = decodeProcNetIp(parts[2]?.split(':')[0] ?? '');
         const target = this.serviceByIp.get(remoteIp);
         if (!target || target.serviceId === service.serviceId) continue;
@@ -231,10 +241,26 @@ export class MetricCollector {
           protocol: 'tcp',
           evidenceSources: ['network-tcp'],
         });
+
+        // Parse destPort from the remote address hex (e.g. 0A000001:1F90)
+        const remotePortHex = parts[2]?.split(':')[1] ?? '0000';
+        const destPort = parseInt(remotePortHex, 16);
+
+        connectionEvents.push({
+          timestamp,
+          targetId: this.targetId,
+          sourceServiceId: service.serviceId,
+          destServiceId: target.serviceId,
+          destPort,
+          state
+        });
       }
     }
 
-    return Array.from(observedEdges.values());
+    return { 
+      observedEdges: Array.from(observedEdges.values()), 
+      connectionEvents 
+    };
   }
 }
 

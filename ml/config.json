@@ -1,0 +1,17 @@
+{
+  "collect_interval_sec": 10,
+  "min_samples_per_service": 10,
+  "min_training_samples": 30,
+  "contamination": 0.01,
+  "score_interval_sec": 10,
+  "persistence_windows": 3,
+  "n_estimators": 200,
+  "max_samples_fraction": 1,
+  "holdout_fraction": 0.2,
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ]
+}

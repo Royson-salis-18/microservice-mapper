@@ -1,0 +1,34 @@
+{
+  "sock-shop": {
+    "targetId": "sock-shop",
+    "baseUrl": "http://65.2.80.40",
+    "endpoints": [
+      {
+        "path": "/",
+        "statusCode": 200,
+        "location": null,
+        "contentType": "text/html; charset=UTF-8",
+        "enabled": true
+      }
+    ],
+    "architecture": null,
+    "settings": {
+      "profile": "HEAVY",
+      "endpointPaths": [
+        "/"
+      ]
+    }
+  },
+  "vertikal-prod": {
+    "targetId": "vertikal",
+    "baseUrl": "http://127.0.0.1:4510"
+  },
+  "death-star": {
+    "targetId": "death-star",
+    "baseUrl": "http://localhost:18080",
+    "settings": {
+      "profile": "MODERATE",
+      "endpointPaths": []
+    }
+  }
+}

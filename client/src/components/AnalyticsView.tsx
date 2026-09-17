@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, DependencyEdge } from '../types';
+import { pageRootStyle } from './ProjectSections';
 
 interface AnalyticsViewProps {
   nodes: Node[];
   edges: Edge[];
   selectedProject: string;
+  /** Rendered inside a per-project stack: the wrapper owns scroll + height. */
+  embedded?: boolean;
 }
 
-export function AnalyticsView({ nodes, edges, selectedProject }: AnalyticsViewProps) {
+export function AnalyticsView({ nodes, edges, selectedProject, embedded = false }: AnalyticsViewProps) {
   const [rcaData, setRcaData] = useState<any>(null);
 
   const serviceNodes = useMemo(() => {
@@ -94,17 +97,7 @@ export function AnalyticsView({ nodes, edges, selectedProject }: AnalyticsViewPr
   }, [serviceNodes, parsedEdges]);
 
   return (
-    <div style={{
-      flex: 1,
-      height: '100%',
-      overflowY: 'auto',
-      padding: '24px',
-      background: 'var(--color-bg-body)',
-      color: 'var(--color-text-main)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <div style={pageRootStyle(embedded)}>
       {/* Root Cause Analysis (RCA) Incident Alert Banner */}
       {rcaData?.incidentDetected && (
         <div style={{

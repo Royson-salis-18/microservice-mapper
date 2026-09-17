@@ -1,0 +1,29 @@
+{
+  "service_id": "death-star:url-shorten-service",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 1568,
+  "trained_at": "2026-09-17T02:14:51.074083+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -1.5894403848637495e-16,
+  "train_score_mean": -0.3494125426546563,
+  "train_score_max": 0.05131716029887157,
+  "holdout": {
+    "samples": 392,
+    "flag_rate": 0.0,
+    "mean_score": -0.3831813941609386,
+    "max_score": -0.3831813941609386,
+    "from": "2026-09-17T00:48:13.108749+00:00",
+    "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

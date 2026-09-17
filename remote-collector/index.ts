@@ -55,6 +55,23 @@ interface InteractionEvent {
   evidenceSource: string;
 }
 
+/**
+ * Raw TCP connection event. NOT a trace span — this is an SSH-sampled
+ * snapshot of active TCP connections between containers, captured by
+ * reading /proc/net/tcp. Known limitations:
+ * - Samples at collection-cycle granularity (POLLING_INTERVAL)
+ * - Short-lived connections between cycles will be missed
+ * - No per-request latency information
+ */
+interface ConnectionEvent {
+  timestamp: string;
+  targetId: string;
+  sourceServiceId: string;
+  destServiceId: string;
+  destPort: number;
+  state: string;
+}
+
 function determineType(name: string, image: string): string {
   const n = name.toLowerCase();
   const img = image.toLowerCase();
@@ -63,6 +80,35 @@ function determineType(name: string, image: string): string {
   if (n.includes('edge-router') || n.includes('gateway') || img.includes('traefik')) return 'gateway';
   if (n.includes('front-end') || n.includes('ui')) return 'frontend';
   return 'service';
+}
+
+/**
+ * Derive a canonical service name from container info.
+ * Priority: com.docker.compose.service label > name-based derivation.
+ * This fixes the "unknown-XXXX" naming bug where containers weren't
+ * matched to their proper service names.
+ */
+function deriveServiceName(containerInfo: any): string {
+  // 1. Best source: Docker Compose service label (always set by compose)
+  const labels = containerInfo.Labels || {};
+  const composeService = labels['com.docker.compose.service'];
+  if (composeService) return composeService;
+
+  // 2. Fallback: parse container name
+  const rawName = (containerInfo.Names?.[0] || '').replace(/^\//, '');
+  // Strip compose project prefix and replica suffix
+  // e.g. "sockshop_shipping_1" → "shipping", "docker-compose-front-end-1" → "front-end"
+  let name = rawName;
+  // Remove known prefixes
+  const projectLabel = labels['com.docker.compose.project'] || '';
+  if (projectLabel && name.startsWith(projectLabel)) {
+    name = name.substring(projectLabel.length).replace(/^[-_]/, '');
+  } else if (name.startsWith('docker-compose-')) {
+    name = name.replace('docker-compose-', '');
+  }
+  // Remove replica suffix: -1, _1, etc.
+  name = name.replace(/[-_]\d+$/, '');
+  return name || rawName;
 }
 
 function calculateCpuPercent(stats: any): number | undefined {
@@ -203,21 +249,25 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
           if (remoteIp && ipToNameMap.has(remoteIp)) {
             sourceName = ipToNameMap.get(remoteIp)!;
           } else if (cleanName.includes('gateway') || cleanName.includes('router') || cleanName.includes('front-end')) {
-            sourceName = cleanName;
-            if (path.startsWith('/auth')) targetName = 'auth';
-            else if (path.startsWith('/rest') || path.startsWith('/api')) targetName = 'rest';
-            else if (path.startsWith('/catalogue')) targetName = 'catalogue';
-            else if (path.startsWith('/cart')) targetName = 'carts';
-            else if (path.startsWith('/orders')) targetName = 'orders';
-            else if (path.startsWith('/user') || path.startsWith('/customers') || path.startsWith('/cards') || path.startsWith('/address')) targetName = 'user';
-            else if (path.startsWith('/shipping')) targetName = 'shipping';
+            sourceName = 'external';
           }
-          
+
+          // General target mapping: if the path contains a service name, use it
+          for (const [ip, name] of ipToNameMap.entries()) {
+            if (path.toLowerCase().includes(name.toLowerCase())) {
+              targetName = name;
+              break;
+            }
+          }
+
           if (targetName === cleanName && sourceName === 'external') {
             sourceName = 'unknown-upstream';
           }
 
-          // Only push if we established a clear source/target relationship or if it's external hitting entrypoint
+          // Extract Trace ID if present in the log line
+          const traceMatch = trimmed.match(/\[traceId=([a-f0-9]+)\]/i);
+          const traceId = traceMatch ? traceMatch[1] : undefined;
+
           if (targetName !== sourceName) {
             interactionEvents.push({
               timestamp: ts,
@@ -229,7 +279,8 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
               statusCode: status,
               latency,
               bytesSent: bytes,
-              evidenceSource: 'http-log'
+              evidenceSource: 'http-log',
+              traceId: traceId
             });
           }
         }
@@ -247,18 +298,18 @@ async function discoverAndCollect() {
   const metrics: { nodeId: string; snapshot: MetricSnapshot }[] = [];
   const ipToNameMap = new Map<string, string>();
   const activeContainerNames = new Set<string>();
+  // Map containerInfo.Id -> friendlyName for /proc/net/tcp parsing
+  const containerIdToName = new Map<string, string>();
 
   for (const containerInfo of containers) {
-    const name = containerInfo.Names[0].replace(/^\//, '');
     const image = containerInfo.Image;
     const isRunning = containerInfo.State === 'running';
     
-    let friendlyName = name;
-    if (name.startsWith('docker-compose-')) {
-      friendlyName = name.replace('docker-compose-', '').replace(/-\d+$/, '');
-    }
+    // Use compose label-based naming to fix the "unknown-XXXX" bug
+    const friendlyName = deriveServiceName(containerInfo);
     const id = `${TARGET_ID}:${friendlyName}`;
     activeContainerNames.add(friendlyName);
+    containerIdToName.set(containerInfo.Id, friendlyName);
 
     if (containerInfo.NetworkSettings?.Networks) {
       for (const net of Object.values<any>(containerInfo.NetworkSettings.Networks)) {
@@ -304,7 +355,7 @@ async function discoverAndCollect() {
     nodes.push({
       id,
       name: friendlyName,
-      type: determineType(name, image),
+      type: determineType(friendlyName, image),
       project: TARGET_ID,
       status,
       metadata: {
@@ -329,15 +380,14 @@ async function discoverAndCollect() {
   const edgesMap = new Map<string, DependencyEdge>();
 
   // 2. Discover OBSERVED connections via /proc/net/tcp inspection
+  // Also collect raw connection events for the Traces feature
   const observedPairs = new Set<string>();
+  const connectionEvents: ConnectionEvent[] = [];
+  const now = new Date().toISOString();
 
   for (const containerInfo of containers) {
     if (containerInfo.State !== 'running') continue;
-    const name = containerInfo.Names[0].replace(/^\//, '');
-    let friendlyName = name;
-    if (name.startsWith('docker-compose-')) {
-      friendlyName = name.replace('docker-compose-', '').replace(/-\d+$/, '');
-    }
+    const friendlyName = containerIdToName.get(containerInfo.Id) || deriveServiceName(containerInfo);
 
     try {
       const container = docker.getContainer(containerInfo.Id);
@@ -357,12 +407,23 @@ async function discoverAndCollect() {
       const lines = output.split('\n');
       for (const line of lines) {
         const parts = line.trim().split(/\s+/);
-        if (parts.length >= 4 && parts[3] === '01') { // ESTABLISHED TCP
+        if (parts.length >= 4 && parts[3] === '01') { // ESTABLISHED TCP (state 01)
           const remoteHexIp = parts[2].split(':')[0];
+          const remoteHexPort = parts[2].split(':')[1];
           const remoteIp = hexToIp(remoteHexIp);
+          const remotePort = remoteHexPort ? parseInt(remoteHexPort, 16) : 0;
           const targetName = ipToNameMap.get(remoteIp);
           if (targetName && targetName !== friendlyName) {
             observedPairs.add(`${friendlyName}->${targetName}`);
+            // Emit raw connection event for the Traces feature
+            connectionEvents.push({
+              timestamp: now,
+              targetId: TARGET_ID,
+              sourceServiceId: `${TARGET_ID}:${friendlyName}`,
+              destServiceId: `${TARGET_ID}:${targetName}`,
+              destPort: remotePort,
+              state: 'ESTABLISHED',
+            });
           }
         }
       }
@@ -391,7 +452,7 @@ async function discoverAndCollect() {
   // 3. Extract REAL HTTP interaction log events
   const realInteractionEvents = await extractLogInteractions(ipToNameMap);
 
-  return { nodes, edges: Array.from(edgesMap.values()), metrics, events: realInteractionEvents };
+  return { nodes, edges: Array.from(edgesMap.values()), metrics, events: realInteractionEvents, connectionEvents };
 }
 
 async function start() {
@@ -417,19 +478,20 @@ async function start() {
         hostIp: PUBLIC_IP,
         timestamp: new Date().toISOString(),
         source: 'remote-collector',
-        capabilities: ['metrics', 'docker-discovery', 'network-tcp-inference', 'http-logs'],
+        capabilities: ['metrics', 'docker-discovery', 'network-tcp-inference', 'http-logs', 'connection-events'],
         events: {
           nodes: payload.nodes,
           edges: payload.edges,
           metrics: payload.metrics,
-          interactions: payload.events
+          interactions: payload.events,
+          connectionEvents: payload.connectionEvents
         }
       };
       
       await axios.post(`${MAPPER_URL}/api/ingest`, body, {
         headers: { Authorization: `Bearer ${INGEST_TOKEN}` }
       });
-      console.log(`Ingested ${payload.nodes.length} nodes, ${payload.edges.length} edges, ${payload.events.length} interaction events`);
+      console.log(`Ingested ${payload.nodes.length} nodes, ${payload.edges.length} edges, ${payload.events.length} interactions, ${payload.connectionEvents.length} connection events`);
       
       retryCount = 0;
       setTimeout(loop, POLLING_INTERVAL);

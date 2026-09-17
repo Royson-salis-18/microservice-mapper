@@ -1,0 +1,29 @@
+{
+  "service_id": "death-star:user-timeline-mongodb",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 1568,
+  "trained_at": "2026-09-17T02:14:52.341016+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -5.199833619240479e-16,
+  "train_score_mean": -0.3397668623168395,
+  "train_score_max": 0.060654020948905374,
+  "holdout": {
+    "samples": 392,
+    "flag_rate": 0.0,
+    "mean_score": -0.3734603702255882,
+    "max_score": -0.37346037022558815,
+    "from": "2026-09-17T00:48:13.108749+00:00",
+    "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

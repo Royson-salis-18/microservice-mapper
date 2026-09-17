@@ -7,6 +7,7 @@ import { MetricStore } from '../telemetry/MetricStore.js';
 import { config } from '../config.js';
 import { EndpointRegistry } from '../registry/EndpointRegistry.js';
 import { EndpointDiscoveryEngine } from '../discovery/EndpointDiscoveryEngine.js';
+import { TraceStore } from '../traces/TraceStore.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,6 +22,7 @@ export class GraphStore {
   public metricStore = new MetricStore();
   public endpointRegistry = new EndpointRegistry();
   public discoveryEngine: EndpointDiscoveryEngine;
+  private traceStores = new Map<string, TraceStore>();
   private storagePath: string;
   private saveTimeout: NodeJS.Timeout | null = null;
   private wsManager?: WebSocketManager;
@@ -51,6 +53,7 @@ export class GraphStore {
     
     setInterval(() => {
       this.checkTargetStaleness();
+      this.pruneStaleNodes();
       this.pingTargetEndpoints();
       this.updateTargetDiscoverySummaries();
       // Broadcast current graph state so UI stays in sync with status changes
@@ -89,8 +92,8 @@ export class GraphStore {
       endpointStatus: hostIp && hostIp !== 'unknown' ? 'REACHABLE' : 'UNCONFIGURED',
       capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
     });
-    // Trigger discovery immediately
-    this.discoveryEngine.discoverTarget(targetId).then(() => this.updateTargetDiscoverySummaries());
+    // Trigger discovery immediately (use refresh to ensure new config is picked up)
+    this.discoveryEngine.refreshTarget(targetId).then(() => this.updateTargetDiscoverySummaries());
   }
 
   private loadFromDisk(): void {
@@ -104,9 +107,16 @@ export class GraphStore {
           }
         }
         if (data.nodesByTarget && typeof data.nodesByTarget === 'object') {
+          const loadTimeIso = new Date().toISOString();
           for (const [tId, nodesObj] of Object.entries(data.nodesByTarget)) {
             const nodesMap = this.getTargetNodes(tId);
             for (const [nId, node] of Object.entries(nodesObj as Record<string, ServiceNode>)) {
+              // Nodes saved before `lastSeen` existed (or from a target that
+              // isn't reachable this run) get a load-time baseline so
+              // pruneStaleNodes() gives them a full grace window to be
+              // reconfirmed by a real discovery/telemetry cycle instead of
+              // being treated as already-infinitely-stale on the first tick.
+              if (!node.lastSeen) node.lastSeen = loadTimeIso;
               nodesMap.set(nId, node);
             }
           }
@@ -209,6 +219,47 @@ export class GraphStore {
     }
   }
 
+  // A container that restarts onto a new container id, or a one-off
+  // discovery/metric match failure, used to leave a permanent ghost node
+  // behind (e.g. "unknown-<hash>") since nodes were only ever upserted,
+  // never removed. Anything not touched by a real discovery or telemetry
+  // update in a while is almost certainly gone — drop it, and any edge
+  // that pointed at it, rather than let the graph accumulate forever.
+  // Deliberately longer than checkTargetStaleness()'s 5min OFFLINE
+  // threshold: on these resource-constrained EC2 hosts, SSH channel
+  // exhaustion has been observed to black out ALL commands (discovery and
+  // telemetry alike) for several minutes at a stretch. Pruning on the same
+  // 5min clock as OFFLINE would wipe every node the moment a target goes
+  // OFFLINE, even though it typically recovers on its own — so give it
+  // extra room to reconnect and reconfirm before treating nodes as gone.
+  private static readonly STALE_NODE_MS = 900_000;
+
+  private pruneStaleNodes() {
+    const now = Date.now();
+    for (const [targetId, nodesMap] of this.nodesByTarget.entries()) {
+      const removedIds = new Set<string>();
+      for (const [id, node] of nodesMap.entries()) {
+        const age = node.lastSeen ? now - new Date(node.lastSeen).getTime() : Infinity;
+        if (age > GraphStore.STALE_NODE_MS) {
+          nodesMap.delete(id);
+          removedIds.add(id);
+        }
+      }
+      if (removedIds.size === 0) continue;
+
+      const edgesMap = this.edgesByTarget.get(targetId);
+      if (edgesMap) {
+        for (const [edgeId, edge] of edgesMap.entries()) {
+          if (removedIds.has(edge.source) || removedIds.has(edge.target)) {
+            edgesMap.delete(edgeId);
+          }
+        }
+      }
+      console.log(`[GRAPH] target=${targetId} pruned ${removedIds.size} stale node(s): ${[...removedIds].join(', ')}`);
+      this.scheduleSave();
+    }
+  }
+
   private updateTargetDiscoverySummaries() {
     for (const target of this.targets.values()) {
       this.endpointRegistry.touchDiscovery(target.targetId);
@@ -265,9 +316,11 @@ export class GraphStore {
       const status = svc.state === 'running' ? 'healthy' : 'unknown';
       const nodeType = ['gateway', 'service', 'database', 'queue', 'frontend', 'infrastructure', 'external'].includes(svc.type) ? svc.type : 'service';
       
+      const nowIso = new Date().toISOString();
       if (existing) {
         existing.status = status as any;
         existing.type = nodeType as any;
+        existing.lastSeen = nowIso;
         existing.metadata = {
           ...existing.metadata,
           containerId: svc.containerId,
@@ -281,6 +334,7 @@ export class GraphStore {
           type: nodeType as any,
           project: targetId,
           status: status as any,
+          lastSeen: nowIso,
           metadata: {
             containerId: svc.containerId,
             image: svc.image,
@@ -317,6 +371,8 @@ export class GraphStore {
       }
     }
 
+    console.log(`[GRAPH] target=${targetId} services=${nodesMap.size} edges=${edgesMap.size}`);
+
     this.scheduleSave();
     if (this.wsManager) {
       this.wsManager.broadcast('graph-update', this.getGraph());
@@ -325,16 +381,44 @@ export class GraphStore {
 
 
 
+  private anomalyScoresCache: { mtimeMs: number; data: Record<string, any> } | null = null;
+
+  /** Reads ml/score.py's output file, re-reading only when it changes on
+   * disk. Missing file (no models trained yet) is not an error — just no
+   * scores to attach. */
+  private readAnomalyScores(): Record<string, any> {
+    const scoresPath = path.resolve(process.cwd(), '..', 'ml', 'data', 'latest_scores.json');
+    try {
+      const stat = fs.statSync(scoresPath);
+      if (this.anomalyScoresCache?.mtimeMs === stat.mtimeMs) {
+        return this.anomalyScoresCache.data;
+      }
+      const data = JSON.parse(fs.readFileSync(scoresPath, 'utf8'));
+      this.anomalyScoresCache = { mtimeMs: stat.mtimeMs, data };
+      return data;
+    } catch {
+      return {};
+    }
+  }
+
   getGraph(): { nodes: ServiceNode[], edges: DependencyEdge[], targets: Target[] } {
     const allNodes: ServiceNode[] = [];
     const allEdges: DependencyEdge[] = [];
-    
+
     for (const nodesMap of this.nodesByTarget.values()) {
       allNodes.push(...Array.from(nodesMap.values()));
     }
-    
+
     for (const edgesMap of this.edgesByTarget.values()) {
       allEdges.push(...Array.from(edgesMap.values()));
+    }
+
+    const scores = this.readAnomalyScores();
+    for (const node of allNodes) {
+      const s = scores[node.id];
+      if (s) {
+        node.analytics = { ...node.analytics, anomalyScore: s.anomaly_score, anomalyPersistent: s.persistent };
+      }
     }
 
     return { nodes: allNodes, edges: allEdges, targets: Array.from(this.targets.values()) };
@@ -379,14 +463,17 @@ export class GraphStore {
     };
 
     if (events.nodes) {
+      const nowIso = new Date().toISOString();
       for (const node of events.nodes) {
         if (!node.project) node.project = targetId;
         node.id = normalizeId(node.id);
         const existing = nodesMap.get(node.id);
         if (existing) {
           existing.status = node.status;
+          existing.lastSeen = nowIso;
           if (node.metadata) existing.metadata = { ...existing.metadata, ...node.metadata };
         } else {
+          node.lastSeen = nowIso;
           nodesMap.set(node.id, node);
         }
       }
@@ -503,17 +590,28 @@ export class GraphStore {
         }
       }
     }
-    
-    for (const edge of edgesMap.values()) {
-      const srcNode = nodesMap.get(edge.source) || Array.from(nodesMap.values()).find(n => n.id === edge.source || n.id.endsWith(`-${edge.source}`));
-      const tgtNode = nodesMap.get(edge.target) || Array.from(nodesMap.values()).find(n => n.id === edge.target || n.id.endsWith(`-${edge.target}`));
 
-      if (srcNode?.status === 'critical' || tgtNode?.status === 'critical') {
-        edge.status = 'failed';
-      } else if (srcNode?.status === 'degraded' || tgtNode?.status === 'degraded') {
-        edge.status = 'degraded';
+    // Ingest raw connection events for the Traces feature
+    if (events.connectionEvents && events.connectionEvents.length > 0) {
+      const traceStore = this.getTraceStore(targetId);
+      traceStore.saveEvents(events.connectionEvents).catch(err => {
+        console.error(`[TRACES] Failed to save connection events for ${targetId}:`, err);
+      });
+      // Broadcast connection events to WebSocket for real-time Traces UI
+      if (this.wsManager) {
+        this.wsManager.broadcast('trace-events', {
+          targetId,
+          events: events.connectionEvents
+        });
       }
-
+      console.log(`[TRACES] target=${targetId} connectionEvents=${events.connectionEvents.length}`);
+    }
+    
+    // Edge status/color comes only from evidence measured on that edge
+    // (below) — an overloaded node shows its own stress on its own card,
+    // it doesn't get smeared onto every edge touching it, since we have no
+    // actual latency/error data for most of those edges.
+    for (const edge of edgesMap.values()) {
       const edgeMetrics = this.metricStore.getAggregatedEdgeMetrics(edge.source, edge.target);
       if (edgeMetrics && edgeMetrics.requestCount > 0) {
         edge.observed = true;
@@ -523,9 +621,15 @@ export class GraphStore {
         edge.metrics = edgeMetrics;
         if (edgeMetrics.errorRate > 0.05) {
           edge.status = 'failed';
-        } else if (edgeMetrics.latency !== null && edgeMetrics.latency > 500 && edge.status !== 'failed') {
+        } else if (edgeMetrics.latency !== null && edgeMetrics.latency > 500) {
           edge.status = 'degraded';
+        } else {
+          edge.status = 'active';
         }
+      } else if (edge.status === 'degraded' || edge.status === 'failed') {
+        // no current edge-level evidence to justify this — don't leave a
+        // stale bad status sitting there forever
+        edge.status = edge.observed ? 'active' : 'unknown';
       }
     }
 
@@ -534,5 +638,15 @@ export class GraphStore {
     if (this.wsManager) {
       this.wsManager.broadcast('graph-update', this.getGraph());
     }
+  }
+
+  /** Get or create a TraceStore for a target. Used by TraceRouter and ingestRemote. */
+  getTraceStore(targetId: string): TraceStore {
+    let store = this.traceStores.get(targetId);
+    if (!store) {
+      store = new TraceStore(targetId);
+      this.traceStores.set(targetId, store);
+    }
+    return store;
   }
 }

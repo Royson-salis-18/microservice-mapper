@@ -1,11 +1,13 @@
-import { 
-  Box, 
-  Network, 
-  Activity, 
-  GitMerge, 
-  BarChart2, 
-  AlertTriangle, 
-  FlaskConical 
+import {
+  Box,
+  Network,
+  Activity,
+  GitMerge,
+  BarChart2,
+  AlertTriangle,
+  FlaskConical,
+  Zap,
+  Brain
 } from 'lucide-react';
 import type { GlobalStatus } from '../types';
 
@@ -23,6 +25,8 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
     { id: 'Telemetry', icon: Activity, label: 'Telemetry' },
     { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
     { id: 'Analytics', icon: BarChart2, label: 'Analytics' },
+    { id: 'ML PIPELINE', icon: Brain, label: 'ML Pipeline' },
+    { id: 'TRACES', icon: Zap, label: 'Traces' },
     { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
     { id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' },
   ];

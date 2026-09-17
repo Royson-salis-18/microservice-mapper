@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { Incident } from '../types';
+import { pageRootStyle } from './ProjectSections';
 
 interface RCAViewProps {
   nodes: Node[];
   edges: Edge[];
   selectedProject: string;
+  /** Rendered inside a per-project stack: the wrapper owns scroll + height. */
+  embedded?: boolean;
 }
 
-export function RCAView({ nodes, edges: _edges, selectedProject }: RCAViewProps) {
+export function RCAView({ nodes, edges: _edges, selectedProject, embedded = false }: RCAViewProps) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
 
@@ -43,17 +46,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject }: RCAViewProps)
   };
 
   return (
-    <div style={{
-      flex: 1,
-      height: '100%',
-      overflowY: 'auto',
-      padding: '24px',
-      background: 'var(--color-bg-body)',
-      color: 'var(--color-text-main)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <div style={pageRootStyle(embedded)}>
       {/* Top Banner: Incident Status & Target Isolation */}
       {activeIncident ? (
         <div style={{

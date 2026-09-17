@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microservice Mapper | Comprehensive Technical Specification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-sidebar: #1e293b;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+            --code-bg: #020617;
+            --code-text: #cbd5e1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background-color: var(--bg-main);
+            margin: 0;
+            display: flex;
+            scroll-behavior: smooth;
+        }
+
+        /* Sidebar */
+        nav {
+            width: 320px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        nav h2 {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        nav h2::before {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding-left: 0.5rem;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li {
+            margin-bottom: 0.25rem;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            display: block;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        nav ul li a:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+
+        nav ul li a.active {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 320px;
+            padding: 4rem 5rem;
+            max-width: 1100px;
+            width: calc(100% - 320px);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-top: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.6rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-light);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: var(--text-primary);
+            border-radius: 0 0.8rem 0.8rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 1.8rem;
+            border-radius: 1rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2rem 0;
+            background: var(--bg-card);
+            border-radius: 0.8rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        table th, table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        table th {
+            background: #1e293b;
+            color: var(--text-primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+        }
+        .badge-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-orange { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        .diagram-box {
+            background: #020617;
+            color: #94a3b8;
+            padding: 2.5rem;
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 2.5rem 0;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            line-height: 1.4;
+        }
+
+        .math-block {
+            background: #1e293b;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 0.8rem;
+            margin: 1.5rem 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            text-align: center;
+            color: var(--text-primary);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        footer {
+            margin-top: 6rem;
+            padding: 4rem 0;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>MAPPER OS</h2>
+
+        <div class="section-title">Foundation</div>
+        <ul>
+            <li><a href="#vision">Project Vision & Scope</a></li>
+            <li><a href="#architecture-overview">Architecture Overview</a></li>
+            <li><a href="#core-design-principles">Core Design Principles</a></li>
+            <li><a href="#system-lifecycle">System Lifecycle</a></li>
+        </ul>
+
+        <div class="section-title">Server Core Deep Dive</div>
+        <ul>
+            <li><a href="#graph-store-detailed">GraphStore Specification</a></li>
+            <li><a href="#metric-store-detailed">MetricStore & Aggregation</a></li>
+            <li><a href="#endpoint-registry-detailed">Endpoint Registry</a></li>
+            <li><a href="#api-layer-detailed">API & Routing Layer</a></li>
+        </ul>
+
+        <div class="section-title">Intelligence & Analysis</div>
+        <ul>
+            <li><a href="#anomaly-detector-detailed">Anomaly Detection Logic</a></li>
+            <li><a href="#rca-engine-detailed">RCA Engine Scoring</a></li>
+            <li><a href="#incident-management-detailed">Incident Lifecycle</a></li>
+            <li><a href="#graph-analytics-detailed">Graph Analytics</a></li>
+        </ul>
+
+        <div class="section-title">Agentless Discovery</div>
+        <ul>
+            <li><a href="#discovery-engine-detailed">Discovery Engine Flow</a></li>
+            <li><a href="#target-agent-detailed">TargetAgent Lifecycle</a></li>
+            <li><a href="#telemetry-platform-detailed">Telemetry Platform (Lib)</a></li>
+        </ul>
+
+        <div class="section-title">Remote Collector</div>
+        <ul>
+            <li><a href="#collector-runtime-detailed">Collector Runtime</a></li>
+            <li><a href="#tcp-inference-detailed">TCP Inference Logic</a></li>
+            <li><a href="#log-parsing-detailed">HTTP Log Demuxing</a></li>
+        </ul>
+
+        <div class="section-title">Traffic & Experiments</div>
+        <ul>
+            <li><a href="#traffic-controller-detailed">Traffic Controller</a></li>
+            <li><a href="#experiment-manager-detailed">Experiment Logic</a></li>
+        </ul>
+
+        <div class="section-title">Data Specification</div>
+        <ul>
+            <li><a href="#model-service-node">ServiceNode Model</a></li>
+            <li><a href="#model-dependency-edge">DependencyEdge Model</a></li>
+            <li><a href="#model-telemetry-envelope">Telemetry Envelope</a></li>
+            <li><a href="#model-incident">Incident Model</a></li>
+        </ul>
+
+        <div class="section-title">API Specifications</div>
+        <ul>
+            <li><a href="#api-graph-spec">Graph API Spec</a></li>
+            <li><a href="#api-discovery-spec">Discovery API Spec</a></li>
+            <li><a href="#api-incident-spec">Incident API Spec</a></li>
+            <li><a href="#api-traffic-spec">Traffic API Spec</a></li>
+            <li><a href="#api-ingest-spec">Ingestion API Spec</a></li>
+        </ul>
+
+        <div class="section-title">Ops & Maintenance</div>
+        <ul>
+            <li><a href="#install-guide">Installation Guide</a></li>
+            <li><a href="#deploy-guide">Deployment Guide</a></li>
+            <li><a href="#troubleshoot-guide">Troubleshooting Matrix</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <h1>Microservice Mapper <span style="color: var(--text-muted); font-weight: 300;">| Technical Spec</span></h1>
+        <p>The definitive engineering authority for the autonomous topology discovery platform. This manual details the mathematical foundations, architectural constraints, and implementation specifics of the system.</p>
+
+        <div class="card">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <span class="badge badge-blue">v1.0.0</span><br>
+                    <strong style="color: var(--text-muted);">Classification:</strong> Internal Technical Reference<br>
+                    <strong style="color: var(--text-muted);">Updated:</strong> 2026-09-15
+                </div>
+                <div style="text-align: right;">
+                    <strong style="color: var(--text-muted);">Stack:</strong> TypeScript / Node.js / React<br>
+                    <strong style="color: var(--text-muted);">Infrastructure:</strong> AWS EC2 / Docker<br>
+                    <strong style="color: var(--text-muted);">Auth:</strong> Bearer Token (INGEST_TOKEN)
+                </div>
+            </div>
+        </div>
+
+        <h2 id="vision">1. Project Vision & Scope</h2>
+        <p>
+            Microservice Mapper is engineered to solve the <strong style="color: var(--accent);">"Visibility Gap"</strong>—the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).
+        </p>
+        <p>
+            Traditional observability relies on instrumentation (SDKs) or distributed tracing (OpenTelemetry). While powerful, these require significant developer effort to implement. Mapper takes a <strong style="color: var(--text-primary);">Zero-Touch</strong> approach, treating the network as the source of truth.
+        </p>
+        <div class="highlight-box">
+            <strong style="color: var(--accent);">Core Value Proposition:</strong> Move from "I think Service A calls Service B" to "I can prove Service A called Service B 4,500 times in the last 5 minutes with a P95 latency of 120ms."
+        </div>
+
+        <h2 id="architecture-overview">2. Architecture Overview</h2>
+        <p>The system is architected as a decoupled Hub-and-Spoke model, separating the Control Plane from the Data Plane to ensure scalability and security.</p>
+
+        <div class="diagram-box">
+[ TARGET INFRASTRUCTURE ]                [ MAPPER CONTROL PLANE ]
+┌──────────────────────────┐              ┌───────────────────────────────┐
+│  Target EC2 Instance     │              │   Express API Server         │
+│  ┌────────────────────┐  │              │   ┌───────────────────────┐   │
+│  │ Docker Runtime     │  │              │   │ GraphStore (In-Memory) │   │
+│  │ ├── Svc A (Node)   │  │              │   │ MetricStore (Buffers)  │   │
+│  │ ├── Svc B (Java)   │  │              │   │ RCA Engine (Analysis)  │   │
+│  │ └── Collector       │  │              │   └───────────────────────┘   │
+│  └──────────┬─────────┘  │              │               ▲               │
+│             │            │    HTTPS POST│               │               │
+│             └────────────┼─────────────┤               │               │
+└──────────────────────────┘  /api/ingest │               │               │
+                                          │               ▼               │
+                                          │   [ React / Three.js UI ]     │
+                                          │   ┌───────────────────────┐   │
+                                          │   │ 3D Topology Visualization│   │
+                                          │   │ Live Interaction Stream  │   │
+                                          │   └───────────────────────┘   │
+                                          └───────────────────────────────┘
+        </div>
+
+        <h3>2.1 Control Plane Componentry</h3>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">GraphStore:</strong> The central repository for all nodes and edges. Implements target isolation for multi-tenancy.</li>
+            <li><strong style="color: var(--text-primary);">DiscoveryEngine:</strong> Manages SSH tunnels to targets, executes Docker inspections, and orchestrates collector deployment.</li>
+            <li><strong style="color: var(--text-primary);">RCA Engine:</strong> A heuristic-based analysis tool that identifies root causes of failure by correlating anomalies across the graph.</li>
+            <li><strong style="color: var(--text-primary);">WebSocket Manager:</strong> Handles real-time broadcast of graph updates to UI clients.</li>
+        </ul>
+
+        <h3>2.2 Data Plane Componentry</h3>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Remote Collector:</strong> A Dockerized TypeScript process that reads <code style="color: #fbbf24;">/proc/net/tcp</code> and tails container logs.</li>
+            <li><strong style="color: var(--text-primary);">Telemetry Envelope:</strong> A standardized JSON schema used to transport nodes, metrics, and interaction events.</li>
+        </ul>
+
+        <h2 id="core-design-principles">3. Core Design Principles</h2>
+        <div class="card">
+            <h4 style="color: var(--accent);">3.1 Non-Invasiveness</h4>
+            <p>The system must not require modification of the target application code. It achieves this by utilizing "side-channel" telemetry (Logs, TCP tables, Docker Stats) rather than instrumenting code via SDKs.</p>
+
+            <h4 style="color: var(--accent);">3.2 Deterministic Identity</h4>
+            <p>To prevent "Node Drift," every entity is assigned a canonical ID based on the pattern <code style="color: #fbbf24;">targetId:serviceName</code>. This ensures that telemetry from multiple sources (TCP vs. Logs) correlates to the same logical node.</p>
+
+            <h4 style="color: var(--accent);">3.3 Eventual Consistency</h4>
+            <p>The system accepts that telemetry may arrive out of order or be delayed. The <code style="color: #fbbf24;">GraphStore</code> handles this by using <code style="color: #fbbf24;">lastSeen</code> timestamps and a staleness-based state machine (LIVE $\rightarrow$ STALE $\rightarrow$ OFFLINE).</p>
+        </div>
+
+        <h2 id="system-lifecycle">4. System Lifecycle</h2>
+        <p>The lifecycle of a target environment within the Mapper follows a strict state transition flow:</p>
+        <div class="diagram-box" style="color: var(--accent);">
+[ Unconfigured ] $\rightarrow$ [ Registered ] $\rightarrow$ [ Discovering ] $\rightarrow$ [ Live ] $\rightarrow$ [ Analysis ]
+      (via API)           (via Config)      (via SSH Scan)      (via Ingest)     (via RCA Loop)
+        </div>
+        <ol style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Registration:</strong> Target IP and SSH keys are added to <code style="color: #fbbf24;">remote_config.json</code>.</li>
+            <li><strong style="color: var(--text-primary);">Discovery:</strong> <code style="color: #fbbf24;">EndpointDiscoveryEngine</code> connects via SSH, identifies containers, and deploys the collector.</li>
+            <li><strong style="color: var(--text-primary);">Ingestion:</strong> The Collector starts POSTing telemetry to <code style="color: #fbbf24;">/api/ingest</code>.</li>
+            <li><strong style="color: var(--text-primary);">Visualization:</strong> The Server broadcasts the discovered graph to the UI.</li>
+            <li><strong style="color: var(--text-primary);">Analysis:</strong> The <code style="color: #fbbf24;">IncidentManager</code> begins monitoring metrics for anomalies.</li>
+        </ol>
+
+        <h2 id="graph-store-detailed">5. GraphStore Specification</h2>
+        <p>The <code style="color: #fbbf24;">GraphStore.ts</code> class is the most critical component of the server. It manages the in-memory representation of the entire microservice landscape.</p>
+
+        <h3>5.1 Internal State Maps</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Type</th>
+                    <th>Responsibility</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-blue">targets</span></td>
+                    <td><code style="color: #fbbf24;">Map&lt;string, Target&gt;</code></td>
+                    <td>Stores environment-level metadata (Host IP, Display Name, Status).</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">nodesByTarget</span></td>
+                    <td><code style="color: #fbbf24;">Map&lt;string, Map&lt;string, ServiceNode&gt;&gt;</code></td>
+                    <td>Nested map allowing O(1) lookup of a service within a specific project.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">edgesByTarget</span></td>
+                    <td><code style="color: #fbbf24;">Map&lt;string, Map&lt;string, DependencyEdge&gt;&gt;</code></td>
+                    <td>Tracks dependencies. Keys are formatted as <code style="color: #fbbf24;">source->target</code>.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.2 The Ingestion Algorithm</h3>
+        <p>When a <code style="color: #fbbf24;">TelemetryEnvelope</code> arrives, the following sequence is executed in <code style="color: #fbbf24;">ingestRemote()</code>:</p>
+        <pre>
+function ingestRemote(payload, clientIp) {
+  1. Normalize target identity and update target.lastSeen = now.
+  2. For each node in payload.events.nodes:
+     - Normalize ID to "target:service".
+     - Update node.status and metadata (containerId, image).
+  3. For each edge in payload.events.edges:
+     - Normalize source/target IDs.
+     - If edge.observed is true, update edge.lastSeen.
+  4. For each metric in payload.events.metrics:
+     - Push raw snapshot to MetricStore.
+     - Update current node.metrics (cpu, mem, network).
+  5. For each interaction in payload.events.interactions:
+     - Create/Update DependencyEdge.
+     - Mark edge.observed = true.
+     - Map route to EndpointRegistry and update request counts.
+  6. Broadcast 'graph-update' via WebSockets.
+}
+        </pre>
+
+        <h2 id="metric-store-detailed">6. MetricStore & Aggregation</h2>
+        <p>The <code style="color: #fbbf24;">MetricStore.ts</code> provides the temporal depth required for anomaly detection. It doesn't just store the current state, but a sliding window of history.</p>
+
+        <h3>6.1 Time-Series Buffering</h3>
+        <p>The store maintains a <code style="color: #fbbf24;">Map&lt;string, MetricSnapshot[]&gt;</code>. To prevent memory exhaustion, it implements a fixed-size buffer (<code style="color: #fbbf24;">maxSize</code>). When the buffer is full, the oldest sample is shifted out.</p>
+
+        <h3>6.2 Edge Metric Aggregation</h3>
+        <p>The <code style="color: #fbbf24;">getAggregatedEdgeMetrics()</code> method transforms raw interaction events into a statistical summary for a specific edge over a time window (default 5m):</p>
+        <div class="math-block">
+            <strong style="color: var(--accent);">Error Rate</strong> = $\frac{\text{Requests with StatusCode } \ge 400}{\text{Total Requests}}$ <br>
+            <strong style="color: var(--accent);">Avg Latency</strong> = $\frac{\sum \text{LatencyMs}}{\text{Total Requests}}$ <br>
+            <strong style="color: var(--accent);">Throughput</strong> = $\frac{\sum \text{BytesSent}}{\text{WindowSeconds}}$
+        </div>
+
+        <h2 id="endpoint-registry-detailed">7. Endpoint Registry</h2>
+        <p>The <code style="color: #fbbf24;">EndpointRegistry.ts</code> manages the catalog of "reachable" interfaces. It separates the physical identity (IP/Port) from the logical identity (Service Name).</p>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Service IDs:</strong> Deterministic names stripped of Docker Compose prefixes.</li>
+            <li><strong style="color: var(--text-primary);">Endpoint IDs:</strong> Unique identifiers for a specific protocol/port pair on a service.</li>
+            <li><strong style="color: var(--text-primary);">Route IDs:</strong> Unique identifiers for a specific HTTP Method + Path combination.</li>
+        </ul>
+
+        <h2 id="api-layer-detailed">8. API & Routing Layer</h2>
+        <p>The API is built using Express.js and organized in <code style="color: #fbbf24;">routes.ts</code>. It provides both synchronous REST endpoints for the UI and an asynchronous Ingestion endpoint for the collectors.</p>
+        <div class="highlight-box">
+            <strong style="color: var(--accent);">Security Note:</strong> The <code style="color: #fbbf24;">/api/ingest</code> endpoint is protected by a Bearer token (<code style="color: #fbbf24;">INGEST_TOKEN</code>) to prevent unauthorized telemetry injection.
+        </div>
+
+        <h2 id="anomaly-detector-detailed">9. Anomaly Detection Logic</h2>
+        <p>The <code style="color: #fbbf24;">AnomalyDetector.ts</code> uses a combination of static thresholds and dynamic statistical analysis to identify problematic nodes.</p>
+
+        <h3>9.1 Dynamic Z-Score Analysis</h3>
+        <p>Instead of relying on a hard-coded "CPU > 80%" rule, the system calculates a <strong style="color: var(--text-primary);">Z-Score</strong> based on the last 15 minutes of history.</p>
+        <div class="math-block">
+            $Z = \frac{x - \mu}{\sigma}$ <br>
+            Where $x$ is current value, $\mu$ is the moving average, and $\sigma$ is the standard deviation.
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>|Z| Value</th>
+                    <th>Severity</th>
+                    <th>Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>$2.5 \le Z < 3.0$</td>
+                    <td><span class="badge badge-orange">MEDIUM</span></td>
+                    <td>Statistically significant deviation. Monitor closely.</td>
+                </tr>
+                <tr>
+                    <td>$3.0 \le Z < 4.0$</td>
+                    <td><span class="badge badge-red">HIGH</span></td>
+                    <td>Strong anomaly. Likely impacting performance.</td>
+                </tr>
+                <tr>
+                    <td>$Z \ge 4.0$</td>
+                    <td><span class="badge badge-red">CRITICAL</span></td>
+                    <td>Extreme outlier. High probability of failure.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="rca-engine-detailed">10. RCA Engine Scoring</h2>
+        <p>The <code style="color: #fbbf24;">RCAEngine.ts</code> calculates a <strong style="color: var(--text-primary);">Root Cause Score</strong> for every failing node using a weighted evidence model.</p>
+
+        <h3>10.1 The Scoring Weights</h3>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Factor</th>
+                        <th>Weight</th>
+                        <th>Condition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Temporal Precedence</td>
+                        <td><strong style="color: var(--accent);">+0.30</strong></td>
+                        <td>Node was the first in the cluster to show an anomaly.</td>
+                    </tr>
+                    <tr>
+                        <td>Critical Status</td>
+                        <td><strong style="color: var(--accent);">+0.35</strong></td>
+                        <td>Container process exited or is in 'critical' state.</td>
+                    </tr>
+                    <tr>
+                        <td>Observed Dependency</td>
+                        <td><strong style="color: var(--accent);">+0.20</strong></td>
+                        <td>Runtime TCP traffic is confirmed between this node and others.</td>
+                    </tr>
+                    <tr>
+                        <td>Downstream Impact</td>
+                        <td><strong style="color: var(--accent);">+0.15</strong></td>
+                        <td>Multiple downstream dependencies are also failing.</td>
+                    </tr>
+                    <tr>
+                        <td>Anomaly Presence</td>
+                        <td><strong style="color: var(--accent);">+0.10</strong></td>
+                        <td>General metric anomaly (Z-score) detected.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="incident-management-detailed">11. Incident Lifecycle</h2>
+        <p>An <code style="color: #fbbf24;">Incident</code> is a first-class object that encapsulates a failure event. The <code style="color: #fbbf24;">IncidentManager` manages the following states:</p>
+        <ol style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Detection:</strong> <code style="color: #fbbf24;">AnomalyDetector</code> flags one or more nodes.</li>
+            <li><strong style="color: var(--text-primary);">Analysis:</strong> <code style="color: #fbbf24;">RCAEngine</code> calculates scores and identifies the primary root cause.</li>
+            <li><strong style="color: var(--text-primary);">Propagation:</strong> The system traces the "Blast Radius" by following edges from the root cause downwards.</li>
+            <li><strong style="color: var(--text-primary);">Remediation:</strong> The system generates a suggested command (e.g., <code style="color: #fbbf24;">docker start ...</code>) based on the root cause.</li>
+            <li><strong style="color: var(--text-primary);">Resolution:</strong> When anomalies disappear, the incident is marked as <code style="color: #fbbf24;">RESOLVED</code>.</li>
+        </ol>
+
+        <h2 id="graph-analytics-detailed">12. Graph Analytics</h2>
+        <p>The <code style="color: #fbbf24;">GraphAnalytics.ts</code> provides higher-order insights into the system topology.</p>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Node Degree:</strong> Sum of upstream and downstream connections. High degree nodes are "Critical Hubs."</li>
+            <li><strong style="color: var(--text-primary);">Top Consumers:</strong> Identifies services with the highest relative CPU/Memory usage.</li>
+            <li><strong style="color: var(--text-primary);">Connectivity Analysis:</strong> Finds the most connected nodes to identify single points of failure (SPOFs).</li>
+        </ul>
+
+        <h2 id="discovery-engine-detailed">13. Discovery Engine Flow</h2>
+        <p>The <code style="color: #fbbf24;">EndpointDiscoveryEngine` implements an automation flow to map remote target environments.</p>
+        <pre>
+Discovery Flow:
+1. Connect via SSH using .pem key.
+2. Run 'docker ps' to identify all containers.
+3. Run 'docker inspect' on each container:
+   - Extract image name, ports, and environment variables.
+   - Parse NetworkSettings to find internal IP addresses.
+4. Parse 'docker-compose.yml' (if available):
+   - Extract 'depends_on' blocks to build Declared Topology.
+5. Register discovered services and endpoints in EndpointRegistry.
+6. Deploy the 'remote-collector' container using 'docker run'.
+7. Establish continuous polling loop for runtime metrics.
+        </pre>
+
+        <h2 id="target-agent-detailed">14. TargetAgent Lifecycle</h2>
+        <p>The <code style="color: #fbbf24;">TargetAgent` manages the state of a single remote target, implementing auto-recovery for SSH drops.</p>
+        <div class="highlight-box">
+            <strong style="color: var(--accent);">Recovery Logic:</strong> If a polling cycle fails, the agent enters <code style="color: #fbbf24;">recovering = true</code>, closes the current connection, and schedules a reconnect attempt in 10 seconds.
+        </div>
+
+        <h2 id="telemetry-platform-detailed">15. Telemetry Platform (Lib)</h2>
+        <p>The <code style="color: #fbbf24;">telemetry-platform</code> is a shared library used by both the server and collector.</p>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">ConnectionManager:</strong> Handles the complexity of SSH PTYs and tunnel persistence.</li>
+            <li><strong style="color: var(--text-primary);">DiscoveryEngine:</strong> The logic for parsing Docker-specific metadata into a generic architecture model.</li>
+            <li><strong style="color: var(--text-primary);">MetricCollector:</strong> Low-level primitives for reading system stats.</li>
+        </ul>
+
+        <h2 id="collector-runtime-detailed">16. Collector Runtime</h2>
+        <p>The <code style="color: #fbbf24;">remote-collector` is a high-performance TypeScript process optimized for low overhead.</p>
+        <div class="card">
+            <h4 style="color: var(--accent);">Performance Characteristics:</h4>
+            <ul style="color: var(--text-secondary);">
+                <li><strong style="color: var(--text-primary);">Polling Interval:</strong> Default 5 seconds.</li>
+                <li><strong style="color: var(--text-primary);">Log Tailing:</strong> Uses a sliding window to avoid reading the entire log file on every cycle.</li>
+                <li><strong style="color: var(--text-primary);">Ingestion:</strong> Batches telemetry events into a single <code style="color: #fbbf24;">TelemetryEnvelope</code>.</li>
+            </ul>
+        </div>
+
+        <h2 id="tcp-inference-detailed">17. TCP Inference Logic</h2>
+        <p>The collector reads <code style="color: #fbbf24;">/proc/net/tcp</code> on the host to identify established connections.</p>
+        <pre>
+Algorithm:
+1. Read /proc/net/tcp.
+2. Filter for rows where state == '01' (TCP_ESTABLISHED).
+3. Parse the local and remote hex-encoded IP addresses.
+4. Use the local Docker network map to correlate these IPs to container names.
+5. If SourceIP=SvcA and TargetIP=SvcB, mark Edge(SvcA $\rightarrow$ SvcB) as 'observed'.
+        </pre>
+
+        <h2 id="log-parsing-detailed">18. HTTP Log Demuxing</h2>
+        <p>The collector implements a <strong style="color: var(--text-primary);">Demuxer</strong> to handle multiple log formats.</p>
+        <ol style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">JSON Parser:</strong> Parses structured logs and looks for <code style="color: #fbbf24;">upstream_addr</code>.</li>
+            <li><strong style="color: var(--text-primary);">Regex Parser:</strong> Applies a standard access log regex to infer target services via path analysis.</li>
+            <li><strong style="color: var(--text-primary);">Upstream Mapping:</strong> Resolves <code style="color: #fbbf24;">upstream_addr</code> back to a service name via internal IP map.</li>
+        </ol>
+
+        <h2 id="traffic-controller-detailed">19. Traffic Controller</h2>
+        <p>The <code style="color: #fbbf24;">TrafficController` manages external load generation via the <code style="color: #fbbf24;">traffic-generator</code> CLI.</p>
+        <pre>
+Traffic Execution:
+- Spawns 'node --import tsx src/cli.ts' as a child process.
+- Passes parameters: --target, --profile, --url, --mode.
+- Listens to stdout for '__STATS__' markers to update real-time experiment metrics.
+- Sends SIGTERM to the child process on stop.
+        </pre>
+
+        <h2 id="experiment-manager-detailed">20. Experiment Logic</h2>
+        <p>Experiments are formal test runs that define a workload and "success limits" (e.g., P95 latency < 200ms).</p>
+        <div class="highlight-box">
+            <strong style="color: var(--accent);">Experiment Lifecycle:</strong> START $\rightarrow$ MONITOR $\rightarrow$ EVALUATE $\rightarrow$ STOP.
+        </div>
+
+        <h2 id="model-service-node">21. Data Model: ServiceNode</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-blue">id</span></td>
+                    <td><code style="color: #fbbf24;">string</code></td>
+                    <td>Canonical ID (<code style="color: #fbbf24;">target:service</code>).</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">status</span></td>
+                    <td><code style="color: #fbbf24;">healthy | degraded | critical | unknown</code></td>
+                    <td>Current health state based on metrics/z-score.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">type</span></td>
+                    <td><code style="color: #fbbf24;">gateway | service | database | queue | frontend</code></td>
+                    <td>Logical role of the service.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">metrics</span></td>
+                    <td><code style="color: #fbbf24;">NodeMetrics | null</code></td>
+                    <td>Current snapshot of CPU/Mem/Net.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="model-dependency-edge">22. Data Model: DependencyEdge</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-blue">source</span></td>
+                    <td><code style="color: #fbbf24;">string</code></td>
+                    <td>Source Node ID.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">target</span></td>
+                    <td><code style="color: #fbbf24;">string</code></td>
+                    <td>Target Node ID.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">declared</span></td>
+                    <td><code style="color: #fbbf24;">boolean</code></td>
+                    <td>True if found in Compose/Config.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">observed</span></td>
+                    <td><code style="color: #fbbf24;">boolean</code></td>
+                    <td>True if seen in TCP/Logs.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">evidenceSources</span></td>
+                    <td><code style="color: #fbbf24;">string[]</code></td>
+                    <td>List of sources (<code style="color: #fbbf24;">network-tcp, http-log, compose-config</code>).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="model-telemetry-envelope">23. Data Model: Telemetry Envelope</h2>
+        <p>The envelope is the transport unit for all data from Collector $\rightarrow$ Server.</p>
+        <pre>
+interface TelemetryEnvelope {
+  schemaVersion: string;
+  targetId: string;
+  timestamp: string;
+  events: {
+    nodes: ServiceNode[];
+    metrics: { nodeId: string; snapshot: MetricSnapshot }[];
+    edges: DependencyEdge[];
+    interactions: InteractionEvent[];
+  }
+}
+        </pre>
+
+        <h2 id="model-incident">24. Data Model: Incident</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-blue">rootCauseServiceId</span></td>
+                    <td><code style="color: #fbbf24;">string | null</code></td>
+                    <td>The ID of the node determined to be the origin of failure.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">confidence</span></td>
+                    <td><code style="color: #fbbf24;">LOW | MEDIUM | HIGH | UNKNOWN</code></td>
+                    <td>Certainty of the RCA result.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">propagation</span></td>
+                    <td><code style="color: #fbbf24;">PropagationStep[]</code></td>
+                    <td>The sequence of failures cascading from the root.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">evidence</span></td>
+                    <td><code style="color: #fbbf24;">EvidenceItem[]</code></td>
+                    <td>The specific metrics/events that justify the incident.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="api-graph-spec">25. API Spec: Graph</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Params</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/graph</code></td>
+                    <td>GET</td>
+                    <td>None</td>
+                    <td><code style="color: #fbbf24;">{ nodes: [], edges: [], targets: [] }</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/nodes/:id</code></td>
+                    <td>GET</td>
+                    <td>id (path)</td>
+                    <td><code style="color: #fbbf24;">ServiceNode</code> object.</td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/nodes/:id/metrics</code></td>
+                    <td>GET</td>
+                    <td>range (query: '5m', '15m')</td>
+                    <td><code style="color: #fbbf24;">MetricSnapshot[]</code> history.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="api-discovery-spec">26. API Spec: Discovery</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Params</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/targets</code></td>
+                    <td>GET</td>
+                    <td>None</td>
+                    <td><code style="color: #fbbf24;">Target[]</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/targets/:id/discovery</code></td>
+                    <td>GET</td>
+                    <td>id (path)</td>
+                    <td><code style="color: #fbbf24;">TargetDiscoverySummary</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/discovery/refresh</code></td>
+                    <td>POST</td>
+                    <td><code style="color: #fbbf24;">{ targetId: string }</code></td>
+                    <td><code style="color: #fbbf24;">{ success: boolean }</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="api-incident-spec">27. API Spec: Incidents</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Params</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/incidents</code></td>
+                    <td>GET</td>
+                    <td>targetId (query)</td>
+                    <td><code style="color: #fbbf24;">Incident[]</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/incidents/:id</code></td>
+                    <td>GET</td>
+                    <td>id (path)</td>
+                    <td><code style="color: #fbbf24;">Incident</code> object.</td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/incidents/:id/propagation</code></td>
+                    <td>GET</td>
+                    <td>id (path)</td>
+                    <td><code style="color: #fbbf24;">PropagationStep[]</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="api-traffic-spec">28. API Spec: Traffic</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Params</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/traffic/start</code></td>
+                    <td>POST</td>
+                    <td><code style="color: #fbbf24;">{ targetId, profile, mode }</code></td>
+                    <td><code style="color: #fbbf24;">TargetTrafficStatus[]</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/traffic/stop</code></td>
+                    <td>POST</td>
+                    <td><code style="color: #fbbf24;">{ targetId }</code></td>
+                    <td><code style="color: #fbbf24;">TargetTrafficStatus</code></td>
+                </tr>
+                <tr>
+                    <td><code style="color: #fbbf24;">/api/experiments/start</code></td>
+                    <td>POST</td>
+                    <td><code style="color: #fbbf24;">{ targetId, profile, config }</code></td>
+                    <td><code style="color: #fbbf24;">{ experimentId, trafficStatus }</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="api-ingest-spec">29. API Spec: Ingestion</h2>
+        <div class="card">
+            <h3 style="margin-top: 0;"><span class="badge badge-blue">POST</span> /api/ingest</h3>
+            <p>The primary entry point for all remote telemetry.</p>
+            <h4 style="color: var(--text-primary);">Required Headers:</h4>
+            <pre>Authorization: Bearer &lt;INGEST_TOKEN&gt;</pre>
+            <h4 style="color: var(--text-primary);">Payload Specification:</h4>
+            <pre>
+{
+  "schemaVersion": "1.0",
+  "targetId": "sock-shop",
+  "timestamp": "2026-09-15T12:00:00Z",
+  "events": {
+    "nodes": [...],
+    "metrics": [...],
+    "edges": [...],
+    "interactions": [...]
+  }
+}
+            </pre>
+        </div>
+
+        <h2 id="install-guide">30. Installation Guide</h2>
+        <p>Follow these steps to set up a local development environment.</p>
+        <div class="card">
+            <ol style="color: var(--text-secondary);">
+                <li><strong style="color: var(--text-primary);">Clone Repository:</strong> <br><code style="color: #fbbf24;">git clone https://github.com/royson/microservice-mapper.git</code></li>
+                <li><strong style="color: var(--text-primary);">Full Dependency Install:</strong> <br><code style="color: #fbbf24;">npm run install:all</code></li>
+                <li><strong style="color: var(--text-primary);">Environment Setup:</strong> Create a <code style="color: #fbbf24;">.env</code> file in the root: <br><pre>PORT=3001\nMAPPER_PUBLIC_URL=http://localhost:3001\nINGEST_TOKEN=mapper-secret-token</pre></li>
+                <li><strong style="color: var(--text-primary);">Launch:</strong> <br><code style="color: #fbbf24;">npm run dev</code></li>
+            </ol>
+        </div>
+
+        <h2 id="deploy-guide">31. Deployment Guide</h2>
+        <p>For deploying to an AWS environment:</p>
+        <ul style="color: var(--text-secondary);">
+            <li><strong style="color: var(--text-primary);">Server Instance:</strong> Deploy to an EC2 instance with port 3001 open.</li>
+            <li><strong style="color: var(--text-primary);">Public URL:</strong> Set <code style="color: #fbbf24;">MAPPER_PUBLIC_URL</code> to the public IP of the server instance.</li>
+            <li><strong style="color: var(--text-primary);">Target Config:</strong> Add targets to <code style="color: #fbbf24;">data/remote_config.json</code> with the correct <code style="color: #fbbf24;">.pem</code> key path.</li>
+        </ul>
+
+        <h2 id="troubleshoot-guide">32. Troubleshooting Matrix</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Symptom</th>
+                    <th>Root Cause</th>
+                    <th>Resolution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Nodes show "NO DATA"</td>
+                    <td>Collector $\rightarrow$ Server Connectivity</td>
+                    <td>Check Security Group for port 3001; verify <code style="color: #fbbf24;">MAPPER_PUBLIC_URL</code>.</td>
+                </tr>
+                <tr>
+                    <td>SSH Auth Failure</td>
+                    <td>Incorrect PEM key or User</td>
+                    <td>Check <code style="color: #fbbf24;">sshUsername</code> and <code style="color: #fbbf24;">sshKeyPath</code> in <code style="color: #fbbf24;">remote_config.json</code>.</td>
+                </tr>
+                <tr>
+                    <td>Graph is static/no edges</td>
+                    <td>No runtime traffic observed</td>
+                    <td>Run <code style="color: #fbbf24;">npm run traffic:sockshop</code> to stimulate the system.</td>
+                </tr>
+                <tr>
+                    <td>RCA reports "UNKNOWN"</td>
+                    <td>Insufficient history for Z-Score</td>
+                    <td>Wait 15 minutes for the <code style="color: #fbbf24;">MetricStore</code> to build a baseline.</td>
+                </tr>
+                <tr>
+                    <td>Collector not starting</td>
+                    <td>Docker daemon inaccessible on target</td>
+                    <td>Ensure SSH user has permissions to run <code style="color: #fbbf24;">docker</code> without sudo.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <footer>
+            <strong style="color: var(--text-primary);">Microservice Mapper Technical Specification</strong><br>
+            Generated by Claude Code | September 15, 2026 | Confidential Internal Document
+        </footer>
+    </main>
+
+</body>
+</html>

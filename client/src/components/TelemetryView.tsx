@@ -1,27 +1,45 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, MetricSnapshot } from '../types';
+import { pageRootStyle } from './ProjectSections';
 
 interface TelemetryViewProps {
   nodes: Node[];
   edges: Edge[];
   selectedProject: string;
+  /** Rendered inside a per-project stack: the wrapper owns scroll + height. */
+  embedded?: boolean;
 }
 
-export function TelemetryView({ nodes, edges: _edges, selectedProject }: TelemetryViewProps) {
+export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded = false }: TelemetryViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'5m' | '15m' | '30m' | '1h'>('15m');
   const [history, setHistory] = useState<MetricSnapshot[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [rawEvents, setRawEvents] = useState<any[]>([]);
+  const [serviceLogs, setServiceLogs] = useState<string[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [logTail, setLogTail] = useState(200);
+  const [autoRefreshLogs, setAutoRefreshLogs] = useState(true);
+  const logListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchTraffic = () => {
-      fetch('/api/traffic?limit=50')
-        .then(res => res.json())
-        .then(data => { if (Array.isArray(data)) setRawEvents(data); })
-        .catch(() => {});
+    const fetchTraffic = async () => {
+      try {
+        const res = await fetch('/api/traffic?limit=50');
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setRawEvents(data);
+        } else {
+          console.error('Unexpected response format from /api/traffic:', data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch traffic logs:', e);
+      }
     };
+
     fetchTraffic();
     const interval = setInterval(fetchTraffic, 2000);
     return () => clearInterval(interval);
@@ -42,16 +60,67 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
     return serviceNodes.find(n => n.id === selectedNodeId) || serviceNodes[0] || null;
   }, [selectedNodeId, serviceNodes]);
 
+  const activeNodeId = selectedNode?.id;
+
   useEffect(() => {
-    if (selectedNode) {
-      fetch(`/api/nodes/${selectedNode.id}/metrics?range=${timeRange}`)
+    if (activeNodeId) {
+      fetch(`/api/nodes/${activeNodeId}/metrics?range=${timeRange}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) setHistory(data);
         })
         .catch(() => setHistory([]));
     }
-  }, [selectedNode, timeRange]);
+    // selectedNode is a fresh object reference on every websocket tick (it's
+    // re-derived from `nodes` via useMemo/.find()); depending on it directly
+    // would tear down and restart this effect several times a minute even
+    // though the actually-selected service hasn't changed. Depend on the
+    // stable id instead.
+  }, [activeNodeId, timeRange]);
+
+  useEffect(() => {
+    if (!activeNodeId || !autoRefreshLogs) return;
+
+    let cancelled = false;
+    const fetchLogs = async () => {
+      setLogsLoading(true);
+      try {
+        const res = await fetch(`/api/nodes/${activeNodeId}/logs?tail=${logTail}`);
+        const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) {
+          setLogsError(data.error || `HTTP ${res.status}`);
+          setServiceLogs([]);
+        } else {
+          setLogsError(null);
+          setServiceLogs(data.lines || []);
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setLogsError(e.message || 'Failed to fetch logs');
+          setServiceLogs([]);
+        }
+      } finally {
+        if (!cancelled) setLogsLoading(false);
+      }
+    };
+
+    fetchLogs();
+    // Kept well above the 1s connection-scan interval on the server so this
+    // on-demand fetch doesn't compete with it for the SSH connection's
+    // limited concurrent-channel budget.
+    const interval = setInterval(fetchLogs, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeNodeId, logTail, autoRefreshLogs]);
+
+  useEffect(() => {
+    if (logListRef.current) {
+      logListRef.current.scrollTop = logListRef.current.scrollHeight;
+    }
+  }, [serviceLogs]);
 
   const summary = useMemo(() => {
     let totalCpu = 0;
@@ -87,17 +156,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
   };
 
   return (
-    <div style={{
-      flex: 1,
-      height: '100%',
-      overflowY: 'auto',
-      padding: '24px',
-      background: 'var(--color-bg-body)',
-      color: 'var(--color-text-main)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <div style={pageRootStyle(embedded)}>
       {/* Top Telemetry KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
@@ -166,7 +225,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
       </div>
 
       {/* Main Telemetry Split View */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', flex: 1, minHeight: '450px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gridTemplateRows: 'minmax(450px, auto)', gap: '24px', flex: 1 }}>
         {/* Left: Detailed Service Telemetry Table */}
         <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -189,7 +248,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
             />
           </div>
 
-          <div style={{ overflowX: 'auto', flex: 1 }}>
+          <div style={{ overflowX: 'auto', flex: 1, minHeight: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
@@ -334,13 +393,23 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
 
               {/* Quick Metadata list */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', marginTop: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Container ID</span>
-                  <span style={{ fontFamily: 'monospace' }}>{selectedNode.metadata?.containerId || 'N/A'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px', gap: '8px' }}>
+                  <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>Container ID</span>
+                  <span
+                    title={selectedNode.metadata?.containerId || 'N/A'}
+                    style={{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontSize: '11px' }}
+                  >
+                    {selectedNode.metadata?.containerId ? selectedNode.metadata.containerId.slice(0, 12) : 'N/A'}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Image</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>{selectedNode.metadata?.image || 'N/A'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px', gap: '8px' }}>
+                  <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>Image</span>
+                  <span
+                    title={selectedNode.metadata?.image || 'N/A'}
+                    style={{ fontFamily: 'monospace', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}
+                  >
+                    {selectedNode.metadata?.image || 'N/A'}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px' }}>
                   <span style={{ color: 'var(--color-text-muted)' }}>Container State</span>
@@ -352,6 +421,68 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject }: Telemet
             <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', margin: 'auto' }}>
               Select a service from the table to view detailed telemetry
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Raw Service Logs */}
+      <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
+            <span style={{ color: logsLoading ? 'var(--color-warning, #ffaa00)' : 'var(--color-healthy)', marginRight: '8px' }}>●</span>
+            RAW LOGS {selectedNode ? `— ${selectedNode.name.toUpperCase()}` : ''}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{serviceLogs.length} lines</div>
+            <select
+              value={logTail}
+              onChange={(e) => setLogTail(parseInt(e.target.value))}
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', outline: 'none' }}
+            >
+              {[100, 200, 500, 1000].map(n => <option key={n} value={n}>last {n}</option>)}
+            </select>
+            <button
+              onClick={() => setAutoRefreshLogs(v => !v)}
+              style={{
+                background: autoRefreshLogs ? 'rgba(0, 230, 118, 0.12)' : 'rgba(255,255,255,0.05)',
+                color: autoRefreshLogs ? 'var(--color-healthy)' : 'var(--color-text-muted)',
+                border: `1px solid ${autoRefreshLogs ? 'rgba(0,230,118,0.3)' : 'var(--color-border)'}`,
+                borderRadius: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer'
+              }}
+            >
+              {autoRefreshLogs ? 'LIVE' : 'PAUSED'}
+            </button>
+          </div>
+        </div>
+        <div
+          ref={logListRef}
+          style={{
+            background: '#010409',
+            borderRadius: '8px',
+            padding: '16px',
+            height: '320px',
+            overflowY: 'auto',
+            fontFamily: 'monospace',
+            fontSize: '11.5px',
+            lineHeight: '1.6',
+            color: '#c9d1d9',
+            border: '1px solid #30363d',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all'
+          }}
+        >
+          {!selectedNode ? (
+            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>Select a service to view its raw logs</div>
+          ) : logsError ? (
+            <div style={{ color: '#ff7b72' }}>Failed to fetch logs: {logsError}</div>
+          ) : serviceLogs.length === 0 ? (
+            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>{logsLoading ? 'Loading logs...' : 'No log lines returned'}</div>
+          ) : (
+            serviceLogs.map((line, i) => (
+              <div key={i} style={{ borderBottom: '1px solid #161b22', padding: '2px 0' }}>
+                {line}
+              </div>
+            ))
           )}
         </div>
       </div>

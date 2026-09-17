@@ -122,7 +122,16 @@ export class EndpointRegistry {
     const map = this.endpointsByTarget.get(targetId);
     if (!map) return [];
     const all = Array.from(map.values());
-    return publicOnly ? all.filter(e => e.type === 'PUBLIC') : all;
+    const filtered = publicOnly ? all.filter(e => e.type === 'PUBLIC') : all;
+    // put the real entrypoint (public, port 80) first — otherwise whatever
+    // got discovered first wins by accident (e.g. jaeger's :4318), and
+    // that's what callers taking "the first endpoint" end up defaulting to
+    return [...filtered].sort((a, b) => {
+      const rank = (e: DiscoveredEndpoint) => (e.type === 'PUBLIC' ? (e.port === 80 ? 0 : 1) : 2);
+      const rankDiff = rank(a) - rank(b);
+      if (rankDiff !== 0) return rankDiff;
+      return a.port - b.port;
+    });
   }
 
   public getEndpoint(targetId: string, endpointId?: string): DiscoveredEndpoint | undefined {

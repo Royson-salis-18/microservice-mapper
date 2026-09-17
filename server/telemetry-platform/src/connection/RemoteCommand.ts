@@ -52,29 +52,35 @@ export const REMOTE_COMMANDS = {
     maxOutputBytes: 256,
     parser: (out) => out.trim(),
   }),
+  // Timeouts below are sized for a host under heavy load, not a healthy one.
+  // These are all round-trips to a Docker daemon that competes with the
+  // containers it's running: on a swap-thrashing 2GB box with ~18 JVM
+  // services, `docker ps` was measured at 45s and `docker inspect` at ~3s.
+  // A timeout shorter than that doesn't degrade gracefully — discovery
+  // returns zero services and the whole target disappears from the graph.
   dockerVersion: (): RemoteCommand<string> => ({
     name: "docker.version",
     command: "docker version --format '{{json .}}' 2>&1",
-    timeoutMs: 8_000,
+    timeoutMs: 20_000,
     maxOutputBytes: 16_384,
   }),
   dockerPs: (): RemoteCommand<string> => ({
     name: "docker.ps",
     command: "docker ps --no-trunc --format '{{json .}}'",
-    timeoutMs: 10_000,
+    timeoutMs: 90_000,
     maxOutputBytes: 262_144,
   }),
   dockerInspect: (containerId: string): RemoteCommand<string> => ({
     name: "docker.inspect",
     command: `docker inspect ${sanitizeContainerId(containerId)}`,
-    timeoutMs: 10_000,
+    timeoutMs: 20_000,
     maxOutputBytes: 262_144,
   }),
   dockerStats: (): RemoteCommand<string> => ({
     name: "docker.stats",
     command:
       "docker stats --no-stream --no-trunc --format '{{json .}}'",
-    timeoutMs: 15_000,
+    timeoutMs: 30_000,
     maxOutputBytes: 262_144,
   }),
   dockerNetworkInspect: (network: string): RemoteCommand<string> => ({
@@ -112,7 +118,7 @@ export const REMOTE_COMMANDS = {
   dockerContainerTcp: (containerId: string): RemoteCommand<string> => ({
     name: "docker.container.tcp",
     command: `docker exec ${sanitizeContainerId(containerId)} sh -c 'cat /proc/net/tcp /proc/net/tcp6 2>&1'`,
-    timeoutMs: 5_000,
+    timeoutMs: 10_000,
     maxOutputBytes: 65_536,
   }),
   catFile: (path: string): RemoteCommand<string> => ({

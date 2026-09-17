@@ -9,6 +9,7 @@ import type { WebSocketManager } from '../api/websocket.js';
 import { ConnectionManager } from '../telemetry-platform/src/connection/ConnectionManager.js';
 import { DiscoveryEngine } from '../telemetry-platform/src/discovery/DiscoveryEngine.js';
 import { MetricCollector } from '../telemetry-platform/src/collection/MetricCollector.js';
+import { REMOTE_COMMANDS } from '../telemetry-platform/src/connection/RemoteCommand.js';
 import type { TargetConfig } from '../telemetry-platform/src/types/target.js';
 
 class TargetAgent {
@@ -20,9 +21,13 @@ class TargetAgent {
   private onTelemetryCollected?: (targetId: string, envelope: any) => void;
 
   private connManager: ConnectionManager | null = null;
+  // separate connection for on-demand requests (log fetches) so they don't
+  // compete with the polling loops for channels on the main connection
+  private adHocConnManager: ConnectionManager | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
   private connectionTimer: NodeJS.Timeout | null = null;
   private recoveryTimer: NodeJS.Timeout | null = null;
+  private rediscoveryTimer: NodeJS.Timeout | null = null;
   private recovering = false;
   private dead = false;
   private discoveredServices: any[] = [];
@@ -99,27 +104,75 @@ class TargetAgent {
     if (this.pollTimer) clearInterval(this.pollTimer);
     if (this.connectionTimer) clearInterval(this.connectionTimer);
     if (this.recoveryTimer) clearTimeout(this.recoveryTimer);
+    if (this.rediscoveryTimer) clearInterval(this.rediscoveryTimer);
     if (this.connManager) this.connManager.close().catch(() => {});
+    if (this.adHocConnManager) this.adHocConnManager.close().catch(() => {});
   }
 
-  private async runCycle() {
-    if (this.dead) return;
-    try {
-      this.log(`[Agent:${this.targetId}] Establishing SSH connection...`);
-      const conn = await this.connManager!.getConnection();
-      
-      this.log(`[Agent:${this.targetId}] Discovering architecture...`);
-      const engine = new DiscoveryEngine(this.targetId, conn);
-      const result = await engine.discover();
+  async getServiceLogs(containerId: string, tailLines: number): Promise<string[]> {
+    if (this.dead) return [];
+    if (!this.adHocConnManager) {
+      this.adHocConnManager = new ConnectionManager(this.createTargetConfig());
+    }
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const cmd = REMOTE_COMMANDS.dockerLogs(containerId, since, tailLines);
 
-      if (result.architecture.warnings && result.architecture.warnings.length > 0) {
-        for (const warn of result.architecture.warnings) {
-          this.log(`[Agent:${this.targetId}] Discovery warning: ${warn}`);
+    // a burst of concurrent requests can still hit sshd's channel cap even
+    // on the dedicated connection, so retry with backoff before giving up
+    const maxAttempts = 5;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const conn = await this.adHocConnManager.getConnection();
+        const res = await conn.execute(cmd);
+        if (res.exitCode !== 0 || res.error) {
+          throw new Error(res.error ?? res.stderr ?? 'docker logs failed');
         }
+        // stdout/stderr come back as separate streams and some services
+        // (Go, some JVM loggers) only log to stderr, so merge + re-sort by
+        // the --timestamps prefix to get them back in order
+        const merged = [...res.stdout.split('\n'), ...res.stderr.split('\n')]
+          .filter((l) => l.length > 0)
+          .sort();
+        return merged.slice(-tailLines);
+      } catch (err) {
+        lastErr = err;
+        if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 300 * attempt));
       }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+  }
 
-      this.discoveredServices = result.services;
-      const nowIso = new Date().toISOString();
+  // Re-runs docker-ps-based discovery against the current connection and
+  // updates registry/graph state. Used both for the initial cycle and for
+  // periodic re-discovery, so containers that start after the first scan
+  // (previously stuck as unmatched "unknown-<hash>" metric samples) get
+  // picked up and correctly named/classified/edged.
+  private async refreshDiscovery(conn: any): Promise<number> {
+    this.log(`[Agent:${this.targetId}] Discovering architecture...`);
+    const engine = new DiscoveryEngine(this.targetId, conn);
+    const result = await engine.discover();
+
+    if (result.architecture.warnings && result.architecture.warnings.length > 0) {
+      for (const warn of result.architecture.warnings) {
+        this.log(`[Agent:${this.targetId}] Discovery warning: ${warn}`);
+      }
+    }
+
+    // A transient SSH/channel hiccup (this host is resource-constrained and
+    // known to drop `docker` commands under load) makes discover() return an
+    // empty service list without throwing. On the *initial* cycle that's the
+    // real state and we take it as-is; on a periodic rescan, overwriting a
+    // known-good service list with an empty one would wipe every already-
+    // matched service back to "unknown-<hash>" until the next reconnect —
+    // so keep the last known-good list and let the next rescan retry.
+    if (result.services.length === 0 && this.discoveredServices.length > 0) {
+      this.log(`[Agent:${this.targetId}] Re-discovery returned 0 services — keeping previous ${this.discoveredServices.length} (likely a transient SSH hiccup, will retry).`);
+      return this.discoveredServices.length;
+    }
+
+    this.discoveredServices = result.services;
+    const nowIso = new Date().toISOString();
 
       // Register services in endpoint registry
       for (const svc of result.services) {
@@ -180,6 +233,16 @@ class TargetAgent {
         this.onTopologyDiscovered(this.targetId, formattedServices, formattedDeps);
       }
       this.log(`[Agent:${this.targetId}] Discovery done — ${result.services.length} services found.`);
+      return result.services.length;
+  }
+
+  private async runCycle() {
+    if (this.dead) return;
+    try {
+      this.log(`[Agent:${this.targetId}] Establishing SSH connection...`);
+      const conn = await this.connManager!.getConnection();
+
+      await this.refreshDiscovery(conn);
 
       // Start continuous metric polling
       this.recovering = false;
@@ -195,8 +258,10 @@ class TargetAgent {
     this.recovering = true;
     if (this.pollTimer) clearInterval(this.pollTimer);
     if (this.connectionTimer) clearInterval(this.connectionTimer);
+    if (this.rediscoveryTimer) clearInterval(this.rediscoveryTimer);
     this.pollTimer = null;
     this.connectionTimer = null;
+    this.rediscoveryTimer = null;
     this.log(`[Agent:${this.targetId}] ${reason}. Reconnecting in 10s…`);
     this.connManager?.close().catch(() => {});
     this.recoveryTimer = setTimeout(() => {
@@ -228,8 +293,8 @@ class TargetAgent {
           // Log warnings but continue
         }
 
-        if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0)) {
-          const envelope = this.translateMetricsToEnvelope(metricsRes.samples, metricsRes.observedEdges, metricsRes.interactions);
+        if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0 || metricsRes.connectionEvents.length > 0)) {
+          const envelope = this.translateMetricsToEnvelope(metricsRes.samples, metricsRes.observedEdges, metricsRes.interactions, metricsRes.connectionEvents);
           this.onTelemetryCollected(this.targetId, envelope);
         }
       } catch (e: any) {
@@ -240,22 +305,49 @@ class TargetAgent {
     await poll();
     if (this.dead || this.recovering) return;
     this.pollTimer = setInterval(poll, 5000);
+
+    // Containers that start after the initial scan (e.g. a compose stack
+    // still coming up, or a service that restarted onto a new container id)
+    // would otherwise sit forever as unmatched "unknown-<hash>" metric
+    // samples with no type/edges — rescan periodically so they get named,
+    // classified, and connected properly. A full rescan is a docker-ps
+    // plus one docker-inspect per container, much heavier than the 1s/5s
+    // polling commands, so on an already resource-constrained host this
+    // needs a long interval to avoid tipping SSH channel usage over the
+    // edge (observed directly: frequent rescans here caused "Channel open
+    // failure" errors across the whole connection, not just rediscovery).
+    if (this.rediscoveryTimer) clearInterval(this.rediscoveryTimer);
+    this.rediscoveryTimer = setInterval(async () => {
+      if (this.dead || this.recovering) return;
+      try {
+        const currentConn = await this.connManager!.getConnection();
+        await this.refreshDiscovery(currentConn);
+      } catch (e: any) {
+        this.log(`[Agent:${this.targetId}] Re-discovery failed (will retry next cycle): ${e.message}`);
+      }
+    }, 180_000);
+
     this.connectionTimer = setInterval(async () => {
       if (this.dead || !this.onTelemetryCollected) return;
       try {
         const currentConn = await this.connManager!.getConnection();
         collector.setConnection(currentConn);
-        const edges = await collector.collectObservedEdges(this.discoveredServices);
-        if (edges.length > 0) {
-          this.onTelemetryCollected(this.targetId, this.translateMetricsToEnvelope([], edges, []));
+        const { observedEdges, connectionEvents } = await collector.collectObservedEdges(this.discoveredServices);
+        if (observedEdges.length > 0 || connectionEvents.length > 0) {
+          this.onTelemetryCollected(this.targetId, this.translateMetricsToEnvelope([], observedEdges, [], connectionEvents));
         }
       } catch (e: any) {
         this.scheduleRecovery(`Connection scan failed: ${e.message}`);
       }
-    }, 1000);
+      // One `docker exec` per container per tick, so this is the heaviest
+      // recurring cost we impose on the target — at 1s on an 18-container
+      // host that was ~18 process spawns per second against a daemon already
+      // struggling. 5s costs us almost nothing in coverage because TIME_WAIT
+      // lingers ~60s, which is exactly why that state is counted.
+    }, 5000);
   }
 
-  private translateMetricsToEnvelope(samples: any[], observedEdges: any[], interactions: any[]): any {
+  private translateMetricsToEnvelope(samples: any[], observedEdges: any[], interactions: any[], connectionEvents: any[] = []): any {
     const observedAt = new Date().toISOString();
     const nodes = samples.map(s => {
       let status = 'healthy';
@@ -289,7 +381,7 @@ class TargetAgent {
       schemaVersion: '1.0',
       targetId: this.targetId,
       timestamp: new Date().toISOString(),
-      events: { nodes, metrics, edges: observedEdges.map((edge) => ({
+      events: { nodes, metrics, connectionEvents, edges: observedEdges.map((edge) => ({
         ...edge,
         id: `${edge.source}->${edge.target}`,
         type: 'dependency',
@@ -394,6 +486,12 @@ export class EndpointDiscoveryEngine {
   public async refreshTarget(targetId: string): Promise<void> {
     this.stopTarget(targetId);
     await this.discoverTarget(targetId);
+  }
+
+  public async getServiceLogs(targetId: string, containerId: string, tailLines: number): Promise<string[]> {
+    const agent = this.agents.get(targetId);
+    if (!agent) throw new Error(`No active agent for target ${targetId}`);
+    return agent.getServiceLogs(containerId, tailLines);
   }
 
   public stopTarget(targetId: string) {

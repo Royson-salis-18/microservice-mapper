@@ -58,6 +58,8 @@ export interface ServiceNode {
     centrality?: number | null;
     upstreamCount?: number;
     downstreamCount?: number;
+    anomalyScore?: number;
+    anomalyPersistent?: boolean;
   };
 }
 
@@ -129,6 +131,7 @@ export interface TelemetryEnvelope {
     edges?: DependencyEdge[];
     metrics?: { nodeId: string; snapshot: MetricSnapshot }[];
     interactions?: any[];
+    connectionEvents?: any[];
   };
 }
 

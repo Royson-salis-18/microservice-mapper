@@ -1,14 +1,17 @@
 import { useState, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { DependencyEdge } from '../types';
+import { pageRootStyle } from './ProjectSections';
 
 interface DependenciesViewProps {
   nodes: Node[];
   edges: Edge[];
   selectedProject: string;
+  /** Rendered inside a per-project stack: the wrapper owns scroll + height. */
+  embedded?: boolean;
 }
 
-export function DependenciesView({ nodes: _nodes, edges, selectedProject }: DependenciesViewProps) {
+export function DependenciesView({ nodes: _nodes, edges, selectedProject, embedded = false }: DependenciesViewProps) {
   const [evidenceFilter, setEvidenceFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -44,17 +47,7 @@ export function DependenciesView({ nodes: _nodes, edges, selectedProject }: Depe
   };
 
   return (
-    <div style={{
-      flex: 1,
-      height: '100%',
-      overflowY: 'auto',
-      padding: '24px',
-      background: 'var(--color-bg-body)',
-      color: 'var(--color-text-main)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <div style={pageRootStyle(embedded)}>
       {/* Top Dependency KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>

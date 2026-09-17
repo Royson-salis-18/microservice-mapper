@@ -58,6 +58,7 @@ export interface Service {
 
 export type DependencyEvidenceSource =
   | "compose"
+  | "application-config"
   | "docker-network"
   | "network-tcp"
   | "http-log"

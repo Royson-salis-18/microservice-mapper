@@ -55,7 +55,7 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid
     environment:
-      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=true
   carts-db:
     image: mongo:3.4
     hostname: carts-db
@@ -81,7 +81,7 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid
     environment:
-      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=true
   orders-db:
     image: mongo:3.4
     hostname: orders-db
@@ -107,7 +107,7 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid
     environment:
-      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=false
+      - JAVA_OPTS=-Xms64m -Xmx128m -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom -Dspring.zipkin.enabled=true
   queue-master:
     image: weaveworksdemos/queue-master:0.3.1
     hostname: queue-master
@@ -133,6 +133,14 @@ services:
       - SETUID
       - DAC_OVERRIDE
     read_only: true
+
+  zipkin:
+    image: openzipkin/zipkin
+    hostname: zipkin
+    ports:
+      - '9411:9411'
+    restart: always
+
   payment:
     image: weaveworksdemos/payment:0.4.3
     hostname: payment

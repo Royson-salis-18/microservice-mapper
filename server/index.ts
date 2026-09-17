@@ -29,7 +29,7 @@ function clearRuntimeState(): void {
 }
 
 async function main() {
-  clearRuntimeState();
+  // REMOVED: clearRuntimeState(); // STOPPED clearing data on every boot to preserve target configs and telemetry
 
   const app = express();
   app.use(cors());

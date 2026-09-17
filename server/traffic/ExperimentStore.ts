@@ -14,7 +14,9 @@ export interface ExperimentRecord {
   };
   startedAt: string;
   stoppedAt: string | null;
-  status: 'RUNNING' | 'COMPLETED' | 'ABORTED_SAFETY' | 'STOPPED';
+  /** INTERRUPTED = was RUNNING when the process died; see reconcileOrphanedRuns(). */
+  status: 'RUNNING' | 'COMPLETED' | 'ABORTED_SAFETY' | 'STOPPED' | 'INTERRUPTED';
+  stopReason?: string;
   trafficStatistics: {
     requestsAttempted: number;
     requestsCompleted: number;
@@ -54,10 +56,32 @@ export class ExperimentStore {
           }
         }
         console.log(`[ExperimentStore] Loaded ${this.records.size} experiment records from disk`);
+        this.reconcileOrphanedRuns();
       }
     } catch (e) {
       console.warn('[ExperimentStore] Failed to load experiments from disk:', e);
     }
+  }
+
+  /**
+   * Nothing survives a process restart, so any record still marked RUNNING
+   * on load belongs to a run that is definitively over — the traffic it
+   * described stopped when the previous process died. Left alone these
+   * accumulate and make the UI report active experiments that nobody can
+   * stop because nothing is driving them. Mark them INTERRUPTED rather
+   * than deleting, so the history stays intact.
+   */
+  private reconcileOrphanedRuns(): void {
+    const orphaned = Array.from(this.records.values()).filter(r => r.status === 'RUNNING');
+    if (orphaned.length === 0) return;
+    const now = new Date().toISOString();
+    for (const rec of orphaned) {
+      rec.status = 'INTERRUPTED';
+      rec.stoppedAt = rec.stoppedAt || now;
+      rec.stopReason = rec.stopReason || 'Server restarted while this run was active';
+    }
+    console.log(`[ExperimentStore] Marked ${orphaned.length} orphaned RUNNING experiment(s) as INTERRUPTED`);
+    this.scheduleSave();
   }
 
   private scheduleSave(): void {

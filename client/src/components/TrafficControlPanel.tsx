@@ -28,6 +28,20 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  interface TrafficHealth {
+    reachable: boolean;
+    url: string | null;
+    projects: Array<{
+      projectId: string; targetId: string; baseUrl: string | null; running: boolean;
+      stats: { requestsAttempted: number; requestsCompleted: number; requestsSuccessful: number; requestsFailed: number; currentRate: number; currentUsers: number; errorRate: number } | null;
+    }>;
+  }
+  const [trafficHealth, setTrafficHealth] = useState<TrafficHealth | null>(null);
+  const [entryPoints, setEntryPoints] = useState<Record<string, { pinned: string | null; resolved: string | null }>>({});
+  const [entryDraft, setEntryDraft] = useState('');
+  const [entryBusy, setEntryBusy] = useState(false);
+  const [entryMsg, setEntryMsg] = useState<string | null>(null);
+
   const fetchResolvedUrl = async (targetId: string, endpointId?: string) => {
     try {
       const url = `/api/targets/${targetId}/resolved-url${endpointId ? `?endpointId=${encodeURIComponent(endpointId)}` : ''}`;
@@ -108,6 +122,31 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     return () => clearInterval(interval);
   }, [selectedTargetId, selectedEndpointId]);
 
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('/api/traffic/health');
+        if (res.ok) setTrafficHealth(await res.json());
+      } catch {
+        setTrafficHealth({ reachable: false, url: null, projects: [] });
+      }
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchEntryPoints();
+  }, []);
+
+  // Show the pin for whichever target is selected, without clobbering an
+  // edit in progress.
+  useEffect(() => {
+    setEntryDraft(entryPoints[selectedTargetId]?.pinned || '');
+    setEntryMsg(null);
+  }, [selectedTargetId, entryPoints[selectedTargetId]?.pinned]);
+
   const activeUrl = resolvedEndpointUrl || '';
   const isEndpointReady = isResolvedConfigured && reachabilityStatus === 'REACHABLE';
 
@@ -163,6 +202,71 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     }
   };
 
+  const anyProjectRunning = (trafficHealth?.projects || []).some(p => p.running);
+
+  const handleStopAll = async () => {
+    setIsLoading(true);
+    try {
+      await fetch('/api/traffic/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: 'all' }),
+      });
+      await fetchData();
+    } catch (e) {
+      console.error('Failed to stop all traffic:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchEntryPoints = async () => {
+    try {
+      const res = await fetch('/api/traffic/entrypoints');
+      if (res.ok) setEntryPoints(await res.json());
+    } catch { /* keep previous */ }
+  };
+
+  const handleProbeEntry = async () => {
+    const url = entryDraft.trim() || entryPoints[selectedTargetId]?.resolved;
+    if (!url) { setEntryMsg('No URL to probe'); return; }
+    setEntryBusy(true);
+    setEntryMsg(null);
+    try {
+      const res = await fetch('/api/traffic/entrypoint/probe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const d = await res.json();
+      setEntryMsg(d.reachable ? `OK — HTTP ${d.status} in ${d.ms}ms` : `Unreachable: ${d.error}`);
+    } catch (e: any) {
+      setEntryMsg(`Probe failed: ${e.message}`);
+    } finally {
+      setEntryBusy(false);
+    }
+  };
+
+  const handleSaveEntry = async (explicit?: string) => {
+    setEntryBusy(true);
+    setEntryMsg(null);
+    try {
+      const res = await fetch('/api/traffic/entrypoint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: selectedTargetId, url: explicit !== undefined ? explicit : entryDraft }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || `HTTP ${res.status}`);
+      setEntryMsg(d.pinned ? `OK — pinned to ${d.pinned}` : 'OK — pin cleared, using discovery');
+      await fetchEntryPoints();
+    } catch (e: any) {
+      setEntryMsg(e.message);
+    } finally {
+      setEntryBusy(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -195,6 +299,127 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         </div>
         {onClose && (
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+        )}
+      </div>
+
+      {/* Traffic-gen live status — makes it obvious whether the engine is
+          actually up, since Node's own "isRunning" belief can go stale if
+          traffic-gen crashes mid-run without Node finding out. */}
+      <div style={{
+        background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '10px',
+        padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Traffic Engine</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              width: '7px', height: '7px', borderRadius: '50%',
+              background: trafficHealth?.reachable ? 'var(--color-healthy)' : 'var(--color-critical)',
+              boxShadow: trafficHealth?.reachable ? '0 0 6px var(--color-healthy)' : '0 0 6px var(--color-critical)',
+            }} />
+            <span style={{ fontSize: '11px', fontWeight: 700, color: trafficHealth?.reachable ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
+              {trafficHealth === null ? 'CHECKING...' : trafficHealth.reachable ? 'ONLINE' : 'OFFLINE'}
+            </span>
+          </div>
+        </div>
+        {trafficHealth?.reachable && trafficHealth.projects.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+            {trafficHealth.projects.map(p => (
+              <div key={p.projectId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span style={{ color: p.running ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)', fontWeight: p.running ? 700 : 400 }}>
+                  {p.running ? '● ' : '○ '}{p.projectId}
+                </span>
+                <span style={{ color: 'var(--color-text-muted)' }}>
+                  {p.running && p.stats
+                    ? `${p.stats.currentUsers} users, ${p.stats.currentRate.toFixed(1)} req/s, ${(p.stats.errorRate * 100).toFixed(0)}% err`
+                    : 'idle'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {trafficHealth?.reachable === false && (
+          <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
+            not reachable at {trafficHealth.url || 'localhost:4400'} — it should auto-start with the server; check server logs if this persists
+          </div>
+        )}
+
+        {/* Global kill switch. Stops every run the system can reach, including
+            ones started outside this app or before the last server restart —
+            not just whatever this panel happens to be showing. */}
+        <button
+          onClick={handleStopAll}
+          disabled={isLoading}
+          title="Stops synthetic traffic for every project, from any source"
+          style={{
+            marginTop: '8px',
+            width: '100%',
+            padding: '7px',
+            background: anyProjectRunning ? 'rgba(255, 23, 68, 0.15)' : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${anyProjectRunning ? 'rgba(255,23,68,0.45)' : 'var(--color-border)'}`,
+            color: anyProjectRunning ? 'var(--color-critical)' : 'var(--color-text-muted)',
+            borderRadius: '6px',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.5px',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {anyProjectRunning ? 'STOP ALL TRAFFIC (ALL PROJECTS)' : 'STOP ALL — nothing running'}
+        </button>
+      </div>
+
+      {/* Entry point: what traffic is actually sent to. Discovery can only
+          see what a container publishes, which isn't always reachable from
+          here, so this can be pinned per project and proven with a probe. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+            Entry point — {selectedTargetId}
+          </span>
+          {entryPoints[selectedTargetId]?.pinned && (
+            <span style={{ fontSize: '9px', color: 'var(--color-accent-cyan)', fontWeight: 700 }}>PINNED</span>
+          )}
+        </div>
+        <input
+          value={entryDraft}
+          onChange={(e) => setEntryDraft(e.target.value)}
+          placeholder={entryPoints[selectedTargetId]?.resolved || 'http://host:port'}
+          style={{
+            width: '100%', background: 'rgba(0,0,0,0.35)', border: '1px solid var(--color-border)',
+            borderRadius: '5px', padding: '5px 7px', fontSize: '11px', color: '#fff', outline: 'none',
+          }}
+        />
+        <div style={{ fontSize: '9px', color: 'var(--color-text-muted)' }}>
+          in use: {entryPoints[selectedTargetId]?.resolved || 'none resolved'}
+          {!entryPoints[selectedTargetId]?.pinned && ' (inferred from discovery)'}
+        </div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            onClick={handleProbeEntry}
+            disabled={entryBusy}
+            style={{ flex: 1, padding: '5px', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.3)', color: 'var(--color-accent-cyan)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
+          >
+            {entryBusy ? '...' : 'PROBE'}
+          </button>
+          <button
+            onClick={() => handleSaveEntry()}
+            disabled={entryBusy}
+            style={{ flex: 1, padding: '5px', background: 'rgba(0,230,118,0.12)', border: '1px solid rgba(0,230,118,0.3)', color: 'var(--color-healthy)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
+          >
+            SAVE
+          </button>
+          <button
+            onClick={() => { setEntryDraft(''); handleSaveEntry(''); }}
+            disabled={entryBusy}
+            title="Clear the pin and fall back to discovery"
+            style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
+          >
+            CLEAR
+          </button>
+        </div>
+        {entryMsg && (
+          <div style={{ fontSize: '10px', color: entryMsg.startsWith('OK') ? 'var(--color-healthy)' : 'var(--color-critical)' }}>{entryMsg}</div>
         )}
       </div>
 
@@ -320,9 +545,11 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         </div>
       </div>
 
-      {/* Safety Notice */}
-      <div style={{ background: 'rgba(255,171,0,0.1)', border: '1px solid rgba(255,171,0,0.3)', padding: '8px', borderRadius: '8px', fontSize: '10px', color: 'var(--color-degraded)' }}>
-        <strong>Safety Limits Active:</strong> Experiments will automatically abort if CPU/Memory exceeds 85% on any target instance to prevent cascading failure.
+      {/* No auto-abort notice — these are failure-injection experiments;
+          services are supposed to break, so nothing here auto-stops on
+          high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
+      <div style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)', padding: '8px', borderRadius: '8px', fontSize: '10px', color: 'var(--color-accent-cyan)' }}>
+        <strong>No auto-abort:</strong> experiments run until you stop them, even under heavy CPU/memory/error-rate — that's the point, for RCA and cascading-failure research.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>

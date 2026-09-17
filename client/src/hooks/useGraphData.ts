@@ -32,29 +32,58 @@ export function useGraphData(): UseGraphDataReturn {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
+  // Lays each project (target) out as its own side-by-side cluster instead
+  // of merging every project's nodes into shared global rows — with two
+  // projects up at once, interleaving them produced long crossing edges
+  // between unrelated services that just happened to land in the same row.
   const calculateLayout = (backendNodes: ServiceNode[]): Node[] => {
-    const gateways = backendNodes.filter(n => n.type === 'gateway' || n.type === 'frontend');
-    const services = backendNodes.filter(n => n.type === 'service');
-    const databases = backendNodes.filter(n => n.type === 'database' || n.type === 'queue');
-    const others = backendNodes.filter(n => n.type === 'external' || n.type === 'infrastructure' || (n.type as string) === 'unknown');
+    const xSpacing = 250;
+    const ySpacing = 180;
+    const projectGap = 220;
+    const maxPerRow = 6; // wrap a layer instead of stretching it into one huge row
 
-    const createLayoutForLayer = (layerNodes: ServiceNode[], yBase: number): Node[] => {
-      const xSpacing = 250;
-      const startX = -((layerNodes.length - 1) * xSpacing) / 2;
-      return layerNodes.map((node, i) => ({
-        id: node.id,
-        type: 'customServiceNode',
-        data: node as ServiceNode & Record<string, unknown>,
-        position: { x: startX + i * xSpacing, y: yBase },
-      }));
+    const layerIndex = (n: ServiceNode) => {
+      if (n.type === 'gateway' || n.type === 'frontend') return 0;
+      if (n.type === 'service') return 1;
+      if (n.type === 'database' || n.type === 'queue') return 2;
+      return 3; // external / infrastructure / unknown
     };
 
-    return [
-      ...createLayoutForLayer(gateways, 0),
-      ...createLayoutForLayer(services, 250),
-      ...createLayoutForLayer(databases, 500),
-      ...createLayoutForLayer(others, 750),
-    ];
+    const projects = Array.from(new Set(backendNodes.map(n => n.project || 'unknown')));
+    const result: Node[] = [];
+    let cursorX = 0;
+
+    for (const project of projects) {
+      const layers: ServiceNode[][] = [[], [], [], []];
+      for (const n of backendNodes) {
+        if ((n.project || 'unknown') === project) layers[layerIndex(n)].push(n);
+      }
+
+      const blockWidth = Math.max(...layers.map(l => Math.min(l.length, maxPerRow)), 1) * xSpacing;
+
+      let cursorY = 0;
+      for (const layerNodes of layers) {
+        if (layerNodes.length === 0) continue;
+        const rows = Math.ceil(layerNodes.length / maxPerRow);
+        for (let row = 0; row < rows; row++) {
+          const rowNodes = layerNodes.slice(row * maxPerRow, row * maxPerRow + maxPerRow);
+          const startX = cursorX + (blockWidth - (rowNodes.length - 1) * xSpacing) / 2;
+          rowNodes.forEach((node, i) => {
+            result.push({
+              id: node.id,
+              type: 'customServiceNode',
+              data: node as ServiceNode & Record<string, unknown>,
+              position: { x: startX + i * xSpacing, y: cursorY + row * ySpacing },
+            });
+          });
+        }
+        cursorY += rows * ySpacing + 60;
+      }
+
+      cursorX += blockWidth + projectGap;
+    }
+
+    return result;
   };
 
   const parseEdges = (backendEdges: DependencyEdge[]): Edge[] => {
@@ -164,10 +193,10 @@ export function useGraphData(): UseGraphDataReturn {
     };
   }, []);
 
-  const sendTerminalCommand = useCallback((cmd: string, ip?: string, key?: string) => {
+  const sendTerminalCommand = useCallback((cmd: string, targetId?: string) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       setTerminalLogs(prev => [...prev, `$ ${cmd}`]);
-      wsRef.current.send(JSON.stringify({ type: 'TERMINAL_EXEC', data: { cmd, ip, key } }));
+      wsRef.current.send(JSON.stringify({ type: 'TERMINAL_EXEC', data: { cmd, targetId } }));
     }
   }, []);
 

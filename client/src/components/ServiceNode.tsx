@@ -95,19 +95,45 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
       }
     }}
     >
-      <Handle 
-        type="target" 
-        position={Position.Top} 
-        style={{ 
-          background: 'var(--color-bg-body)', 
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          background: 'var(--color-bg-body)',
           border: `2px solid ${color}`,
           width: '9px',
           height: '9px',
           borderRadius: '50%',
           boxShadow: `0 0 8px ${color}`
-        }} 
+        }}
       />
-      
+
+      {data.analytics?.anomalyPersistent && (
+        <div
+          title={`Isolation Forest: anomaly score ${((data.analytics?.anomalyScore ?? 0) * 100).toFixed(0)}%, sustained over multiple windows`}
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            right: '-8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            background: 'rgba(255, 23, 68, 0.15)',
+            border: '1px solid var(--color-critical)',
+            borderRadius: '10px',
+            padding: '2px 6px',
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.5px',
+            color: 'var(--color-critical)',
+            animation: 'pulse-critical 1.8s infinite',
+            zIndex: 2,
+          }}
+        >
+          ANOMALY
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
