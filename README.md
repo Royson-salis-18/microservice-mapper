@@ -1026,20 +1026,6 @@ The platform includes comprehensive self-observability:
 5. Update `traffic-generator/src/index.ts` to export new scenarios
 6. Restart platform and verify discovery works
 
-## 🙏 Acknowledgments
-
-This platform builds upon and integrates concepts from:
-- **Google's Dapper** and **OpenTelemetry** for distributed tracing inspiration
-- **Netflix's Simpsonian Anthropologist** and **Chaos Monkey** for failure injection
-- **Weave Works Sock Shop** as the canonical microservice demo
-- **Prometheus** model for multi-dimensional data collection
-- **Grafana** for visualization inspiration (though we went 3D+force-directed)
-- **eBPF pioneers** like Brendan Gregg for low-overhead observability insights
-- **The Four Golden Signals** (latency, traffic, errors, saturation) from SRE literature
-- **Amazon's AWS X-Ray** concepts for distributed tracing
-- **Jaeger** and **Zipkin** for trace storage ideas
-- **Service Mesh Interface (SMI)** for traffic management concepts
-- **CNCF Observability Tag** for landscape understanding
 
 ## 📜 License
 
