@@ -85,7 +85,19 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         const eps: DiscoveredEndpoint[] = await epRes.json();
         setPublicEndpoints(eps);
         if (eps.length > 0 && !selectedEndpointId) {
-          setSelectedEndpointId(eps[0].endpointId);
+          // [AGY] Changed default selection behavior to prioritize known frontend 
+          // ports (80, 8080) rather than picking the first alphabetical endpoint. 
+          // OpenTelemetry was defaulting to grafana:3000 which was unreachable.
+          const preferredPorts = [80, 8080, 8000, 3000];
+          const bestEp = [...eps].sort((a, b) => {
+            const aIdx = preferredPorts.indexOf(a.port);
+            const bIdx = preferredPorts.indexOf(b.port);
+            if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+            if (aIdx !== -1) return -1;
+            if (bIdx !== -1) return 1;
+            return 0;
+          })[0];
+          setSelectedEndpointId(bestEp.endpointId);
         }
       }
       if (rtRes.ok) setRoutes(await rtRes.json());

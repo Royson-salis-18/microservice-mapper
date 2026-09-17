@@ -3,8 +3,11 @@
 /**
  * OpenTelemetry Demo workflows — STUB.
  *
- * This target uses dynamic endpoints discovered from the frontend service,
- * or simple base paths. 
+ * [AGY] IMPORTANT: We explicitly set STUB: false at the bottom of this file.
+ * If STUB is true, the engine requires dynamic endpoints injected via the start request.
+ * Because the backend UI's "USER_JOURNEY" mode doesn't send endpoints, STUB=true
+ * caused traffic-gen to silently reject open-telemetry with HTTP 400.
+ * We know the base paths (/, /cart) exist, so STUB=false is safe and allows it to run.
  */
 
 const browse = {
@@ -28,4 +31,4 @@ const profiles = {
   RAMP: { users: 20, spawnRatePerSec: 2, defaultThinkTimeMs: [1000, 3000] }
 };
 
-module.exports = { workflows, defaultWorkflowWeights, profiles, STUB: true };
+module.exports = { workflows, defaultWorkflowWeights, profiles, STUB: false };

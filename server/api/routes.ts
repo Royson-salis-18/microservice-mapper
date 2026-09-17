@@ -203,6 +203,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     if (!url) return res.json({ status: 'ERROR', message: 'No URL provided' });
     try {
       const controller = new AbortController();
+      // [AGY] Increased timeout from 2000ms to 10000ms. High-latency instances
+      // (like open-telemetry) were timing out during UI reachability checks.
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const reachRes = await fetch(url, { method: 'HEAD', signal: controller.signal as any }).catch(() => fetch(url, { method: 'GET', signal: controller.signal as any }));
       clearTimeout(timeoutId);

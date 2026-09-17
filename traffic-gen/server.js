@@ -90,6 +90,8 @@ async function checkReachable(projectId, baseUrl) {
   }
   try {
     const controller = new AbortController();
+    // [AGY] Increased timeout from 4000ms to 10000ms because high-latency targets
+    // (like open-telemetry on AWS) were falsely marked unreachable.
     const timer = setTimeout(() => controller.abort(), 10000);
     const resp = await fetch(baseUrl, { signal: controller.signal });
     clearTimeout(timer);
