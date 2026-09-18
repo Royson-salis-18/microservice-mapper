@@ -8,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T13:51:01.782304+00:00",
+  "trained_at": "2026-09-18T14:02:04.169661+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -38,23 +38,6 @@
       },
       "artifact": "sock-shop_front-end.joblib"
     },
-    "lof": {
-      "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-    },
-    "ocsvm": {
-      "threshold_p99": 0.000456023623534918,
-      "train_score_mean": -0.05581728667027187,
-      "train_score_max": 4.029090961494803,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.06441975456516857,
-        "max_score": -0.06441975456516857,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "artifact": "sock-shop_front-end.ocsvm.joblib"
-    },
     "zscore": {
       "threshold_p99": 4.6680437459981,
       "train_score_mean": 0.568432793800495,
@@ -71,19 +54,7 @@
     }
   },
   "agreement": {
-    "iforest|ocsvm": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
-    },
     "iforest|zscore": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
-    },
-    "ocsvm|zscore": {
       "same_verdict_rate": 1.0,
       "jaccard": null,
       "both_flagged": 0,

@@ -739,7 +739,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     if (retrainState.running) {
       return res.status(409).json({ error: 'A retrain is already running' });
     }
-    const { since, until } = req.body || {};
+    const { since, until, project, algorithms, contamination, nEstimators, minSamples, holdoutFraction, skipPreprocess } = req.body || {};
     retrainState = { running: true, startedAt: new Date().toISOString(), finishedAt: null, log: [], exitCode: null };
 
     // Bounded: train.py emits a line per trained AND per skipped service, so
@@ -769,20 +769,106 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       });
     });
 
+    // Only forward a flag the caller actually set, so train.py's own
+    // defaults (which come from ml/config.json) stay in charge otherwise.
+    const numericArg = (name: string, value: unknown, args: string[]) => {
+      const n = Number(value);
+      if (value === undefined || value === null || value === '' || !Number.isFinite(n)) return;
+      args.push(name, String(n));
+    };
+
     (async () => {
-      const preCode = await runStep('python3', ['preprocess.py']);
-      if (preCode !== 0) {
-        retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: preCode };
-        return;
+      // Preprocessing rebuilds features.csv for every service at once; it is
+      // not project-scoped and is the slow step, so a caller tuning
+      // hyperparameters against unchanged data can skip it.
+      if (!skipPreprocess) {
+        const preCode = await runStep('python3', ['preprocess.py']);
+        if (preCode !== 0) {
+          retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: preCode };
+          return;
+        }
+      } else {
+        appendLog('[retrain] skipping preprocess — reusing the existing features.csv');
       }
+
       const trainArgs = ['train.py'];
       if (since) trainArgs.push('--since', since);
       if (until) trainArgs.push('--until', until);
+      if (typeof project === 'string' && project.trim() && project !== 'ALL') {
+        trainArgs.push('--project', project.trim());
+      }
+      if (typeof algorithms === 'string' && algorithms.trim()) {
+        trainArgs.push('--algorithms', algorithms.trim());
+      } else if (Array.isArray(algorithms) && algorithms.length > 0) {
+        trainArgs.push('--algorithms', algorithms.join(','));
+      }
+      numericArg('--contamination', contamination, trainArgs);
+      numericArg('--n-estimators', nEstimators, trainArgs);
+      numericArg('--min-samples', minSamples, trainArgs);
+      numericArg('--holdout-fraction', holdoutFraction, trainArgs);
+
+      appendLog(`[retrain] python3 ${trainArgs.join(' ')}`);
       const trainCode = await runStep('python3', trainArgs);
       retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: trainCode };
     })();
 
     res.json({ success: true, message: 'Retrain started' });
+  });
+
+  /**
+   * The actual source of the pipeline scripts, so the execution panel shows
+   * what really runs rather than a prose description of it that can drift.
+   * Read-only and allow-listed by name — this serves files, and the set of
+   * files it will serve is fixed here rather than taken from the request.
+   */
+  router.get('/ml/source/:name', (req, res) => {
+    const ALLOWED: Record<string, string> = {
+      collector: 'collector.py',
+      preprocess: 'preprocess.py',
+      train: 'train.py',
+      score: 'score.py',
+      config: 'mlconfig.py',
+    };
+    const file = ALLOWED[req.params.name];
+    if (!file) {
+      return res.status(404).json({ error: `unknown source '${req.params.name}'`, available: Object.keys(ALLOWED) });
+    }
+    const full = path.join(mlDir, file);
+    if (!fs.existsSync(full)) return res.status(404).json({ error: `${file} not found` });
+    try {
+      const code = fs.readFileSync(full, 'utf8');
+      res.json({ name: req.params.name, file, code, lines: code.split('\n').length });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  /** Which projects have data, so the UI can scope to one at a time. */
+  router.get('/ml/projects', (_req, res) => {
+    const featuresPath = path.join(mlDataDir, 'features.csv');
+    const projects = new Set<string>();
+    try {
+      if (fs.existsSync(featuresPath)) {
+        const lines = fs.readFileSync(featuresPath, 'utf8').split('\n').filter(Boolean);
+        const columns = lines[0].split(',');
+        const sidIndex = columns.indexOf('service_id');
+        if (sidIndex >= 0) {
+          for (const line of lines.slice(1)) {
+            const sid = line.split(',')[sidIndex];
+            if (sid && sid.includes(':')) projects.add(sid.split(':')[0]);
+          }
+        }
+      }
+    } catch { /* fall through to whatever models tell us */ }
+    try {
+      for (const f of fs.readdirSync(mlModelsDir)) {
+        if (!f.endsWith('.meta.json')) continue;
+        const meta = readJsonSafe(path.join(mlModelsDir, f));
+        const sid = meta?.service_id;
+        if (typeof sid === 'string' && sid.includes(':')) projects.add(sid.split(':')[0]);
+      }
+    } catch { /* none yet */ }
+    res.json(Array.from(projects).sort());
   });
 
   router.get('/ml/score-history', (req, res) => {

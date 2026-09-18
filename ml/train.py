@@ -159,6 +159,14 @@ def main():
         default=",".join(DETECTORS),
         help=f"comma-separated subset of: {', '.join(DETECTORS)} (default: all)",
     )
+    parser.add_argument(
+        "--project",
+        help="train only this project's services (service_id prefix before ':'). "
+             "Models are per service and never mixed across projects, so this "
+             "changes which are rebuilt, not what any of them learns.",
+    )
+    parser.add_argument("--n-estimators", type=int, default=int(_cfg["n_estimators"]))
+    parser.add_argument("--holdout-fraction", type=float, default=float(_cfg["holdout_fraction"]))
     args = parser.parse_args()
 
     algorithms = [a.strip() for a in args.algorithms.split(",") if a.strip()]
@@ -171,9 +179,9 @@ def main():
     # detector blows up on this service.
     algorithms.sort(key=lambda a: 0 if a == "iforest" else 1)
     min_training_samples = args.min_samples
-    n_estimators = int(_cfg["n_estimators"])
+    n_estimators = int(args.n_estimators)
     max_samples_fraction = float(_cfg["max_samples_fraction"])
-    holdout_fraction = float(_cfg["holdout_fraction"])
+    holdout_fraction = float(args.holdout_fraction)
 
     if not os.path.exists(FEATURES_PATH):
         print(f"[train] no features at {FEATURES_PATH} — run preprocess.py first", file=sys.stderr)
@@ -186,6 +194,19 @@ def main():
     if args.until:
         until = pd.Timestamp(args.until, tz="UTC")
         df = df[df["timestamp"] <= until]
+
+    if args.project:
+        prefix = f"{args.project}:"
+        before = df["service_id"].nunique()
+        df = df[df["service_id"].astype(str).str.startswith(prefix)]
+        if df.empty:
+            print(
+                f"[train] no rows for project '{args.project}' "
+                f"(features.csv holds {before} service(s))",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print(f"[train] scoped to project '{args.project}': {df['service_id'].nunique()} service(s)")
 
     os.makedirs(MODELS_DIR, exist_ok=True)
 
@@ -368,6 +389,7 @@ def main():
         "holdout_fraction": holdout_fraction,
         "feature_columns": FEATURE_COLUMNS,
         "training_window": {"since": args.since, "until": args.until},
+        "project": args.project,
         "algorithms": algorithms,
         "trained": {
             sid: {
@@ -389,7 +411,40 @@ def main():
         },
         "skipped": {sid: {"samples": n} for sid, n in skipped},
     }
-    with open(os.path.join(MODELS_DIR, "training_summary.json"), "w") as f:
+    # A project-scoped run must not erase the record of the others. The
+    # summary is what the UI reads to decide whether a service has a model,
+    # so overwriting it wholesale after training one project would show every
+    # other project as untrained while its models sat on disk, fine.
+    summary_path = os.path.join(MODELS_DIR, "training_summary.json")
+    if args.project and os.path.exists(summary_path):
+        try:
+            with open(summary_path) as f:
+                previous = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            previous = {}
+
+        def _other_projects(section):
+            prefix = f"{args.project}:"
+            return {
+                sid: entry
+                for sid, entry in (previous.get(section) or {}).items()
+                if not str(sid).startswith(prefix)
+            }
+
+        summary["trained"] = {**_other_projects("trained"), **summary["trained"]}
+        summary["skipped"] = {**_other_projects("skipped"), **summary["skipped"]}
+        # Keep a per-project record of when each was last trained, so "this
+        # project is stale" is answerable without re-reading every model file.
+        last_trained = dict(previous.get("last_trained_per_project") or {})
+        last_trained[args.project] = summary["generated_at"]
+        summary["last_trained_per_project"] = last_trained
+    else:
+        summary["last_trained_per_project"] = {
+            p: summary["generated_at"]
+            for p in {sid.split(":")[0] for sid in summary["trained"] if ":" in sid}
+        }
+
+    with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
 
     if not trained:

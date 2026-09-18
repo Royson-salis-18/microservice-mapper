@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-18T13:51:07.133101+00:00",
+  "generated_at": "2026-09-18T14:04:42.107127+00:00",
   "min_training_samples": 30,
-  "contamination": 0.01,
-  "n_estimators": 200,
+  "contamination": 0.02,
+  "n_estimators": 50,
   "max_samples_fraction": 1.0,
   "holdout_fraction": 0.2,
   "feature_columns": [
@@ -15,473 +15,12 @@
     "since": null,
     "until": null
   },
+  "project": "death-star",
   "algorithms": [
     "iforest",
-    "lof",
-    "ocsvm",
     "zscore"
   ],
   "trained": {
-    "death-star:post-storage-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.3910313872989022e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.32841404005428254,
-        "max_score": -0.3284140400542826,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 149,
-        "unique_fraction": 0.09502551020408163,
-        "feature_std": {
-          "z_cpu_percent": 1.1068133114688328,
-          "z_memory_percent": 1.1178912275938835,
-          "z_network_rx_rate": 1.1096208414173805,
-          "z_network_tx_rate": 1.1113077772485551
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.3910313872989022e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.6794219588821613,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 6.519227458674911e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.8196217286218355,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:post-storage-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -3.8467493079785697e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3816448836544062,
-        "max_score": -0.3816448836544062,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 152,
-        "unique_fraction": 0.09693877551020408,
-        "feature_std": {
-          "z_cpu_percent": 1.1169677467418444,
-          "z_memory_percent": 1.1178912275938835,
-          "z_network_rx_rate": 1.111552807681167,
-          "z_network_tx_rate": 1.109620837583989
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -3.8467493079785697e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8598658376556194,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00027158948903122153,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.780827911372536,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:social-graph-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.207801220148852e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3962980217365842,
-        "max_score": -0.3962980217365842,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 47,
-        "unique_fraction": 0.029974489795918366,
-        "feature_std": {
-          "z_cpu_percent": 1.1107313785965,
-          "z_memory_percent": 1.1173669549540761,
-          "z_network_rx_rate": 1.1176765038530663,
-          "z_network_tx_rate": 1.117389113812135
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.207801220148852e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8428613182483613,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 3.849183349685826e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 12.238995561023708,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:social-graph-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": 0.0,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4304760133135882,
-        "max_score": -0.4304760133135883,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 32,
-        "unique_fraction": 0.02040816326530612,
-        "feature_std": {
-          "z_cpu_percent": 1.1159713799819122,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1174784482894105,
-          "z_network_tx_rate": 1.117962646887923
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.009236171338719,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 3.5648000531991214e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.581034750875494,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:url-shorten-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -2.5825695748604716e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.36405559546460087,
-        "max_score": -0.364055595464601,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 156,
-        "unique_fraction": 0.09948979591836735,
-        "feature_std": {
-          "z_cpu_percent": 1.1080143510131415,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.109562188939082,
-          "z_network_tx_rate": 1.1112971168498986
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -2.5825695748604716e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 3.1511499944664525,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 9.600655697503963e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 6.090616067015823,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:url-shorten-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.5894403848637495e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3831813941609386,
-        "max_score": -0.3831813941609386,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 159,
-        "unique_fraction": 0.10140306122448979,
-        "feature_std": {
-          "z_cpu_percent": 1.1122586794867033,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1115463830564671,
-          "z_network_tx_rate": 1.1093896473552725
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.5894403848637495e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 2.644105682535423,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00018123465307809711,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 8.250013924856624,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -5.260548940899668e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4248967861767484,
-        "max_score": -0.4248967861767485,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 41,
-        "unique_fraction": 0.02614795918367347,
-        "feature_std": {
-          "z_cpu_percent": 1.1173125866083407,
-          "z_memory_percent": 1.1176765038522671,
-          "z_network_rx_rate": 1.1178912275951935,
-          "z_network_tx_rate": 1.1172265146645441
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -5.260548940899668e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.0458973423375666,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": -3.7839605236835735e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 6.401002666982822,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.352000109089424e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4037817728303506,
-        "max_score": -0.4037817728303507,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 37,
-        "unique_fraction": 0.023596938775510203,
-        "feature_std": {
-          "z_cpu_percent": 1.116828899312879,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1178912276067028,
-          "z_network_tx_rate": 1.1178912275951935
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.352000109089424e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.0802857616136552,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00039748412060647276,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 4.714480267420381,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-timeline-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -5.199833619240479e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3734603702255882,
-        "max_score": -0.37346037022558815,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 150,
-        "unique_fraction": 0.09566326530612244,
-        "feature_std": {
-          "z_cpu_percent": 1.1112069362169072,
-          "z_memory_percent": 1.1178197307412046,
-          "z_network_rx_rate": 1.1099380753645878,
-          "z_network_tx_rate": 1.111571918156207
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -5.199833619240479e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 2.0010613397711685,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00023781711440759245,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.985863490182609,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-timeline-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -2.516433242338856e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3890024775072322,
-        "max_score": -0.3890024775072322,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 153,
-        "unique_fraction": 0.0975765306122449,
-        "feature_std": {
-          "z_cpu_percent": 1.1169664642661437,
-          "z_memory_percent": 1.1177481562030402,
-          "z_network_rx_rate": 1.1115903084869592,
-          "z_network_tx_rate": 1.109741531640687
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -2.516433242338856e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8041788094297917,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00023885424056910255,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.952892036806984,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
     "sock-shop:carts": {
       "samples": 1568,
       "project": "sock-shop",
@@ -508,16 +47,6 @@
       "algorithms": {
         "iforest": {
           "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0002165569945455914,
           "holdout_flag_rate": 0.0,
           "error": null
         },
@@ -557,16 +86,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0002799667740851497,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 7.51518386290543,
           "holdout_flag_rate": 0.0,
@@ -601,16 +120,6 @@
         "iforest": {
           "threshold_p99": 0.0,
           "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00014194345481666204,
-          "holdout_flag_rate": 1.0,
           "error": null
         },
         "zscore": {
@@ -649,16 +158,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00014323279501171626,
-          "holdout_flag_rate": 1.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 5.871459380331556,
           "holdout_flag_rate": 0.0,
@@ -692,16 +191,6 @@
       "algorithms": {
         "iforest": {
           "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.000456023623534918,
           "holdout_flag_rate": 0.0,
           "error": null
         },
@@ -741,16 +230,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 5 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00045466409967431787,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 4.668050736058746,
           "holdout_flag_rate": 0.0,
@@ -784,16 +263,6 @@
       "algorithms": {
         "iforest": {
           "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0002463027021297748,
           "holdout_flag_rate": 0.0,
           "error": null
         },
@@ -833,16 +302,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 6.204887379190893e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 4.668050736058741,
           "holdout_flag_rate": 0.0,
@@ -876,16 +335,6 @@
       "algorithms": {
         "iforest": {
           "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00033516012426826336,
           "holdout_flag_rate": 0.0,
           "error": null
         },
@@ -925,16 +374,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0005113106442324877,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 6.862981467316156,
           "holdout_flag_rate": 0.0,
@@ -968,16 +407,6 @@
       "algorithms": {
         "iforest": {
           "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0006713748013682519,
           "holdout_flag_rate": 0.0,
           "error": null
         },
@@ -1017,16 +446,6 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0002726158422845515,
-          "holdout_flag_rate": 1.0,
-          "error": null
-        },
         "zscore": {
           "threshold_p99": 7.526424039577453,
           "holdout_flag_rate": 0.0,
@@ -1063,18 +482,368 @@
           "holdout_flag_rate": 0.0,
           "error": null
         },
-        "lof": {
-          "threshold_p99": null,
-          "holdout_flag_rate": null,
-          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
-        },
-        "ocsvm": {
-          "threshold_p99": 0.0005144896934785592,
+        "zscore": {
+          "threshold_p99": 8.624619860270029,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:post-storage-mongodb": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.015613635518400901,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.31214215028963516,
+        "max_score": -0.3121421502896352,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 149,
+        "unique_fraction": 0.09502551020408163,
+        "feature_std": {
+          "z_cpu_percent": 1.1068133114688328,
+          "z_memory_percent": 1.1178912275938835,
+          "z_network_rx_rate": 1.1096208414173805,
+          "z_network_tx_rate": 1.1113077772485551
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.015613635518400901,
           "holdout_flag_rate": 0.0,
           "error": null
         },
         "zscore": {
-          "threshold_p99": 8.624619860270029,
+          "threshold_p99": 5.8196217286218355,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:post-storage-service": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.027179241995728742,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3588431496370612,
+        "max_score": -0.35884314963706104,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 152,
+        "unique_fraction": 0.09693877551020408,
+        "feature_std": {
+          "z_cpu_percent": 1.1169677467418444,
+          "z_memory_percent": 1.1178912275938835,
+          "z_network_rx_rate": 1.111552807681167,
+          "z_network_tx_rate": 1.109620837583989
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.027179241995728742,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.780827911372536,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:social-graph-mongodb": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.05210583021313122,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.33523494014088756,
+        "max_score": -0.33523494014088745,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 47,
+        "unique_fraction": 0.029974489795918366,
+        "feature_std": {
+          "z_cpu_percent": 1.1107313785965,
+          "z_memory_percent": 1.1173669549540761,
+          "z_network_rx_rate": 1.1176765038530663,
+          "z_network_tx_rate": 1.117389113812135
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.05210583021313122,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 12.238995561023708,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:social-graph-service": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.10894445716020862,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3324835820150298,
+        "max_score": -0.3324835820150298,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 32,
+        "unique_fraction": 0.02040816326530612,
+        "feature_std": {
+          "z_cpu_percent": 1.1159713799819122,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1174784482894105,
+          "z_network_tx_rate": 1.117962646887923
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.10894445716020862,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.581034750875494,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:url-shorten-mongodb": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.02528371740216248,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3311980294540558,
+        "max_score": -0.33119802945405574,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 156,
+        "unique_fraction": 0.09948979591836735,
+        "feature_std": {
+          "z_cpu_percent": 1.1080143510131415,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.109562188939082,
+          "z_network_tx_rate": 1.1112971168498986
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.02528371740216248,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.090616067015823,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:url-shorten-service": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.03409463515899133,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.347425190376124,
+        "max_score": -0.347425190376124,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 159,
+        "unique_fraction": 0.10140306122448979,
+        "feature_std": {
+          "z_cpu_percent": 1.1122586794867033,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1115463830564671,
+          "z_network_tx_rate": 1.1093896473552725
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.03409463515899133,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.250013924856624,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-mongodb": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.03741314213284885,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.38246437075567025,
+        "max_score": -0.38246437075567014,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 41,
+        "unique_fraction": 0.02614795918367347,
+        "feature_std": {
+          "z_cpu_percent": 1.1173125866083407,
+          "z_memory_percent": 1.1176765038522671,
+          "z_network_rx_rate": 1.1178912275951935,
+          "z_network_tx_rate": 1.1172265146645441
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.03741314213284885,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.401002666982822,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-service": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.03990603388357111,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.36279486147397033,
+        "max_score": -0.36279486147397033,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 37,
+        "unique_fraction": 0.023596938775510203,
+        "feature_std": {
+          "z_cpu_percent": 1.116828899312879,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1178912276067028,
+          "z_network_tx_rate": 1.1178912275951935
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.03990603388357111,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.714480267420381,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-timeline-mongodb": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.023951683666622352,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.34859370869229267,
+        "max_score": -0.3485937086922927,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 150,
+        "unique_fraction": 0.09566326530612244,
+        "feature_std": {
+          "z_cpu_percent": 1.1112069362169072,
+          "z_memory_percent": 1.1178197307412046,
+          "z_network_rx_rate": 1.1099380753645878,
+          "z_network_tx_rate": 1.111571918156207
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.023951683666622352,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.985863490182609,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-timeline-service": {
+      "samples": 1568,
+      "project": "death-star",
+      "threshold_p99": 0.019868029601182866,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.372502275134575,
+        "max_score": -0.372502275134575,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 153,
+        "unique_fraction": 0.0975765306122449,
+        "feature_std": {
+          "z_cpu_percent": 1.1169664642661437,
+          "z_memory_percent": 1.1177481562030402,
+          "z_network_rx_rate": 1.1115903084869592,
+          "z_network_tx_rate": 1.109741531640687
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.019868029601182866,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.952892036806984,
           "holdout_flag_rate": 0.0,
           "error": null
         }
@@ -1082,63 +851,6 @@
     }
   },
   "skipped": {
-    "death-star:compose-post-service": {
-      "samples": 0
-    },
-    "death-star:home-timeline-redis": {
-      "samples": 0
-    },
-    "death-star:home-timeline-service": {
-      "samples": 0
-    },
-    "death-star:jaeger-agent": {
-      "samples": 0
-    },
-    "death-star:media-frontend": {
-      "samples": 0
-    },
-    "death-star:media-memcached": {
-      "samples": 0
-    },
-    "death-star:media-mongodb": {
-      "samples": 0
-    },
-    "death-star:media-service": {
-      "samples": 0
-    },
-    "death-star:nginx-thrift": {
-      "samples": 0
-    },
-    "death-star:post-storage-memcached": {
-      "samples": 0
-    },
-    "death-star:social-graph-redis": {
-      "samples": 0
-    },
-    "death-star:text-service": {
-      "samples": 0
-    },
-    "death-star:unique-id-service": {
-      "samples": 0
-    },
-    "death-star:url-shorten-memcached": {
-      "samples": 0
-    },
-    "death-star:user-memcached": {
-      "samples": 0
-    },
-    "death-star:user-mention-service": {
-      "samples": 0
-    },
-    "death-star:user-timeline-redis": {
-      "samples": 0
-    },
-    "sock-shop:catalogue": {
-      "samples": 0
-    },
-    "sock-shop:payment": {
-      "samples": 0
-    },
     "train-ticket:ts-admin-route-service": {
       "samples": 0
     },
@@ -1240,6 +952,67 @@
     },
     "train-ticket:unknown-fdb4653e096a": {
       "samples": 0
+    },
+    "sock-shop:catalogue": {
+      "samples": 0
+    },
+    "sock-shop:payment": {
+      "samples": 0
+    },
+    "death-star:compose-post-service": {
+      "samples": 0
+    },
+    "death-star:home-timeline-redis": {
+      "samples": 0
+    },
+    "death-star:home-timeline-service": {
+      "samples": 0
+    },
+    "death-star:jaeger-agent": {
+      "samples": 0
+    },
+    "death-star:media-frontend": {
+      "samples": 0
+    },
+    "death-star:media-memcached": {
+      "samples": 0
+    },
+    "death-star:media-mongodb": {
+      "samples": 0
+    },
+    "death-star:media-service": {
+      "samples": 0
+    },
+    "death-star:nginx-thrift": {
+      "samples": 0
+    },
+    "death-star:post-storage-memcached": {
+      "samples": 0
+    },
+    "death-star:social-graph-redis": {
+      "samples": 0
+    },
+    "death-star:text-service": {
+      "samples": 0
+    },
+    "death-star:unique-id-service": {
+      "samples": 0
+    },
+    "death-star:url-shorten-memcached": {
+      "samples": 0
+    },
+    "death-star:user-memcached": {
+      "samples": 0
+    },
+    "death-star:user-mention-service": {
+      "samples": 0
+    },
+    "death-star:user-timeline-redis": {
+      "samples": 0
     }
+  },
+  "last_trained_per_project": {
+    "sock-shop": "2026-09-18T14:02:08.921173+00:00",
+    "death-star": "2026-09-18T14:04:42.107127+00:00"
   }
 }
