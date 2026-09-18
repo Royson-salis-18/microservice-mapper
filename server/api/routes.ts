@@ -900,6 +900,185 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     }
   });
 
+  /**
+   * Hyperparameter suggestions computed from the data that is actually there.
+   *
+   * Deliberately not a table of textbook defaults. The useful question is not
+   * "what is a normal contamination" but "what will happen to *these* services
+   * at that value", and that depends on facts only the feature table knows —
+   * above all how many DISTINCT rows each service has, which on these targets
+   * is a tiny fraction of the row count because collection polls faster than
+   * the metrics change.
+   *
+   * Every suggestion carries its reason, and anything the data cannot answer
+   * says so rather than inventing a number. Contamination in particular is a
+   * prior about how much of the data is anomalous; unlabelled data cannot
+   * tell you that, so what is offered is the consequence of choosing it.
+   */
+  let suggestCache: { at: number; key: string; body: any } | null = null;
+
+  router.get('/ml/suggestions', (req, res) => {
+    const project = typeof req.query.project === 'string' && req.query.project !== 'ALL'
+      ? req.query.project
+      : undefined;
+    const cacheKey = project ?? 'ALL';
+
+    // Parsing a 147k-line CSV per keystroke would be silly; the numbers move
+    // only when preprocessing reruns.
+    if (suggestCache && suggestCache.key === cacheKey && Date.now() - suggestCache.at < 30_000) {
+      return res.json(suggestCache.body);
+    }
+
+    const featuresPath = path.join(mlDataDir, 'features.csv');
+    if (!fs.existsSync(featuresPath)) {
+      return res.json({ available: false, reason: 'No features.csv yet — run preprocessing first.' });
+    }
+
+    const Z_COLUMNS = ['z_cpu_percent', 'z_memory_percent', 'z_network_rx_rate', 'z_network_tx_rate'];
+    const perService = new Map<string, { rows: number; distinct: Set<string> }>();
+
+    try {
+      const text = fs.readFileSync(featuresPath, 'utf8');
+      const lines = text.split('\n');
+      const header = lines[0].split(',');
+      const sidIdx = header.indexOf('service_id');
+      const zIdx = Z_COLUMNS.map((c) => header.indexOf(c));
+      if (sidIdx < 0 || zIdx.some((i) => i < 0)) {
+        return res.json({ available: false, reason: 'features.csv is missing the expected columns.' });
+      }
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+        const cells = line.split(',');
+        const sid = cells[sidIdx];
+        if (!sid) continue;
+        if (project && !sid.startsWith(`${project}:`)) continue;
+        // A row with any missing feature is dropped by train.py too.
+        const key = zIdx.map((i2) => cells[i2]).join(',');
+        if (key.split(',').some((v) => v === '' || v === undefined)) continue;
+        let entry = perService.get(sid);
+        if (!entry) { entry = { rows: 0, distinct: new Set() }; perService.set(sid, entry); }
+        entry.rows++;
+        entry.distinct.add(key);
+      }
+    } catch (e: any) {
+      return res.json({ available: false, reason: `Could not read features.csv: ${e.message}` });
+    }
+
+    const services = Array.from(perService.entries())
+      .map(([sid, v]) => ({ sid, rows: v.rows, distinct: v.distinct.size }))
+      .sort((a, b) => a.distinct - b.distinct);
+
+    if (services.length === 0) {
+      return res.json({ available: false, reason: project ? `No feature rows for ${project}.` : 'No feature rows yet.' });
+    }
+
+    const median = (xs: number[]) => {
+      const a = [...xs].sort((x, y) => x - y);
+      const mid = Math.floor(a.length / 2);
+      return a.length % 2 ? a[mid] : Math.round((a[mid - 1] + a[mid]) / 2);
+    };
+
+    const rowCounts = services.map((s) => s.rows);
+    const distinctCounts = services.map((s) => s.distinct);
+    const medRows = median(rowCounts);
+    const medDistinct = median(distinctCounts);
+    const minRows = Math.min(...rowCounts);
+    const thin = services.filter((s) => s.distinct / Math.max(s.rows, 1) < 0.05);
+    const lofCapable = services.filter((s) => s.distinct >= 20);
+
+    // min_samples: keep as many services as possible while still leaving a
+    // holdout. Anything below the smallest service's row count trains
+    // everything; the default of 30 is only a problem when services are
+    // genuinely short of data.
+    const wouldSkip = (threshold: number) => services.filter((s) => s.rows < threshold).length;
+
+    // n_estimators buys score stability, and stability is bounded by how many
+    // distinct points there are to partition. More trees over 6 distinct rows
+    // is just a more precise answer to a question the data cannot support.
+    const nEstimators = medDistinct < 50 ? 100 : medDistinct < 500 ? 200 : 300;
+
+    // holdout_fraction must leave a tail big enough to mean something while
+    // keeping enough rows to fit.
+    const holdout = medRows >= 500 ? 0.2 : medRows >= 150 ? 0.15 : 0.1;
+
+    const body = {
+      available: true,
+      project: project ?? 'ALL',
+      observed: {
+        services: services.length,
+        median_rows: medRows,
+        median_distinct: medDistinct,
+        min_rows: minRows,
+        thin_services: thin.length,
+        lof_capable_services: lofCapable.length,
+        thinnest: services.slice(0, 3).map((s) => ({ sid: s.sid, rows: s.rows, distinct: s.distinct })),
+      },
+      suggestions: {
+        contamination: {
+          suggested: 0.01,
+          range: [0.005, 0.05],
+          hard_limits: [0.0001, 0.5],
+          reason:
+            'A prior, not something unlabelled data can tell you: it sets where the alert threshold ' +
+            'lands, not how many anomalies exist. Raise it to make every detector fire more readily. ' +
+            `Across ${services.length} service(s) here the training data is ` +
+            `${medDistinct}/${medRows} distinct rows at the median, so the threshold is being drawn ` +
+            'from a small number of genuinely different points whatever value you pick.',
+        },
+        n_estimators: {
+          suggested: nEstimators,
+          range: [100, 300],
+          hard_limits: [10, 1000],
+          reason:
+            `${nEstimators} — more trees buy score stability, and stability is capped by how many ` +
+            `distinct points there are to partition (median ${medDistinct} here). Past ~200 the ` +
+            'returns are small and the cost is linear. Isolation Forest only; the other three ignore it.',
+        },
+        min_samples: {
+          suggested: Math.max(30, Math.min(50, Math.floor(medRows / 10))),
+          range: [30, Math.max(30, Math.floor(medRows / 5))],
+          hard_limits: [10, 100000],
+          reason:
+            `At 30 it skips ${wouldSkip(30)} of ${services.length} service(s); at 100 it would skip ` +
+            `${wouldSkip(100)}. Counts raw rows, not distinct ones, so a service can clear this ` +
+            'comfortably and still carry almost no signal — check "thin data" before trusting a pass.',
+        },
+        holdout_fraction: {
+          suggested: holdout,
+          range: [0.1, 0.3],
+          hard_limits: [0, 0.9],
+          reason:
+            `${holdout} leaves about ${Math.round(medRows * holdout)} rows held out at the median ` +
+            `service (${medRows} rows). The split is chronological, so the holdout is the most recent ` +
+            'data — a high firing rate on it usually means the system changed, not that the model is wrong.',
+        },
+        algorithms: {
+          suggested: lofCapable.length >= services.length / 2
+            ? ['iforest', 'lof', 'ocsvm', 'zscore']
+            : ['iforest', 'ocsvm', 'zscore'],
+          reason:
+            `${lofCapable.length} of ${services.length} service(s) have the 20+ distinct rows LOF ` +
+            'needs for a density model; it refuses on the rest and records why. ' +
+            'Keep zscore whatever else you run — it needs no fitting and is the interpretable ' +
+            'baseline the others have to beat.',
+        },
+      },
+      warnings: [
+        ...(thin.length > 0
+          ? [`${thin.length} of ${services.length} service(s) are under 5% distinct rows. No hyperparameter fixes that — it needs slower collection or longer, more varied runs.`]
+          : []),
+        ...(minRows < 30
+          ? [`The smallest service has ${minRows} feature row(s), below the default min_samples of 30, so it will be skipped.`]
+          : []),
+      ],
+    };
+
+    suggestCache = { at: Date.now(), key: cacheKey, body };
+    res.json(body);
+  });
+
   /** Which projects have data, so the UI can scope to one at a time. */
   router.get('/ml/projects', (_req, res) => {
     const featuresPath = path.join(mlDataDir, 'features.csv');
