@@ -176,7 +176,13 @@ class VirtualUser {
     // substitute extracted vars: /product/${slug}
     path = path.replace(/\$\{(\w+)\}/g, (_, k) => this.vars[k] ?? '');
 
-    const url = cfg.baseUrl.replace(/\/$/, '') + path;
+    // A step path may be an absolute URL. That lets a single run spread load
+    // across every discovered service (http://host:8080/, http://host:9000/, …)
+    // instead of only the one baseUrl, which is what "stress every endpoint"
+    // needs in order to produce telemetry for all services at once.
+    const url = /^https?:\/\//i.test(path)
+      ? path
+      : cfg.baseUrl.replace(/\/$/, '') + path;
     const method = step.method || 'GET';
     const started = Date.now();
     this.engine.stats.recordRequestStart();

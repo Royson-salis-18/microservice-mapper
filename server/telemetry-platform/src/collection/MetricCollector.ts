@@ -219,8 +219,9 @@ export class MetricCollector {
 
     // count TIME_WAIT (06) too, not just ESTABLISHED (01) — it's the ~60s
     // post-close linger state, so it catches fast request/response cycles
-    // that finish between two 1s snapshots and would otherwise never show
-    // up. We still record which state we actually saw, not a guess.
+    // that finish between two sweeps (currently 5s apart) and would
+    // otherwise never show up. We still record which state we actually
+    // saw, not a guess.
     const RELEVANT_TCP_STATES: Record<string, string> = { '01': 'ESTABLISHED', '06': 'TIME_WAIT' };
 
     for (const service of services) {

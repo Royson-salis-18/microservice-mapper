@@ -74,7 +74,12 @@ export class WebSocketManager {
                 sshUser = tVal.sshUsername || sshUser;
               }
             }
-          } catch (e) {}
+          } catch (e) {
+            // Swallowing this silently meant a malformed remote_config.json
+            // dropped us onto the DEFAULT ssh host/key without a word, so the
+            // terminal connected somewhere the user never asked for.
+            console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
+          }
 
           if (targetIp && targetKey) {
             spawnCmd = 'ssh';
@@ -88,6 +93,14 @@ export class WebSocketManager {
         });
         
         this.sessions.set(ws, session);
+
+        // A missing ssh binary emits 'error'; unhandled it throws, and the
+        // dead session stays in the map so the next command silently writes
+        // into a process that isn't there.
+        session.on('error', (err) => {
+          ws.send(JSON.stringify({ type: 'TERMINAL_LOG', data: `\n[Terminal failed to start: ${err.message}]\n` }));
+          this.sessions.delete(ws);
+        });
 
         session.stdout?.on('data', (out) => {
           const str = out.toString();

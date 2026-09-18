@@ -100,18 +100,34 @@ function hierarchyDepths(items: Item[], edges: Edge[]): Map<string, number> {
   // node so those services still get laid out instead of piling at zero.
   const seeds = roots.length > 0 ? roots : [...items].sort((a, b) => b.degree - a.degree).slice(0, 1);
 
-  const queue: Array<{ id: string; d: number }> = seeds.map((s) => ({ id: s.id, d: 0 }));
-  const visited = new Set<string>();
+  // Breadth-first, assigning each node a depth exactly once. An earlier
+  // version re-queued a node whenever a longer path to it was found, to get
+  // "deepest depender wins" — but on a cycle (A -> B -> A, which real
+  // meshes have: a service and its database each observed calling the
+  // other) the depth grows without bound and the loop never terminates,
+  // freezing whatever thread it runs on. First-visit depth is stable,
+  // always terminates, and still reads left-to-right.
+  const queue: string[] = seeds.map((s) => s.id);
+  const visited = new Set<string>(queue);
+  for (const id of queue) depth.set(id, 0);
+
   while (queue.length > 0) {
-    const { id, d } = queue.shift()!;
-    if (visited.has(id) && (depth.get(id) ?? 0) >= d) continue;
-    visited.add(id);
-    depth.set(id, Math.max(depth.get(id) ?? 0, d));
+    const id = queue.shift()!;
+    const d = depth.get(id) ?? 0;
     for (const next of outgoing.get(id) || []) {
-      if (!visited.has(next) || (depth.get(next) ?? 0) < d + 1) {
-        queue.push({ id: next, d: d + 1 });
-      }
+      if (visited.has(next)) continue;
+      visited.add(next);
+      depth.set(next, d + 1);
+      queue.push(next);
     }
+  }
+
+  // Anything in a component with no root (pure cycles) is unreachable from
+  // the seeds; place it after the deepest reached node rather than at 0,
+  // where it would sit on top of the entry points.
+  const maxReached = depth.size > 0 ? Math.max(...depth.values()) : 0;
+  for (const item of items) {
+    if (!depth.has(item.id)) depth.set(item.id, maxReached + 1);
   }
 
   for (const item of items) if (!depth.has(item.id)) depth.set(item.id, 0);

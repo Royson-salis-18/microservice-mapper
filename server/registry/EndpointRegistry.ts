@@ -123,11 +123,32 @@ export class EndpointRegistry {
     if (!map) return [];
     const all = Array.from(map.values());
     const filtered = publicOnly ? all.filter(e => e.type === 'PUBLIC') : all;
-    // put the real entrypoint (public, port 80) first — otherwise whatever
-    // got discovered first wins by accident (e.g. jaeger's :4318), and
-    // that's what callers taking "the first endpoint" end up defaulting to
+
+    // Order matters because callers that don't name an endpoint take the
+    // first one, and that becomes the URL traffic is sent to.
+    //
+    // Sorting PUBLIC-then-lowest-port alone picks the wrong thing on any
+    // stack that ships its own observability UIs: an OpenTelemetry Demo
+    // publishes Grafana on :3000 and the actual app frontend on :8080, so
+    // :3000 won on port order and every request went to a dashboard that
+    // isn't the system under test (and which timed out from outside).
+    //
+    // Observability components are identified by service name rather than by
+    // port, because ports collide — :3000 is Grafana here and a perfectly
+    // normal app frontend elsewhere. This only affects which endpoint is
+    // OFFERED as the default; any endpoint can still be chosen explicitly.
+    const OBSERVABILITY = /(grafana|jaeger|prometheus|opensearch|kibana|zipkin|otel-?collector|opamp|telemetry-docs|flagd-ui)/i;
+    const APP_ENTRY_PORTS = [80, 443, 8080, 8000, 3000];
+
+    const rank = (e: DiscoveredEndpoint) => {
+      if (e.type !== 'PUBLIC') return 40;
+      if (OBSERVABILITY.test(e.serviceName || '')) return 30; // last, but still listed
+      if (e.port === 80 || e.port === 443) return 0;
+      const idx = APP_ENTRY_PORTS.indexOf(e.port);
+      return idx >= 0 ? idx : 20;
+    };
+
     return [...filtered].sort((a, b) => {
-      const rank = (e: DiscoveredEndpoint) => (e.type === 'PUBLIC' ? (e.port === 80 ? 0 : 1) : 2);
       const rankDiff = rank(a) - rank(b);
       if (rankDiff !== 0) return rankDiff;
       return a.port - b.port;

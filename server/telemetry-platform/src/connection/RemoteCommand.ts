@@ -139,8 +139,16 @@ function sanitizeContainerId(id: string): string {
   return id;
 }
 
+// Strict ISO-8601. Date.parse() is NOT sufficient here: V8 accepts
+// non-ISO formats with trailing garbage, so `Date.parse("Jan 1 2026
+// $(whoami)")` succeeds and the payload reaches the remote shell through
+// `docker logs --since`. This value is currently computed server-side, but a
+// sanitizer whose whole job is blocking injection must not depend on the
+// caller staying trustworthy.
+const ISO_8601 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+
 function sanitizeIso(iso: string): string {
-  if (Number.isNaN(Date.parse(iso))) {
+  if (typeof iso !== "string" || !ISO_8601.test(iso) || Number.isNaN(Date.parse(iso))) {
     throw new Error(`Refusing to build command: invalid ISO timestamp "${iso}"`);
   }
   return iso;

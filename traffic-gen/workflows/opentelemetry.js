@@ -1,13 +1,18 @@
 'use strict';
 
 /**
- * OpenTelemetry Demo workflows — STUB.
+ * OpenTelemetry Demo workflows — NOT a stub (STUB: false at the bottom).
  *
- * [AGY] IMPORTANT: We explicitly set STUB: false at the bottom of this file.
- * If STUB is true, the engine requires dynamic endpoints injected via the start request.
- * Because the backend UI's "USER_JOURNEY" mode doesn't send endpoints, STUB=true
- * caused traffic-gen to silently reject open-telemetry with HTTP 400.
- * We know the base paths (/, /cart) exist, so STUB=false is safe and allows it to run.
+ * Why STUB is false: with STUB true, /api/start rejects the target unless the
+ * request also supplies confirmed endpoints (useDiscoveredEndpoints plus a
+ * non-empty endpointPaths). The UI's USER_JOURNEY mode does not send those,
+ * so the target failed with HTTP 400 while looking correctly configured.
+ * The paths below are the OpenTelemetry Demo's own frontend routes, so
+ * there is nothing to confirm dynamically.
+ *
+ * Entry point: the demo serves through frontend-proxy on :8080. If that port
+ * is not open to you in the instance's security group, pin a tunnelled URL
+ * instead of guessing — see wiki/15-troubleshooting.md.
  */
 
 const browse = {

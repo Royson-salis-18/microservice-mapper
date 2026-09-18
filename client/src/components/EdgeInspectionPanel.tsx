@@ -32,6 +32,12 @@ export function EdgeInspectionPanel({ edge, onClose }: EdgeInspectionPanelProps)
   return (
     <div style={{
       width: '400px',
+      // main-content is a flex row (Scene3D/canvas + this panel as siblings);
+      // without flexShrink:0 the flex algorithm crushes this panel toward 0
+      // width instead of shrinking the canvas side, so it rendered off the
+      // right edge of the viewport at ~40px wide with all its content
+      // still there but invisible. flexShrink:0 makes the 400px authoritative.
+      flexShrink: 0,
       background: 'rgba(12, 12, 24, 0.85)',
       backdropFilter: 'blur(12px)',
       borderLeft: '1px solid rgba(255,255,255,0.1)',

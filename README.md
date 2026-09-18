@@ -89,6 +89,7 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run build` | Production client build |
 | `npm run install:all` | Install server, client, remote-collector, traffic-gen |
 | `npm run traffic-gen` | Run traffic generator |
+| `npm test` | Run the logic test suite (layouts, cycle handling, edge heat bands) |
 
 ---
 
@@ -281,7 +282,8 @@ Full technical documentation lives in the **[wiki/](./wiki/)** directory:
 
 ## Known Limitations
 
-- **Short TCP connections missed** — connections that open/close within the 5-second polling window are invisible
+- **Connection sampling, not per-request tracing** — the sweep counts sockets in `ESTABLISHED` and `TIME_WAIT`. `TIME_WAIT` lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record
+- **No per-edge latency or error rate** — `edge.metrics` is `null` in a Docker/SSH deployment. Edge heat is graded on observed connection volume (`activity.samplesPerMin`), which is a concurrency proxy, not HTTP load
 - **HTTP/1.1 log parsing only** — no HTTP/2 or gRPC log parsing
 - **Linux targets only** — `/proc/net/tcp` is Linux-specific
 - **No auto-retraining** — ML models must be manually retrained as data accumulates

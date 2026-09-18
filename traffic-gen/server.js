@@ -70,8 +70,31 @@ function parseArchitecture(output, host) {
   return { listening, containers };
 }
 
+// Hard ceiling on virtual users for any single run. This is a blast-radius
+// limit, not a performance target: the targets are small EC2 boxes and a
+// runaway loop here is real load on a real machine. Raise it deliberately
+// with TRAFFIC_MAX_USERS if a box can take more.
+const ABSOLUTE_MAX_USERS = Math.max(1, Number(process.env.TRAFFIC_MAX_USERS) || 200);
+
+// engine.validateConfig rejects the run when users > maxUsers, so the cap
+// must always sit at or above the user count actually being requested.
+function clampUsers(requested, floorValue) {
+  const asked = Number(requested) || 0;
+  return Math.min(ABSOLUTE_MAX_USERS, Math.max(floorValue, asked));
+}
+
 function dynamicWorkflows(paths) {
-  const steps = paths.map((path, index) => ({ id: `endpoint_${index + 1}`, method: 'GET', path, thinkTimeMs: [300, 1200] }));
+  const steps = paths.map((path, index) => {
+    // Name the step after the host:port or path it hits so per-step stats
+    // are readable when a sweep covers 20+ services.
+    let label;
+    try {
+      label = /^https?:\/\//i.test(path) ? new URL(path).host : path;
+    } catch {
+      label = path;
+    }
+    return { id: `ep_${index + 1}_${label}`.slice(0, 60), method: 'GET', path, thinkTimeMs: [300, 1200] };
+  });
   return { discovered: { id: 'discovered', name: 'Discovered endpoints', steps } };
 }
 
@@ -262,10 +285,18 @@ app.post('/api/start', (req, res) => {
     if (mod.STUB && !isDynamic) return res.status(400).json({ error: `${targetId} needs confirmed endpoints before starting` });
     if (engines.get(projectId)?.engine.running) return res.status(409).json({ error: `project ${projectId} is already running` });
     saveUrl(targetId, baseUrl, projectId);
-    saveProjectSettings(projectId, { profile, users, durationSec, workflowWeights: requestedWorkflowWeights, endpointPaths: configuredPaths });
     targetUrl = targetUrl || baseUrl;
 
     const profileCfg = mod.profiles[profile] || mod.profiles.BASELINE;
+    // An explicit `users` from the caller wins over the profile default, so
+    // the operator can dial a run up or down without editing a workflow file.
+    const effectiveUsers = Math.max(1, Math.min(Number(users) || profileCfg.users, ABSOLUTE_MAX_USERS));
+    if (users && Number(users) > ABSOLUTE_MAX_USERS) {
+      console.warn(`[TRAFFIC] requested users=${users} clamped to ABSOLUTE_MAX_USERS=${ABSOLUTE_MAX_USERS}`);
+    }
+    // Persist what will actually run, not what was asked for, so the saved
+    // settings match the run an operator sees in the stats panel.
+    saveProjectSettings(projectId, { profile, users: effectiveUsers, durationSec, workflowWeights: requestedWorkflowWeights, endpointPaths: configuredPaths });
 
     const workflows = isDynamic ? dynamicWorkflows(configuredPaths) : mod.workflows;
     const requestedWeights = requestedWorkflowWeights || profileCfg.workflowWeights || mod.defaultWorkflowWeights;
@@ -274,12 +305,19 @@ app.post('/api/start', (req, res) => {
       baseUrl: targetUrl,
       workflows,
       workflowWeights: isDynamic ? [{ key: 'discovered', weight: 100 }] : effectiveWorkflowWeights,
-      users: users ?? profileCfg.users,
+      users: effectiveUsers,
       spawnRatePerSec: profileCfg.spawnRatePerSec,
       defaultThinkTimeMs: profileCfg.defaultThinkTimeMs,
       durationSec: durationSec || null,
-      maxUsers: Math.min(maxUsers || 20, 20),
-      maxConcurrency: Math.min(maxConcurrency || 20, 20),
+      // Ceiling, not a target. This used to be Math.min(x, 20), which made
+      // the HEAVY (40 users) and STRESS (80 users) profiles impossible to
+      // run at all: engine.validateConfig throws
+      // "users (80) exceeds maxUsers (20)" and /api/start answered 400.
+      // The cap now floats above whatever the profile asks for, so a
+      // profile can never reject itself, and the real ceiling is one
+      // number (TRAFFIC_MAX_USERS) an operator can see and change.
+      maxUsers: clampUsers(maxUsers, effectiveUsers),
+      maxConcurrency: clampUsers(maxConcurrency, effectiveUsers),
       // These are RCA/failure-injection experiments: services are *expected*
       // to fail and the point is to observe it. 1 is the max engine.js
       // accepts and means "never auto-throttle on error rate" (see
