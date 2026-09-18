@@ -31,6 +31,9 @@ class TargetAgent {
   private recovering = false;
   private dead = false;
   private discoveredServices: any[] = [];
+  /** Telemetry warnings already announced, so a permanently-failing service
+   *  is reported once rather than every collection cycle. */
+  private seenWarnings = new Set<string>();
 
   constructor(
     targetId: string,
@@ -289,8 +292,21 @@ class TargetAgent {
       try {
         collector.setConnection(currentConn);
         const metricsRes = await collector.collectOnce(this.discoveredServices);
-        if (metricsRes.warnings.length > 0) {
-          // Log warnings but continue
+        // These used to be dropped on the floor here — the block was an
+        // empty `// Log warnings but continue`. That is the other half of
+        // why a permanent TCP-scan failure went unnoticed for so long: the
+        // collector dutifully reported it every 5s and nothing ever printed
+        // it. Deduplicated because a genuinely broken service fails on
+        // every single sweep, and an unthrottled warning would bury the log
+        // rather than inform it — so each distinct message is announced
+        // once, then again only if it stops and recurs.
+        for (const warn of metricsRes.warnings) {
+          if (this.seenWarnings.has(warn)) continue;
+          this.seenWarnings.add(warn);
+          this.log(`[Agent:${this.targetId}] Telemetry warning: ${warn}`);
+        }
+        for (const seen of this.seenWarnings) {
+          if (!metricsRes.warnings.includes(seen)) this.seenWarnings.delete(seen);
         }
 
         if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0 || metricsRes.connectionEvents.length > 0)) {
