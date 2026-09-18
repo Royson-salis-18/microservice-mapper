@@ -392,7 +392,7 @@ export class TrafficController {
     const liveOrigins = originResults.filter((r) => r.reachable);
 
     // --- phase 2: what lives behind the ones that do ---
-    const hypotheses = this.pathHypotheses(targetId);
+    const hypotheses = this.pathHypotheses(targetId, await this.declaredWorkflowPaths(targetId));
     const pathCandidates: ProbeCandidate[] = [];
     const seen = new Set(originResults.map((r) => r.url));
     outer: for (const origin of liveOrigins) {
@@ -426,6 +426,29 @@ export class TrafficController {
     return report;
   }
 
+  /**
+   * The GET paths this target's traffic-gen workflows declare.
+   *
+   * Declared evidence, not inference — the same standard the graph holds
+   * itself to. The probe then decides whether each one actually answers, so
+   * a stale workflow path is dropped rather than trusted.
+   */
+  private async declaredWorkflowPaths(targetId: string): Promise<string[]> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`${TRAFFIC_GEN_URL}/api/targets/${encodeURIComponent(targetId)}/paths`, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return [];
+      const body = await res.json();
+      return Array.isArray(body?.paths) ? body.paths.filter((p: unknown): p is string => typeof p === 'string') : [];
+    } catch {
+      // traffic-gen being unreachable is not a reason to fail the probe;
+      // it just means falling back to the generic hypotheses.
+      return [];
+    }
+  }
+
   /** Bounded fan-out. Firing 60 requests at once at a 2GB box measures the
    * box's accept queue, not its endpoints. */
   private async probeAll(candidates: ProbeCandidate[], timeoutMs: number, concurrency: number): Promise<ProbeResult[]> {
@@ -455,13 +478,19 @@ export class TrafficController {
    * then probed: a guess that 404s is dropped, and nothing generates load
    * unless a real response came back from it first.
    */
-  private pathHypotheses(targetId: string): string[] {
+  private pathHypotheses(targetId: string, declaredPaths: string[] = []): string[] {
     const paths: string[] = ['/'];
     const add = (p: string) => {
       if (!p) return;
       const norm = p.startsWith('/') ? p : `/${p}`;
       if (!paths.includes(norm)) paths.push(norm);
     };
+
+    // First, because these are not guesses: they were written against the
+    // real system in its workflow file. Without them a sweep of
+    // DeathStarBench found 2 usable URLs out of 53 — its API is
+    // /wrk2-api/*, and every conventional path 404s.
+    for (const p of declaredPaths) add(p);
 
     if (this.graphStore) {
       for (const route of this.graphStore.endpointRegistry.getRoutes(targetId)) {
