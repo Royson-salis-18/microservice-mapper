@@ -17,6 +17,9 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
   const [history, setHistory] = useState<MetricSnapshot[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [rawEvents, setRawEvents] = useState<any[]>([]);
+  // 'http' = parsed from access logs (has route/status/latency);
+  // 'connection' = observed sockets (no route, no status).
+  const [rawEventKind, setRawEventKind] = useState<'http' | 'connection'>('connection');
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState<string | null>(null);
@@ -27,11 +30,17 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
   useEffect(() => {
     const fetchTraffic = async () => {
       try {
-        const res = await fetch('/api/traffic?limit=50');
+        const scope = selectedProject && selectedProject !== 'ALL' ? `&targetId=${encodeURIComponent(selectedProject)}` : '';
+        const res = await fetch(`/api/traffic?limit=50${scope}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
+        // The endpoint returns { kind, events }; it used to return a bare
+        // array, so keep accepting that rather than breaking on a stale server.
         if (Array.isArray(data)) {
           setRawEvents(data);
+        } else if (data && Array.isArray(data.events)) {
+          setRawEvents(data.events);
+          if (data.kind === 'http' || data.kind === 'connection') setRawEventKind(data.kind);
         } else {
           console.error('Unexpected response format from /api/traffic:', data);
         }
@@ -43,7 +52,9 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
     fetchTraffic();
     const interval = setInterval(fetchTraffic, 2000);
     return () => clearInterval(interval);
-  }, []);
+    // Re-subscribe when the project changes: with an empty dependency list
+    // this kept polling the project that was selected when the view mounted.
+  }, [selectedProject]);
 
   const serviceNodes = useMemo(() => {
     return nodes
@@ -192,6 +203,9 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
           <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
             <span style={{ color: 'var(--color-healthy)', marginRight: '8px' }}>●</span>
             RAW TRAFFIC LOGS
+            <span style={{ marginLeft: '10px', fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 400 }}>
+              {rawEventKind === 'http' ? 'HTTP interactions (from access logs)' : 'observed socket connections'}
+            </span>
           </h3>
           <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{rawEvents.length} events</div>
         </div>
@@ -207,15 +221,26 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
           border: '1px solid #30363d'
         }}>
           {rawEvents.length === 0 ? (
-            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>Waiting for traffic events...</div>
+            <div style={{ color: '#8b949e', fontStyle: 'italic', lineHeight: 1.6 }}>
+              No traffic observed for this project yet.<br />
+              HTTP-level rows need a service that writes a parseable access log to stdout; otherwise this
+              falls back to socket connections seen by the /proc/net/tcp scanner, which needs a reachable
+              host and at least one discovery cycle.
+            </div>
           ) : (
             rawEvents.map((evt, i) => (
               <div key={i} style={{ marginBottom: '8px', display: 'flex', gap: '12px', borderBottom: '1px solid #21262d', paddingBottom: '4px' }}>
                 <span style={{ color: '#8b949e', whiteSpace: 'nowrap' }}>{new Date(evt.timestamp).toISOString().split('T')[1].replace('Z','')}</span>
                 <span style={{ color: '#58a6ff', width: '150px', flexShrink: 0, textOverflow: 'ellipsis', overflow: 'hidden' }}>{evt.source} ➔ {evt.target}</span>
-                <span style={{ color: evt.statusCode >= 400 ? '#ff7b72' : '#3fb950', width: '50px' }}>{evt.statusCode || 200}</span>
+                {/* No status invented for a socket observation: the scanner
+                    sees a connection, not a response. This used to print 200
+                    for every TCP row, which reads as "the request succeeded"
+                    when nothing observed a request at all. */}
+                <span style={{ color: evt.statusCode == null ? '#6e7681' : evt.statusCode >= 400 ? '#ff7b72' : '#3fb950', width: '50px' }}>
+                  {evt.statusCode ?? '—'}
+                </span>
                 <span style={{ color: '#d2a8ff', width: '60px' }}>{evt.method || 'TCP'}</span>
-                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '<encrypted>'}</span>
+                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '—'}</span>
                 {evt.latency && <span style={{ color: '#e3b341', width: '60px', textAlign: 'right' }}>{Math.round(evt.latency)}ms</span>}
                 {evt.bytesSent && <span style={{ color: '#8b949e', width: '70px', textAlign: 'right' }}>{formatBytes(evt.bytesSent)}</span>}
               </div>
