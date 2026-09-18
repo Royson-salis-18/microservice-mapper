@@ -1,5 +1,6 @@
 {
   "service_id": "death-star:user-mongodb",
+  "project": "death-star",
   "feature_columns": [
     "z_cpu_percent",
     "z_memory_percent",
@@ -7,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-17T02:14:51.516521+00:00",
+  "trained_at": "2026-09-18T13:50:56.710599+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -21,6 +22,113 @@
     "max_score": -0.4248967861767485,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -5.260548940899668e-16,
+      "train_score_mean": -0.3934392234131103,
+      "train_score_max": 0.07910732698090805,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.4248967861767484,
+        "max_score": -0.4248967861767485,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_user-mongodb.joblib"
+    },
+    "lof": {
+      "threshold_p99": 1.0458973423375666,
+      "train_score_mean": 0.9940396061555162,
+      "train_score_max": 3.7109848230977134,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.9850290875122283,
+        "max_score": 0.9850290875122283,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_user-mongodb.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": -3.7839605236835735e-05,
+      "train_score_mean": -0.02320977896906672,
+      "train_score_max": 0.16168346982849346,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.024004482230589375,
+        "max_score": -0.024004482230589375,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_user-mongodb.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 6.401002666982822,
+      "train_score_mean": 0.4992067549005373,
+      "train_score_max": 31.29197492209549,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.07599820904238762,
+        "max_score": 0.0759982090423876,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_user-mongodb.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 1568,
+    "unique_rows": 41,
+    "unique_fraction": 0.02614795918367347,
+    "feature_std": {
+      "z_cpu_percent": 1.1173125866083407,
+      "z_memory_percent": 1.1176765038522671,
+      "z_network_rx_rate": 1.1178912275951935,
+      "z_network_tx_rate": 1.1172265146645441
+    }
   },
   "training_window": {
     "since": null,

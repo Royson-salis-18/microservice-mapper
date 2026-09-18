@@ -1,5 +1,6 @@
 {
   "service_id": "sock-shop:edge-router",
+  "project": "sock-shop",
   "feature_columns": [
     "z_cpu_percent",
     "z_memory_percent",
@@ -7,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-17T02:14:54.328548+00:00",
+  "trained_at": "2026-09-18T13:51:01.186318+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -21,6 +22,84 @@
     "max_score": -0.31954236511551126,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": 0.0,
+      "train_score_mean": -0.2963463338914249,
+      "train_score_max": 0.05591429755884958,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3195423651155113,
+        "max_score": -0.31954236511551126,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_edge-router.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00014323279501171626,
+      "train_score_mean": 0.0036357495602207203,
+      "train_score_max": 2.494451073647734,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 1.0,
+        "mean_score": 0.00014323279501171626,
+        "max_score": 0.00014323279501171626,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_edge-router.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 5.871459380331556,
+      "train_score_mean": 0.6599340949992879,
+      "train_score_max": 44.19589877099611,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.24410521453151465,
+        "max_score": 0.2441052145315147,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_edge-router.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.0,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 392
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.0,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 392
+    }
+  },
+  "data_quality": {
+    "rows": 1568,
+    "unique_rows": 7,
+    "unique_fraction": 0.004464285714285714,
+    "feature_std": {
+      "z_cpu_percent": 1.1096751557661093,
+      "z_memory_percent": 1.1099484083826066,
+      "z_network_rx_rate": 1.1179484786514333,
+      "z_network_tx_rate": 1.1179521406230153
+    }
   },
   "training_window": {
     "since": null,

@@ -1,5 +1,6 @@
 {
   "service_id": "death-star:post-storage-service",
+  "project": "death-star",
   "feature_columns": [
     "z_cpu_percent",
     "z_memory_percent",
@@ -7,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-17T02:14:49.307143+00:00",
+  "trained_at": "2026-09-18T13:50:53.495148+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -21,6 +22,113 @@
     "max_score": -0.3816448836544062,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -3.8467493079785697e-16,
+      "train_score_mean": -0.3465601138047592,
+      "train_score_max": 0.06914363134537349,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3816448836544062,
+        "max_score": -0.3816448836544062,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_post-storage-service.joblib"
+    },
+    "lof": {
+      "threshold_p99": 1.8598658376556194,
+      "train_score_mean": 1.1826637525426116,
+      "train_score_max": 15.636983602342198,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 1.1558168707675116,
+        "max_score": 1.1558168707675118,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_post-storage-service.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00027158948903122153,
+      "train_score_mean": -0.001876327632099087,
+      "train_score_max": 0.00043821879397387686,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.0002860372562254465,
+        "max_score": -0.0002860372562254465,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_post-storage-service.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 5.780827911372536,
+      "train_score_mean": 0.722863407726545,
+      "train_score_max": 31.28897569432404,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.24489407865054777,
+        "max_score": 0.2448940786505477,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_post-storage-service.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 1568,
+    "unique_rows": 152,
+    "unique_fraction": 0.09693877551020408,
+    "feature_std": {
+      "z_cpu_percent": 1.1169677467418444,
+      "z_memory_percent": 1.1178912275938835,
+      "z_network_rx_rate": 1.111552807681167,
+      "z_network_tx_rate": 1.109620837583989
+    }
   },
   "training_window": {
     "since": null,
