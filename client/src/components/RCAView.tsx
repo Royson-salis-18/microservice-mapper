@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { Incident } from '../types';
 import { pageRootStyle } from './ProjectSections';
+import { IncidentRulesPanel } from './IncidentRulesPanel';
 
 interface RCAViewProps {
   nodes: Node[];
@@ -47,6 +48,10 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
 
   return (
     <div style={pageRootStyle(embedded)}>
+      {/* What actually fires an incident — visible and editable here rather
+          than living as literals inside AnomalyDetector. */}
+      <IncidentRulesPanel />
+
       {/* Top Banner: Incident Status & Target Isolation */}
       {activeIncident ? (
         <div style={{

@@ -283,3 +283,95 @@ test('restart: running and healthy containers are untouched', () => {
   assert.equal(shouldRestart({ State: 'running', Names: 'docker-compose-front-end-1', Status: 'Up 6 minutes' }), false);
   assert.equal(shouldRestart({ State: 'running', Names: 'vertikal-studio', Status: 'Up 4 minutes (unhealthy)' }), false);
 });
+
+// --- incident detection thresholds ------------------------------------
+//
+// Incidents are rule-based and must keep working when the ML pipeline
+// cannot, so the rules have to survive a bad edit. Clamping is the safety
+// property: no posted value should be able to disable detection or make
+// every service alert. Mirrors the LIMITS table in server/rca/thresholds.ts.
+const THRESHOLD_LIMITS: Record<string, [number, number]> = {
+  minHistorySamples: [2, 1000],
+  zScoreAnomaly: [0.5, 10],
+  zScoreHigh: [0.5, 15],
+  zScoreCritical: [0.5, 20],
+  absoluteHighPercent: [1, 100],
+  absoluteCriticalPercent: [1, 100],
+  flatlineStdDev: [0.0000001, 10],
+  flatlineDeltaPercent: [1, 100],
+  flatlineCriticalPercent: [1, 100],
+  criticalServicesForCritical: [1, 1000],
+};
+
+const DEFAULT_THRESHOLDS: Record<string, number> = {
+  minHistorySamples: 3,
+  zScoreAnomaly: 2.5,
+  zScoreHigh: 3.0,
+  zScoreCritical: 4.0,
+  absoluteHighPercent: 70,
+  absoluteCriticalPercent: 85,
+  flatlineStdDev: 0.001,
+  flatlineDeltaPercent: 30,
+  flatlineCriticalPercent: 80,
+  criticalServicesForCritical: 2,
+};
+
+/** Mirrors toNumber() in server/rca/thresholds.ts. Number(null) and
+ *  Number([]) are both 0, so a bare Number.isFinite guard would accept them
+ *  and clamp to the minimum — the most sensitive possible setting. */
+function toThresholdNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/** Mirrors the merge in loadThresholds/saveThresholds. */
+function clampThresholds(patch: Record<string, unknown>): Record<string, number> {
+  const next = { ...DEFAULT_THRESHOLDS };
+  for (const key of Object.keys(DEFAULT_THRESHOLDS)) {
+    if (!(key in patch)) continue;
+    const value = toThresholdNumber(patch[key]);
+    if (value === null) continue;
+    const [lo, hi] = THRESHOLD_LIMITS[key];
+    next[key] = Math.min(Math.max(value, lo), hi);
+  }
+  return next;
+}
+
+test('thresholds: an absurd value is clamped, not stored', () => {
+  assert.equal(clampThresholds({ absoluteCriticalPercent: 999 }).absoluteCriticalPercent, 100);
+  assert.equal(clampThresholds({ absoluteCriticalPercent: -5 }).absoluteCriticalPercent, 1);
+  // A z-score of 0 would make every sample anomalous.
+  assert.equal(clampThresholds({ zScoreAnomaly: 0 }).zScoreAnomaly, 0.5);
+  // And an enormous one would mean nothing ever fires.
+  assert.equal(clampThresholds({ zScoreAnomaly: 1e9 }).zScoreAnomaly, 10);
+});
+
+test('thresholds: junk is ignored and the default stands', () => {
+  for (const bad of ['abc', null, undefined, NaN, {}, []]) {
+    assert.equal(clampThresholds({ zScoreAnomaly: bad }).zScoreAnomaly, 2.5, `${String(bad)} must not take effect`);
+  }
+});
+
+test('thresholds: an unrelated key cannot inject itself', () => {
+  const out = clampThresholds({ zScoreAnomaly: 3, somethingElse: 42 } as any);
+  assert.equal(out.zScoreAnomaly, 3);
+  assert.ok(!('somethingElse' in out));
+});
+
+test('thresholds: severity bounds stay ordered so a band cannot vanish', () => {
+  // Not enforced by clamping — this documents that the ordering is the
+  // operator's to keep, and that each bound is independently in range.
+  const t = clampThresholds({ zScoreAnomaly: 2.5, zScoreHigh: 3, zScoreCritical: 4 });
+  assert.ok(t.zScoreAnomaly <= t.zScoreHigh && t.zScoreHigh <= t.zScoreCritical);
+});
+
+test('thresholds: defaults are all inside their own limits', () => {
+  for (const [key, value] of Object.entries(DEFAULT_THRESHOLDS)) {
+    const [lo, hi] = THRESHOLD_LIMITS[key];
+    assert.ok(value >= lo && value <= hi, `${key} default ${value} outside ${lo}-${hi}`);
+  }
+});

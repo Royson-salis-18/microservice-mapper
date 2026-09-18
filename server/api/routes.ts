@@ -11,6 +11,7 @@ import type { WebSocketManager } from './websocket.js';
 import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
+import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -221,6 +222,36 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       return res.json(incident ? [incident] : []);
     }
     res.json(incidentManager.getAllActiveIncidents());
+  });
+
+  // Registered before /incidents/:id — otherwise Express matches
+  // "thresholds" as an incident id and this never runs.
+  /**
+   * The rules that decide what becomes an incident, plus what each one means.
+   *
+   * Incidents are rule-based on purpose and share no code with the ML
+   * pipeline: they must fire on a service discovered a minute ago, on a
+   * target whose models were never trained, while the scorer is stopped.
+   * Model output is a separate question and lives under Findings.
+   */
+  router.get('/incidents/thresholds', (_req, res) => {
+    res.json({
+      values: loadThresholds(),
+      defaults: DEFAULT_THRESHOLDS,
+      limits: thresholdLimits(),
+      docs: THRESHOLD_DOCS,
+    });
+  });
+
+  router.post('/incidents/thresholds', (req, res) => {
+    try {
+      // `reset` puts every rule back rather than making the caller remember
+      // ten defaults to send.
+      const next = req.body?.reset === true ? saveThresholds(DEFAULT_THRESHOLDS) : saveThresholds(req.body || {});
+      res.json({ success: true, values: next });
+    } catch (e: any) {
+      res.status(500).json({ error: e?.message ?? 'Could not save thresholds' });
+    }
   });
 
   router.get('/incidents/:id', (req, res) => {
