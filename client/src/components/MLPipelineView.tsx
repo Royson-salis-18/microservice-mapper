@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, Legend,
   LineChart, Line, ReferenceLine, ScatterChart, Scatter, ZAxis,
 } from 'recharts';
+import { MLExecutionPanel } from './MLExecutionPanel';
 
 interface MLStatus {
   collection: {
@@ -1185,6 +1186,8 @@ export function MLPipelineView() {
       </div>
 
       <ProcessPanel />
+
+      <MLExecutionPanel />
 
       <ConfigPanel />
 
