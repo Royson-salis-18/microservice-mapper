@@ -12,6 +12,18 @@ import { MetricCollector } from '../telemetry-platform/src/collection/MetricColl
 import { REMOTE_COMMANDS } from '../telemetry-platform/src/connection/RemoteCommand.js';
 import type { TargetConfig } from '../telemetry-platform/src/types/target.js';
 
+/**
+ * Containers that exist to produce load. These are never auto-restarted:
+ * traffic has to be startable and stoppable from the traffic controller, and
+ * a load generator quietly revived by a reconnect is load nobody can see in
+ * the UI or stop from it. Observed on sock-shop as `docker-compose-user-sim-1`
+ * (Exited 137) and `sock-shop-stress-1` (Exited 0).
+ */
+const LOAD_GENERATOR_NAMES = /(user-sim|usersim|load-?gen|loadgen|loadgenerator|locust|k6|jmeter|gatling|stress|bench|wrk2?\b|siege|vegeta|artillery)/i;
+
+/** Restart attempts per container per session before giving up on it. */
+const MAX_RESTART_ATTEMPTS = 2;
+
 class TargetAgent {
   private targetId: string;
   private tConf: any;
@@ -34,6 +46,9 @@ class TargetAgent {
   /** Telemetry warnings already announced, so a permanently-failing service
    *  is reported once rather than every collection cycle. */
   private seenWarnings = new Set<string>();
+  /** Restarts attempted per container name, so a crash-looping service is
+   *  not restarted indefinitely. */
+  private restartAttempts = new Map<string, number>();
 
   constructor(
     targetId: string,
@@ -245,6 +260,10 @@ class TargetAgent {
       this.log(`[Agent:${this.targetId}] Establishing SSH connection...`);
       const conn = await this.connManager!.getConnection();
 
+      // Before discovery, so anything brought back is discovered as part of
+      // this cycle rather than waiting for the next one.
+      await this.restartCrashedContainers(conn);
+
       await this.refreshDiscovery(conn);
 
       // Start continuous metric polling
@@ -253,6 +272,91 @@ class TargetAgent {
 
     } catch (err: any) {
       this.scheduleRecovery(`Cycle failed: ${err.message}`);
+    }
+  }
+
+  /**
+   * Bring back containers that crashed, once per fresh SSH connection.
+   *
+   * Stress runs kill services on these small hosts and they stay dead, so
+   * the next session maps a system with holes in it. This restarts them on
+   * reconnect — deliberately on reconnect only, never mid-run: an
+   * experiment that silently repaired what it was measuring would destroy
+   * the failure the RCA pipeline exists to observe.
+   *
+   * Four things are never restarted:
+   *
+   *   - Exit code 0. That is a job that finished, not a crash — sock-shop's
+   *     `sock-shop-stress-1` has sat at "Exited (0)" for six days and
+   *     restarting it would re-run a stress job nobody asked for.
+   *   - Anything that generates load (see LOAD_GENERATOR_NAMES). Reviving
+   *     `docker-compose-user-sim-1` would resurrect synthetic traffic
+   *     outside the traffic controller, i.e. load with no way to see or
+   *     stop it from the UI.
+   *   - "created" containers, which never ran at all. sock-shop carries ~15
+   *     of these as leftovers from failed `docker run` attempts; starting
+   *     them would add services the stack was never meant to have.
+   *   - Anything already retried MAX_RESTART_ATTEMPTS times, so a
+   *     crash-looping container is not restarted forever.
+   */
+  private async restartCrashedContainers(conn: any): Promise<void> {
+    if (process.env.MAPPER_AUTO_RESTART === 'off') return;
+
+    const res = await conn.execute(REMOTE_COMMANDS.dockerPsAll()).catch((e: any) => ({
+      exitCode: null, error: e?.message, stdout: '',
+    }));
+    if (res.exitCode !== 0 || res.error || !res.stdout?.trim()) {
+      // A host too loaded to answer `docker ps -a` is exactly the host that
+      // should not be asked to start more containers.
+      this.log(`[Agent:${this.targetId}] Auto-restart skipped: could not list containers (${res.error ?? `exit ${res.exitCode}`}).`);
+      return;
+    }
+
+    const crashed: Array<{ name: string; code: number; status: string }> = [];
+    for (const line of res.stdout.split('\n')) {
+      if (!line.trim()) continue;
+      let row: any;
+      try { row = JSON.parse(line); } catch { continue; }
+
+      const state = String(row.State ?? '').toLowerCase();
+      if (state !== 'exited' && state !== 'dead') continue;
+
+      const name = String(row.Names ?? '').split(',')[0].trim();
+      if (!name) continue;
+
+      // "Exited (137) 6 days ago" — the code is the whole signal here, and
+      // it is already in the listing, so this needs no extra inspect call.
+      const match = /Exited \((\d+)\)/.exec(String(row.Status ?? ''));
+      const code = match ? Number(match[1]) : -1;
+      if (code === 0) continue;
+
+      if (LOAD_GENERATOR_NAMES.test(name)) {
+        this.log(`[Agent:${this.targetId}] Not restarting ${name} (exit ${code}) — it generates load, and traffic must only ever start from the traffic controller.`);
+        continue;
+      }
+
+      const attempts = this.restartAttempts.get(name) ?? 0;
+      if (attempts >= MAX_RESTART_ATTEMPTS) {
+        this.log(`[Agent:${this.targetId}] Not restarting ${name} again — already tried ${attempts}x this session; it is crash-looping and needs a look.`);
+        continue;
+      }
+
+      crashed.push({ name, code, status: String(row.Status ?? '') });
+    }
+
+    if (crashed.length === 0) return;
+
+    this.log(`[Agent:${this.targetId}] Found ${crashed.length} crashed container(s); restarting…`);
+    for (const c of crashed) {
+      this.restartAttempts.set(c.name, (this.restartAttempts.get(c.name) ?? 0) + 1);
+      const start = await conn.execute(REMOTE_COMMANDS.dockerStart(c.name)).catch((e: any) => ({
+        exitCode: null, error: e?.message, stdout: '',
+      }));
+      if (start.exitCode === 0 && !start.error) {
+        this.log(`[Agent:${this.targetId}] Restarted ${c.name} (was ${c.status}).`);
+      } else {
+        this.log(`[Agent:${this.targetId}] Could not restart ${c.name}: ${(start.stdout || start.error || '').trim().slice(0, 160)}`);
+      }
     }
   }
 

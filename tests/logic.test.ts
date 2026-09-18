@@ -230,3 +230,56 @@ test('heat: undefined edge does not throw', () => {
   assert.ok(a.color);
   assert.equal(a.heat, 'idle');
 });
+
+// --- auto-restart of crashed containers -------------------------------
+//
+// These guard the carve-outs in EndpointDiscoveryEngine.restartCrashedContainers.
+// The load-generator rule matters most: reviving one resurrects synthetic
+// traffic outside the traffic controller, which is load the UI cannot show
+// or stop. The regex is duplicated here on purpose — importing the engine
+// would pull in ssh2 and a live connection manager.
+const LOAD_GENERATOR_NAMES = /(user-sim|usersim|load-?gen|loadgen|loadgenerator|locust|k6|jmeter|gatling|stress|bench|wrk2?\b|siege|vegeta|artillery)/i;
+
+/** Mirrors the decision made per container in restartCrashedContainers. */
+function shouldRestart(row: { State: string; Names: string; Status: string }): boolean {
+  const state = String(row.State ?? '').toLowerCase();
+  if (state !== 'exited' && state !== 'dead') return false;
+  const name = String(row.Names ?? '').split(',')[0].trim();
+  if (!name) return false;
+  const match = /Exited \((\d+)\)/.exec(String(row.Status ?? ''));
+  const code = match ? Number(match[1]) : -1;
+  if (code === 0) return false;
+  if (LOAD_GENERATOR_NAMES.test(name)) return false;
+  return true;
+}
+
+test('restart: a crashed service is restarted', () => {
+  assert.equal(shouldRestart({ State: 'exited', Names: 'docker-compose-carts-1', Status: 'Exited (137) 2 hours ago' }), true);
+  assert.equal(shouldRestart({ State: 'dead', Names: 'docker-compose-orders-1', Status: 'Dead' }), true);
+});
+
+test('restart: a job that finished on purpose is left alone', () => {
+  // Real row from sock-shop; restarting it would re-run a stress job.
+  assert.equal(shouldRestart({ State: 'exited', Names: 'sock-shop-stress-1', Status: 'Exited (0) 6 days ago' }), false);
+  assert.equal(shouldRestart({ State: 'exited', Names: 'db-migrate-1', Status: 'Exited (0) 3 days ago' }), false);
+});
+
+test('restart: load generators are never revived, even when they crashed', () => {
+  // Real row from sock-shop: exit 137 is a genuine kill, but restarting it
+  // would start synthetic traffic nothing in the UI could stop.
+  assert.equal(shouldRestart({ State: 'exited', Names: 'docker-compose-user-sim-1', Status: 'Exited (137) 6 days ago' }), false);
+  for (const name of ['loadgenerator', 'otel-load-generator-1', 'locust-worker', 'k6-runner', 'my-stress-test']) {
+    assert.equal(shouldRestart({ State: 'exited', Names: name, Status: 'Exited (1) 1 hour ago' }), false, `${name} must not be revived`);
+  }
+});
+
+test('restart: containers that never ran are left alone', () => {
+  // sock-shop carries ~15 of these from failed `docker run` attempts;
+  // starting them would add services the stack never had.
+  assert.equal(shouldRestart({ State: 'created', Names: 'quirky_raman', Status: 'Created' }), false);
+});
+
+test('restart: running and healthy containers are untouched', () => {
+  assert.equal(shouldRestart({ State: 'running', Names: 'docker-compose-front-end-1', Status: 'Up 6 minutes' }), false);
+  assert.equal(shouldRestart({ State: 'running', Names: 'vertikal-studio', Status: 'Up 4 minutes (unhealthy)' }), false);
+});
