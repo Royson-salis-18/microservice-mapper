@@ -227,7 +227,20 @@ export class MetricCollector {
     for (const service of services) {
       if (!service.containerId) continue;
       const tcpRes = await this.connection.execute(REMOTE_COMMANDS.dockerContainerTcp(service.containerId));
-      if (tcpRes.exitCode !== 0 || tcpRes.error) continue;
+      if (tcpRes.exitCode !== 0 || tcpRes.error) {
+        // This used to `continue` in silence, which is how a permanent,
+        // 100%-reproducible failure stayed invisible: the frontend's scan
+        // failed on every single sweep for weeks (no shell in a distroless
+        // image — see dockerContainerTcp) and nothing anywhere said so. A
+        // service that can never be scanned produces no edges and no
+        // activity, so the graph quietly under-reports instead of
+        // reporting that it could not look.
+        warnings.push(
+          `TCP scan failed for ${service.serviceId}: ${tcpRes.error ?? `exit ${tcpRes.exitCode}`}` +
+          `${tcpRes.stdout ? ` — ${tcpRes.stdout.trim().slice(0, 120)}` : ''}`,
+        );
+        continue;
+      }
       for (const line of tcpRes.stdout.split('\n')) {
         const parts = line.trim().split(/\s+/);
         const state = RELEVANT_TCP_STATES[parts[3]];

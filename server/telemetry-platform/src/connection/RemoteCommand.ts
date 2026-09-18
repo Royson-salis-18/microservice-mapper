@@ -115,9 +115,40 @@ export const REMOTE_COMMANDS = {
     timeoutMs: 8_000,
     maxOutputBytes: 1_024,
   }),
+  /**
+   * A container's socket table, read from the HOST rather than from inside
+   * the container.
+   *
+   * This used to run `docker exec <id> sh -c 'cat /proc/net/tcp ...'`, which
+   * silently returned nothing for any image without a shell. That is not an
+   * edge case: the OpenTelemetry demo's `frontend` runs
+   * ghcr.io/open-telemetry/demo:3.0.0-frontend, a distroless image whose
+   * entrypoint is /nodejs/bin/node and which has no `sh` at all, so every
+   * scan of it failed with exit 127 ("exec: sh: executable file not found").
+   * collectObservedEdges treats a non-zero exit as "skip this service", so
+   * frontend's outbound connections were invisible 100% of the time —
+   * permanently, not intermittently.
+   *
+   * That mattered more than it sounds: frontend is the service that actually
+   * calls cart / currency / checkout / shipping / product-catalog when it
+   * serves /api/*. So none of those edges could ever be observed, none could
+   * ever be discovered from traffic, and no amount of load would ever make
+   * them light up — which is exactly the "stress doesn't show in the edges"
+   * and "several edges are missing" symptoms.
+   *
+   * Reading /proc/<hostPid>/net/tcp from the host is the same data (the file
+   * is per network namespace either way) and needs nothing whatsoever inside
+   * the container, so it works for distroless, scratch and normal images
+   * alike. Verified on the live host: no sudo required, and the output
+   * format is byte-identical to the old command's, so the parser downstream
+   * is unchanged.
+   */
   dockerContainerTcp: (containerId: string): RemoteCommand<string> => ({
     name: "docker.container.tcp",
-    command: `docker exec ${sanitizeContainerId(containerId)} sh -c 'cat /proc/net/tcp /proc/net/tcp6 2>&1'`,
+    // `if` rather than `a && b && c` on purpose: a stopped container reports
+    // PID 0, and that should read as "no connections" (exit 0, empty output),
+    // which is true, not as a scan failure the caller warns about.
+    command: `PID=$(docker inspect ${sanitizeContainerId(containerId)} --format '{{.State.Pid}}' 2>/dev/null); if [ -n "$PID" ] && [ "$PID" != "0" ]; then cat /proc/$PID/net/tcp /proc/$PID/net/tcp6 2>&1; fi`,
     timeoutMs: 10_000,
     maxOutputBytes: 65_536,
   }),
