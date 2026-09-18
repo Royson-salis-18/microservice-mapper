@@ -95,7 +95,7 @@ function CodeCell({ source, collapsed, onToggle }: { source: SourceDoc | null; c
   );
 }
 
-export function MLExecutionPanel() {
+export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?: string }) {
   const [projects, setProjects] = useState<string[]>([]);
   const [project, setProject] = useState<string>('');
   const [sources, setSources] = useState<Record<string, SourceDoc>>({});
@@ -120,7 +120,7 @@ export function MLExecutionPanel() {
       .then(r => r.json())
       .then((list: string[]) => {
         setProjects(list);
-        setProject(prev => prev || list[0] || '');
+        setProject(prev => prev || (selectedProject !== 'ALL' ? selectedProject : list[0] || ''));
       })
       .catch(() => { /* panel still works; the selector is just empty */ });
 
@@ -131,6 +131,14 @@ export function MLExecutionPanel() {
         .catch(() => { /* the cell simply shows no source */ });
     }
   }, []);
+
+  // Follow the top bar. Choosing a project up there and then training a
+  // different one because this selector kept its own value is the kind of
+  // mistake that is only noticed after the run. Still selectable here, so a
+  // deliberate choice made after the fact is not overridden on every render.
+  useEffect(() => {
+    if (selectedProject && selectedProject !== 'ALL') setProject(selectedProject);
+  }, [selectedProject]);
 
   // Poll only while a run is in flight.
   useEffect(() => {

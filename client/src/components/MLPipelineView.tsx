@@ -1089,11 +1089,99 @@ function ConfigPanel() {
   );
 }
 
-export function MLPipelineView() {
+/**
+ * One line of numbers for whatever is currently in scope.
+ *
+ * The page is long, and the questions asked most often — how many services
+ * are there, how many have a model, how stale is it — were only answerable
+ * by scrolling through several panels and adding up rows.
+ */
+function ScopeSummary({ rows, models, training }: {
+  rows: { sid: string; collected?: any; featured?: any; trainedEntry?: any; live?: any }[];
+  models: ModelMeta[];
+  training?: { generated_at?: string } | null;
+}) {
+  const services = rows.length;
+  const collected = rows.filter(r => r.collected).length;
+  const featureReady = rows.filter(r => r.featured?.status === 'ok').length;
+  const trained = rows.filter(r => r.trainedEntry).length;
+  const scored = rows.filter(r => r.live).length;
+
+  // Detector coverage: a model file exists per detector per service, and
+  // some detectors refuse to fit (see the data-quality panel), so "trained"
+  // alone hides that one of the four may be missing everywhere.
+  const detectorCounts = new Map<string, number>();
+  for (const m of models) {
+    for (const [algo, info] of Object.entries(m.algorithms || {})) {
+      if (!info?.error) detectorCounts.set(algo, (detectorCounts.get(algo) ?? 0) + 1);
+    }
+  }
+
+  const thinData = models.filter(m => (m.data_quality?.unique_fraction ?? 1) < 0.05).length;
+
+  const age = (() => {
+    if (!training?.generated_at) return null;
+    const ms = Date.now() - new Date(training.generated_at).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    const mins = Math.round(ms / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    return hrs < 48 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`;
+  })();
+
+  const Stat = ({ label, value, tone, hint }: { label: string; value: React.ReactNode; tone?: string; hint?: string }) => (
+    <div style={{ flex: '1 1 120px', minWidth: '120px' }} title={hint}>
+      <div style={{ fontSize: '20px', fontWeight: 700, color: tone || 'var(--color-text-main)', lineHeight: 1.2 }}>{value}</div>
+      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{label}</div>
+    </div>
+  );
+
+  return (
+    <div style={{
+      background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)',
+      borderRadius: '12px', padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap',
+    }}>
+      <Stat label="Services" value={services} />
+      <Stat label="Collected" value={collected} hint="Have raw metric samples" />
+      <Stat label="Feature-ready" value={featureReady} hint="Made it through preprocessing into features.csv" />
+      <Stat label="Trained" value={trained} tone={trained ? 'var(--color-healthy)' : undefined} />
+      <Stat label="Scored live" value={scored} tone={scored ? 'var(--color-healthy)' : 'var(--color-text-dim)'}
+            hint="Needs score.py running against a reachable target" />
+      <Stat
+        label="Detectors fitted"
+        hint={Array.from(detectorCounts).map(([a, n]) => `${a}: ${n}`).join('\n') || 'none yet'}
+        value={
+          detectorCounts.size === 0
+            ? '—'
+            : <span style={{ fontSize: '13px' }}>{Array.from(detectorCounts).map(([a, n]) => `${a} ${n}`).join(' · ')}</span>
+        }
+      />
+      {thinData > 0 && (
+        <Stat label="Thin data" value={thinData} tone="var(--color-degraded)"
+              hint="Services whose training set is under 5% distinct rows — caps what any detector can learn" />
+      )}
+      {age && <Stat label="Last trained" value={<span style={{ fontSize: '14px' }}>{age}</span>} />}
+    </div>
+  );
+}
+
+interface MLPipelineViewProps {
+  /** The project chosen in the top bar. 'ALL' shows everything. */
+  selectedProject?: string;
+}
+
+export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps) {
   const [status, setStatus] = useState<MLStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedSid, setSelectedSid] = useState<string | null>(null);
   const [models, setModels] = useState<ModelMeta[]>([]);
+
+  const scoped = selectedProject !== 'ALL';
+  /** Does this "project:service" id belong to the selected project? */
+  const inScope = useCallback(
+    (sid: string) => !scoped || sid.split(':')[0] === selectedProject,
+    [scoped, selectedProject],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1143,7 +1231,7 @@ export function MLPipelineView() {
   Object.keys(training?.skipped || {}).forEach(s => allServiceIds.add(s));
   Object.keys(liveScores || {}).forEach(s => allServiceIds.add(s));
 
-  const rows = Array.from(allServiceIds).sort().map(sid => {
+  const rows = Array.from(allServiceIds).filter(inScope).sort().map(sid => {
     const collected = collection?.per_service?.[sid];
     const featured = preprocessing?.per_service?.[sid];
     const trainedEntry = training?.trained?.[sid];
@@ -1164,6 +1252,10 @@ export function MLPipelineView() {
   }
   const projectNames = Array.from(byProject.keys()).sort();
 
+  // Everything below renders from these, so the whole page follows the top
+  // bar rather than each panel deciding for itself what it shows.
+  const scopedModels = models.filter(m => inScope(m.service_id));
+
   // Only services that made it through preprocessing have rows in
   // features.csv, so those are the only ones the explorer can chart.
   const featureServiceIds = rows
@@ -1177,17 +1269,31 @@ export function MLPipelineView() {
       display: 'flex', flexDirection: 'column', gap: '20px',
     }}>
       <div>
-        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>ML Pipeline</h1>
-        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>ML Pipeline</h1>
+          <span style={{
+            fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            color: scoped ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
+            border: `1px solid ${scoped ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+            borderRadius: '999px', padding: '2px 10px',
+          }}>
+            {scoped ? selectedProject : 'all projects'}
+          </span>
+        </div>
+        <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
           Per-service anomaly detection with four independent detectors (Isolation Forest, Local Outlier Factor,
-          One-Class SVM and a z-score baseline) — data collection, preprocessing, training, and live scoring status.
-          Models are trained per project ({projectNames.join(', ') || 'none yet'}) — never mixed.
+          One-Class SVM and a z-score baseline). Models are fitted per service and never mixed across projects;
+          {scoped
+            ? ' everything below is scoped to the project selected in the top bar.'
+            : ` showing ${projectNames.join(', ') || 'no projects yet'} — pick one in the top bar to scope this page to it.`}
         </p>
       </div>
 
+      <ScopeSummary rows={rows} models={scopedModels} training={training} />
+
       <ProcessPanel />
 
-      <MLExecutionPanel />
+      <MLExecutionPanel selectedProject={selectedProject} />
 
       <ConfigPanel />
 
@@ -1279,7 +1385,9 @@ export function MLPipelineView() {
         </StageCard>
       </div>
 
-      <PipelineFunnelChart projectNames={projectNames} byProject={byProject} />
+      {/* A funnel with a single bar says nothing the summary strip above does
+          not already say, so it only earns its space when comparing projects. */}
+      {!scoped && <PipelineFunnelChart projectNames={projectNames} byProject={byProject} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
         <LiveScoresChart rows={rows} onSelect={setSelectedSid} selectedSid={selectedSid} />
@@ -1288,12 +1396,12 @@ export function MLPipelineView() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
         <ScoreDistributionChart rows={rows} />
-        <ModelQualityChart models={models} onSelect={setSelectedSid} />
+        <ModelQualityChart models={scopedModels} onSelect={setSelectedSid} />
       </div>
 
-      <DetectorComparison models={models} />
+      <DetectorComparison models={scopedModels} />
 
-      <DataQualityPanel models={models} />
+      <DataQualityPanel models={scopedModels} />
 
       <FeatureExplorer serviceIds={featureServiceIds} sid={selectedSid} onSelect={setSelectedSid} />
 
