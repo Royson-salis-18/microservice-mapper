@@ -259,7 +259,20 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   return (
     <div
       ref={canvasWrapRef}
-      style={{ width: '100%', height: '100%', background: '#04060f', position: 'relative' }}
+      // minWidth/minHeight: 0 override the flexbox "automatic minimum size"
+      // rule. main-content is a flex row with this wrapper (flex:1) beside
+      // InspectionPanel (400px, flexShrink:0). The R3F <canvas> inside sets
+      // real width/height *attributes* on itself (see the resize-nudge
+      // effect below) the first time it measures — before any panel is
+      // open, so at full main-content width. That canvas pixel size then
+      // becomes this div's content-based minimum width, and a flex item is
+      // never shrunk below that minimum unless min-width is overridden —
+      // so opening the panel just pushed it 400px past the right edge of
+      // the viewport instead of the canvas making room for it. Without
+      // this, the fix below (InspectionPanel's own flexShrink:0) is
+      // necessary but not sufficient: the panel gets its correct 400px,
+      // but the canvas never gives up the space for it to appear in.
+      style={{ width: '100%', height: '100%', minWidth: 0, minHeight: 0, background: '#04060f', position: 'relative' }}
       onClick={(e) => { if (e.target === e.currentTarget) onPaneClick(); }}
     >
       <Canvas
