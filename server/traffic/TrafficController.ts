@@ -75,6 +75,13 @@ const COMMON_GATEWAY_PATHS = [
   '/health', '/healthz', '/actuator/health', '/metrics', '/status',
 ];
 
+/**
+ * Ceiling for a probe, and the budget a timed-out probe is retried at. Sized
+ * from a real measurement: sock-shop's /catalogue?size=5 answers in 15.1s
+ * when the host is thrashing.
+ */
+const MAX_PROBE_TIMEOUT_MS = 25_000;
+
 /** A URL queued for probing, before anything is known about it. */
 interface ProbeCandidate {
   url: string;
@@ -405,7 +412,41 @@ export class TrafficController {
         if (pathCandidates.length >= maxProbes) break outer;
       }
     }
-    const pathResults = await this.probeAll(pathCandidates, timeoutMs, concurrency);
+    // Phase 2 gets a timeout scaled to how slow this host actually proved to
+    // be in phase 1, because a fixed budget lies about struggling hosts.
+    // Measured on sock-shop (909MB box, load 26): at a flat 6s the probe
+    // called /catalogue, /cart, /customers and /tags dead, when in fact they
+    // answer in 3-15s — /catalogue?size=5 takes 15.1s. Reporting a live
+    // endpoint as dead is worse than waiting for it, since the sweep then
+    // silently drops it and generates no load against that service at all.
+    const slowestOrigin = Math.max(0, ...liveOrigins.map((r) => r.ms));
+    const pathTimeoutMs = Math.min(Math.max(timeoutMs, slowestOrigin * 5), 25_000);
+    if (pathTimeoutMs > timeoutMs) {
+      console.log(`[TrafficController] ${targetId}: slowest origin answered in ${slowestOrigin}ms, raising path probe timeout ${timeoutMs}ms -> ${pathTimeoutMs}ms`);
+    }
+    const pathResults = await this.probeAll(pathCandidates, pathTimeoutMs, concurrency);
+
+    // One retry for anything that only *timed out*, at the full budget.
+    // Scaling off the origin is not enough on its own: sock-shop's index is
+    // static and answers in 0.17s while /catalogue?size=5 — which really
+    // does work — takes 15.1s, so the origin measurement says "fast host"
+    // and the backends still blow the budget. A timeout is the one failure
+    // mode that might just be slowness; a refused connection or a 404 is an
+    // answer, and is not retried.
+    const timedOut = pathResults.filter((r) => !r.reachable && /no response/.test(r.error ?? ''));
+    if (timedOut.length > 0 && pathTimeoutMs < MAX_PROBE_TIMEOUT_MS) {
+      console.log(`[TrafficController] ${targetId}: retrying ${timedOut.length} timed-out path(s) at ${MAX_PROBE_TIMEOUT_MS}ms`);
+      const retried = await this.probeAll(
+        timedOut.map((r) => ({ url: r.url, serviceName: r.serviceName, endpointId: r.endpointId, port: r.port })),
+        MAX_PROBE_TIMEOUT_MS,
+        Math.max(2, Math.floor(concurrency / 2)),
+      );
+      const byUrl = new Map(retried.map((r) => [r.url, r]));
+      for (let i = 0; i < pathResults.length; i++) {
+        const better = byUrl.get(pathResults[i].url);
+        if (better?.reachable) pathResults[i] = better;
+      }
+    }
 
     const results = [...originResults, ...pathResults];
     results.sort((a, b) => a.url.localeCompare(b.url));
