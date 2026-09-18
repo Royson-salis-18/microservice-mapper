@@ -1,5 +1,6 @@
 {
   "service_id": "sock-shop:orders",
+  "project": "sock-shop",
   "feature_columns": [
     "z_cpu_percent",
     "z_memory_percent",
@@ -7,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-17T02:14:55.569298+00:00",
+  "trained_at": "2026-09-18T13:51:03.085799+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -21,6 +22,84 @@
     "max_score": -0.362935657153372,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": 0.0,
+      "train_score_mean": -0.3394566205546002,
+      "train_score_max": -0.0,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.362935657153372,
+        "max_score": -0.362935657153372,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_orders.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0002463027021297748,
+      "train_score_mean": 0.0053144304677062906,
+      "train_score_max": 2.683845075380225,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.00020410270824422483,
+        "max_score": 0.00020410270824422483,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_orders.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 7.972334233123968,
+      "train_score_mean": 0.613965718275846,
+      "train_score_max": 38.350506754731214,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.23215222552138745,
+        "max_score": 0.2321522255213874,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_orders.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 1568,
+    "unique_rows": 7,
+    "unique_fraction": 0.004464285714285714,
+    "feature_std": {
+      "z_cpu_percent": 1.1104764383173373,
+      "z_memory_percent": 1.1134148801262598,
+      "z_network_rx_rate": 1.1178617439802134,
+      "z_network_tx_rate": 1.1178465193010216
+    }
   },
   "training_window": {
     "since": null,

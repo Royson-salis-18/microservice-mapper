@@ -414,15 +414,203 @@ function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomaly_score
   );
 }
 
+interface AlgoHoldout { samples: number; flag_rate: number; mean_score: number; max_score: number; from: string; to: string }
+
+interface AlgoMeta {
+  threshold_p99?: number;
+  train_score_mean?: number;
+  train_score_max?: number;
+  holdout?: AlgoHoldout | null;
+  artifact?: string;
+  /** Present instead of the rest when this detector refused to fit. */
+  error?: string;
+}
+
 interface ModelMeta {
   service_id: string;
+  project?: string | null;
   feature_columns: string[];
   trained_on_samples: number;
   trained_at: string;
   contamination: number;
   n_estimators?: number;
   threshold_p99: number;
-  holdout?: { samples: number; flag_rate: number; mean_score: number; max_score: number; from: string; to: string } | null;
+  holdout?: AlgoHoldout | null;
+  /** One entry per detector: iforest, lof, ocsvm, zscore. */
+  algorithms?: Record<string, AlgoMeta>;
+  /** Pairwise, keyed "a|b". */
+  agreement?: Record<string, { same_verdict_rate: number; jaccard: number | null; both_flagged: number; either_flagged: number }>;
+  data_quality?: {
+    rows: number;
+    unique_rows: number;
+    unique_fraction: number;
+    feature_std: Record<string, number>;
+  };
+}
+
+const ALGO_LABEL: Record<string, string> = {
+  iforest: 'Isolation Forest',
+  lof: 'Local Outlier Factor',
+  ocsvm: 'One-Class SVM',
+  zscore: 'Z-score (max|z|)',
+};
+
+const ALGO_NOTE: Record<string, string> = {
+  iforest: 'Partitioning. Cheap, copes with mixed scales.',
+  lof: 'Local density. Catches a point that is normal globally but odd locally.',
+  ocsvm: 'Boundary. Fits a frontier around the normal region.',
+  zscore: 'Statistical baseline. No fitting — the interpretable number the others must beat.',
+};
+
+/**
+ * Per-project detector comparison.
+ *
+ * Four detectors per service is only worth the cost if they can disagree,
+ * so this shows, per project: how many services each one actually fitted,
+ * how often it fires on the held-out tail, and how much the detectors agree
+ * with each other. Agreement near 1.0 everywhere means the extra detectors
+ * are adding cost and no information.
+ */
+function DetectorComparison({ models }: { models: ModelMeta[] }) {
+  const byProject = useMemo(() => {
+    const map = new Map<string, ModelMeta[]>();
+    for (const m of models) {
+      const project = m.project || (m.service_id.includes(':') ? m.service_id.split(':')[0] : '(unknown)');
+      if (!map.has(project)) map.set(project, []);
+      map.get(project)!.push(m);
+    }
+    return map;
+  }, [models]);
+
+  const projects = Array.from(byProject.keys()).sort();
+  if (projects.length === 0) return null;
+
+  const algos = Array.from(
+    new Set(models.flatMap(m => Object.keys(m.algorithms || {}))),
+  ).sort((a, b) => (a === 'iforest' ? -1 : b === 'iforest' ? 1 : a.localeCompare(b)));
+
+  if (algos.length === 0) return null;
+
+  return (
+    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '16px' }}>
+      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Detectors by project</h3>
+      <p style={{ margin: '0 0 14px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+        Each service is fitted independently per project — a sock-shop model never sees death-star data.
+        The held-out tail is unlabelled, so a firing rate is not accuracy: it is how often that detector
+        fires on data collected after it was fitted.
+      </p>
+
+      {projects.map(project => {
+        const rows = byProject.get(project)!;
+        return (
+          <div key={project} style={{ marginBottom: '18px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-cyan)', marginBottom: '6px' }}>
+              {project} <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>· {rows.length} service{rows.length === 1 ? '' : 's'}</span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <thead>
+                <tr style={{ color: 'var(--color-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Detector</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Fitted</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Refused</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Mean firing rate on holdout</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>What it measures</th>
+                </tr>
+              </thead>
+              <tbody>
+                {algos.map(algo => {
+                  const entries = rows.map(r => r.algorithms?.[algo]).filter(Boolean) as AlgoMeta[];
+                  const fitted = entries.filter(e => !e.error);
+                  const refused = entries.filter(e => e.error);
+                  const withHoldout = fitted.filter(e => e.holdout);
+                  const meanRate = withHoldout.length
+                    ? withHoldout.reduce((acc, e) => acc + (e.holdout!.flag_rate), 0) / withHoldout.length
+                    : null;
+                  return (
+                    <tr key={algo} style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '5px 6px', fontWeight: 600 }}>{ALGO_LABEL[algo] || algo}</td>
+                      <td style={{ padding: '5px 6px', color: fitted.length ? 'var(--color-healthy)' : 'var(--color-text-dim)' }}>{fitted.length}</td>
+                      <td style={{ padding: '5px 6px', color: refused.length ? 'var(--color-degraded)' : 'var(--color-text-dim)' }}
+                          title={refused[0]?.error || ''}>
+                        {refused.length || '—'}
+                      </td>
+                      <td style={{ padding: '5px 6px' }}>
+                        {meanRate === null ? '—' : `${(meanRate * 100).toFixed(1)}%`}
+                      </td>
+                      <td style={{ padding: '5px 6px', color: 'var(--color-text-dim)' }}>{ALGO_NOTE[algo] || ''}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Distinct rows vs total rows, per service.
+ *
+ * The first thing to check when every detector fires on 0% — a detector
+ * cannot learn a boundary from a handful of distinct points no matter how
+ * many times they were sampled. Measured on sock-shop:front-end: 1568 rows
+ * carrying 6 distinct values, because collection polls faster than the
+ * metrics actually change.
+ */
+function DataQualityPanel({ models }: { models: ModelMeta[] }) {
+  const rows = models
+    .filter(m => m.data_quality)
+    .map(m => ({
+      sid: m.service_id,
+      project: m.project || m.service_id.split(':')[0],
+      ...m.data_quality!,
+    }))
+    .sort((a, b) => a.unique_fraction - b.unique_fraction);
+
+  if (rows.length === 0) return null;
+  const thin = rows.filter(r => r.unique_fraction < 0.05);
+
+  return (
+    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '16px' }}>
+      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Distinct signal per service</h3>
+      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+        How much of each training set is actually distinct. Repeated rows carry no extra information,
+        so a low percentage here caps what any detector can learn — and is the reason to look at before
+        concluding a model is bad.
+        {thin.length > 0 && (
+          <strong style={{ color: 'var(--color-degraded)' }}> {thin.length} service{thin.length === 1 ? '' : 's'} below 5%.</strong>
+        )}
+      </p>
+      <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+          <thead>
+            <tr style={{ color: 'var(--color-text-muted)', textAlign: 'left' }}>
+              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Service</th>
+              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Rows</th>
+              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Distinct</th>
+              <th style={{ padding: '4px 6px', fontWeight: 600 }}>%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.sid} style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td style={{ padding: '4px 6px' }}>
+                  <span style={{ color: 'var(--color-text-dim)' }}>{r.project}:</span>{r.sid.split(':').slice(1).join(':')}
+                </td>
+                <td style={{ padding: '4px 6px', color: 'var(--color-text-dim)' }}>{r.rows}</td>
+                <td style={{ padding: '4px 6px' }}>{r.unique_rows}</td>
+                <td style={{ padding: '4px 6px', color: r.unique_fraction < 0.05 ? 'var(--color-degraded)' : 'var(--color-healthy)', fontWeight: 600 }}>
+                  {(r.unique_fraction * 100).toFixed(1)}%
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 // Training size vs how often the model fires on the held-out tail. The tail
@@ -990,7 +1178,8 @@ export function MLPipelineView() {
       <div>
         <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>ML Pipeline</h1>
         <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-          Per-service Isolation Forest anomaly detection — data collection, preprocessing, training, and live scoring status.
+          Per-service anomaly detection with four independent detectors (Isolation Forest, Local Outlier Factor,
+          One-Class SVM and a z-score baseline) — data collection, preprocessing, training, and live scoring status.
           Models are trained per project ({projectNames.join(', ') || 'none yet'}) — never mixed.
         </p>
       </div>
@@ -1098,6 +1287,10 @@ export function MLPipelineView() {
         <ScoreDistributionChart rows={rows} />
         <ModelQualityChart models={models} onSelect={setSelectedSid} />
       </div>
+
+      <DetectorComparison models={models} />
+
+      <DataQualityPanel models={models} />
 
       <FeatureExplorer serviceIds={featureServiceIds} sid={selectedSid} onSelect={setSelectedSid} />
 

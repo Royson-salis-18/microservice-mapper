@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-17T02:14:58.110201+00:00",
+  "generated_at": "2026-09-18T13:51:07.133101+00:00",
   "min_training_samples": 30,
   "contamination": 0.01,
   "n_estimators": 200,
@@ -15,9 +15,16 @@
     "since": null,
     "until": null
   },
+  "algorithms": [
+    "iforest",
+    "lof",
+    "ocsvm",
+    "zscore"
+  ],
   "trained": {
     "death-star:post-storage-mongodb": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -1.3910313872989022e-16,
       "holdout": {
         "samples": 392,
@@ -26,10 +33,44 @@
         "max_score": -0.3284140400542826,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 149,
+        "unique_fraction": 0.09502551020408163,
+        "feature_std": {
+          "z_cpu_percent": 1.1068133114688328,
+          "z_memory_percent": 1.1178912275938835,
+          "z_network_rx_rate": 1.1096208414173805,
+          "z_network_tx_rate": 1.1113077772485551
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.3910313872989022e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.6794219588821613,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 6.519227458674911e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.8196217286218355,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:post-storage-service": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -3.8467493079785697e-16,
       "holdout": {
         "samples": 392,
@@ -38,10 +79,44 @@
         "max_score": -0.3816448836544062,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 152,
+        "unique_fraction": 0.09693877551020408,
+        "feature_std": {
+          "z_cpu_percent": 1.1169677467418444,
+          "z_memory_percent": 1.1178912275938835,
+          "z_network_rx_rate": 1.111552807681167,
+          "z_network_tx_rate": 1.109620837583989
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -3.8467493079785697e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.8598658376556194,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00027158948903122153,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.780827911372536,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:social-graph-mongodb": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -1.207801220148852e-16,
       "holdout": {
         "samples": 392,
@@ -50,10 +125,44 @@
         "max_score": -0.3962980217365842,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 47,
+        "unique_fraction": 0.029974489795918366,
+        "feature_std": {
+          "z_cpu_percent": 1.1107313785965,
+          "z_memory_percent": 1.1173669549540761,
+          "z_network_rx_rate": 1.1176765038530663,
+          "z_network_tx_rate": 1.117389113812135
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.207801220148852e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.8428613182483613,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 3.849183349685826e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 12.238995561023708,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:social-graph-service": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -62,10 +171,44 @@
         "max_score": -0.4304760133135883,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 32,
+        "unique_fraction": 0.02040816326530612,
+        "feature_std": {
+          "z_cpu_percent": 1.1159713799819122,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1174784482894105,
+          "z_network_tx_rate": 1.117962646887923
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.009236171338719,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 3.5648000531991214e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.581034750875494,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:url-shorten-mongodb": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -2.5825695748604716e-16,
       "holdout": {
         "samples": 392,
@@ -74,10 +217,44 @@
         "max_score": -0.364055595464601,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 156,
+        "unique_fraction": 0.09948979591836735,
+        "feature_std": {
+          "z_cpu_percent": 1.1080143510131415,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.109562188939082,
+          "z_network_tx_rate": 1.1112971168498986
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -2.5825695748604716e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 3.1511499944664525,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 9.600655697503963e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.090616067015823,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:url-shorten-service": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -1.5894403848637495e-16,
       "holdout": {
         "samples": 392,
@@ -86,10 +263,44 @@
         "max_score": -0.3831813941609386,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 159,
+        "unique_fraction": 0.10140306122448979,
+        "feature_std": {
+          "z_cpu_percent": 1.1122586794867033,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1115463830564671,
+          "z_network_tx_rate": 1.1093896473552725
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.5894403848637495e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 2.644105682535423,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00018123465307809711,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.250013924856624,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:user-mongodb": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -5.260548940899668e-16,
       "holdout": {
         "samples": 392,
@@ -98,10 +309,44 @@
         "max_score": -0.4248967861767485,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 41,
+        "unique_fraction": 0.02614795918367347,
+        "feature_std": {
+          "z_cpu_percent": 1.1173125866083407,
+          "z_memory_percent": 1.1176765038522671,
+          "z_network_rx_rate": 1.1178912275951935,
+          "z_network_tx_rate": 1.1172265146645441
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.260548940899668e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0458973423375666,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": -3.7839605236835735e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.401002666982822,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:user-service": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -1.352000109089424e-16,
       "holdout": {
         "samples": 392,
@@ -110,10 +355,44 @@
         "max_score": -0.4037817728303507,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 37,
+        "unique_fraction": 0.023596938775510203,
+        "feature_std": {
+          "z_cpu_percent": 1.116828899312879,
+          "z_memory_percent": 1.1176047735614814,
+          "z_network_rx_rate": 1.1178912276067028,
+          "z_network_tx_rate": 1.1178912275951935
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.352000109089424e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0802857616136552,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00039748412060647276,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.714480267420381,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:user-timeline-mongodb": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -5.199833619240479e-16,
       "holdout": {
         "samples": 392,
@@ -122,10 +401,44 @@
         "max_score": -0.37346037022558815,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 150,
+        "unique_fraction": 0.09566326530612244,
+        "feature_std": {
+          "z_cpu_percent": 1.1112069362169072,
+          "z_memory_percent": 1.1178197307412046,
+          "z_network_rx_rate": 1.1099380753645878,
+          "z_network_tx_rate": 1.111571918156207
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.199833619240479e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 2.0010613397711685,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00023781711440759245,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.985863490182609,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "death-star:user-timeline-service": {
       "samples": 1568,
+      "project": "death-star",
       "threshold_p99": -2.516433242338856e-16,
       "holdout": {
         "samples": 392,
@@ -134,10 +447,44 @@
         "max_score": -0.3890024775072322,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 153,
+        "unique_fraction": 0.0975765306122449,
+        "feature_std": {
+          "z_cpu_percent": 1.1169664642661437,
+          "z_memory_percent": 1.1177481562030402,
+          "z_network_rx_rate": 1.1115903084869592,
+          "z_network_tx_rate": 1.109741531640687
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -2.516433242338856e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.8041788094297917,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00023885424056910255,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.952892036806984,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:carts": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -146,10 +493,44 @@
         "max_score": -0.3594943448789939,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 6,
+        "unique_fraction": 0.003826530612244898,
+        "feature_std": {
+          "z_cpu_percent": 1.115204950316158,
+          "z_memory_percent": 1.114098719309407,
+          "z_network_rx_rate": 1.1179626468879231,
+          "z_network_tx_rate": 1.1179626468879236
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002165569945455914,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.431921108621728,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:carts-db": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -158,10 +539,44 @@
         "max_score": -0.3512901091194765,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1152654525346408,
+          "z_memory_percent": 1.1175432283244287,
+          "z_network_rx_rate": 1.1178587345855437,
+          "z_network_tx_rate": 1.117858237543214
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002799667740851497,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 7.51518386290543,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:catalogue-db": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -170,10 +585,44 @@
         "max_score": -0.3244799328920923,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 6,
+        "unique_fraction": 0.003826530612244898,
+        "feature_std": {
+          "z_cpu_percent": 1.1161461355242468,
+          "z_memory_percent": 1.1071611962376222,
+          "z_network_rx_rate": 1.1179055176773227,
+          "z_network_tx_rate": 1.1179626468879236
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00014194345481666204,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.624648212440434,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:edge-router": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -182,10 +631,44 @@
         "max_score": -0.31954236511551126,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1096751557661093,
+          "z_memory_percent": 1.1099484083826066,
+          "z_network_rx_rate": 1.1179484786514333,
+          "z_network_tx_rate": 1.1179521406230153
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00014323279501171626,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.871459380331556,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:front-end": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -194,10 +677,44 @@
         "max_score": -0.3143191977895749,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 6,
+        "unique_fraction": 0.003826530612244898,
+        "feature_std": {
+          "z_cpu_percent": 1.111582749558538,
+          "z_memory_percent": 1.1102093000888498,
+          "z_network_rx_rate": 1.1179613750339492,
+          "z_network_tx_rate": 1.1179625593536315
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.000456023623534918,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.6680437459981,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:jaeger": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -206,10 +723,44 @@
         "max_score": -0.3063162612660387,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 5,
+        "unique_fraction": 0.0031887755102040817,
+        "feature_std": {
+          "z_cpu_percent": 1.1095317057482432,
+          "z_memory_percent": 1.1116020052802216,
+          "z_network_rx_rate": 1.1179198046354317,
+          "z_network_tx_rate": 1.1179626468879231
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 5 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00045466409967431787,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.668050736058746,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:orders": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -218,10 +769,44 @@
         "max_score": -0.362935657153372,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1104764383173373,
+          "z_memory_percent": 1.1134148801262598,
+          "z_network_rx_rate": 1.1178617439802134,
+          "z_network_tx_rate": 1.1178465193010216
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002463027021297748,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 7.972334233123968,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:orders-db": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -230,10 +815,44 @@
         "max_score": -0.2725742202764388,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1105759878028192,
+          "z_memory_percent": 1.1116020052802216,
+          "z_network_rx_rate": 1.1178639958555159,
+          "z_network_tx_rate": 1.1178438549082774
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 6.204887379190893e-05,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.668050736058741,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:queue-master": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -242,10 +861,44 @@
         "max_score": -0.31369558013068743,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1161536016432596,
+          "z_memory_percent": 1.106829300249751,
+          "z_network_rx_rate": 1.1178915475989746,
+          "z_network_tx_rate": 1.1178419821927474
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00033516012426826336,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.624651609463156,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:rabbitmq": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -254,10 +907,44 @@
         "max_score": -0.3168022314152952,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1110547648241016,
+          "z_memory_percent": 1.1087799349095242,
+          "z_network_rx_rate": 1.1178798960752208,
+          "z_network_tx_rate": 1.1178458355061072
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0005113106442324877,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.862981467316156,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:shipping": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -266,10 +953,44 @@
         "max_score": -0.3374407611602262,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.1096330030027095,
+          "z_memory_percent": 1.1087978277842965,
+          "z_network_rx_rate": 1.1178936821623122,
+          "z_network_tx_rate": 1.11785874030168
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0006713748013682519,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 7.022654250491056,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:user": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -278,10 +999,44 @@
         "max_score": -0.34491716199434064,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 6,
+        "unique_fraction": 0.003826530612244898,
+        "feature_std": {
+          "z_cpu_percent": 1.1155641555977014,
+          "z_memory_percent": 1.116502737994388,
+          "z_network_rx_rate": 1.1178576734575527,
+          "z_network_tx_rate": 1.1178281437840336
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 6 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002726158422845515,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 7.526424039577453,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     },
     "sock-shop:user-db": {
       "samples": 1568,
+      "project": "sock-shop",
       "threshold_p99": 0.0,
       "holdout": {
         "samples": 392,
@@ -290,6 +1045,39 @@
         "max_score": -0.3449324562312824,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "data_quality": {
+        "rows": 1568,
+        "unique_rows": 7,
+        "unique_fraction": 0.004464285714285714,
+        "feature_std": {
+          "z_cpu_percent": 1.116130739342144,
+          "z_memory_percent": 1.1179874069117084,
+          "z_network_rx_rate": 1.1178587345855437,
+          "z_network_tx_rate": 1.1178503797612516
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0005144896934785592,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 8.624619860270029,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
       }
     }
   },

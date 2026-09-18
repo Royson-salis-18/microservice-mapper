@@ -1,5 +1,6 @@
 {
   "service_id": "sock-shop:jaeger",
+  "project": "sock-shop",
   "feature_columns": [
     "z_cpu_percent",
     "z_memory_percent",
@@ -7,7 +8,7 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-17T02:14:55.122381+00:00",
+  "trained_at": "2026-09-18T13:51:02.443881+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
@@ -21,6 +22,84 @@
     "max_score": -0.3063162612660387,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": 0.0,
+      "train_score_mean": -0.28933396275361944,
+      "train_score_max": -0.0,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.3063162612660388,
+        "max_score": -0.3063162612660387,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_jaeger.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 5 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00045466409967431787,
+      "train_score_mean": 0.004449830213424184,
+      "train_score_max": 3.657797179056481,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.00022732577987394365,
+        "max_score": -0.00022732577987394365,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_jaeger.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.668050736058746,
+      "train_score_mean": 0.5859890104583247,
+      "train_score_max": 44.26059195266145,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 0.24618298195866545,
+        "max_score": 0.2461829819586654,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "sock-shop_jaeger.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 1568,
+    "unique_rows": 5,
+    "unique_fraction": 0.0031887755102040817,
+    "feature_std": {
+      "z_cpu_percent": 1.1095317057482432,
+      "z_memory_percent": 1.1116020052802216,
+      "z_network_rx_rate": 1.1179198046354317,
+      "z_network_tx_rate": 1.1179626468879231
+    }
   },
   "training_window": {
     "since": null,
