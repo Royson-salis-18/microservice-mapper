@@ -70,6 +70,25 @@ export const REMOTE_COMMANDS = {
     timeoutMs: 90_000,
     maxOutputBytes: 262_144,
   }),
+  /**
+   * Every container including stopped ones. `dockerPs` deliberately lists
+   * only running containers (that is what discovery should see), but
+   * deciding whether something crashed needs the ones that are not there
+   * any more.
+   */
+  dockerPsAll: (): RemoteCommand<string> => ({
+    name: "docker.ps.all",
+    command: "docker ps -a --no-trunc --format '{{json .}}'",
+    timeoutMs: 60_000,
+    maxOutputBytes: 262_144,
+  }),
+  /** Restart a stopped container in place; no image pull, no recreate. */
+  dockerStart: (containerId: string): RemoteCommand<string> => ({
+    name: "docker.start",
+    command: `docker start ${sanitizeContainerId(containerId)} 2>&1`,
+    timeoutMs: 60_000,
+    maxOutputBytes: 8_192,
+  }),
   dockerInspect: (containerId: string): RemoteCommand<string> => ({
     name: "docker.inspect",
     command: `docker inspect ${sanitizeContainerId(containerId)}`,
