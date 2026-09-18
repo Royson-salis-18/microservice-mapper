@@ -25,6 +25,30 @@ interface SourceDoc {
   lines: number;
 }
 
+interface Suggestion {
+  suggested: number | string[];
+  range?: [number, number];
+  hard_limits?: [number, number];
+  reason: string;
+}
+
+interface Suggestions {
+  available: boolean;
+  reason?: string;
+  project?: string;
+  observed?: {
+    services: number;
+    median_rows: number;
+    median_distinct: number;
+    min_rows: number;
+    thin_services: number;
+    lof_capable_services: number;
+    thinnest: { sid: string; rows: number; distinct: number }[];
+  };
+  suggestions?: Record<string, Suggestion>;
+  warnings?: string[];
+}
+
 interface RetrainState {
   running: boolean;
   startedAt: string | null;
@@ -95,6 +119,48 @@ function CodeCell({ source, collapsed, onToggle }: { source: SourceDoc | null; c
   );
 }
 
+/**
+ * The suggestion under a hyperparameter field.
+ *
+ * Shows the value, the sane range, and one click to take it — with the
+ * reasoning behind it available rather than asking anyone to trust a bare
+ * number. The reasons are computed from this project's own feature table,
+ * so they say what will happen to these services rather than quoting a
+ * textbook default.
+ */
+function Hint({ s, current, onApply }: { s?: Suggestion; current: string; onApply: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  if (!s || Array.isArray(s.suggested)) return null;
+  const value = String(s.suggested);
+  const applied = current === value;
+  return (
+    <div style={{ marginTop: '4px', fontSize: '9px', color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
+      <span>suggest </span>
+      <button
+        type="button"
+        onClick={() => onApply(value)}
+        title={applied ? 'already set' : `use ${value}`}
+        style={{
+          background: applied ? 'rgba(0,230,118,0.15)' : 'rgba(0,212,255,0.12)',
+          border: `1px solid ${applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)'}`,
+          color: applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)',
+          borderRadius: '4px', padding: '0 5px', fontSize: '9px', cursor: 'pointer', fontWeight: 700,
+        }}
+      >{value}</button>
+      {s.range && <span> · usual {s.range[0]}–{s.range[1]}</span>}
+      <button
+        type="button" onClick={() => setOpen(o => !o)}
+        style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '9px', padding: '0 0 0 5px', textDecoration: 'underline' }}
+      >{open ? 'less' : 'why'}</button>
+      {open && (
+        <div style={{ marginTop: '4px', padding: '6px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', color: 'var(--color-text-muted)' }}>
+          {s.reason}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?: string }) {
   const [projects, setProjects] = useState<string[]>([]);
   const [project, setProject] = useState<string>('');
@@ -111,6 +177,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
   const [until, setUntil] = useState('');
   const [skipPreprocess, setSkipPreprocess] = useState(false);
 
+  const [suggest, setSuggest] = useState<Suggestions | null>(null);
   const [retrain, setRetrain] = useState<RetrainState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
@@ -139,6 +206,18 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
   useEffect(() => {
     if (selectedProject && selectedProject !== 'ALL') setProject(selectedProject);
   }, [selectedProject]);
+
+  // Suggestions are computed from the feature table for whatever is in
+  // scope, so they change with the project.
+  useEffect(() => {
+    if (!project) return;
+    let cancelled = false;
+    fetch(`/api/ml/suggestions?project=${encodeURIComponent(project)}`)
+      .then(r => r.json())
+      .then((data: Suggestions) => { if (!cancelled) setSuggest(data); })
+      .catch(() => { if (!cancelled) setSuggest(null); });
+    return () => { cancelled = true; };
+  }, [project]);
 
   // Poll only while a run is in flight.
   useEffect(() => {
@@ -283,7 +362,50 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
           [3] Train
         </div>
 
+        {/* What the suggestions below are reasoning from. Without this the
+            numbers look like defaults rather than measurements. */}
+        {suggest?.available && suggest.observed && (
+          <div style={{
+            marginBottom: '10px', padding: '8px 10px', borderRadius: '6px',
+            background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.25)',
+            fontSize: '10px', color: 'var(--color-text-muted)', lineHeight: 1.6,
+          }}>
+            <strong style={{ color: 'var(--color-accent-cyan)' }}>Measured for {suggest.project}:</strong>{' '}
+            {suggest.observed.services} service(s), median{' '}
+            <strong style={{ color: 'var(--color-text-main)' }}>{suggest.observed.median_distinct}</strong> distinct
+            rows out of {suggest.observed.median_rows}. Suggestions below come from these numbers, not from defaults.
+            {suggest.observed.thinnest.length > 0 && (
+              <div style={{ marginTop: '4px', color: 'var(--color-text-dim)' }}>
+                thinnest: {suggest.observed.thinnest.map(t => `${t.sid.split(':').slice(1).join(':')} ${t.distinct}/${t.rows}`).join(' · ')}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(suggest?.warnings ?? []).map((w, i) => (
+          <div key={i} style={{
+            marginBottom: '10px', padding: '8px 10px', borderRadius: '6px',
+            background: 'rgba(255,171,0,0.08)', border: '1px solid rgba(255,171,0,0.3)',
+            fontSize: '10px', color: 'var(--color-degraded)', lineHeight: 1.5,
+          }}>{w}</div>
+        ))}
+
         <label style={label}>Detectors</label>
+        {Array.isArray(suggest?.suggestions?.algorithms?.suggested) && (
+          <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginBottom: '6px', lineHeight: 1.5 }}>
+            suggest{' '}
+            <button
+              type="button" disabled={running}
+              onClick={() => setAlgorithms(suggest!.suggestions!.algorithms.suggested as string[])}
+              style={{
+                background: 'rgba(0,212,255,0.12)', border: '1px solid var(--color-accent-cyan)',
+                color: 'var(--color-accent-cyan)', borderRadius: '4px', padding: '0 5px',
+                fontSize: '9px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 700,
+              }}
+            >{(suggest!.suggestions!.algorithms.suggested as string[]).join(', ')}</button>
+            <span> — {suggest!.suggestions!.algorithms.reason}</span>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
           {ALGORITHMS.map(a => {
             const on = algorithms.includes(a.id);
@@ -309,24 +431,25 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
             <label style={label}>Contamination</label>
             <input value={contamination} onChange={e => setContamination(e.target.value)} disabled={running}
                    type="number" step="0.001" min="0" max="0.5" placeholder="0.01" style={input} />
+            <Hint s={suggest?.suggestions?.contamination} current={contamination} onApply={setContamination} />
           </div>
           <div>
             <label style={label}>n_estimators</label>
             <input value={nEstimators} onChange={e => setNEstimators(e.target.value)} disabled={running}
                    type="number" min="10" placeholder="200" style={input} />
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>Isolation Forest only.</div>
+            <Hint s={suggest?.suggestions?.n_estimators} current={nEstimators} onApply={setNEstimators} />
           </div>
           <div>
             <label style={label}>Min samples</label>
             <input value={minSamples} onChange={e => setMinSamples(e.target.value)} disabled={running}
                    type="number" min="1" placeholder="30" style={input} />
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>Below this a service is skipped.</div>
+            <Hint s={suggest?.suggestions?.min_samples} current={minSamples} onApply={setMinSamples} />
           </div>
           <div>
             <label style={label}>Holdout fraction</label>
             <input value={holdoutFraction} onChange={e => setHoldoutFraction(e.target.value)} disabled={running}
                    type="number" step="0.05" min="0" max="0.9" placeholder="0.2" style={input} />
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>Chronological tail, not random.</div>
+            <Hint s={suggest?.suggestions?.holdout_fraction} current={holdoutFraction} onApply={setHoldoutFraction} />
           </div>
         </div>
 
