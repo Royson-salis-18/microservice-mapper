@@ -24,6 +24,7 @@ This wiki is the complete technical reference for the Microservice Mapper projec
 | 14 | [configuration.md](./14-configuration.md) | All env vars, config files, data file locations |
 | 15 | [troubleshooting.md](./15-troubleshooting.md) | Common issues, known bugs, diagnosis runbook |
 | 16 | [change-log-and-rationale.md](./16-change-log-and-rationale.md) | What changed, why, and where — decisions and the bugs behind them |
+| 17 | [findings-vs-incidents.md](./17-findings-vs-incidents.md) | Why model output and rule-based alerts are separate pages, and the incident thresholds |
 
 ---
 
@@ -39,3 +40,5 @@ This wiki is the complete technical reference for the Microservice Mapper projec
 - **Debugging no metrics:** [15-troubleshooting.md](./15-troubleshooting.md)
 - **RCA scoring explained:** [08-rca-engine.md](./08-rca-engine.md) → Scoring Algorithm
 - **ML anomaly detection:** [11-ml-pipeline.md](./11-ml-pipeline.md)
+- **"Why did this incident fire?" / tuning thresholds:** [17-findings-vs-incidents.md](./17-findings-vs-incidents.md) → Incidents: the rules
+- **Where did the ML charts go:** [17-findings-vs-incidents.md](./17-findings-vs-incidents.md) → What moved

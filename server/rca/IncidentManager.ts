@@ -2,6 +2,7 @@ import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incid
 import type { GraphStore } from '../graph/GraphStore.js';
 import { AnomalyDetector } from './AnomalyDetector.js';
 import { RCAEngine } from './RCAEngine.js';
+import { loadThresholds } from './thresholds.js';
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
@@ -48,8 +49,9 @@ export class IncidentManager {
     let severity: IncidentSeverity = 'LOW';
     let status: IncidentStatus = 'DEGRADED';
 
+    const t = loadThresholds();
     if (criticalCount > 0) {
-      severity = criticalCount > 2 ? 'CRITICAL' : 'HIGH';
+      severity = criticalCount > t.criticalServicesForCritical ? 'CRITICAL' : 'HIGH';
       status = 'INCIDENT';
     } else if (degradedCount > 0) {
       severity = 'MEDIUM';

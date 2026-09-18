@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { MLExecutionPanel } from './MLExecutionPanel';
 
-interface MLStatus {
+export interface MLStatus {
   collection: {
     started_at: string;
     last_write_at: string;
@@ -159,7 +159,7 @@ function severityColor(score: { persistent: boolean; above_threshold: boolean })
   return '#00e676';
 }
 
-function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{ sid: string; live?: { anomaly_score: number; persistent: boolean; above_threshold: boolean } }>; onSelect: (sid: string) => void; selectedSid: string | null }) {
+export function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{ sid: string; live?: { anomaly_score: number; persistent: boolean; above_threshold: boolean } }>; onSelect: (sid: string) => void; selectedSid: string | null }) {
   const data = rows
     .filter(r => r.live)
     .map(r => ({ sid: r.sid, name: r.sid.includes(':') ? r.sid.split(':').slice(1).join(':') : r.sid, score: Math.round(r.live!.anomaly_score * 100), live: r.live! }))
@@ -197,7 +197,7 @@ function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{ sid: s
   );
 }
 
-function ScoreHistoryChart({ sid }: { sid: string | null }) {
+export function ScoreHistoryChart({ sid }: { sid: string | null }) {
   const [history, setHistory] = useState<Array<{ timestamp: string; anomaly_score: number; above_threshold: boolean }>>([]);
 
   useEffect(() => {
@@ -261,7 +261,7 @@ const FEATURE_SERIES = [
 // Shows the exact rows train.py fits on — raw values on the left, the
 // z-scores actually fed to the forest on the right — so a score can be
 // traced back to the data that produced it instead of taken on faith.
-function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: string[]; sid: string | null; onSelect: (sid: string) => void }) {
+export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: string[]; sid: string | null; onSelect: (sid: string) => void }) {
   const [rows, setRows] = useState<Array<Record<string, any>>>([]);
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState<string[]>(FEATURE_SERIES.map(f => f.raw));
@@ -371,7 +371,7 @@ function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: string[]; 
 // How the live scores are spread out right now. A pile-up in the lowest
 // bucket is the expected shape for a healthy system; a long right tail is
 // what's worth looking at.
-function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomaly_score: number } }> }) {
+export function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomaly_score: number } }> }) {
   const buckets = useMemo(() => {
     const counts = Array.from({ length: 10 }, (_, i) => ({ bucket: `${i * 10}-${i * 10 + 10}%`, count: 0, index: i }));
     for (const r of rows) {
@@ -415,9 +415,9 @@ function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomaly_score
   );
 }
 
-interface AlgoHoldout { samples: number; flag_rate: number; mean_score: number; max_score: number; from: string; to: string }
+export interface AlgoHoldout { samples: number; flag_rate: number; mean_score: number; max_score: number; from: string; to: string }
 
-interface AlgoMeta {
+export interface AlgoMeta {
   threshold_p99?: number;
   train_score_mean?: number;
   train_score_max?: number;
@@ -427,7 +427,7 @@ interface AlgoMeta {
   error?: string;
 }
 
-interface ModelMeta {
+export interface ModelMeta {
   service_id: string;
   project?: string | null;
   feature_columns: string[];
@@ -472,7 +472,7 @@ const ALGO_NOTE: Record<string, string> = {
  * with each other. Agreement near 1.0 everywhere means the extra detectors
  * are adding cost and no information.
  */
-function DetectorComparison({ models }: { models: ModelMeta[] }) {
+export function DetectorComparison({ models }: { models: ModelMeta[] }) {
   const byProject = useMemo(() => {
     const map = new Map<string, ModelMeta[]>();
     for (const m of models) {
@@ -560,7 +560,7 @@ function DetectorComparison({ models }: { models: ModelMeta[] }) {
  * carrying 6 distinct values, because collection polls faster than the
  * metrics actually change.
  */
-function DataQualityPanel({ models }: { models: ModelMeta[] }) {
+export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
   const rows = models
     .filter(m => m.data_quality)
     .map(m => ({
@@ -617,7 +617,7 @@ function DataQualityPanel({ models }: { models: ModelMeta[] }) {
 // Training size vs how often the model fires on the held-out tail. The tail
 // isn't labelled, so a high rate isn't "wrong" — it means the model fires a
 // lot on data it never saw, which is either drift or a non-normal tail.
-function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; onSelect: (sid: string) => void }) {
+export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; onSelect: (sid: string) => void }) {
   const points = useMemo(() => models
     .filter(m => m.holdout)
     .map(m => ({
@@ -1256,11 +1256,6 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
   // bar rather than each panel deciding for itself what it shows.
   const scopedModels = models.filter(m => inScope(m.service_id));
 
-  // Only services that made it through preprocessing have rows in
-  // features.csv, so those are the only ones the explorer can chart.
-  const featureServiceIds = rows
-    .filter(r => r.featured?.status === 'ok')
-    .map(r => r.sid);
 
   return (
     <div style={{
@@ -1389,21 +1384,20 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           not already say, so it only earns its space when comparing projects. */}
       {!scoped && <PipelineFunnelChart projectNames={projectNames} byProject={byProject} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
-        <LiveScoresChart rows={rows} onSelect={setSelectedSid} selectedSid={selectedSid} />
-        <ScoreHistoryChart sid={selectedSid} />
+      {/* Model outputs — live scores, model quality, detector agreement, data
+          quality and the feature explorer — moved to Findings. This page is
+          the machine: how the pipeline is configured and how far each service
+          has got through it. */}
+      <div style={{
+        background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.22)',
+        borderRadius: '10px', padding: '12px 14px', fontSize: '11px',
+        color: 'var(--color-text-muted)', lineHeight: 1.6,
+      }}>
+        Looking for scores, model quality, detector agreement or the feature explorer? Those are model
+        <em> outputs</em> and live under <strong style={{ color: 'var(--color-accent-cyan)' }}>Findings</strong>.
+        This page covers the pipeline itself — processes, execution, configuration, and how far each
+        service has got through collection, preprocessing and training.
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
-        <ScoreDistributionChart rows={rows} />
-        <ModelQualityChart models={scopedModels} onSelect={setSelectedSid} />
-      </div>
-
-      <DetectorComparison models={scopedModels} />
-
-      <DataQualityPanel models={scopedModels} />
-
-      <FeatureExplorer serviceIds={featureServiceIds} sid={selectedSid} onSelect={setSelectedSid} />
 
       {/* Per-project pipeline progress — one section per project, never merged */}
       {projectNames.map((project) => {

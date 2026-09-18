@@ -7,7 +7,8 @@ import {
   AlertTriangle,
   FlaskConical,
   Zap,
-  Brain
+  Brain,
+  Microscope
 } from 'lucide-react';
 import type { GlobalStatus } from '../types';
 
@@ -26,6 +27,9 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
     { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
     { id: 'Analytics', icon: BarChart2, label: 'Analytics' },
     { id: 'ML PIPELINE', icon: Brain, label: 'ML Pipeline' },
+    // Model outputs. Sits next to the pipeline that produces them, and apart
+    // from Incidents, which are rule-based and involve no model.
+    { id: 'FINDINGS', icon: Microscope, label: 'Findings' },
     { id: 'TRACES', icon: Zap, label: 'Traces' },
     { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
     { id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' },
