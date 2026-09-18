@@ -339,7 +339,7 @@ export default function App() {
         ) : activeTab === 'EXPERIMENTS' ? (
           <ExperimentHistoryPanel />
         ) : activeTab === 'ML PIPELINE' ? (
-          <MLPipelineView />
+          <MLPipelineView selectedProject={selectedProjectId} />
         ) : (
           <ReactFlowProvider>
             <GraphControls 
