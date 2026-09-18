@@ -61,10 +61,67 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(history);
   });
 
+  /**
+   * The "raw traffic logs" feed.
+   *
+   * Two different things can count as observed traffic here and only one of
+   * them usually exists:
+   *
+   *   HTTP interactions — method, route, status, latency — parsed out of
+   *   container access logs. Richest, but it needs a service that actually
+   *   writes a parseable access log to stdout. DeathStarBench's nginx-thrift
+   *   does not, and sock-shop's edge-router does not either, so this feed was
+   *   permanently empty on those targets and the panel just said "waiting for
+   *   traffic events" forever while traffic was plainly flowing.
+   *
+   *   Socket connections — who talked to whom, on which port — observed by
+   *   the /proc/net/tcp scanner. Coarser (no route, no status) but it exists
+   *   for every target, because it needs nothing of the application.
+   *
+   * So: prefer interactions, fall back to connections, and say which one is
+   * being returned rather than silently showing an empty box. `kind` lets the
+   * UI label what it is displaying instead of implying HTTP detail it does
+   * not have.
+   */
   router.get('/traffic', (req, res) => {
-    const limit = parseInt(req.query.limit as string) || 100;
-    const events = graphStore.metricStore.getEvents(limit);
-    res.json(events);
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
+    const targetId = typeof req.query.targetId === 'string' && req.query.targetId !== 'ALL'
+      ? req.query.targetId
+      : undefined;
+
+    const interactions = graphStore.metricStore.getEvents(limit * 4)
+      .filter((e: any) => !targetId || String(e.source ?? '').startsWith(`${targetId}:`) || String(e.target ?? '').startsWith(`${targetId}:`))
+      .slice(0, limit);
+
+    if (interactions.length > 0) {
+      return res.json({ kind: 'http', events: interactions });
+    }
+
+    // Fall back to observed socket connections.
+    const targetIds = targetId
+      ? [targetId]
+      : Array.from(graphStore.targets.keys());
+    const connections: any[] = [];
+    for (const tid of targetIds) {
+      const store = graphStore.getTraceStore?.(tid);
+      if (!store) continue;
+      for (const ev of store.getRecentEvents(limit)) {
+        connections.push({
+          timestamp: ev.timestamp,
+          source: ev.sourceServiceId,
+          target: ev.destServiceId,
+          // Deliberately not faking an HTTP status: the scanner sees a
+          // socket, not a response. The UI renders these as TCP.
+          statusCode: null,
+          method: null,
+          route: ev.destPort ? `:${ev.destPort} ${ev.state ?? ''}`.trim() : (ev.state ?? null),
+          protocol: 'tcp',
+          evidenceSource: 'network-tcp',
+        });
+      }
+    }
+    connections.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+    res.json({ kind: 'connection', events: connections.slice(0, limit) });
   });
 
   router.get('/analytics', (_req, res) => {
