@@ -144,6 +144,24 @@ class VirtualUser {
         continue;
       }
       this.vars = {};
+      // A workflow may declare fixed value pools to choose from per run, e.g.
+      //   vars: { productSlug: ['brutal-shell-parka', 'hardline-boxy-tee'] }
+      // referenced from a step path as /product/${productSlug}.
+      //
+      // `extract` only works when a step answers JSON, and plenty of real
+      // entry points are server-rendered HTML — the Vertikal storefront's
+      // /catalog is a Next.js page, so there is nothing to extract a slug
+      // from. Without this every virtual user would have to hammer one
+      // hard-coded product, which measures that product's cache rather than
+      // the catalogue. Values are still real ones verified against the
+      // running app; this only chooses between them.
+      if (workflow.vars) {
+        for (const [name, pool] of Object.entries(workflow.vars)) {
+          if (Array.isArray(pool) && pool.length > 0) {
+            this.vars[name] = pool[Math.floor(Math.random() * pool.length)];
+          }
+        }
+      }
       this.engine.stats.recordWorkflowStart(workflowId);
       let abandoned = false;
 
