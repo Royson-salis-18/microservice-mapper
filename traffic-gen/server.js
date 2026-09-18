@@ -267,6 +267,46 @@ app.post('/api/probe', async (req, res) => {
   res.json({ projectId, baseUrl, results, endpoints: confirmed });
 });
 
+/**
+ * The GET paths a target's workflows actually declare.
+ *
+ * The sweep probe on the Node side otherwise has to guess what lives behind
+ * an entry point, and generic guesses are worthless on a system that does
+ * not follow e-commerce conventions: probing DeathStarBench produced 49
+ * 404s out of 53, because its API is /wrk2-api/* and nothing resembles
+ * /api/cart or /health. These paths are the opposite of a guess — they were
+ * written against the real system — so the sweep should start from them.
+ *
+ * Only GET, and only fully-resolved paths: anything else is unsafe to fire
+ * blindly at a target nobody has mapped yet. A ${var} is resolved from the
+ * workflow's own value pool when it has one, since those are real values.
+ */
+app.get('/api/targets/:targetId/paths', (req, res) => {
+  const mod = TARGETS[req.params.targetId];
+  if (!mod) return res.status(404).json({ error: `unknown targetId: ${req.params.targetId}` });
+
+  const paths = [];
+  for (const wf of Object.values(mod.workflows || {})) {
+    for (const step of wf.steps || []) {
+      if ((step.method || 'GET').toUpperCase() !== 'GET') continue;
+      if (typeof step.path !== 'string' || !step.path) continue;
+
+      let path = step.path;
+      if (path.includes('${')) {
+        path = path.replace(/\$\{(\w+)\}/g, (match, name) => {
+          const pool = wf.vars && wf.vars[name];
+          return Array.isArray(pool) && pool.length > 0 ? pool[0] : match;
+        });
+        // Still templated means it depends on a value extracted at runtime,
+        // which a probe cannot produce.
+        if (path.includes('${')) continue;
+      }
+      if (!paths.includes(path)) paths.push(path);
+    }
+  }
+  res.json({ targetId: req.params.targetId, paths });
+});
+
 app.post('/api/start', (req, res) => {
   try {
     const { targetId, profile, users, workflowWeights: requestedWorkflowWeights, durationSec, maxUsers, maxConcurrency, endpointPaths } = req.body;
