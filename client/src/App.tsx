@@ -215,6 +215,31 @@ export default function App() {
     return node ? (node.data as unknown as ServiceNode) : null;
   }, [selectedNodeId, nodes]);
 
+  /**
+   * Keep the floating terminal clear of the inspection sidebar.
+   *
+   * The sidebar docks against the right edge and takes real layout width
+   * (main-content is a flex row, so the canvas shrinks to make room). The
+   * terminal floats above everything at z-index 1000 and defaults to
+   * `window.innerWidth - 340`, which is inside that same column — so it
+   * landed squarely on top of the sidebar, opaque, every time. Clicking a
+   * node did open the sidebar; it was just behind the terminal, which is
+   * indistinguishable from nothing happening.
+   *
+   * Clamping only while the inspector is open means the terminal slides
+   * left to make room and returns to wherever it was once the sidebar is
+   * closed, and a deliberate drag still wins inside the remaining space.
+   */
+  const INSPECTOR_WIDTH = 400;
+  const TERMINAL_WIDTH = 300;
+  const isInspectorOpen = Boolean(selectedNodeData || selectedEdgeId);
+  const terminalLeft = isInspectorOpen
+    ? Math.min(
+        terminalPosition.x,
+        Math.max(0, window.innerWidth - INSPECTOR_WIDTH - TERMINAL_WIDTH - 16),
+      )
+    : terminalPosition.x;
+
 
 
   return (
@@ -383,9 +408,9 @@ export default function App() {
       {/* GLOBAL TERMINAL PANEL (Draggable Card) */}
       <div style={{
         position: 'absolute',
-        left: terminalPosition.x,
+        left: terminalLeft,
         top: terminalPosition.y,
-        width: '300px',
+        width: `${TERMINAL_WIDTH}px`,
         height: isTerminalVisible ? '400px' : '40px',
         background: 'rgba(12, 12, 24, 0.95)',
         backdropFilter: 'blur(24px)',
