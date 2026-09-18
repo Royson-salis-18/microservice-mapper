@@ -72,27 +72,83 @@ Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadT
 
 **`baseUrl`** — used for HTTP health pings. Optional but recommended. If absent, `endpointStatus` stays `UNCONFIGURED`.
 
+**`trafficBaseUrl`** (optional) — pins the URL traffic is actually sent to,
+overriding what discovery infers. Set it from the **Entry point** control in
+the Traffic panel, or via `POST /api/traffic/entrypoint`.
+
+It exists because discovery can only report what a container *publishes*,
+which is not the same as what is *reachable from where the app runs*. Two
+real cases:
+
+- A published port is closed in the security group, so the inferred URL
+  times out forever while an SSH forward (`http://localhost:18080`) works.
+- Discovery picks the alphabetically-first endpoint, which can be a
+  telemetry port — a DeathStarBench box resolved to Jaeger's OTLP `:4318`
+  rather than the app's own entry.
+
+`GET /api/traffic/entrypoints` flags a pin whose host no longer matches the
+target's current `ec2PublicIp` (`staleHost`), because these instances get a
+new public IP on every stop/start.
+
+Note that `POST /api/config/remote` **merges** into the existing entry rather
+than replacing it, specifically so that updating an IP does not silently
+erase this key.
+
 ---
 
 ## ML Pipeline — `ml/config.json`
 
+Defaults live in `ml/mlconfig.py`. `collector.py` and `score.py` re-read this
+file every cycle, so changes to their keys take effect within one cycle with
+no restart. `preprocess.py` and `train.py` read it once at startup, so their
+keys only apply on the next **Retrain**.
+
 ```json
 {
-  "collector_interval_s":       10,
-  "api_base_url":               "http://localhost:3001",
-  "min_training_samples":       30,
-  "anomaly_threshold":          0.7,
-  "persistent_anomaly_windows": 3
+  "collect_interval_sec": 10,
+  "min_samples_per_service": 10,
+  "min_training_samples": 30,
+  "contamination": 0.01,
+  "score_interval_sec": 10,
+  "persistence_windows": 3,
+  "n_estimators": 200,
+  "max_samples_fraction": 1.0,
+  "holdout_fraction": 0.2,
+  "feature_columns": [
+    "z_cpu_percent", "z_memory_percent",
+    "z_network_rx_rate", "z_network_tx_rate"
+  ]
 }
 ```
 
-| Key | Default | Description |
-|---|---|---|
-| `collector_interval_s` | `10` | How often `collector.py` polls `/api/graph` |
-| `api_base_url` | `http://localhost:3001` | Backend URL for data collection |
-| `min_training_samples` | `30` | Minimum rows per service before training |
-| `anomaly_threshold` | `0.7` | Score above which = anomalous |
-| `persistent_anomaly_windows` | `3` | Consecutive anomalous windows → `persistent: true` |
+| Key | Default | Applies | Description |
+|---|---|---|---|
+| `collect_interval_sec` | `10` | live | How often `collector.py` polls `/api/graph` |
+| `min_samples_per_service` | `10` | retrain | Below this, a service is skipped when building features |
+| `min_training_samples` | `30` | retrain | Below this, a service gets no model |
+| `contamination` | `0.01` | retrain | Expected anomaly fraction. Must be `< 0.5` — an IsolationForest requirement |
+| `score_interval_sec` | `10` | live | How often `score.py` re-scores |
+| `persistence_windows` | `3` | live | Consecutive above-threshold windows before flagging a real anomaly |
+| `n_estimators` | `200` | retrain | Trees per forest |
+| `max_samples_fraction` | `1.0` | retrain | Fraction of training rows each tree draws. `1.0` = sklearn `auto` |
+| `holdout_fraction` | `0.2` | retrain | Chronological tail held out of training. `0` = train on everything |
+| `feature_columns` | all four | retrain | Which `z_*` features to fit on. Must be a non-empty subset |
+
+All of these are editable from the **ML Pipeline** page; the API validates
+them (`POST /api/ml/config`).
+
+### The holdout is not an accuracy figure
+
+`holdout_fraction` splits **chronologically**, not randomly: the model fits
+the earlier part of each service's data and is then scored on the tail it
+never saw. A random split would leak adjacent samples across the boundary
+and flatter the result.
+
+The tail is unlabelled, so what comes back is a **firing rate**, not an error
+rate — "how often does this model fire on data it never saw". Compare it to
+`contamination`: much higher suggests drift or a tail that was not actually
+normal. It is reported per model in `models/*.meta.json` and in the
+`Holdout flagged` column on the ML Pipeline page.
 
 ---
 

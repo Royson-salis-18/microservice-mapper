@@ -43,6 +43,10 @@ async function main() {
   const trafficController = new TrafficController(graphStore);
   const experimentManager = new ExperimentManager(graphStore, graphStore.metricStore, trafficController);
   trafficController.onStatsCallback = (targetId, stats) => experimentManager.updateExperimentStats(targetId, stats);
+  // A sweep with a durationSec now ends itself instead of running until
+  // someone clicks Stop. Without this, the experiment record and the
+  // traffic status UI would both keep reporting it as live forever.
+  trafficController.onStoppedCallback = (targetId) => experimentManager.stopExperiment(targetId, 'STOPPED');
   app.use('/api', createRouter(graphStore, wsManager, incidentManager, trafficController, experimentManager));
 
   server.listen(Number(config.PORT), '0.0.0.0', () => {
@@ -60,7 +64,10 @@ async function main() {
         }
         if (localIp !== '127.0.0.1') break;
       }
-    } catch (e) {}
+    } catch {
+      // Best-effort LAN IP detection for the collector callback URL. Falling
+      // back to 127.0.0.1 is a valid outcome, not an error worth surfacing.
+    }
 
     const mapperUrl = process.env.MAPPER_PUBLIC_URL || `http://${localIp}:${config.PORT}`;
     // Store for use by EndpointDiscoveryEngine
@@ -92,4 +99,20 @@ async function main() {
   }, config.POLLING_INTERVAL_MS);
 }
 
-main().catch(console.error);
+// A long-running collector polls hosts that are frequently unreachable. A
+// single stray rejection — a dropped SSH channel, a socket reset mid-write —
+// would otherwise terminate the whole server in Node 18+, taking every
+// healthy target down with it. Log loudly and keep serving; a crash loop is
+// strictly worse than a degraded target.
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL-GUARD] Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL-GUARD] Uncaught exception:', err);
+});
+
+main().catch((e) => {
+  console.error('[FATAL] Server failed to start:', e);
+  process.exit(1);
+});

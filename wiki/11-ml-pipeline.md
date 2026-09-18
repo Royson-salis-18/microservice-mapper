@@ -112,6 +112,69 @@ while True:
 
 ---
 
+## Running It From the UI
+
+The two long-running stages (`collector.py`, `score.py`) are supervised from
+the **ML Pipeline** page rather than only from a shell:
+
+| Control | Endpoint | Notes |
+|---|---|---|
+| Start / Stop collector | `POST /api/ml/processes/collector/{start,stop}` | Writes to `ml/logs/collector.log` |
+| Start / Stop scorer | `POST /api/ml/processes/scorer/{start,stop}` | Writes to `ml/logs/scorer.log` |
+| Status | `GET /api/ml/processes` | Running, pid, uptime, log tail |
+| Retrain | `POST /api/ml/retrain` | Runs `preprocess.py` then `train.py`, streaming the log |
+
+This exists because the numbers on the page are only meaningful if you know
+whether anything is still producing them. A stopped collector leaves every
+figure frozen at its last write, which is indistinguishable from "the system
+is quiet" unless the process state is visible.
+
+**Externally-started processes are detected too.** `GET /api/ml/processes`
+falls back to an anchored `pgrep` (`^python3 collector\.py$`), so a run
+launched from a terminal is reported honestly and can still be stopped from
+the UI. The anchor matters: without it the match also hits shell wrappers
+whose command line merely *contains* `python3 collector.py`, and stopping the
+wrapper would leave the interpreter running.
+
+---
+
+## Tuning Knobs
+
+All editable from the page, all genuinely wired into the Python — see
+[14-configuration](14-configuration.md) for the full table.
+
+- `n_estimators`, `max_samples_fraction` → passed to `IsolationForest`
+- `feature_columns` → which `z_*` features are fitted. `score.py` reads each
+  model's own recorded `feature_columns` from its `meta.json`, so a
+  subset-trained model is scored with the vector it was fitted on rather
+  than silently mismatched
+- `holdout_fraction` → chronological train/test split (see below)
+- Training window (`--since` / `--until`) → restrict training to a period you
+  know was baseline-only
+
+### Holdout evaluation
+
+With `holdout_fraction > 0`, `train.py` fits on the earlier part of each
+service's series and scores the held-out tail, recording in `meta.json`:
+
+```json
+"holdout": {
+  "samples": 392,
+  "flag_rate": 0.0,
+  "mean_score": -0.328,
+  "max_score": -0.328,
+  "from": "…", "to": "…"
+}
+```
+
+The split is chronological, not random — a random split leaks adjacent
+samples across the boundary and flatters the result. The tail is unlabelled,
+so `flag_rate` is a **firing rate, not an accuracy**: how often the model
+fires on data it never saw. Compare it against `contamination`; much higher
+suggests drift or a tail that was not actually normal.
+
+---
+
 ## Server Integration
 
 `GraphStore.readAnomalyScores()` — called inside `getGraph()` before each response:
@@ -173,5 +236,10 @@ Only CPU, memory, and network rate are used. HTTP latency and error rate fields 
 **4. No auto-retraining**
 Must manually re-run `preprocess.py` + `train.py` as data accumulates. A cron job like `0 3 * * * cd /path/to/ml && python3 preprocess.py && python3 train.py` handles this.
 
-**5. `collector.py` and MetricStore overlap**
+**5. The holdout is not accuracy**
+`flag_rate` says how often a model fires on unseen data. Without labels there
+is no way to call those firings right or wrong. It is useful as a relative
+signal (compare to `contamination`, or across services), not as a score.
+
+**6. `collector.py` and MetricStore overlap**
 Both read `/api/graph`. The collector is standalone — it doesn't hook into MetricStore. This means there's some redundant API polling. The separation exists because the ML pipeline needs to be independently deployable (possibly on a different machine).

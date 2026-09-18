@@ -159,6 +159,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   });
   const [showLabels, setShowLabels] = useState(true);
   const live = useRef<PositionMap>(new Map()).current;
+  const canvasWrapRef = useRef<HTMLDivElement>(null);
   // onPointerMissed can fire in the same gesture as a node click, which
   // would select and then immediately deselect — the selection panel would
   // flash and vanish. Ignore a "missed" that lands right after a real hit.
@@ -167,6 +168,26 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   useEffect(() => {
     try { localStorage.setItem('mm.scene3d.layout', layout); } catch { /* private mode */ }
   }, [layout]);
+
+  // R3F sizes its canvas from a measured container. When this view mounts
+  // while the layout is still settling — a tab switch, a panel opening, the
+  // first paint — that measurement can come back stale, and the canvas stays
+  // at the browser default 300x150 with the renderer never initialised. The
+  // scene then appears completely blank: no grid, no nodes, no errors, and a
+  // healthy WebGL context. Nudging a resize after mount forces a real
+  // measurement. This was the cause of every "3D is blank" episode.
+  useEffect(() => {
+    const nudge = () => window.dispatchEvent(new Event('resize'));
+    const raf = requestAnimationFrame(nudge);
+    const timer = setTimeout(nudge, 250); // covers slower first paints
+    const observer = new ResizeObserver(nudge);
+    if (canvasWrapRef.current) observer.observe(canvasWrapRef.current);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onPaneClick(); };
@@ -237,11 +258,13 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
 
   return (
     <div
+      ref={canvasWrapRef}
       style={{ width: '100%', height: '100%', background: '#04060f', position: 'relative' }}
       onClick={(e) => { if (e.target === e.currentTarget) onPaneClick(); }}
     >
       <Canvas
         dpr={[1, 1.75]}
+        resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
         onPointerMissed={() => {
           if (Date.now() - lastNodeClick.current < 150) return;
           onPaneClick();

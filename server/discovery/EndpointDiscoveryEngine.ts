@@ -458,7 +458,12 @@ export class EndpointDiscoveryEngine {
       try {
         const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         tConf = configData[targetId];
-      } catch {}
+      } catch (e) {
+        // Leaving tConf null here makes the target look unconfigured rather
+        // than broken, which sends you hunting for a discovery bug when the
+        // real problem is a JSON syntax error in the config file.
+        console.error(`[Discovery] Could not parse remote_config.json for ${targetId}:`, (e as Error)?.message ?? e);
+      }
     }
 
     if (!tConf?.ec2PublicIp || !tConf?.sshKeyPath) {

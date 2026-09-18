@@ -23,6 +23,7 @@ This wiki is the complete technical reference for the Microservice Mapper projec
 | 13 | [api-reference.md](./13-api-reference.md) | Full REST API + WebSocket protocol |
 | 14 | [configuration.md](./14-configuration.md) | All env vars, config files, data file locations |
 | 15 | [troubleshooting.md](./15-troubleshooting.md) | Common issues, known bugs, diagnosis runbook |
+| 16 | [change-log-and-rationale.md](./16-change-log-and-rationale.md) | What changed, why, and where — decisions and the bugs behind them |
 
 ---
 
@@ -32,6 +33,8 @@ This wiki is the complete technical reference for the Microservice Mapper projec
 - **How data flows:** [05-telemetry-ingestion.md](./05-telemetry-ingestion.md)
 - **Why nodes disappear:** [06-node-edge-lifecycle.md](./06-node-edge-lifecycle.md) → Node Pruning section
 - **Setting up a new target:** [14-configuration.md](./14-configuration.md) → Target SSH Config section
+- **Why is it built this way:** [16-change-log-and-rationale.md](./16-change-log-and-rationale.md)
+- **Traffic won't start / no edges appear:** [16 §5](./16-change-log-and-rationale.md#5-traffic)
 - **"Why does edge X show grey?":** [09-frontend.md](./09-frontend.md) → Edge Visualization Semantics
 - **Debugging no metrics:** [15-troubleshooting.md](./15-troubleshooting.md)
 - **RCA scoring explained:** [08-rca-engine.md](./08-rca-engine.md) → Scoring Algorithm

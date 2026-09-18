@@ -1,4 +1,35 @@
 import { useState, useEffect } from 'react';
+
+// Mirrors ABSOLUTE_MAX_USERS in traffic-gen/server.js. Kept in sync by hand;
+// the server clamps regardless, so a drift here only affects the hint text.
+const MAX_USERS = 200;
+
+// Each workflow file declares its own per-profile user counts, so this is a
+// hint for the placeholder only — the server uses the real value.
+const PROFILE_USER_HINT: Record<string, number> = {
+  baseline: 5, moderate: 15, heavy: 40, stress: 80, ramp: 20,
+};
+
+interface ProbeResult {
+  url: string;
+  serviceName: string;
+  endpointId: string;
+  port: number;
+  reachable: boolean;
+  usable: boolean;
+  status?: number;
+  ms: number;
+  error?: string;
+}
+
+interface SurfaceReport {
+  targetId: string;
+  probedAt: string;
+  totalCandidates: number;
+  usable: ProbeResult[];
+  reachableButUnusable: ProbeResult[];
+  dead: ProbeResult[];
+}
 import type { Target, DiscoveredService, DiscoveredEndpoint, DiscoveredRoute, TargetDiscoverySummary } from '../types';
 
 interface TrafficControlPanelProps {
@@ -8,9 +39,15 @@ interface TrafficControlPanelProps {
 export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   const [selectedTargetId, setSelectedTargetId] = useState<string>('sock-shop');
   const [workloadSource, setWorkloadSource] = useState<'EXTERNAL' | 'USER_SIM'>('EXTERNAL');
-  const [mode, setMode] = useState<'USER_JOURNEY' | 'ENDPOINT' | 'SERVICE'>('USER_JOURNEY');
+  const [mode, setMode] = useState<'USER_JOURNEY' | 'ENDPOINT' | 'SERVICE' | 'SWEEP'>('USER_JOURNEY');
   const [profile, setProfile] = useState<string>('baseline');
   const [duration, setDuration] = useState<string>('0');
+  // Empty means "use the profile's own default". A number overrides it, so
+  // an operator can push past a profile without editing a workflow file.
+  const [users, setUsers] = useState<string>('');
+  const [surface, setSurface] = useState<SurfaceReport | null>(null);
+  const [probing, setProbing] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [reachabilityStatus, setReachabilityStatus] = useState<string>('UNKNOWN');
   
   const [selectedEndpointId, setSelectedEndpointId] = useState<string>('');
@@ -160,7 +197,6 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   }, [selectedTargetId, entryPoints[selectedTargetId]?.pinned]);
 
   const activeUrl = resolvedEndpointUrl || '';
-  const isEndpointReady = isResolvedConfigured && reachabilityStatus === 'REACHABLE';
 
   const runningDiag = diagnostics.find((d) => d.targetId === selectedTargetId && d.isRunning);
   const isCurrentRunning = !!runningDiag;
@@ -171,11 +207,42 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     ? selectedServiceRoutes.some(r => r.trafficCapable)
     : true;
 
+  // Why the run can't start, in the user's words. Previously handleStart
+  // just `return`ed when a precondition failed, so clicking a button that
+  // looked enabled did nothing at all and said nothing about why.
+  //
+  // SWEEP is deliberately exempt from the reachability gate: its whole job is
+  // to find out which endpoints respond. Blocking it because the *default*
+  // entry point is unreachable would block the one mode that can tell you
+  // which entry point to use instead.
+  const blockedReason: string | null =
+    !isResolvedConfigured
+      ? 'No entry point resolved for this target. Pin one above, or pick an endpoint.'
+      : mode === 'SWEEP'
+        ? null
+        : reachabilityStatus === 'CHECKING'
+          ? 'Still checking whether the entry point responds…'
+          : reachabilityStatus !== 'REACHABLE'
+            ? `Entry point ${activeUrl || ''} is ${reachabilityStatus}. Pick a different endpoint, or pin one that responds — telemetry UIs (Grafana, Jaeger) are often not reachable from here. Or switch Traffic Mode to Sweep to probe every endpoint.`
+            : !isSelectedServiceCapable
+              ? 'The selected service has no traffic-capable routes. Choose another service, or switch Traffic Mode to User Journey.'
+              : null;
+
   const handleStart = async () => {
-    if (!isEndpointReady || !isSelectedServiceCapable) return;
+    if (blockedReason) return;
     setIsLoading(true);
+    setStartError(null);
     try {
-      await fetch('/api/experiments/start', {
+      const durationSec = parseInt(duration, 10) || 0;
+      // If the surface was already probed for this target, reuse that result
+      // rather than making the server probe again — the operator has seen
+      // exactly which URLs it contains and is starting against those.
+      const sweepPaths =
+        mode === 'SWEEP' && surface?.targetId === selectedTargetId && surface.usable.length > 0
+          ? surface.usable.map(u => u.url)
+          : undefined;
+
+      const res = await fetch('/api/experiments/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,18 +250,60 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           workloadSource,
           profile,
           mode,
-          config: { durationSeconds: parseInt(duration, 10) },
+          users: users.trim() ? parseInt(users, 10) : undefined,
+          durationSec: durationSec || undefined,
+          endpointPaths: sweepPaths,
+          config: { durationSeconds: durationSec },
           endpointId: selectedEndpointId || undefined,
           serviceId: selectedServiceId || undefined,
           routeId: selectedRouteId || undefined,
           limits: { cpuThreshold: 85, memoryThreshold: 85, errorRateThreshold: 0.1, latencyThreshold: 2000 }
         }),
       });
+
+      // The server answers 502 with the real reason when traffic never
+      // started. This used to be discarded, so a failed start looked
+      // identical to a successful one until the stats stayed at zero.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({} as any));
+        setStartError(body.error || `Server refused the start (HTTP ${res.status})`);
+      }
       await fetchData();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to start experiment:', e);
+      setStartError(e?.message || 'Could not reach the server');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Probe every discovered endpoint and report which ones answer.
+   *
+   * This is read-only — one GET per endpoint, no load generated. It exists
+   * because discovery can only report what a container publishes, which is
+   * not the same as what is reachable from here.
+   */
+  const handleProbeSurface = async () => {
+    setProbing(true);
+    setSurface(null);
+    setStartError(null);
+    try {
+      const res = await fetch('/api/traffic/surface/probe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId: selectedTargetId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({} as any));
+        setStartError(body.error || `Probe failed (HTTP ${res.status})`);
+        return;
+      }
+      setSurface(await res.json());
+    } catch (e: any) {
+      setStartError(e?.message || 'Probe request failed');
+    } finally {
+      setProbing(false);
     }
   };
 
@@ -446,7 +555,19 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET AWS APP</label>
           <select
             value={selectedTargetId} disabled={isAnyRunning}
-            onChange={(e) => setSelectedTargetId(e.target.value)}
+            onChange={(e) => {
+              // Endpoint/service/route ids are namespaced per target, so
+              // carrying them across a target switch sends traffic to the
+              // previous project's URL. Observed in the log as a death-star
+              // experiment resolving an open-telemetry endpoint id.
+              setSelectedTargetId(e.target.value);
+              setSelectedEndpointId('');
+              setSelectedServiceId('');
+              setSelectedRouteId('');
+              // A probe report belongs to the target it was taken against.
+              setSurface(null);
+              setStartError(null);
+            }}
             style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: isAnyRunning ? 'var(--color-text-dim)' : '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', outline: 'none', cursor: isAnyRunning ? 'not-allowed' : 'pointer' }}
           >
             {targets.length > 0 ? targets.map(t => <option key={t.targetId} value={t.targetId}>{t.displayName || t.targetId}</option>) : <><option value="sock-shop">Sock Shop AWS</option><option value="vertikal">Vertikal AWS</option></>}
@@ -491,6 +612,42 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
             type="number" value={duration} onChange={e => setDuration(e.target.value)}
             style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
           />
+          <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>0 = run until stopped (max 1800)</div>
+        </div>
+      </div>
+
+      <div>
+        <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
+          VIRTUAL USERS {users.trim() ? '(OVERRIDE)' : '(PROFILE DEFAULT)'}
+        </label>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <input
+            type="number" min={1} max={MAX_USERS} value={users}
+            placeholder={`profile default — e.g. ${PROFILE_USER_HINT[profile] ?? 5}`}
+            onChange={e => setUsers(e.target.value)}
+            style={{ flex: 1, background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
+          />
+          {[10, 25, 50, 100].map(n => (
+            <button
+              key={n} type="button" onClick={() => setUsers(String(n))}
+              style={{
+                background: users === String(n) ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${users === String(n) ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+                color: users === String(n) ? '#fff' : 'var(--color-text-dim)',
+                borderRadius: '6px', padding: '5px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600,
+              }}
+            >{n}</button>
+          ))}
+          {users.trim() && (
+            <button
+              type="button" onClick={() => setUsers('')}
+              title="Back to the profile's own default"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-dim)', borderRadius: '6px', padding: '5px 8px', fontSize: '10px', cursor: 'pointer' }}
+            >clear</button>
+          )}
+        </div>
+        <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>
+          Concurrent simulated users. Hard ceiling {MAX_USERS} — these are small EC2 boxes.
         </div>
       </div>
 
@@ -513,12 +670,78 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
                 style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
               >
                 <option value="USER_JOURNEY">User Journey Scenario</option>
+                <option value="SWEEP">Sweep — every working endpoint</option>
                 <option value="ENDPOINT">Specific Discovered Route</option>
                 <option value="SERVICE">Service Public Workflow</option>
               </select>
             </div>
           </div>
           
+          {mode === 'SWEEP' && (
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '10px', background: 'rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
+                Sweep drives one virtual-user loop across <strong>every discovered HTTP endpoint that answers a live probe</strong>,
+                so every service emits telemetry in the same window — which is what the per-service Isolation Forest needs.
+                Endpoints that do not respond are left out rather than counted as failures.
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button" onClick={handleProbeSurface} disabled={probing}
+                  style={{
+                    background: probing ? 'rgba(255,255,255,0.05)' : 'rgba(0,212,255,0.15)',
+                    border: '1px solid var(--color-accent-cyan)',
+                    color: probing ? 'var(--color-text-dim)' : '#fff',
+                    borderRadius: '6px', padding: '6px 12px', fontSize: '10px',
+                    cursor: probing ? 'wait' : 'pointer', fontWeight: 700, letterSpacing: '0.04em',
+                  }}
+                >{probing ? 'PROBING…' : 'PROBE ALL ENDPOINTS'}</button>
+                <span style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
+                  Read-only: one GET per endpoint, no load generated.
+                </span>
+              </div>
+
+              {surface && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '10px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--color-healthy)' }}>{surface.usable.length} working</span>
+                    <span style={{ color: 'var(--color-degraded)' }}>{surface.reachableButUnusable.length} answered but unusable</span>
+                    <span style={{ color: 'var(--color-critical)' }}>{surface.dead.length} no response</span>
+                    <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>of {surface.totalCandidates} discovered</span>
+                  </div>
+
+                  <div style={{ maxHeight: '170px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {[...surface.usable, ...surface.reachableButUnusable, ...surface.dead].map(r => (
+                      <div key={r.url} style={{ display: 'flex', gap: '6px', alignItems: 'baseline', fontSize: '9px', fontFamily: 'monospace' }}>
+                        <span style={{
+                          width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                          background: r.usable ? 'var(--color-healthy)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)',
+                        }} />
+                        <span style={{ color: 'var(--color-text-muted)', minWidth: '90px', flexShrink: 0 }}>{r.serviceName}</span>
+                        <span style={{ color: 'var(--color-text-dim)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</span>
+                        <span style={{ color: r.usable ? 'var(--color-healthy)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)', flexShrink: 0 }}>
+                          {r.reachable ? `${r.status} · ${r.ms}ms` : r.error}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {surface.usable.length === 0 && (
+                    <div style={{ fontSize: '9px', color: 'var(--color-critical)' }}>
+                      Nothing responded. The host may be down, or its ports may not be open in the security group.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!surface && !probing && (
+                <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
+                  Not probed yet — starting now will probe first and use whatever answers.
+                </div>
+              )}
+            </div>
+          )}
+
           {mode === 'SERVICE' && (
             <div>
               <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET SERVICE</label>
@@ -563,6 +786,41 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         </div>
       </div>
 
+      {blockedReason && (
+        <div style={{
+          background: 'rgba(255, 171, 0, 0.1)',
+          border: '1px solid rgba(255, 171, 0, 0.35)',
+          borderRadius: '8px',
+          padding: '8px 10px',
+          fontSize: '10px',
+          lineHeight: 1.45,
+          color: 'var(--color-degraded)',
+        }}>
+          <strong>Can't start yet:</strong> {blockedReason}
+        </div>
+      )}
+
+      {startError && (
+        <div style={{
+          background: 'rgba(255, 82, 82, 0.1)',
+          border: '1px solid rgba(255, 82, 82, 0.4)',
+          borderRadius: '8px',
+          padding: '8px 10px',
+          fontSize: '10px',
+          lineHeight: 1.45,
+          color: 'var(--color-critical)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '8px',
+        }}>
+          <span><strong>Start failed:</strong> {startError}</span>
+          <button
+            type="button" onClick={() => setStartError(null)}
+            style={{ background: 'transparent', border: 'none', color: 'var(--color-text-dim)', cursor: 'pointer', fontSize: '12px', lineHeight: 1, padding: 0 }}
+          >×</button>
+        </div>
+      )}
+
       {/* No auto-abort notice — these are failure-injection experiments;
           services are supposed to break, so nothing here auto-stops on
           high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
@@ -573,13 +831,14 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
         <button
           onClick={handleStart}
-          disabled={isLoading || isCurrentRunning}
+          disabled={isLoading || isCurrentRunning || !!blockedReason}
+          title={blockedReason || 'Start the experiment'}
           style={{
-            background: !isCurrentRunning ? 'linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,230,118,0.25))' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${!isCurrentRunning ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-            color: !isCurrentRunning ? '#fff' : 'var(--color-text-dim)',
+            background: !isCurrentRunning && !blockedReason ? 'linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,230,118,0.25))' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${!isCurrentRunning && !blockedReason ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+            color: !isCurrentRunning && !blockedReason ? '#fff' : 'var(--color-text-dim)',
             padding: '8px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',
-            cursor: !isCurrentRunning ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
+            cursor: !isCurrentRunning && !blockedReason ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
           }}
         >
           ▶ START EXPERIMENT

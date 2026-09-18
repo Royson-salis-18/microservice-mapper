@@ -40,7 +40,11 @@ export class TraceStore {
     const dir = path.dirname(this.filePath);
     try {
       await fs.mkdir(dir, { recursive: true });
-    } catch (e) {}
+    } catch {
+      // Ignorable: recursive mkdir succeeds if the directory exists, and any
+      // real failure (permissions, full disk) surfaces on the write below
+      // with a clearer message than it would here.
+    }
     await fs.writeFile(this.filePath, JSON.stringify(filtered, null, 2));
   }
 
@@ -65,7 +69,9 @@ export class TraceStore {
     this.recentEvents = [];
     try {
       await fs.unlink(this.filePath);
-    } catch (e) {}
+    } catch {
+      // Ignorable: clearing a trace file that was never written is a no-op.
+    }
   }
 }
 

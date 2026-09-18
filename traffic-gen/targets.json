@@ -25,18 +25,31 @@
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://localhost:18080",
+    "baseUrl": "http://3.111.53.6:8080",
     "settings": {
-      "profile": "MODERATE",
-      "endpointPaths": []
+      "profile": "STRESS",
+      "endpointPaths": [
+        "/"
+      ]
     }
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
-    "baseUrl": "http://15.252.240.146:8080",
+    "baseUrl": "http://52.66.242.202:8080",
     "settings": {
       "profile": "BASELINE",
-      "endpointPaths": []
+      "endpointPaths": [
+        "http://52.66.242.202:8080",
+        "http://52.66.242.202:8080/",
+        "http://52.66.242.202:8080/api/cart",
+        "http://52.66.242.202:8080/api/checkout",
+        "http://52.66.242.202:8080/api/currency",
+        "http://52.66.242.202:8080/api/data",
+        "http://52.66.242.202:8080/api/shipping",
+        "http://52.66.242.202:8080/cart"
+      ],
+      "users": 4,
+      "durationSec": 10
     }
   }
 }

@@ -51,7 +51,13 @@ export class GraphStore {
     this.loadTargetsFromConfig();
     
     // Initial discovery for loaded targets
-    this.discoveryEngine.discoverAll().then(() => this.updateTargetDiscoverySummaries());
+    this.discoveryEngine
+      .discoverAll()
+      .then(() => this.updateTargetDiscoverySummaries())
+      // Without this, a rejection from startup discovery is an unhandled
+      // rejection, which terminates the process in Node 18+. Targets being
+      // unreachable at boot is normal here, not fatal.
+      .catch((e) => console.error('[GraphStore] Initial discovery failed:', e?.message ?? e));
     
     setInterval(() => {
       this.checkTargetStaleness();
@@ -95,7 +101,10 @@ export class GraphStore {
       capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
     });
     // Trigger discovery immediately (use refresh to ensure new config is picked up)
-    this.discoveryEngine.refreshTarget(targetId).then(() => this.updateTargetDiscoverySummaries());
+    this.discoveryEngine
+      .refreshTarget(targetId)
+      .then(() => this.updateTargetDiscoverySummaries())
+      .catch((e) => console.error(`[GraphStore] Discovery failed for ${targetId}:`, e?.message ?? e));
   }
 
   private loadFromDisk(): void {

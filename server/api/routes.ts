@@ -12,6 +12,33 @@ import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 
+/**
+ * Normalises the load knobs that arrive from the UI as strings or nulls.
+ *
+ * Every field is optional and an absent/invalid one is dropped entirely
+ * rather than coerced to 0 — traffic-gen falls back to the workflow
+ * profile's own default when a field is missing, and a literal 0 would be
+ * rejected by engine.validateConfig ("users must be a positive integer").
+ */
+function coerceLoad(raw: { users?: unknown; maxConcurrency?: unknown; durationSec?: unknown; endpointPaths?: unknown }) {
+  const out: { users?: number; maxConcurrency?: number; durationSec?: number; endpointPaths?: string[] } = {};
+  const num = (v: unknown): number | undefined => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;
+  };
+  const users = num(raw.users);
+  if (users !== undefined) out.users = users;
+  const conc = num(raw.maxConcurrency);
+  if (conc !== undefined) out.maxConcurrency = conc;
+  const dur = num(raw.durationSec);
+  if (dur !== undefined) out.durationSec = dur;
+  if (Array.isArray(raw.endpointPaths)) {
+    const paths = raw.endpointPaths.filter((p): p is string => typeof p === 'string' && p.trim().length > 0);
+    if (paths.length > 0) out.endpointPaths = paths;
+  }
+  return out;
+}
+
 export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManager, incidentManager?: IncidentManager, trafficController?: TrafficController, experimentManager?: ExperimentManager) {
   const router = Router();
   const analytics = new GraphAnalytics(graphStore);
@@ -349,6 +376,29 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     }
   });
 
+  /**
+   * Probe every discovered HTTP endpoint for a target and report which ones
+   * actually answer. This is the "find all the entry points and see them
+   * working" step: discovery says what is published, this says what responds.
+   *
+   * Read-only — it sends one GET per endpoint and starts no traffic. The
+   * result feeds the sweep run, so an operator can see the surface before
+   * committing load to it.
+   */
+  router.post('/traffic/surface/probe', async (req, res) => {
+    if (!trafficController) return res.status(500).json({ error: 'Traffic controller unavailable' });
+    const { targetId, includeInternal = false, timeoutMs, concurrency } = req.body || {};
+    if (!targetId || typeof targetId !== 'string') {
+      return res.status(400).json({ error: 'targetId is required' });
+    }
+    const report = await trafficController.probeSurface(targetId, {
+      includeInternal: includeInternal === true,
+      timeoutMs: Number(timeoutMs) || undefined,
+      concurrency: Number(concurrency) || undefined,
+    });
+    res.json(report);
+  });
+
   router.get('/traffic/status', (req, res) => {
     const targetId = req.query.targetId as string;
     if (experimentManager) {
@@ -370,17 +420,22 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     }
   });
 
-  router.post('/traffic/start', (req, res) => {
+  router.post('/traffic/start', async (req, res) => {
     if (!trafficController) return res.status(500).json({ error: 'Traffic controller unavailable' });
-    const { targetId = 'all', profile = 'normal', mode = 'USER_JOURNEY', routeId, serviceId, endpointId, baseUrl } = req.body;
-    
-    const opts = { profile, mode, routeId, serviceId, endpointId, overrideUrl: baseUrl };
+    const { targetId = 'all', profile = 'normal', mode = 'USER_JOURNEY', routeId, serviceId, endpointId, baseUrl, users, maxConcurrency, durationSec, endpointPaths } = req.body;
+
+    const opts = {
+      profile, mode, routeId, serviceId, endpointId, overrideUrl: baseUrl,
+      ...coerceLoad({ users, maxConcurrency, durationSec, endpointPaths }),
+    };
     if (targetId === 'all') {
-      const sockShopStats = trafficController.startTarget('sock-shop', opts);
-      const vertikalStats = trafficController.startTarget('vertikal', opts);
-      return res.json([sockShopStats, vertikalStats]);
+      const stats = await Promise.all([
+        trafficController.startTarget('sock-shop', opts),
+        trafficController.startTarget('vertikal', opts),
+      ]);
+      return res.json(stats);
     } else {
-      const stats = trafficController.startTarget(targetId, opts);
+      const stats = await trafficController.startTarget(targetId, opts);
       return res.json([stats]);
     }
   });
@@ -414,9 +469,10 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(experimentManager.experimentStore.getAllRecords(targetId));
   });
 
-  router.post('/experiments/start', (req, res) => {
+  router.post('/experiments/start', async (req, res) => {
     if (!experimentManager || !trafficController) return res.status(500).json({ error: 'Experiment manager unavailable' });
-    const { targetId, profile = 'normal', mode = 'USER_JOURNEY', routeId, serviceId, endpointId, baseUrl, workloadSource = 'EXTERNAL', limits, config } = req.body;
+    const { targetId, profile = 'normal', mode = 'USER_JOURNEY', routeId, serviceId, endpointId, baseUrl, workloadSource = 'EXTERNAL', limits, config, users, maxConcurrency, durationSec, endpointPaths } = req.body;
+    const load = coerceLoad({ users, maxConcurrency, durationSec, endpointPaths });
     
     if (!targetId || targetId === 'all') {
       return res.status(400).json({ error: 'Must specify a single targetId for an experiment' });
@@ -426,13 +482,21 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       targetId, 
       workloadSource, 
       profile, 
-      config || { mode, rate: 0, concurrency: 1, durationSeconds: 0 },
+      config || { mode, rate: 0, concurrency: load.users ?? 1, durationSeconds: load.durationSec ?? 0 },
       limits
     );
 
-    const opts = { profile, mode, routeId, serviceId, endpointId, overrideUrl: baseUrl, workloadSource };
-    const stats = trafficController.startTarget(targetId, opts);
-    
+    const opts = { profile, mode, routeId, serviceId, endpointId, overrideUrl: baseUrl, workloadSource, ...load };
+    const stats = await trafficController.startTarget(targetId, opts);
+
+    // If the workload never started there is no experiment to observe, so
+    // close the record out rather than leaving it RUNNING forever and
+    // report the failure to the caller.
+    if (!stats.isRunning) {
+      experimentManager?.stopExperiment(targetId, 'STOPPED');
+      return res.status(502).json({ error: stats.error || 'Traffic failed to start', experimentId: expId, trafficStatus: stats });
+    }
+
     return res.json({ experimentId: expId, trafficStatus: stats });
   });
 
@@ -584,8 +648,19 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       cwd: mlDir,
       stdio: ['ignore', logFd, logFd],
     });
-    child.on('close', () => {
+    const releaseFd = () => {
       try { fs.closeSync(logFd); } catch { /* already closed */ }
+    };
+    child.on('close', () => {
+      releaseFd();
+      managedMlProcs.delete(name);
+    });
+    // spawn emits 'error' when the binary is missing (no python3 on PATH).
+    // Unhandled, that event throws; worse, the process stayed registered as
+    // running when it never started, and the log fd was never released.
+    child.on('error', (err) => {
+      console.error(`[ML] Failed to start ${name}:`, err.message);
+      releaseFd();
       managedMlProcs.delete(name);
     });
     managedMlProcs.set(name, { child, startedAt: new Date().toISOString() });
@@ -667,11 +742,31 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     const { since, until } = req.body || {};
     retrainState = { running: true, startedAt: new Date().toISOString(), finishedAt: null, log: [], exitCode: null };
 
+    // Bounded: train.py emits a line per trained AND per skipped service, so
+    // on a 76-service deployment this array grew for the whole run and every
+    // byte of it was re-sent on each 2-second poll of GET /api/ml/retrain.
+    // The UI only ever renders the tail.
+    const MAX_LOG_LINES = 500;
+    const appendLog = (chunk: Buffer | string) => {
+      const text = chunk.toString('utf8').trim();
+      if (!text) return;
+      retrainState.log.push(text);
+      if (retrainState.log.length > MAX_LOG_LINES) {
+        retrainState.log = retrainState.log.slice(-MAX_LOG_LINES);
+      }
+    };
+
     const runStep = (cmd: string, args: string[]) => new Promise<number>((resolve) => {
       const child = spawn(cmd, args, { cwd: mlDir });
-      child.stdout?.on('data', (chunk) => retrainState.log.push(chunk.toString('utf8').trim()));
-      child.stderr?.on('data', (chunk) => retrainState.log.push(chunk.toString('utf8').trim()));
+      child.stdout?.on('data', appendLog);
+      child.stderr?.on('data', appendLog);
       child.on('close', (code) => resolve(code ?? 1));
+      child.on('error', (err) => {
+        // spawn itself can fail (python3 missing from PATH). Without this the
+        // promise never settles and the retrain is stuck "running" forever.
+        appendLog(`Failed to start ${cmd}: ${err.message}`);
+        resolve(1);
+      });
     });
 
     (async () => {
