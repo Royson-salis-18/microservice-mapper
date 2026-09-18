@@ -70,10 +70,33 @@ export class SSHConnection implements Connection {
       let stderr = "";
       let truncated = false;
       let settled = false;
+      let channel: any = null;
+
+      /**
+       * Give the channel back to the SSH server.
+       *
+       * Timing out used to resolve the promise and walk away, leaving the
+       * channel open with the command still running on the other end. Each
+       * one holds a slot against the server's MaxSessions (OpenSSH defaults
+       * to 10), so on a loaded host — where these commands time out often —
+       * the slots fill up and then *every* subsequent exec fails with
+       * "(SSH) Channel open failure: open failed", which is exactly what
+       * the telemetry warnings were showing across all three targets.
+       */
+      const releaseChannel = () => {
+        try {
+          channel?.close?.();
+          channel?.destroy?.();
+        } catch {
+          // Best effort: the channel may already be gone, and failing to
+          // close it must never fail the command's result.
+        }
+      };
 
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
+        releaseChannel();
         resolve({
           name: cmd.name,
           command: cmd.command,
@@ -87,6 +110,15 @@ export class SSHConnection implements Connection {
       }, cmd.timeoutMs);
 
       this.client!.exec(cmd.command, (err, stream) => {
+        channel = stream;
+
+        // The open itself can outlast the timeout. Without this the
+        // just-opened channel would be orphaned the moment it arrived.
+        if (settled) {
+          releaseChannel();
+          return;
+        }
+
         if (err) {
           clearTimeout(timer);
           if (settled) return;

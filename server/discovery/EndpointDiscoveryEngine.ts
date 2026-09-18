@@ -320,7 +320,33 @@ class TargetAgent {
 
     await poll();
     if (this.dead || this.recovering) return;
-    this.pollTimer = setInterval(poll, 5000);
+
+    /**
+     * Self-scheduling rather than setInterval, because `poll` is async and
+     * a cycle takes far longer than the interval.
+     *
+     * setInterval(poll, 5000) fires every 5s whether or not the previous
+     * poll has finished. One poll walks every discovered service with a
+     * separate SSH exec each (25 services on the OpenTelemetry demo, some
+     * taking seconds, some timing out at 10s), so cycles stacked up and ran
+     * concurrently. Each overlapping cycle holds its own SSH channels, and
+     * once they exceed the server's MaxSessions (OpenSSH default 10) every
+     * further exec is refused with "(SSH) Channel open failure: open
+     * failed" — measured at ~2.6 refused scans per cycle across all three
+     * targets, i.e. a steady fraction of every sweep's services silently
+     * going unscanned, which is exactly the coverage gap that made the
+     * graph look patchy.
+     *
+     * Waiting 5s *after* a cycle ends means only ever one in flight.
+     */
+    const scheduleNext = () => {
+      if (this.dead || this.recovering) return;
+      this.pollTimer = setTimeout(async () => {
+        await poll();
+        scheduleNext();
+      }, 5000);
+    };
+    scheduleNext();
 
     // Containers that start after the initial scan (e.g. a compose stack
     // still coming up, or a service that restarted onto a new container id)
