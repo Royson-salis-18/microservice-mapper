@@ -1,7 +1,7 @@
 {
   "sock-shop": {
     "targetId": "sock-shop",
-    "baseUrl": "http://13.201.99.244",
+    "baseUrl": "http://65.0.97.59",
     "endpoints": [
       {
         "path": "/",
@@ -16,40 +16,56 @@
       "profile": "BASELINE",
       "endpointPaths": [
         "/"
-      ]
+      ],
+      "users": 10
     }
   },
   "vertikal-prod": {
     "targetId": "vertikal",
-    "baseUrl": "http://127.0.0.1:4510"
+    "baseUrl": "http://localhost:3000",
+    "settings": {
+      "profile": "MODERATE",
+      "users": 8,
+      "durationSec": 30,
+      "endpointPaths": []
+    }
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://3.111.53.6:8080",
+    "baseUrl": "http://13.204.68.115:8080",
     "settings": {
-      "profile": "STRESS",
-      "endpointPaths": [
-        "/"
-      ]
+      "profile": "HEAVY",
+      "endpointPaths": [],
+      "users": 100
     }
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
-    "baseUrl": "http://52.66.242.202:8080",
+    "baseUrl": "http://13.203.196.246:8080",
     "settings": {
-      "profile": "BASELINE",
+      "profile": "HEAVY",
       "endpointPaths": [
-        "http://52.66.242.202:8080",
-        "http://52.66.242.202:8080/",
-        "http://52.66.242.202:8080/api/cart",
-        "http://52.66.242.202:8080/api/checkout",
-        "http://52.66.242.202:8080/api/currency",
-        "http://52.66.242.202:8080/api/data",
-        "http://52.66.242.202:8080/api/shipping",
-        "http://52.66.242.202:8080/cart"
+        "http://13.203.196.246:8080",
+        "http://13.203.196.246:8080/",
+        "http://13.203.196.246:8080/api/cart",
+        "http://13.203.196.246:8080/api/checkout",
+        "http://13.203.196.246:8080/api/currency",
+        "http://13.203.196.246:8080/api/data",
+        "http://13.203.196.246:8080/api/shipping",
+        "http://13.203.196.246:8080/cart"
       ],
-      "users": 4,
-      "durationSec": 10
+      "users": 40,
+      "durationSec": 120
+    }
+  },
+  "vertikal": {
+    "targetId": "vertikal",
+    "baseUrl": "http://localhost:3000",
+    "settings": {
+      "profile": "MODERATE",
+      "users": 6,
+      "durationSec": 25,
+      "endpointPaths": []
     }
   }
 }
