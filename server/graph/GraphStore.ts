@@ -517,13 +517,24 @@ export class GraphStore {
       for (const node of events.nodes) {
         if (!node.project) node.project = targetId;
         node.id = normalizeId(node.id);
+        // Tier 1/2 request metrics ride along on the envelope when a source
+        // produced them. Merged rather than assigned, so a cycle where the
+        // optional source was unavailable does not wipe the resource metrics
+        // the agentless path collected in the same cycle.
+        const req = (node as any).requestMetrics;
+        delete (node as any).requestMetrics;
+
         const existing = nodesMap.get(node.id);
         if (existing) {
           existing.status = node.status;
           existing.lastSeen = nowIso;
           if (node.metadata) existing.metadata = { ...existing.metadata, ...node.metadata };
+          if (req) {
+            existing.metrics = { ...(existing.metrics ?? {}), ...req } as any;
+          }
         } else {
           node.lastSeen = nowIso;
+          if (req) node.metrics = { ...(node.metrics ?? {}), ...req };
           nodesMap.set(node.id, node);
         }
       }

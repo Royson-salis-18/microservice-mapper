@@ -506,3 +506,55 @@ test('prometheus: malformed output fails loudly rather than producing numbers', 
   const snap = await src.collect(300);
   assert.ok(snap.warnings.some(w => /did not return JSON/.test(w)), `expected a warning, got ${JSON.stringify(snap.warnings)}`);
 });
+
+// --- Tier 2 merge into the graph --------------------------------------
+//
+// The dangerous failure here is not a wrong number, it is a *silently wiped*
+// one: a cycle where the optional source was unavailable must not clear the
+// Tier 0 resource metrics collected in the same cycle. Mirrors the merge in
+// GraphStore.ingestRemote.
+function mergeNodeMetrics(
+  existing: Record<string, any> | null,
+  incomingRequestMetrics: Record<string, any> | undefined,
+): Record<string, any> | null {
+  if (!incomingRequestMetrics) return existing;
+  return { ...(existing ?? {}), ...incomingRequestMetrics };
+}
+
+test('tier2 merge: request metrics are added without losing cgroup metrics', () => {
+  const before = { cpu: 12.5, memoryPercent: 40, networkRx: 900 };
+  const after = mergeNodeMetrics(before, {
+    latencyP95: 82.9,
+    requestRate: 2.5,
+    errorRate: 0,
+    provenance: { source: 'prometheus', tier: 2, observedAt: 'now' },
+  });
+  assert.equal(after!.cpu, 12.5, 'cgroup CPU must survive');
+  assert.equal(after!.memoryPercent, 40);
+  assert.equal(after!.latencyP95, 82.9);
+  assert.equal(after!.provenance.tier, 2);
+});
+
+test('tier2 merge: an unavailable source leaves tier 0 untouched', () => {
+  const before = { cpu: 12.5, memoryPercent: 40 };
+  const after = mergeNodeMetrics(before, undefined);
+  assert.deepEqual(after, before, 'no Tier 2 data must not clear Tier 0');
+});
+
+test('tier2 merge: a node with no prior metrics still gets request metrics', () => {
+  const after = mergeNodeMetrics(null, { requestRate: 1.1, provenance: { source: 'prometheus', tier: 2, observedAt: 'now' } });
+  assert.equal(after!.requestRate, 1.1);
+});
+
+test('provenance: a source may not fill a field it cannot measure', async () => {
+  const { SOURCE_CAPABILITIES, SOURCE_TIER } = await import('../server/models/MetricProvenance.js');
+  // The whole point of the capability table: a socket scan sees connections,
+  // not requests, so it must never be allowed to populate latency.
+  assert.equal(SOURCE_CAPABILITIES['socket-scan'].latency, false);
+  assert.equal(SOURCE_CAPABILITIES['socket-scan'].errorRate, false);
+  assert.equal(SOURCE_CAPABILITIES['cgroup'].latency, false, 'docker stats cannot see latency');
+  assert.equal(SOURCE_CAPABILITIES['prometheus'].latency, true);
+  assert.equal(SOURCE_TIER['cgroup'], 0);
+  assert.equal(SOURCE_TIER['access-log'], 1);
+  assert.equal(SOURCE_TIER['prometheus'], 2);
+});

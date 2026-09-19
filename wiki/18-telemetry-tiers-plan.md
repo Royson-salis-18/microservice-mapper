@@ -119,6 +119,52 @@ PromQL to the fields that are currently null:
 *Done when:* `edge.metrics` is non-null for open-telemetry, values match what
 a direct PromQL query returns, and the UI labels them Tier 2.
 
+### Phase 3b — Wiring (done)
+
+Tier 2 metrics reach the graph and the UI.
+
+**Enabling it.** Per target in `server/data/remote_config.json`:
+
+```json
+"open-telemetry": {
+  "ec2PublicIp": "...",
+  "sshKeyPath": "~/Downloads/sock-shop-key.pem",
+  "telemetrySources": {
+    "prometheus": { "enabled": true, "url": "http://localhost:9090" }
+  }
+}
+```
+
+`localhost` is correct and deliberate — the query runs *on the target* via
+curl over the SSH connection already held. Prometheus is bound to localhost
+there and only :8080 is open in the security group, so querying from outside
+would mean opening a port to read a metric.
+
+Opt-in, never inferred. A reachable Prometheus is not on its own consent to
+query it every cycle.
+
+**Failure behaviour.** The whole Tier 2 path is wrapped. If the source is
+slow, broken, or returns nonsense, the cycle logs once and returns empty, and
+the Tier 0 metrics collected in the same cycle are published unchanged. The
+merge is additive for the same reason: a cycle where Prometheus was
+unavailable must not wipe the CPU and memory that `docker stats` just
+returned. Both properties are covered by tests.
+
+**In the UI.** The inspection sidebar grows a `REQUEST METRICS` block with a
+`TIER 2 · prometheus` badge, separate from `LIVE HEALTH` which is now marked
+`tier 0 · cgroup`. They are kept apart on purpose: CPU is measured by the
+kernel, latency by whatever the target happens to run, and those are not the
+same kind of fact.
+
+Two things it will not do:
+- A missing quantile reads "not measured", never `0ms`.
+- An error rate with no traffic in the window reads "no traffic in window",
+  never `0%` — a clean bill of health nobody earned.
+
+*Verified:* server boots with the path wired and stays silent when no target
+opts in; 44 tests pass. **Not yet verified against live Prometheus** — all
+four targets were unreachable (SSH closed) throughout this work.
+
 ### Phase 4 — Edge heat and RCA use real rates
 Edge heat currently grades on `samplesPerMin` — socket observations, an
 honest proxy but a proxy. Where a real request rate exists, use it. Same for

@@ -137,9 +137,65 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
           </div>
         </div>
 
+        {/* Request-level metrics — present only when a Tier 1/2 source
+            supplied them. Rendered as its own block, labelled with where it
+            came from, rather than mixed in with the cgroup numbers: CPU is
+            measured by the kernel and latency is measured by whatever the
+            target happens to run, and those are not the same kind of fact. */}
+        {node.metrics?.provenance && (
+          <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>
+                REQUEST METRICS
+              </span>
+              <span
+                title={node.metrics.provenance.detail || ''}
+                style={{
+                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.04em',
+                  color: 'var(--color-accent-cyan)', border: '1px solid var(--color-accent-cyan)',
+                  borderRadius: '999px', padding: '1px 8px',
+                }}
+              >
+                TIER {node.metrics.provenance.tier} · {node.metrics.provenance.source}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+              {([
+                ['p50 latency', node.metrics.latencyP50, 'ms'],
+                ['p95 latency', node.metrics.latencyP95, 'ms'],
+                ['p99 latency', node.metrics.latencyP99, 'ms'],
+                ['Request rate', node.metrics.requestRate, '/s'],
+              ] as [string, number | null | undefined, string][]).map(([label, value, unit]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</span>
+                  <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                    {value === null || value === undefined
+                      ? <span style={{ color: 'rgba(255,255,255,0.3)' }}>not measured</span>
+                      : `${value < 10 ? value.toFixed(2) : value.toFixed(1)}${unit}`}
+                  </span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Error rate</span>
+                <span style={{ fontWeight: 600, fontFamily: 'monospace',
+                               color: (node.metrics.errorRate ?? 0) > 0 ? 'var(--color-critical)' : undefined }}>
+                  {/* null here means "no traffic in the window", which is not
+                      the same as 0% and must not be shown as a clean bill. */}
+                  {node.metrics.errorRate === null || node.metrics.errorRate === undefined
+                    ? <span style={{ color: 'rgba(255,255,255,0.3)' }}>no traffic in window</span>
+                    : `${(node.metrics.errorRate * 100).toFixed(2)}%`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Live Health */}
         <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '16px', letterSpacing: '1px' }}>LIVE HEALTH</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>LIVE HEALTH</span>
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>tier 0 · cgroup</span>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
             
             {/* CPU Bar */}

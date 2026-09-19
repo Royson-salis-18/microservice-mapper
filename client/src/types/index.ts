@@ -40,14 +40,28 @@ export interface ServiceNode {
     [key: string]: any;
   };
   metrics: {
+    // Tier 0 — exact, from cgroup accounting.
     cpu?: number;
     memory?: number;
     memoryPercent?: number;
     networkRx?: number;
     networkTx?: number;
+    // Tier 1/2 only. Nothing outside the container can measure these, so
+    // they are absent rather than zero when no source supplied them.
     latency?: number | null;
+    latencyP50?: number | null;
+    latencyP95?: number | null;
+    latencyP99?: number | null;
     requestRate?: number | null;
     errorRate?: number | null;
+    /** Which source produced the request-level fields above.
+     *  See wiki/18-telemetry-tiers-plan.md. */
+    provenance?: {
+      source: 'cgroup' | 'socket-scan' | 'access-log' | 'prometheus' | 'trace-backend';
+      tier: 0 | 1 | 2;
+      observedAt: string;
+      detail?: string;
+    };
   } | null;
   analytics?: {
     healthScore?: number | null;
