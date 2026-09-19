@@ -11,6 +11,9 @@ import { DiscoveryEngine } from '../telemetry-platform/src/discovery/DiscoveryEn
 import { MetricCollector } from '../telemetry-platform/src/collection/MetricCollector.js';
 import { REMOTE_COMMANDS } from '../telemetry-platform/src/connection/RemoteCommand.js';
 import type { TargetConfig } from '../telemetry-platform/src/types/target.js';
+import { PrometheusSource } from '../telemetry-sources/PrometheusSource.js';
+import type { ServiceRequestMetrics, TelemetrySourceConfig } from '../telemetry-sources/TelemetrySource.js';
+import { provenance } from '../models/MetricProvenance.js';
 
 /**
  * Containers that exist to produce load. These are never auto-restarted:
@@ -49,6 +52,10 @@ class TargetAgent {
   /** Restarts attempted per container name, so a crash-looping service is
    *  not restarted indefinitely. */
   private restartAttempts = new Map<string, number>();
+  /** Tier 2 source, created once if this target opts in. */
+  private prometheus: PrometheusSource | null = null;
+  private prometheusChecked = false;
+  private prometheusUnavailableReason: string | null = null;
 
   constructor(
     targetId: string,
@@ -360,6 +367,74 @@ class TargetAgent {
     }
   }
 
+  /**
+   * Tier 2 request metrics, if this target has a source configured.
+   *
+   * Everything here is best-effort and wrapped: an optional source that is
+   * slow, broken or lying must never cost us the Tier 0 metrics already in
+   * hand. The agentless path is the one that has to keep working — this only
+   * ever adds fields to it.
+   *
+   * Opt-in per target via `telemetrySources.prometheus` in
+   * remote_config.json. A reachable Prometheus is not on its own consent to
+   * query it on a loop.
+   */
+  private async collectRequestMetrics(conn: any): Promise<Map<string, ServiceRequestMetrics>> {
+    const empty = new Map<string, ServiceRequestMetrics>();
+    const sources: TelemetrySourceConfig | undefined = this.tConf?.telemetrySources;
+    const promCfg = sources?.prometheus;
+    if (!promCfg?.enabled) return empty;
+
+    try {
+      if (!this.prometheus) {
+        // Runs on the target: Prometheus is bound to localhost there and
+        // only :8080 is open externally, so querying from here would mean
+        // asking someone to open a port to read a metric.
+        const exec = async (command: string): Promise<string> => {
+          const res = await conn.execute({
+            name: 'prometheus.query',
+            command,
+            timeoutMs: 15_000,
+            maxOutputBytes: 262_144,
+          });
+          if (res.error) throw new Error(res.error);
+          return res.stdout ?? '';
+        };
+        this.prometheus = new PrometheusSource(this.targetId, exec, promCfg.url || 'http://localhost:9090');
+      }
+
+      if (!this.prometheusChecked) {
+        const status = await this.prometheus.probe();
+        this.prometheusChecked = true;
+        if (!status.available) {
+          this.prometheusUnavailableReason = status.reason ?? 'unavailable';
+          this.log(`[Agent:${this.targetId}] Tier 2 (Prometheus) unavailable: ${this.prometheusUnavailableReason}`);
+          return empty;
+        }
+        this.log(`[Agent:${this.targetId}] Tier 2 (Prometheus) available — per-request latency and error rates enabled.`);
+      }
+      if (this.prometheusUnavailableReason) return empty;
+
+      const snapshot = await this.prometheus.collect(300);
+      for (const warn of snapshot.warnings) {
+        if (this.seenWarnings.has(warn)) continue;
+        this.seenWarnings.add(warn);
+        this.log(`[Agent:${this.targetId}] Tier 2 warning: ${warn}`);
+      }
+
+      const out = new Map<string, ServiceRequestMetrics>();
+      for (const svc of snapshot.services) out.set(svc.serviceName, svc);
+      return out;
+    } catch (e: any) {
+      const msg = `Tier 2 collection failed: ${e?.message ?? e}`;
+      if (!this.seenWarnings.has(msg)) {
+        this.seenWarnings.add(msg);
+        this.log(`[Agent:${this.targetId}] ${msg}`);
+      }
+      return empty;
+    }
+  }
+
   private scheduleRecovery(reason: string): void {
     if (this.dead || this.recovering) return;
     this.recovering = true;
@@ -413,8 +488,17 @@ class TargetAgent {
           if (!metricsRes.warnings.includes(seen)) this.seenWarnings.delete(seen);
         }
 
+        // Tier 2, if this target has a source configured and it is usable.
+        // Wrapped so that a failing optional source can never cost us the
+        // Tier 0 metrics we already have in hand — the agentless path is the
+        // one that has to keep working.
+        const requestMetrics = await this.collectRequestMetrics(currentConn);
+
         if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0 || metricsRes.connectionEvents.length > 0)) {
-          const envelope = this.translateMetricsToEnvelope(metricsRes.samples, metricsRes.observedEdges, metricsRes.interactions, metricsRes.connectionEvents);
+          const envelope = this.translateMetricsToEnvelope(
+            metricsRes.samples, metricsRes.observedEdges, metricsRes.interactions,
+            metricsRes.connectionEvents, requestMetrics,
+          );
           this.onTelemetryCollected(this.targetId, envelope);
         }
       } catch (e: any) {
@@ -493,7 +577,13 @@ class TargetAgent {
     }, 5000);
   }
 
-  private translateMetricsToEnvelope(samples: any[], observedEdges: any[], interactions: any[], connectionEvents: any[] = []): any {
+  private translateMetricsToEnvelope(
+    samples: any[],
+    observedEdges: any[],
+    interactions: any[],
+    connectionEvents: any[] = [],
+    requestMetrics: Map<string, ServiceRequestMetrics> = new Map(),
+  ): any {
     const observedAt = new Date().toISOString();
     const nodes = samples.map(s => {
       let status = 'healthy';
@@ -502,12 +592,29 @@ class TargetAgent {
       // Need to derive a clean name for GraphStore from serviceId
       const cleanName = s.serviceId.includes(':') ? s.serviceId.split(':')[1] : s.serviceId;
 
+      // Tier 2, when the target publishes it. Absent means absent: these
+      // fields stay undefined rather than being zero-filled, because
+      // "0 ms latency" and "no measurement" are entirely different claims.
+      const req = requestMetrics.get(cleanName);
+      const requestLevel = req
+        ? {
+            latency: req.latencyP95Ms ?? null,
+            latencyP50: req.latencyP50Ms ?? null,
+            latencyP95: req.latencyP95Ms ?? null,
+            latencyP99: req.latencyP99Ms ?? null,
+            requestRate: req.requestRate ?? null,
+            errorRate: req.errorRate ?? null,
+            provenance: provenance('prometheus', req.detail, observedAt),
+          }
+        : undefined;
+
       return {
         id: s.serviceId,
         name: cleanName,
         project: this.targetId,
         status,
-        metadata: { state: 'running' }
+        metadata: { state: 'running' },
+        ...(requestLevel ? { requestMetrics: requestLevel } : {}),
       };
     });
 
