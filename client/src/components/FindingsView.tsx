@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { PageShell, PageHeader, Panel, Stat, StatRow, EmptyNote, SPACE } from './ui/Panel';
 import {
   LiveScoresChart,
   ScoreHistoryChart,
@@ -7,6 +8,7 @@ import {
   DetectorComparison,
   DataQualityPanel,
   ModelQualityChart,
+  PanelsStartOpen,
   type ModelMeta,
   type MLStatus,
 } from './MLPipelineView';
@@ -36,26 +38,6 @@ interface FindingsViewProps {
   selectedProject?: string;
 }
 
-const panel: React.CSSProperties = {
-  background: 'var(--color-bg-panel)',
-  border: '1px solid var(--color-border)',
-  borderRadius: '12px',
-  padding: '16px',
-};
-
-const sectionTitle: React.CSSProperties = {
-  margin: '0 0 4px 0',
-  fontSize: '14px',
-  fontWeight: 700,
-};
-
-const sectionNote: React.CSSProperties = {
-  margin: '0 0 14px 0',
-  fontSize: '11px',
-  color: 'var(--color-text-muted)',
-  lineHeight: 1.55,
-};
-
 /**
  * What the models are flagging right now.
  *
@@ -71,33 +53,54 @@ function CurrentFindings({ rows, onSelect }: {
   const flagged = scored.filter(r => r.live!.above_threshold);
   const persistent = flagged.filter(r => r.live!.persistent);
 
+  const about = (
+    <>
+      A service is flagged when its score passes the p99 threshold taken from its own training
+      distribution — so "high" always means high <em>for that service</em>, never against a shared bar.
+      <br /><br />
+      <strong>Persistent</strong> means it has stayed above that line for the configured number of
+      consecutive scoring cycles. A single cycle above threshold is very often one noisy sample, which
+      is why the two are counted separately and persistent ones sort first.
+    </>
+  );
+
   if (scored.length === 0) {
     return (
-      <div style={panel}>
-        <h3 style={sectionTitle}>Current findings</h3>
-        <p style={sectionNote}>
-          Nothing scored. The scorer process has to be running and the target reachable for the models to
-          say anything — start it under ML Pipeline → Pipeline processes. Until then this page shows what
-          was learned at training time, not what is happening now.
-        </p>
-      </div>
+      <Panel title="Current findings" subtitle="nothing scored" about={about}>
+        <EmptyNote>
+          The scorer is not running, or the target is unreachable. Start it under{' '}
+          <strong>ML Pipeline → Pipeline processes</strong>. Until then this page shows what was learned
+          at training time, not what is happening now.
+        </EmptyNote>
+      </Panel>
     );
   }
 
   return (
-    <div style={panel}>
-      <h3 style={sectionTitle}>Current findings</h3>
-      <p style={sectionNote}>
-        {flagged.length === 0
-          ? `All ${scored.length} scored service(s) are within their own learned baseline.`
-          : `${flagged.length} of ${scored.length} scored service(s) are above their model's threshold` +
-            (persistent.length > 0
-              ? `, ${persistent.length} of them persistently — the ones worth looking at first.`
-              : ', none persistently yet — a single cycle above threshold is often one noisy sample.')}
-      </p>
+    <Panel
+      title="Current findings"
+      subtitle={flagged.length === 0 ? 'all within baseline' : `${flagged.length} flagged`}
+      about={about}
+    >
+      <div style={{ marginBottom: flagged.length ? SPACE.card : 0 }}>
+        <StatRow>
+          <Stat label="Scored" value={scored.length} />
+          <Stat
+            label="Above threshold"
+            value={flagged.length}
+            tone={flagged.length ? 'var(--color-degraded)' : 'var(--color-healthy)'}
+          />
+          <Stat
+            label="Persistent"
+            value={persistent.length}
+            tone={persistent.length ? 'var(--color-critical)' : 'var(--color-text-dim)'}
+            sub={persistent.length ? 'look here first' : undefined}
+          />
+        </StatRow>
+      </div>
 
       {flagged.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[...flagged]
             .sort((a, b) => Number(b.live!.persistent) - Number(a.live!.persistent) || b.live!.anomaly_score - a.live!.anomaly_score)
             .map(r => (
@@ -106,29 +109,32 @@ function CurrentFindings({ rows, onSelect }: {
                 type="button"
                 onClick={() => onSelect(r.sid)}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-                  background: r.live!.persistent ? 'rgba(255,82,82,0.08)' : 'rgba(255,171,0,0.07)',
-                  border: `1px solid ${r.live!.persistent ? 'rgba(255,82,82,0.4)' : 'rgba(255,171,0,0.32)'}`,
-                  borderRadius: '8px', padding: '8px 10px', cursor: 'pointer', textAlign: 'left',
-                  color: 'var(--color-text-main)', fontSize: '11px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px',
+                  background: r.live!.persistent ? 'rgba(255,23,68,0.07)' : 'rgba(255,171,0,0.06)',
+                  border: `1px solid ${r.live!.persistent ? 'rgba(255,23,68,0.35)' : 'rgba(255,171,0,0.28)'}`,
+                  borderRadius: '10px', padding: '12px 14px', cursor: 'pointer', textAlign: 'left',
+                  color: 'var(--color-text-main)', fontSize: '13px',
                 }}
               >
                 <span style={{ fontWeight: 600 }}>
                   {r.sid.includes(':') ? r.sid.split(':').slice(1).join(':') : r.sid}
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: r.live!.persistent ? 'var(--color-critical)' : 'var(--color-degraded)', fontWeight: 700 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+                    color: r.live!.persistent ? 'var(--color-critical)' : 'var(--color-degraded)',
+                  }}>
                     {r.live!.persistent ? 'persistent' : 'single cycle'}
                   </span>
-                  <span style={{ fontFamily: 'monospace', color: 'var(--color-text-muted)' }}>
-                    score {r.live!.anomaly_score.toFixed(4)}
+                  <span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    {r.live!.anomaly_score.toFixed(4)}
                   </span>
                 </span>
               </button>
             ))}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -199,36 +205,22 @@ export function FindingsView({ selectedProject = 'ALL' }: FindingsViewProps) {
   }
 
   return (
-    <div style={{
-      flex: 1, height: '100%', overflowY: 'auto', padding: '24px',
-      background: 'var(--color-bg-body)', color: 'var(--color-text-main)',
-      display: 'flex', flexDirection: 'column', gap: '20px',
-    }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Findings</h1>
-          <span style={{
-            fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            color: scoped ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-            border: `1px solid ${scoped ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-            borderRadius: '999px', padding: '2px 10px',
-          }}>{scoped ? selectedProject : 'all projects'}</span>
-        </div>
-        <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
-          What the trained detectors concluded — live scores, how each model behaves, and how much the
-          detectors agree. These are model outputs, so they depend on what the models were fitted on.
-          Rule-based alerts that need no model live under <strong>Incidents</strong>.
-        </p>
-      </div>
+    // The charts are what this page is for, so they open by default here.
+    <PanelsStartOpen.Provider value={true}>
+    <PageShell>
+      <PageHeader title="Findings" scope={selectedProject}>
+        What the trained detectors concluded. These are model outputs, so they are only as good as what
+        the models were fitted on — rule-based alerts that need no model live under Incidents.
+      </PageHeader>
 
       <CurrentFindings rows={rows} onSelect={setSelectedSid} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: `${SPACE.section}px`, alignItems: 'start' }}>
         <LiveScoresChart rows={rows} onSelect={setSelectedSid} selectedSid={selectedSid} />
         <ScoreHistoryChart sid={selectedSid} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: `${SPACE.section}px`, alignItems: 'start' }}>
         <ScoreDistributionChart rows={rows} />
         <ModelQualityChart models={scopedModels} onSelect={setSelectedSid} />
       </div>
@@ -238,6 +230,7 @@ export function FindingsView({ selectedProject = 'ALL' }: FindingsViewProps) {
       <DataQualityPanel models={scopedModels} />
 
       <FeatureExplorer serviceIds={featureServiceIds} sid={selectedSid} onSelect={setSelectedSid} />
-    </div>
+    </PageShell>
+    </PanelsStartOpen.Provider>
   );
 }

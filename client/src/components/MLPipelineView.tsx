@@ -4,6 +4,19 @@ import {
   LineChart, Line, ReferenceLine, ScatterChart, Scatter, ZAxis,
 } from 'recharts';
 import { MLExecutionPanel } from './MLExecutionPanel';
+import { InfoTip, PageHeader, Panel, Stat as KitStat, StatRow } from './ui/Panel';
+import { createContext, useContext } from 'react';
+
+/**
+ * Whether the shared chart panels start open.
+ *
+ * They default to collapsed, which is right on ML Pipeline where the charts
+ * are secondary to the controls. On Findings the charts *are* the page, and a
+ * results page whose results are all folded away is worse than a busy one —
+ * so that page flips the default rather than every component taking a prop.
+ */
+export const PanelsStartOpen = createContext(false);
+import '../styles/ml-pipeline.css';
 
 export interface MLStatus {
   collection: {
@@ -67,23 +80,12 @@ function timeAgo(iso: string | null | undefined): string {
 
 function StageCard({ title, ready, subtitle, children }: { title: string; ready: boolean; subtitle: string; children?: React.ReactNode }) {
   return (
-    <div style={{
-      background: 'var(--color-bg-panel)',
-      border: '1px solid var(--color-border)',
-      borderRadius: '10px',
-      padding: '16px 18px',
-      flex: 1,
-      minWidth: '220px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-        <span style={{
-          width: '8px', height: '8px', borderRadius: '50%',
-          background: ready ? 'var(--color-healthy)' : 'var(--color-text-muted)',
-          boxShadow: ready ? '0 0 6px var(--color-healthy)' : 'none',
-        }} />
-        <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.3px' }}>{title}</span>
+    <div className="ml-stage-card">
+      <div className="ml-stage-title">
+        <span className={`indicator ${ready ? 'ready' : 'not-ready'}`} />
+        <span className="text">{title}</span>
       </div>
-      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '10px' }}>{subtitle}</div>
+      <div className="ml-stage-subtitle">{subtitle}</div>
       {children}
     </div>
   );
@@ -91,9 +93,9 @@ function StageCard({ title, ready, subtitle, children }: { title: string; ready:
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '3px 0' }}>
-      <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
+    <div className="ml-stat-row">
+      <span className="ml-stat-label">{label}</span>
+      <span className="ml-stat-value">{value}</span>
     </div>
   );
 }
@@ -111,12 +113,69 @@ function ScoreBar({ score, persistent, aboveThreshold }: { score: number; persis
   );
 }
 
-const CHART_PANEL_STYLE: React.CSSProperties = {
-  background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '18px',
-};
 const AXIS_COLOR = 'var(--color-text-muted)';
 const GRID_COLOR = 'rgba(255,255,255,0.06)';
 const TOOLTIP_STYLE = { background: '#0d1117', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '11px' };
+
+/**
+ * Panel used by every chart on ML Pipeline and Findings.
+ *
+ * `desc` used to render as a permanently visible paragraph under each title.
+ * Individually each one earned its place — they are the difference between a
+ * number and a number you can trust — but eight of them stacked down a page
+ * turned into a wall of grey text that buried the charts it was explaining.
+ *
+ * The explanation now lives behind the ⓘ. Nothing is lost, and the data gets
+ * to be the loudest thing on the page.
+ */
+function CollapsiblePanel({
+  title,
+  desc,
+  children,
+  defaultCollapsed = false,
+  headerContent
+}: {
+  title: React.ReactNode;
+  desc?: React.ReactNode;
+  children: React.ReactNode;
+  defaultCollapsed?: boolean;
+  headerContent?: React.ReactNode;
+}) {
+  const startOpen = useContext(PanelsStartOpen);
+  const [collapsed, setCollapsed] = useState(startOpen ? false : defaultCollapsed);
+  return (
+    <div className="ml-panel">
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        gap: '10px', marginBottom: collapsed ? 0 : '16px', flexWrap: 'wrap',
+      }}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', minWidth: 0 }}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <h3 className="ml-chart-title" style={{ margin: 0 }}>{title}</h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }} onClick={e => e.stopPropagation()}>
+          {desc && <InfoTip>{desc}</InfoTip>}
+          {headerContent}
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            title={collapsed ? 'expand' : 'collapse'}
+            style={{
+              background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--color-text-muted)',
+              cursor: 'pointer', fontSize: '10px', width: '24px', height: '24px', borderRadius: '6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}
+          >
+            {collapsed ? '▼' : '▲'}
+          </button>
+        </div>
+      </div>
+      {!collapsed && <div>{children}</div>}
+    </div>
+  );
+}
 
 function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string[]; byProject: Map<string, any[]> }) {
   const data = projectNames.map((project) => {
@@ -131,9 +190,10 @@ function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string
   });
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Pipeline funnel by project</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>How many of each project's services have made it through each stage</p>
+    <CollapsiblePanel 
+      title="Pipeline funnel by project" 
+      desc="How many of each project's services have made it through each stage"
+    >
       <div style={{ height: '220px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
@@ -149,7 +209,7 @@ function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -167,17 +227,17 @@ export function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{
 
   if (data.length === 0) {
     return (
-      <div style={CHART_PANEL_STYLE}>
-        <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Live anomaly scores</h3>
-        <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>No services are being scored yet.</p>
-      </div>
+      <CollapsiblePanel title="Live anomaly scores" desc="No services are being scored yet." defaultCollapsed>
+        <div />
+      </CollapsiblePanel>
     );
   }
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Live anomaly scores</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>Click a bar to see its trend below · red = persistent anomaly, amber = above threshold, green = normal</p>
+    <CollapsiblePanel 
+      title="Live anomaly scores" 
+      desc="Click a bar to see its trend below · red = persistent anomaly, amber = above threshold, green = normal"
+    >
       <div style={{ height: `${Math.max(160, data.length * 26)}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 0 }}>
@@ -193,7 +253,7 @@ export function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -216,19 +276,19 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
 
   if (!sid) {
     return (
-      <div style={CHART_PANEL_STYLE}>
-        <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Anomaly score trend</h3>
-        <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-text-muted)' }}>Click a service in the chart above (or a row in the table below) to see its trend over time.</p>
-      </div>
+      <CollapsiblePanel title="Anomaly score trend" desc="Click a service in the chart above (or a row in the table below) to see its trend over time." defaultCollapsed>
+        <div />
+      </CollapsiblePanel>
     );
   }
 
   const data = history.map(h => ({ ...h, score: Math.round(h.anomaly_score * 100), t: new Date(h.timestamp).toLocaleTimeString() }));
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Anomaly score trend — {sid}</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>From score_history.csv, written every scoring cycle</p>
+    <CollapsiblePanel 
+      title={`Anomaly score trend — ${sid}`}
+      desc="From score_history.csv, written every scoring cycle"
+    >
       {data.length < 2 ? (
         <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
           Not enough history yet for this service
@@ -247,7 +307,7 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
           </ResponsiveContainer>
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -286,14 +346,11 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
   const toggle = (raw: string) => setVisible(v => v.includes(raw) ? v.filter(x => x !== raw) : [...v, raw]);
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap', marginBottom: '4px' }}>
-        <div>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>Feature explorer</h3>
-          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-            The actual rows from features.csv — raw metrics and the normalized z-scores the model is fitted on
-          </p>
-        </div>
+    <CollapsiblePanel 
+      title="Feature explorer" 
+      desc="The actual rows from features.csv — raw metrics and the normalized z-scores the model is fitted on"
+      defaultCollapsed={true}
+      headerContent={
         <select
           value={sid ?? ''}
           onChange={(e) => onSelect(e.target.value)}
@@ -305,8 +362,8 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
           <option value="">select a service…</option>
           {serviceIds.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-      </div>
-
+      }
+    >
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', margin: '10px 0' }}>
         {FEATURE_SERIES.map(f => (
           <label key={f.raw} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', cursor: 'pointer', color: visible.includes(f.raw) ? f.color : 'var(--color-text-muted)' }}>
@@ -364,7 +421,7 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
           </div>
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -385,11 +442,11 @@ export function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomal
   const scored = buckets.reduce((sum, b) => sum + b.count, 0);
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Live score distribution</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-        {scored} scored service{scored === 1 ? '' : 's'} bucketed by current anomaly score
-      </p>
+    <CollapsiblePanel 
+      title="Live score distribution" 
+      desc={`${scored} scored service${scored === 1 ? '' : 's'} bucketed by current anomaly score`}
+      defaultCollapsed={true}
+    >
       {scored === 0 ? (
         <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
           Nothing scored right now — the scorer needs live metrics from a reachable target
@@ -411,7 +468,7 @@ export function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomal
           </ResponsiveContainer>
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -493,14 +550,17 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
   if (algos.length === 0) return null;
 
   return (
-    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '16px' }}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Detectors by project</h3>
-      <p style={{ margin: '0 0 14px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-        Each service is fitted independently per project — a sock-shop model never sees death-star data.
-        The held-out tail is unlabelled, so a firing rate is not accuracy: it is how often that detector
-        fires on data collected after it was fitted.
-      </p>
-
+    <CollapsiblePanel 
+      title="Detectors by project" 
+      desc={
+        <span style={{lineHeight: 1.5}}>
+          Each service is fitted independently per project — a sock-shop model never sees death-star data.
+          The held-out tail is unlabelled, so a firing rate is not accuracy: it is how often that detector
+          fires on data collected after it was fitted.
+        </span>
+      }
+      defaultCollapsed={true}
+    >
       {projects.map(project => {
         const rows = byProject.get(project)!;
         return (
@@ -547,7 +607,7 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
           </div>
         );
       })}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -574,16 +634,20 @@ export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
   const thin = rows.filter(r => r.unique_fraction < 0.05);
 
   return (
-    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '16px' }}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Distinct signal per service</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-        How much of each training set is actually distinct. Repeated rows carry no extra information,
-        so a low percentage here caps what any detector can learn — and is the reason to look at before
-        concluding a model is bad.
-        {thin.length > 0 && (
-          <strong style={{ color: 'var(--color-degraded)' }}> {thin.length} service{thin.length === 1 ? '' : 's'} below 5%.</strong>
-        )}
-      </p>
+    <CollapsiblePanel 
+      title="Distinct signal per service" 
+      desc={
+        <span style={{lineHeight: 1.5}}>
+          How much of each training set is actually distinct. Repeated rows carry no extra information,
+          so a low percentage here caps what any detector can learn — and is the reason to look at before
+          concluding a model is bad.
+          {thin.length > 0 && (
+            <strong style={{ color: 'var(--color-degraded)' }}> {thin.length} service{thin.length === 1 ? '' : 's'} below 5%.</strong>
+          )}
+        </span>
+      }
+      defaultCollapsed={true}
+    >
       <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
           <thead>
@@ -610,7 +674,7 @@ export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -632,11 +696,11 @@ export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; o
   const colors = ['#00d4ff', '#00e676', '#ffab00', '#e040fb', '#ff1744'];
 
   return (
-    <div style={CHART_PANEL_STYLE}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Model check — holdout firing rate</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-        Each model trained on the earlier part of its data and scored on the held-out tail. Unlabelled data, so this is a firing rate, not accuracy — compare it to contamination.
-      </p>
+    <CollapsiblePanel 
+      title="Model check — holdout firing rate" 
+      desc="Each model trained on the earlier part of its data and scored on the held-out tail. Unlabelled data, so this is a firing rate, not accuracy — compare it to contamination."
+      defaultCollapsed={true}
+    >
       {points.length === 0 ? (
         <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '0 20px' }}>
           No holdout evaluations yet — set a holdout fraction above 0 and hit Retrain
@@ -688,7 +752,7 @@ export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; o
           </ResponsiveContainer>
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 }
 
@@ -713,27 +777,21 @@ function ProcessCard({ proc, label, description, onAction, busy }: {
   const running = proc?.running ?? false;
 
   return (
-    <div style={{ flex: 1, minWidth: '300px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px 14px' }}>
+    <div className="ml-process-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
           <span style={{
             width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
             background: running ? 'var(--color-healthy)' : 'var(--color-text-muted)',
-            boxShadow: running ? '0 0 6px var(--color-healthy)' : 'none',
+            boxShadow: running ? '0 0 8px var(--color-healthy)' : 'none',
           }} />
-          <span style={{ fontSize: '13px', fontWeight: 700 }}>{label}</span>
-          <code style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>{proc?.script}</code>
+          <span style={{ fontSize: '14px', fontWeight: 700 }}>{label}</span>
+          <code style={{ fontSize: '10px', color: 'var(--color-text-muted)', padding: '2px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>{proc?.script}</code>
         </div>
         <button
           onClick={() => onAction(running ? 'stop' : 'start')}
           disabled={busy}
-          style={{
-            background: running ? 'rgba(255, 23, 68, 0.12)' : 'rgba(0, 230, 118, 0.12)',
-            color: running ? 'var(--color-critical)' : 'var(--color-healthy)',
-            border: `1px solid ${running ? 'rgba(255,23,68,0.3)' : 'rgba(0,230,118,0.3)'}`,
-            borderRadius: '6px', padding: '4px 12px', fontSize: '11px', fontWeight: 700,
-            cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1, flexShrink: 0,
-          }}
+          className={`ml-btn ${running ? 'ml-btn-stop' : 'ml-btn-start'}`}
         >
           {busy ? '...' : running ? 'Stop' : 'Start'}
         </button>
@@ -806,11 +864,17 @@ function ProcessPanel() {
   };
 
   return (
-    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '18px' }}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Pipeline processes</h3>
-      <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-        The two long-running stages. If either is stopped, the numbers below are frozen at whatever it last wrote.
-      </p>
+    <div className="ml-panel">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <h3 className="ml-chart-title" style={{ margin: 0 }}>Pipeline processes</h3>
+        <InfoTip>
+          The two long-running stages. The <strong>collector</strong> polls the mapper and appends raw
+          metrics; the <strong>scorer</strong> runs live metrics against the trained models each cycle.
+          <br /><br />
+          If either is stopped, everything downstream is frozen at whatever it last wrote — which is why
+          "Collected" and "Scored live" read 0 on this page when they are not running.
+        </InfoTip>
+      </div>
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
         <ProcessCard
           proc={procs.collector}
@@ -963,9 +1027,9 @@ function ConfigPanel() {
   if (!draft) return null;
 
   return (
-    <div style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '18px' }}>
+    <div className="ml-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>Parameters</h3>
+        <h3 className="ml-chart-title" style={{ margin: 0 }}>Parameters</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleSave}
@@ -1129,39 +1193,64 @@ function ScopeSummary({ rows, models, training }: {
     return hrs < 48 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`;
   })();
 
-  const Stat = ({ label, value, tone, hint }: { label: string; value: React.ReactNode; tone?: string; hint?: string }) => (
-    <div style={{ flex: '1 1 120px', minWidth: '120px' }} title={hint}>
-      <div style={{ fontSize: '20px', fontWeight: 700, color: tone || 'var(--color-text-main)', lineHeight: 1.2 }}>{value}</div>
-      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{label}</div>
-    </div>
-  );
-
   return (
-    <div style={{
-      background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)',
-      borderRadius: '12px', padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap',
-    }}>
-      <Stat label="Services" value={services} />
-      <Stat label="Collected" value={collected} hint="Have raw metric samples" />
-      <Stat label="Feature-ready" value={featureReady} hint="Made it through preprocessing into features.csv" />
-      <Stat label="Trained" value={trained} tone={trained ? 'var(--color-healthy)' : undefined} />
-      <Stat label="Scored live" value={scored} tone={scored ? 'var(--color-healthy)' : 'var(--color-text-dim)'}
-            hint="Needs score.py running against a reachable target" />
-      <Stat
-        label="Detectors fitted"
-        hint={Array.from(detectorCounts).map(([a, n]) => `${a}: ${n}`).join('\n') || 'none yet'}
-        value={
-          detectorCounts.size === 0
-            ? '—'
-            : <span style={{ fontSize: '13px' }}>{Array.from(detectorCounts).map(([a, n]) => `${a} ${n}`).join(' · ')}</span>
-        }
-      />
-      {thinData > 0 && (
-        <Stat label="Thin data" value={thinData} tone="var(--color-degraded)"
-              hint="Services whose training set is under 5% distinct rows — caps what any detector can learn" />
+    <Panel
+      title="At a glance"
+      subtitle={`${services} service${services === 1 ? '' : 's'} in scope`}
+      about={
+        <>
+          <strong>Collected</strong> and <strong>scored live</strong> both require a running process —
+          if they read 0, the Collector or Scorer is stopped and the rest of this page is a snapshot,
+          not live state.
+          <br /><br />
+          <strong>Detectors fitted</strong> breaks down per algorithm rather than one trained count,
+          because a detector can refuse to fit and that would otherwise be invisible here.
+          <br /><br />
+          <strong>Thin data</strong> counts services whose training set is under 5% distinct rows. It
+          caps what any detector can learn, and no hyperparameter fixes it.
+        </>
+      }
+    >
+      <StatRow>
+        <KitStat label="Services" value={services} />
+        <KitStat
+          label="Collected"
+          value={collected}
+          tone={collected ? undefined : 'var(--color-text-dim)'}
+          sub={collected ? undefined : 'collector stopped'}
+        />
+        <KitStat label="Feature-ready" value={featureReady} />
+        <KitStat label="Trained" value={trained} tone={trained ? 'var(--color-healthy)' : undefined} />
+        <KitStat
+          label="Scored live"
+          value={scored}
+          tone={scored ? 'var(--color-healthy)' : 'var(--color-text-dim)'}
+          sub={scored ? undefined : 'scorer stopped'}
+        />
+        {thinData > 0 && (
+          <KitStat label="Thin data" value={thinData} tone="var(--color-degraded)" sub="under 5% distinct" />
+        )}
+        {age && <KitStat label="Last trained" value={<span style={{ fontSize: '17px' }}>{age}</span>} />}
+      </StatRow>
+
+      {detectorCounts.size > 0 && (
+        <div style={{
+          marginTop: '18px', paddingTop: '16px', borderTop: '1px solid var(--color-border)',
+          display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Detectors fitted</span>
+          {Array.from(detectorCounts).map(([algo, n]) => (
+            <span key={algo} style={{
+              fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)',
+              color: 'var(--color-text-main)',
+            }}>
+              {algo} <span style={{ color: 'var(--color-accent-cyan)' }}>{n}</span>
+            </span>
+          ))}
+        </div>
       )}
-      {age && <Stat label="Last trained" value={<span style={{ fontSize: '14px' }}>{age}</span>} />}
-    </div>
+    </Panel>
   );
 }
 
@@ -1258,31 +1347,12 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
 
 
   return (
-    <div style={{
-      flex: 1, height: '100%', overflowY: 'auto', padding: '24px',
-      background: 'var(--color-bg-body)', color: 'var(--color-text-main)',
-      display: 'flex', flexDirection: 'column', gap: '20px',
-    }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>ML Pipeline</h1>
-          <span style={{
-            fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            color: scoped ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-            border: `1px solid ${scoped ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-            borderRadius: '999px', padding: '2px 10px',
-          }}>
-            {scoped ? selectedProject : 'all projects'}
-          </span>
-        </div>
-        <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
-          Per-service anomaly detection with four independent detectors (Isolation Forest, Local Outlier Factor,
-          One-Class SVM and a z-score baseline). Models are fitted per service and never mixed across projects;
-          {scoped
-            ? ' everything below is scoped to the project selected in the top bar.'
-            : ` showing ${projectNames.join(', ') || 'no projects yet'} — pick one in the top bar to scope this page to it.`}
-        </p>
-      </div>
+    <div className="ml-pipeline-container">
+      <PageHeader title="ML Pipeline" scope={selectedProject}>
+        {scoped
+          ? 'How the pipeline is configured and how far each service has got through it. Model outputs live under Findings.'
+          : `Configuration and per-service progress across ${projectNames.join(', ') || 'no projects yet'} — pick one in the top bar to scope this page.`}
+      </PageHeader>
 
       <ScopeSummary rows={rows} models={scopedModels} training={training} />
 
@@ -1405,9 +1475,9 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
         const trainedCount = projectRows.filter(r => r.trainedEntry).length;
         const scoredCount = projectRows.filter(r => r.live).length;
         return (
-          <div key={project} style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '18px' }}>
+          <div key={project} className="ml-panel">
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{project}</h3>
+              <h3 className="ml-chart-title" style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{project}</h3>
               <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
                 {projectRows.length} services · {trainedCount} trained · {scoredCount} scored
               </span>
@@ -1432,11 +1502,8 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
                     <tr
                       key={sid}
                       onClick={() => live && setSelectedSid(sid)}
-                      style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.03)',
-                        background: sid === selectedSid ? 'rgba(0, 212, 255, 0.06)' : 'transparent',
-                        cursor: live ? 'pointer' : 'default',
-                      }}
+                      className={`ml-table-row ${sid === selectedSid ? 'selected' : ''}`}
+                      style={{ cursor: live ? 'pointer' : 'default' }}
                     >
                       <td style={{ padding: '8px 10px', fontWeight: 600 }}>{shortName}</td>
                       <td style={{ padding: '8px 10px' }}>{collected?.samples ?? 0}</td>
