@@ -1,3 +1,5 @@
+import type { MetricProvenance } from './MetricProvenance.js';
+
 export interface DependencyEdge {
   id: string;
   source: string;
@@ -12,6 +14,13 @@ export interface DependencyEdge {
   firstSeen?: string;
   lastSeen?: string;
 
+  /**
+   * Per-request metrics. Null under Tier 0 alone, and that is not a gap to
+   * paper over: a socket table contains no requests, so there is nothing
+   * here to report. Filled by Tier 1 (proxy access logs) or Tier 2 (the
+   * target's own Prometheus/traces) when the target provides them — see
+   * wiki/18-telemetry-tiers-plan.md.
+   */
   metrics: {
     requestCount?: number | null;
     requestRate?: number | null;
@@ -21,6 +30,9 @@ export interface DependencyEdge {
     p99Latency?: number | null;
     errorCount?: number | null;
     errorRate?: number | null;
+    /** Which tier produced these, so an estimate is never read as a
+     *  measurement. Absent on data written before provenance existed. */
+    provenance?: MetricProvenance;
   } | null;
 
   statusCodeDistribution?: Record<string, number>;

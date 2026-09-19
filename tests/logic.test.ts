@@ -375,3 +375,134 @@ test('thresholds: defaults are all inside their own limits', () => {
     assert.ok(value >= lo && value <= hi, `${key} default ${value} outside ${lo}-${hi}`);
   }
 });
+
+// --- Tier 2: PrometheusSource -----------------------------------------
+//
+// Driven by responses captured from the live open-telemetry target on
+// 2026-09-18, so this exercises the shapes Prometheus actually returned
+// rather than shapes invented to make the parser pass. The targets rotate
+// IPs constantly, so a stubbed exec is also the only way this stays runnable.
+import { PrometheusSource } from '../server/telemetry-sources/PrometheusSource.js';
+
+/** Builds a fake remote exec that answers by matching the query text. */
+function stubExec(routes: { match: RegExp; reply: string }[]) {
+  return async (cmd: string) => {
+    for (const r of routes) if (r.match.test(cmd)) return r.reply;
+    return JSON.stringify({ status: 'success', data: { resultType: 'vector', result: [] } });
+  };
+}
+
+const NAME_VALUES = JSON.stringify({
+  status: 'success',
+  data: [
+    'http_server_request_duration_seconds_bucket',
+    'http_server_request_duration_seconds_count',
+    'demo_cart_get_cart_latency_seconds_bucket',
+    'up',
+  ],
+});
+
+const vector = (rows: [Record<string, string>, string][]) => JSON.stringify({
+  status: 'success',
+  data: { resultType: 'vector', result: rows.map(([metric, v]) => ({ metric, value: [1789744887, v] })) },
+});
+
+test('prometheus: probe finds the duration family the target actually emits', async () => {
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+  ]));
+  const status = await src.probe();
+  assert.equal(status.available, true);
+  assert.equal(status.kind, 'prometheus');
+});
+
+test('prometheus: an up instance with no request histograms is unavailable, with a usable reason', async () => {
+  const src = new PrometheusSource('sock-shop', stubExec([
+    { match: /__name__/, reply: JSON.stringify({ status: 'success', data: ['up', 'node_cpu_seconds_total'] }) },
+  ]));
+  const status = await src.probe();
+  assert.equal(status.available, false);
+  assert.match(status.reason ?? '', /not HTTP\/RPC instrumented/);
+});
+
+test('prometheus: seconds are converted to ms, not reported raw', async () => {
+  // 0.0829s is the real p95 measured for cart.get_cart. Reporting it as
+  // "0.08 ms" instead of "82.9 ms" would be off by 1000x and look plausible.
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['cart'] }) },
+    { match: /histogram_quantile\(0\.95/, reply: vector([[{ service_name: 'cart' }, '0.0829']]) },
+    { match: /rate\(http_server_request_duration_seconds_count/, reply: vector([[{ service_name: 'cart' }, '2.5']]) },
+  ]));
+  await src.probe();
+  const snap = await src.collect(1800);
+  const cart = snap.services.find(s => s.serviceName === 'cart');
+  assert.ok(cart, 'cart should be present');
+  assert.ok(Math.abs((cart!.latencyP95Ms ?? 0) - 82.9) < 0.01, `expected ~82.9ms, got ${cart!.latencyP95Ms}`);
+  assert.equal(cart!.requestRate, 2.5);
+});
+
+test('prometheus: NaN quantile is dropped, never recorded as zero latency', async () => {
+  // histogram_quantile returns NaN when no observations fall in the window.
+  // Zero would read as "instant", the opposite of "unknown".
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['idle-svc'] }) },
+    { match: /histogram_quantile/, reply: vector([[{ service_name: 'idle-svc' }, 'NaN']]) },
+  ]));
+  await src.probe();
+  const snap = await src.collect(300);
+  const svc = snap.services.find(s => s.serviceName === 'idle-svc');
+  assert.ok(svc === undefined || svc.latencyP95Ms === undefined, 'NaN must not become a number');
+});
+
+test('prometheus: error rate with no traffic is unknown, not 0%', async () => {
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['quiet'] }) },
+    { match: /label\/http_response_status_code\/values/, reply: JSON.stringify({ status: 'success', data: ['200', '500'] }) },
+    { match: /histogram_quantile\(0\.95/, reply: vector([[{ service_name: 'quiet' }, '0.01']]) },
+    // no request rate returned -> denominator is zero
+  ]));
+  await src.probe();
+  const snap = await src.collect(300);
+  const svc = snap.services.find(s => s.serviceName === 'quiet');
+  assert.ok(svc, 'service present');
+  assert.equal(svc!.errorRate, null, '0 requests must give unknown error rate, not 0');
+});
+
+test('prometheus: error rate is a ratio of the measured request rate', async () => {
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['shipping'] }) },
+    { match: /label\/http_response_status_code\/values/, reply: JSON.stringify({ status: 'success', data: ['200', '500'] }) },
+    { match: /5\.\./, reply: vector([[{ service_name: 'shipping' }, '1.0']]) },
+    { match: /rate\(http_server_request_duration_seconds_count\[/, reply: vector([[{ service_name: 'shipping' }, '4.0']]) },
+  ]));
+  await src.probe();
+  const snap = await src.collect(300);
+  const svc = snap.services.find(s => s.serviceName === 'shipping');
+  assert.equal(svc?.errorRate, 0.25, '1 of 4 req/s failing is 25%');
+});
+
+test('prometheus: never claims caller -> callee attribution it cannot support', async () => {
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['cart'] }) },
+    { match: /histogram_quantile/, reply: vector([[{ service_name: 'cart' }, '0.05']]) },
+  ]));
+  await src.probe();
+  const snap = await src.collect(300);
+  assert.deepEqual(snap.edges, [], 'server-side metrics cannot say who called');
+});
+
+test('prometheus: malformed output fails loudly rather than producing numbers', async () => {
+  const src = new PrometheusSource('open-telemetry', stubExec([
+    { match: /__name__/, reply: NAME_VALUES },
+    { match: /label\/service_name\/values/, reply: JSON.stringify({ status: 'success', data: ['cart'] }) },
+    { match: /histogram_quantile/, reply: '<html>502 Bad Gateway</html>' },
+  ]));
+  await src.probe();
+  const snap = await src.collect(300);
+  assert.ok(snap.warnings.some(w => /did not return JSON/.test(w)), `expected a warning, got ${JSON.stringify(snap.warnings)}`);
+});
