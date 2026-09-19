@@ -1,3 +1,5 @@
+import type { MetricProvenance } from './MetricProvenance.js';
+
 export interface ServiceNode {
   id: string;
   name: string;
@@ -18,14 +20,18 @@ export interface ServiceNode {
     [key: string]: any;
   };
   metrics: {
+    // Tier 0: exact, straight from cgroup accounting.
     cpu?: number;
     memory?: number;
     memoryPercent?: number;
     networkRx?: number;
     networkTx?: number;
+    // Tier 1/2 only — nothing outside the container can measure these.
     latency?: number | null;
     requestRate?: number | null;
     errorRate?: number | null;
+    /** Which tier produced the request-level fields above. */
+    provenance?: MetricProvenance;
   } | null;
   analytics?: {
     healthScore?: number | null;
