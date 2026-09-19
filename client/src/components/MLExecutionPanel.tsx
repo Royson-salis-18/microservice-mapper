@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { InfoTip } from './ui/Panel';
 
 /**
  * Notebook-style execution panel for the ML pipeline.
@@ -63,13 +64,6 @@ const ALGORITHMS = [
   { id: 'ocsvm', label: 'One-Class SVM', note: 'boundary' },
   { id: 'zscore', label: 'Z-score', note: 'statistical baseline' },
 ];
-
-const panel: React.CSSProperties = {
-  background: 'var(--color-bg-panel)',
-  border: '1px solid var(--color-border)',
-  borderRadius: '12px',
-  padding: '16px',
-};
 
 const label: React.CSSProperties = {
   fontSize: '10px',
@@ -296,16 +290,20 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
   ].filter(Boolean).join(' ');
 
   return (
-    <div style={panel}>
-      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700 }}>Execution</h3>
-      <p style={{ margin: '0 0 14px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-        The pipeline steps in the order they run, each showing the source of the script it executes.
-        Scope to one project and set the hyperparameters; they are passed to <code>train.py</code> as
-        CLI flags, and anything left blank keeps the default from <code>ml/config.json</code>.
-      </p>
+    <div className="ml-panel">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+        <h3 className="ml-chart-title" style={{ margin: 0 }}>Execution</h3>
+        <InfoTip>
+          The pipeline steps in the order they run, each showing the real source of the script it
+          executes — fetched from the server, so what is displayed cannot drift from what runs.
+          <br /><br />
+          Hyperparameters are passed to <code>train.py</code> as CLI flags. Anything left blank keeps the
+          default from <code>ml/config.json</code>, and the exact command is previewed before you run it.
+        </InfoTip>
+      </div>
 
       {/* ---- cell 1: scope ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
         <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '8px', color: 'var(--color-accent-cyan)' }}>
           [1] Scope
         </div>
@@ -338,7 +336,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       </div>
 
       {/* ---- cell 2: preprocess ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-cyan)' }}>
             [2] Preprocess → features.csv
@@ -348,16 +346,18 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
             skip this step
           </label>
         </div>
-        <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '6px', lineHeight: 1.5 }}>
-          Rebuilds the feature table for every service — it is not project-scoped, and it is the slow step.
-          Skip it when tuning hyperparameters against data that has not changed.
+        <div style={{ marginTop: '6px' }}>
+          <InfoTip label="what this step does">
+            Rebuilds the feature table for <em>every</em> service — it is not project-scoped, and it is
+            the slow step. Skip it when tuning hyperparameters against data that has not changed.
+          </InfoTip>
         </div>
         <CodeCell source={sources.preprocess || null} collapsed={collapsed.preprocess}
                   onToggle={() => setCollapsed(c => ({ ...c, preprocess: !c.preprocess }))} />
       </div>
 
       {/* ---- cell 3: train ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
         <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '8px', color: 'var(--color-accent-cyan)' }}>
           [3] Train
         </div>
@@ -370,15 +370,25 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
             background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.25)',
             fontSize: '10px', color: 'var(--color-text-muted)', lineHeight: 1.6,
           }}>
-            <strong style={{ color: 'var(--color-accent-cyan)' }}>Measured for {suggest.project}:</strong>{' '}
-            {suggest.observed.services} service(s), median{' '}
-            <strong style={{ color: 'var(--color-text-main)' }}>{suggest.observed.median_distinct}</strong> distinct
-            rows out of {suggest.observed.median_rows}. Suggestions below come from these numbers, not from defaults.
-            {suggest.observed.thinnest.length > 0 && (
-              <div style={{ marginTop: '4px', color: 'var(--color-text-dim)' }}>
-                thinnest: {suggest.observed.thinnest.map(t => `${t.sid.split(':').slice(1).join(':')} ${t.distinct}/${t.rows}`).join(' · ')}
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span>
+                <strong style={{ color: 'var(--color-accent-cyan)' }}>Measured for {suggest.project}:</strong>{' '}
+                {suggest.observed.services} services · median{' '}
+                <strong style={{ color: 'var(--color-text-main)' }}>{suggest.observed.median_distinct}</strong>
+                {' '}distinct of {suggest.observed.median_rows} rows
+              </span>
+              <InfoTip label="where these come from">
+                Every suggestion below is computed from this project's own feature table, not from a
+                textbook default — so they say what will happen to <em>these</em> services.
+                {suggest.observed.thinnest.length > 0 && (
+                  <>
+                    <br /><br />
+                    Thinnest services (distinct/total):{' '}
+                    {suggest.observed.thinnest.map(t => `${t.sid.split(':').slice(1).join(':')} ${t.distinct}/${t.rows}`).join(' · ')}
+                  </>
+                )}
+              </InfoTip>
+            </div>
           </div>
         )}
 
@@ -392,18 +402,21 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
 
         <label style={label}>Detectors</label>
         {Array.isArray(suggest?.suggestions?.algorithms?.suggested) && (
-          <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginBottom: '6px', lineHeight: 1.5 }}>
-            suggest{' '}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap',
+            fontSize: '11px', color: 'var(--color-text-muted)',
+          }}>
+            <span>Suggested:</span>
             <button
               type="button" disabled={running}
               onClick={() => setAlgorithms(suggest!.suggestions!.algorithms.suggested as string[])}
               style={{
                 background: 'rgba(0,212,255,0.12)', border: '1px solid var(--color-accent-cyan)',
-                color: 'var(--color-accent-cyan)', borderRadius: '4px', padding: '0 5px',
-                fontSize: '9px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 700,
+                color: 'var(--color-accent-cyan)', borderRadius: '6px', padding: '3px 10px',
+                fontSize: '11px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 650,
               }}
             >{(suggest!.suggestions!.algorithms.suggested as string[]).join(', ')}</button>
-            <span> — {suggest!.suggestions!.algorithms.reason}</span>
+            <InfoTip label="why these">{suggest!.suggestions!.algorithms.reason}</InfoTip>
           </div>
         )}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -470,13 +483,8 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         <button
           type="button" onClick={run} disabled={running}
-          style={{
-            background: running ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,230,118,0.25))',
-            border: `1px solid ${running ? 'var(--color-border)' : 'var(--color-accent-cyan)'}`,
-            color: running ? 'var(--color-text-dim)' : '#fff',
-            borderRadius: '8px', padding: '8px 18px', fontSize: '11px', fontWeight: 700,
-            cursor: running ? 'not-allowed' : 'pointer', letterSpacing: '0.04em',
-          }}
+          className="ml-btn ml-btn-start"
+          style={{ padding: '8px 18px', fontSize: '11px' }}
         >{running ? 'RUNNING…' : '▶ RUN'}</button>
         {retrain?.finishedAt && !running && (
           <span style={{ fontSize: '10px', color: retrain.exitCode === 0 ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
