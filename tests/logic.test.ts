@@ -558,3 +558,86 @@ test('provenance: a source may not fill a field it cannot measure', async () => 
   assert.equal(SOURCE_TIER['access-log'], 1);
   assert.equal(SOURCE_TIER['prometheus'], 2);
 });
+
+// --- tailCsv: read the end of a big file without loading it -----------
+//
+// The optimisation is only worth anything if it returns exactly what the
+// naive full-read returned. These compare the two directly on a generated
+// file, including the awkward cases: a chunk boundary landing mid-line, a
+// filter matching nothing, and a file smaller than one chunk.
+import { tailCsvLines, readCsvHeader, fieldAt } from '../server/util/tailCsv.js';
+import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+function withCsv(rows: string[], fn: (path: string) => void) {
+  const dir = mkdtempSync(join(tmpdir(), 'tailcsv-'));
+  const path = join(dir, 'f.csv');
+  writeFileSync(path, ['ts,service_id,value', ...rows].join('\n') + '\n');
+  try { fn(path); } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+
+/** What the old implementation did, kept as the oracle. */
+function naiveTail(rows: string[], limit: number, serviceId?: string) {
+  return rows.filter(l => !serviceId || l.split(',')[1] === serviceId).slice(-limit);
+}
+
+test('tailCsv: header is read without touching the body', () => {
+  withCsv(['1,a,10'], (path) => {
+    assert.deepEqual(readCsvHeader(path), ['ts', 'service_id', 'value']);
+  });
+});
+
+test('tailCsv: matches the naive full-read, including across chunk boundaries', () => {
+  // 5000 rows forces several 256KB chunks and lands boundaries mid-line.
+  const rows = Array.from({ length: 5000 }, (_, i) => `${i},svc-${i % 7},${i * 3}`);
+  withCsv(rows, (path) => {
+    for (const limit of [1, 10, 300, 4999, 5000, 6000]) {
+      assert.deepEqual(
+        tailCsvLines(path, { limit }),
+        naiveTail(rows, limit),
+        `limit ${limit} must match the full read`,
+      );
+    }
+  });
+});
+
+test('tailCsv: filtering by service matches the naive result', () => {
+  const rows = Array.from({ length: 3000 }, (_, i) => `${i},svc-${i % 5},${i}`);
+  withCsv(rows, (path) => {
+    const match = (line: string) => fieldAt(line, 1) === 'svc-3';
+    assert.deepEqual(
+      tailCsvLines(path, { limit: 50, match }),
+      naiveTail(rows, 50, 'svc-3'),
+    );
+  });
+});
+
+test('tailCsv: the header is never returned as a data row', () => {
+  withCsv(['1,a,10', '2,b,20'], (path) => {
+    const out = tailCsvLines(path, { limit: 99 });
+    assert.equal(out.length, 2);
+    assert.ok(!out.some(l => l.startsWith('ts,')), 'header must not appear as data');
+  });
+});
+
+test('tailCsv: a filter matching nothing terminates instead of scanning forever', () => {
+  const rows = Array.from({ length: 4000 }, (_, i) => `${i},svc,${i}`);
+  withCsv(rows, (path) => {
+    const out = tailCsvLines(path, { limit: 10, match: () => false, maxBytes: 64 * 1024 });
+    assert.deepEqual(out, [], 'no matches is an empty result, not a hang');
+  });
+});
+
+test('tailCsv: empty and tiny files are handled', () => {
+  withCsv([], (path) => assert.deepEqual(tailCsvLines(path, { limit: 10 }), []));
+  withCsv(['1,a,10'], (path) => assert.deepEqual(tailCsvLines(path, { limit: 10 }), ['1,a,10']));
+});
+
+test('fieldAt: reads one column without splitting the line', () => {
+  assert.equal(fieldAt('a,b,c,d', 0), 'a');
+  assert.equal(fieldAt('a,b,c,d', 2), 'c');
+  assert.equal(fieldAt('a,b,c,d', 3), 'd', 'last column has no trailing comma');
+  assert.equal(fieldAt('a,b,c,d', 9), '', 'past the end is empty, not a throw');
+  assert.equal(fieldAt('a,b,c,d', -1), '');
+});
