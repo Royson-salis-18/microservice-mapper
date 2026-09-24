@@ -25,10 +25,14 @@ This wiki is the complete technical reference for the Microservice Mapper projec
 | 15 | [troubleshooting.md](./15-troubleshooting.md) | Common issues, known bugs, diagnosis runbook |
 | 16 | [change-log-and-rationale.md](./16-change-log-and-rationale.md) | What changed, why, and where — decisions and the bugs behind them |
 | 17 | [findings-vs-incidents.md](./17-findings-vs-incidents.md) | Why model output and rule-based alerts are separate pages, and the incident thresholds |
+| 18 | [telemetry-tiers-plan.md](./18-telemetry-tiers-plan.md) | Tier 0/1/2 telemetry sources, provenance, and the phased plan |
+| 19 | [how-it-all-works.md](./19-how-it-all-works.md) | **Start here.** Plain-language walkthrough, then the full architecture |
 
 ---
 
 ## Quick Links
+
+- **New to the project / want the whole picture:** [19-how-it-all-works.md](./19-how-it-all-works.md) — plain language first, detail second
 
 - **Understanding the graph:** Start with [01-overview.md](./01-overview.md) → [02-architecture.md](./02-architecture.md)
 - **How data flows:** [05-telemetry-ingestion.md](./05-telemetry-ingestion.md)
