@@ -12,6 +12,7 @@ import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
+import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -788,12 +789,15 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     if (!fs.existsSync(featuresPath)) return res.json({ columns: [], rows: [] });
     const serviceId = req.query.serviceId as string | undefined;
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 300, 2000);
-    const lines = fs.readFileSync(featuresPath, 'utf8').split('\n').filter(Boolean);
-    const columns = lines[0].split(',');
+    // Reads backwards from EOF and stops once it has `limit` rows, instead
+    // of loading all 33 MB to return 300 of them. See util/tailCsv.ts — the
+    // old path spent 141ms, of which 0.3ms was the actual answer.
+    const columns = readCsvHeader(featuresPath);
     const sidIndex = columns.indexOf('service_id');
-    const rows = lines.slice(1)
-      .filter((line) => !serviceId || line.split(',')[sidIndex] === serviceId)
-      .slice(-limit)
+    const matchesService = serviceId
+      ? (line: string) => fieldAt(line, sidIndex) === serviceId
+      : undefined;
+    const rows = tailCsvLines(featuresPath, { limit, match: matchesService })
       .map((line) => {
         const parts = line.split(',');
         const row: Record<string, any> = {};
