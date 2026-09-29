@@ -1,0 +1,108 @@
+{
+  "service_id": "sock-shop:otel-collector",
+  "project": "sock-shop",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 32,
+  "trained_at": "2026-09-18T15:13:57.992307+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": 2.949029909160572e-17,
+  "train_score_mean": -0.3144876836482813,
+  "train_score_max": 0.011606257599971248,
+  "holdout": {
+    "samples": 7,
+    "flag_rate": 0.0,
+    "mean_score": -0.2987910882727958,
+    "max_score": -0.2987910882727959,
+    "from": "2026-09-18T15:12:38.539091+00:00",
+    "to": "2026-09-18T15:13:38.579911+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": 2.949029909160572e-17,
+      "train_score_mean": -0.3144876836482813,
+      "train_score_max": 0.011606257599971248,
+      "holdout": {
+        "samples": 7,
+        "flag_rate": 0.0,
+        "mean_score": -0.2987910882727958,
+        "max_score": -0.2987910882727959,
+        "from": "2026-09-18T15:12:38.539091+00:00",
+        "to": "2026-09-18T15:13:38.579911+00:00"
+      },
+      "artifact": "sock-shop_otel-collector.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00015870439033973058,
+      "train_score_mean": -3.813097893720814e-05,
+      "train_score_max": 0.00021869458088556726,
+      "holdout": {
+        "samples": 7,
+        "flag_rate": 0.0,
+        "mean_score": -6.67480829289746e-05,
+        "max_score": -6.67480829289746e-05,
+        "from": "2026-09-18T15:12:38.539091+00:00",
+        "to": "2026-09-18T15:13:38.579911+00:00"
+      },
+      "artifact": "sock-shop_otel-collector.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.581015642870744,
+      "train_score_mean": 1.2150089007850469,
+      "train_score_max": 5.427370720315839,
+      "holdout": {
+        "samples": 7,
+        "flag_rate": 0.0,
+        "mean_score": 1.1361287433453755,
+        "max_score": 1.1361287433453755,
+        "from": "2026-09-18T15:12:38.539091+00:00",
+        "to": "2026-09-18T15:13:38.579911+00:00"
+      },
+      "artifact": "sock-shop_otel-collector.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 32,
+    "unique_rows": 7,
+    "unique_fraction": 0.21875,
+    "feature_std": {
+      "z_cpu_percent": 0.9352132181074474,
+      "z_memory_percent": 0.9770686626326099,
+      "z_network_rx_rate": 1.0962667392131398,
+      "z_network_tx_rate": 1.0966737441074048
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

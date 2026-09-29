@@ -7,69 +7,98 @@
     "z_network_rx_rate",
     "z_network_tx_rate"
   ],
-  "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T14:02:05.819964+00:00",
+  "trained_on_samples": 1606,
+  "trained_at": "2026-09-18T15:15:04.755814+00:00",
   "contamination": 0.01,
-  "n_estimators": 200,
+  "n_estimators": 100,
   "max_samples": "auto",
-  "threshold_p99": 0.0,
-  "train_score_mean": -0.24898668601991844,
-  "train_score_max": 0.0505956582044127,
+  "threshold_p99": -0.0,
+  "train_score_mean": -0.2532497803042706,
+  "train_score_max": 0.05499450518010962,
   "holdout": {
-    "samples": 392,
-    "flag_rate": 0.0,
-    "mean_score": -0.27257422027643885,
-    "max_score": -0.2725742202764388,
-    "from": "2026-09-17T00:48:13.108749+00:00",
-    "to": "2026-09-17T01:53:54.859981+00:00"
+    "samples": 401,
+    "flag_rate": 0.0024937655860349127,
+    "mean_score": -0.26118386739143407,
+    "max_score": 0.039315730766170454,
+    "from": "2026-09-17T00:54:33.276127+00:00",
+    "to": "2026-09-18T15:14:48.805770+00:00"
   },
   "algorithms": {
     "iforest": {
-      "threshold_p99": 0.0,
-      "train_score_mean": -0.24898668601991844,
-      "train_score_max": 0.0505956582044127,
+      "threshold_p99": -0.0,
+      "train_score_mean": -0.2532497803042706,
+      "train_score_max": 0.05499450518010962,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.27257422027643885,
-        "max_score": -0.2725742202764388,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 401,
+        "flag_rate": 0.0024937655860349127,
+        "mean_score": -0.26118386739143407,
+        "max_score": 0.039315730766170454,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_orders-db.joblib"
     },
-    "zscore": {
-      "threshold_p99": 4.668050736058741,
-      "train_score_mean": 0.5251446903790697,
-      "train_score_max": 39.024229817575645,
+    "lof": {
+      "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00012858142720961752,
+      "train_score_mean": 0.00901670703799875,
+      "train_score_max": 5.415380870275609,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": 0.23062333145312572,
-        "max_score": 0.2306233314531257,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 401,
+        "flag_rate": 0.059850374064837904,
+        "mean_score": 0.36854125016874884,
+        "max_score": 6.41538087027503,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
+      },
+      "artifact": "sock-shop_orders-db.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.694796598067501,
+      "train_score_mean": 0.5231152757449276,
+      "train_score_max": 39.15757711447329,
+      "holdout": {
+        "samples": 401,
+        "flag_rate": 0.0024937655860349127,
+        "mean_score": 0.4931551284893912,
+        "max_score": 9.557319295092793,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_orders-db.zscore.joblib"
     }
   },
   "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.942643391521197,
+      "jaccard": 0.041666666666666664,
+      "both_flagged": 1,
+      "either_flagged": 24
+    },
     "iforest|zscore": {
       "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "jaccard": 1.0,
+      "both_flagged": 1,
+      "either_flagged": 1
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.942643391521197,
+      "jaccard": 0.041666666666666664,
+      "both_flagged": 1,
+      "either_flagged": 24
     }
   },
   "data_quality": {
-    "rows": 1568,
+    "rows": 1606,
     "unique_rows": 7,
-    "unique_fraction": 0.004464285714285714,
+    "unique_fraction": 0.0043586550435865505,
     "feature_std": {
-      "z_cpu_percent": 1.1105759878028192,
-      "z_memory_percent": 1.1116020052802216,
-      "z_network_rx_rate": 1.1178639958555159,
-      "z_network_tx_rate": 1.1178438549082774
+      "z_cpu_percent": 1.1097433456986021,
+      "z_memory_percent": 0.9797831049757991,
+      "z_network_rx_rate": 1.1084593425849625,
+      "z_network_tx_rate": 1.086839408357611
     }
   },
   "training_window": {

@@ -7,69 +7,98 @@
     "z_network_rx_rate",
     "z_network_tx_rate"
   ],
-  "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T14:02:08.920613+00:00",
+  "trained_on_samples": 1606,
+  "trained_at": "2026-09-18T15:15:05.944396+00:00",
   "contamination": 0.01,
-  "n_estimators": 200,
+  "n_estimators": 100,
   "max_samples": "auto",
-  "threshold_p99": 0.0,
-  "train_score_mean": -0.3208305528624131,
-  "train_score_max": 0.0376916049646685,
+  "threshold_p99": -0.0,
+  "train_score_mean": -0.32388228856291446,
+  "train_score_max": 0.038392398484719426,
   "holdout": {
-    "samples": 392,
+    "samples": 401,
     "flag_rate": 0.0,
-    "mean_score": -0.34493245623128244,
-    "max_score": -0.3449324562312824,
-    "from": "2026-09-17T00:48:13.108749+00:00",
-    "to": "2026-09-17T01:53:54.859981+00:00"
+    "mean_score": -0.3348594924321245,
+    "max_score": -0.1366539896075688,
+    "from": "2026-09-17T00:54:33.276127+00:00",
+    "to": "2026-09-18T15:14:48.805770+00:00"
   },
   "algorithms": {
     "iforest": {
-      "threshold_p99": 0.0,
-      "train_score_mean": -0.3208305528624131,
-      "train_score_max": 0.0376916049646685,
+      "threshold_p99": -0.0,
+      "train_score_mean": -0.32388228856291446,
+      "train_score_max": 0.038392398484719426,
       "holdout": {
-        "samples": 392,
+        "samples": 401,
         "flag_rate": 0.0,
-        "mean_score": -0.34493245623128244,
-        "max_score": -0.3449324562312824,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "mean_score": -0.3348594924321245,
+        "max_score": -0.1366539896075688,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_user-db.joblib"
     },
-    "zscore": {
-      "threshold_p99": 8.624619860270029,
-      "train_score_mean": 0.561229308933503,
-      "train_score_max": 38.52193710804179,
+    "lof": {
+      "error": "ValueError: only 7 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00035528727063871557,
+      "train_score_mean": 0.005292737315851675,
+      "train_score_max": 2.660652911302899,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": 0.11664884322524068,
-        "max_score": 0.1166488432252407,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 401,
+        "flag_rate": 0.9875311720698254,
+        "mean_score": 0.0976193776774401,
+        "max_score": 3.660652911302899,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
+      },
+      "artifact": "sock-shop_user-db.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 8.728617814979732,
+      "train_score_mean": 0.5305986960829872,
+      "train_score_max": 37.27305298929495,
+      "holdout": {
+        "samples": 401,
+        "flag_rate": 0.004987531172069825,
+        "mean_score": 0.44341495327064107,
+        "max_score": 41.57091543836269,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_user-db.zscore.joblib"
     }
   },
   "agreement": {
-    "iforest|zscore": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.012468827930174564,
+      "jaccard": 0.0,
       "both_flagged": 0,
-      "either_flagged": 0
+      "either_flagged": 396
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 0.9950124688279302,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 2
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.017456359102244388,
+      "jaccard": 0.005050505050505051,
+      "both_flagged": 2,
+      "either_flagged": 396
     }
   },
   "data_quality": {
-    "rows": 1568,
+    "rows": 1606,
     "unique_rows": 7,
-    "unique_fraction": 0.004464285714285714,
+    "unique_fraction": 0.0043586550435865505,
     "feature_std": {
-      "z_cpu_percent": 1.116130739342144,
-      "z_memory_percent": 1.1179874069117084,
-      "z_network_rx_rate": 1.1178587345855437,
-      "z_network_tx_rate": 1.1178503797612516
+      "z_cpu_percent": 1.1160546625462955,
+      "z_memory_percent": 1.0489771350730095,
+      "z_network_rx_rate": 1.069018799499829,
+      "z_network_tx_rate": 0.0947240925232038
     }
   },
   "training_window": {
