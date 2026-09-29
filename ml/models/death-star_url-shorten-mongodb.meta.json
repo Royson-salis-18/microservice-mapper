@@ -8,35 +8,63 @@
     "z_network_tx_rate"
   ],
   "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T14:04:41.490875+00:00",
-  "contamination": 0.02,
-  "n_estimators": 50,
+  "trained_at": "2026-09-18T15:03:20.967397+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
   "max_samples": "auto",
-  "threshold_p99": 0.02528371740216248,
-  "train_score_mean": -0.2981634145701082,
-  "train_score_max": 0.09100355008904071,
+  "threshold_p99": -2.5825695748604716e-16,
+  "train_score_mean": -0.3310645570548142,
+  "train_score_max": 0.07894108644780562,
   "holdout": {
     "samples": 392,
     "flag_rate": 0.0,
-    "mean_score": -0.3311980294540558,
-    "max_score": -0.33119802945405574,
+    "mean_score": -0.36405559546460087,
+    "max_score": -0.364055595464601,
     "from": "2026-09-17T00:48:13.108749+00:00",
     "to": "2026-09-17T01:53:54.859981+00:00"
   },
   "algorithms": {
     "iforest": {
-      "threshold_p99": 0.02528371740216248,
-      "train_score_mean": -0.2981634145701082,
-      "train_score_max": 0.09100355008904071,
+      "threshold_p99": -2.5825695748604716e-16,
+      "train_score_mean": -0.3310645570548142,
+      "train_score_max": 0.07894108644780562,
       "holdout": {
         "samples": 392,
         "flag_rate": 0.0,
-        "mean_score": -0.3311980294540558,
-        "max_score": -0.33119802945405574,
+        "mean_score": -0.36405559546460087,
+        "max_score": -0.364055595464601,
         "from": "2026-09-17T00:48:13.108749+00:00",
         "to": "2026-09-17T01:53:54.859981+00:00"
       },
       "artifact": "death-star_url-shorten-mongodb.joblib"
+    },
+    "lof": {
+      "threshold_p99": 3.1511499944664525,
+      "train_score_mean": 1.2280864142806458,
+      "train_score_max": 67.42772436957259,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": 1.1134084213758013,
+        "max_score": 1.113408421375801,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_url-shorten-mongodb.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 9.600655697503963e-05,
+      "train_score_mean": -0.01319456982715044,
+      "train_score_max": 0.0004225706749780844,
+      "holdout": {
+        "samples": 392,
+        "flag_rate": 0.0,
+        "mean_score": -0.012945282973268357,
+        "max_score": -0.012945282973268357,
+        "from": "2026-09-17T00:48:13.108749+00:00",
+        "to": "2026-09-17T01:53:54.859981+00:00"
+      },
+      "artifact": "death-star_url-shorten-mongodb.ocsvm.joblib"
     },
     "zscore": {
       "threshold_p99": 6.090616067015823,
@@ -54,7 +82,37 @@
     }
   },
   "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
     "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
       "same_verdict_rate": 1.0,
       "jaccard": null,
       "both_flagged": 0,

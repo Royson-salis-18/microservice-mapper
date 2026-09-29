@@ -1,7 +1,7 @@
 {
   "sock-shop": {
     "targetId": "sock-shop",
-    "baseUrl": "http://65.0.97.59",
+    "baseUrl": "http://13.233.120.223:80",
     "endpoints": [
       {
         "path": "/",
@@ -13,11 +13,11 @@
     ],
     "architecture": null,
     "settings": {
-      "profile": "BASELINE",
+      "profile": "STRESS",
       "endpointPaths": [
         "/"
       ],
-      "users": 10
+      "users": 20
     }
   },
   "vertikal-prod": {
@@ -32,39 +32,46 @@
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://13.204.68.115:8080",
+    "baseUrl": "http://13.203.231.198:8080",
     "settings": {
-      "profile": "HEAVY",
-      "endpointPaths": [],
-      "users": 100
+      "profile": "MODERATE",
+      "endpointPaths": [
+        "http://13.203.231.198:8080",
+        "http://13.203.231.198:8080/",
+        "http://13.203.231.198:8080/wrk2-api/home-timeline/read?user_id=1&start=0&stop=10",
+        "http://13.203.231.198:8080/wrk2-api/home-timeline/read?user_id=3&start=0&stop=20",
+        "http://13.203.231.198:8080/wrk2-api/user-timeline/read?user_id=2&start=0&stop=10",
+        "http://13.203.231.198:8080/wrk2-api/user-timeline/read?user_id=4&start=0&stop=20"
+      ],
+      "users": 10
     }
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
-    "baseUrl": "http://13.203.196.246:8080",
+    "baseUrl": "http://43.204.141.83:8080",
     "settings": {
-      "profile": "HEAVY",
+      "profile": "STRESS",
       "endpointPaths": [
-        "http://13.203.196.246:8080",
-        "http://13.203.196.246:8080/",
-        "http://13.203.196.246:8080/api/cart",
-        "http://13.203.196.246:8080/api/checkout",
-        "http://13.203.196.246:8080/api/currency",
-        "http://13.203.196.246:8080/api/data",
-        "http://13.203.196.246:8080/api/shipping",
-        "http://13.203.196.246:8080/cart"
+        "http://43.204.141.83:8080",
+        "http://43.204.141.83:8080/",
+        "http://43.204.141.83:8080/api/cart",
+        "http://43.204.141.83:8080/api/checkout",
+        "http://43.204.141.83:8080/api/currency",
+        "http://43.204.141.83:8080/api/data",
+        "http://43.204.141.83:8080/api/products",
+        "http://43.204.141.83:8080/api/recommendations",
+        "http://43.204.141.83:8080/api/shipping",
+        "http://43.204.141.83:8080/cart"
       ],
-      "users": 40,
-      "durationSec": 120
+      "users": 10
     }
   },
   "vertikal": {
     "targetId": "vertikal",
     "baseUrl": "http://localhost:3000",
     "settings": {
-      "profile": "MODERATE",
-      "users": 6,
-      "durationSec": 25,
+      "profile": "BASELINE",
+      "users": 1,
       "endpointPaths": []
     }
   }

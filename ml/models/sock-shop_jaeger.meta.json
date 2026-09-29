@@ -7,69 +7,98 @@
     "z_network_rx_rate",
     "z_network_tx_rate"
   ],
-  "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T14:02:04.744242+00:00",
+  "trained_on_samples": 1606,
+  "trained_at": "2026-09-18T15:15:04.225490+00:00",
   "contamination": 0.01,
-  "n_estimators": 200,
+  "n_estimators": 100,
   "max_samples": "auto",
-  "threshold_p99": 0.0,
-  "train_score_mean": -0.28933396275361944,
+  "threshold_p99": -0.0,
+  "train_score_mean": -0.28976605807491623,
   "train_score_max": -0.0,
   "holdout": {
-    "samples": 392,
-    "flag_rate": 0.0,
-    "mean_score": -0.3063162612660388,
-    "max_score": -0.3063162612660387,
-    "from": "2026-09-17T00:48:13.108749+00:00",
-    "to": "2026-09-17T01:53:54.859981+00:00"
+    "samples": 401,
+    "flag_rate": 0.004987531172069825,
+    "mean_score": -0.3049752042612902,
+    "max_score": -0.0,
+    "from": "2026-09-17T00:54:33.276127+00:00",
+    "to": "2026-09-18T15:14:48.805770+00:00"
   },
   "algorithms": {
     "iforest": {
-      "threshold_p99": 0.0,
-      "train_score_mean": -0.28933396275361944,
+      "threshold_p99": -0.0,
+      "train_score_mean": -0.28976605807491623,
       "train_score_max": -0.0,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3063162612660388,
-        "max_score": -0.3063162612660387,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 401,
+        "flag_rate": 0.004987531172069825,
+        "mean_score": -0.3049752042612902,
+        "max_score": -0.0,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_jaeger.joblib"
     },
-    "zscore": {
-      "threshold_p99": 4.668050736058746,
-      "train_score_mean": 0.5859890104583247,
-      "train_score_max": 44.26059195266145,
+    "lof": {
+      "error": "ValueError: only 5 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0005434185304853401,
+      "train_score_mean": 0.004331146703923943,
+      "train_score_max": 3.756685283164421,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": 0.24618298195866545,
-        "max_score": 0.2461829819586654,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 401,
+        "flag_rate": 0.1172069825436409,
+        "mean_score": 0.5052494562639044,
+        "max_score": 4.756685283164421,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
+      },
+      "artifact": "sock-shop_jaeger.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.147781811398333,
+      "train_score_mean": 0.5458294972692386,
+      "train_score_max": 39.07047714126448,
+      "holdout": {
+        "samples": 401,
+        "flag_rate": 0.0024937655860349127,
+        "mean_score": 0.6483789767041339,
+        "max_score": 21.877959041639976,
+        "from": "2026-09-17T00:54:33.276127+00:00",
+        "to": "2026-09-18T15:14:48.805770+00:00"
       },
       "artifact": "sock-shop_jaeger.zscore.joblib"
     }
   },
   "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.8877805486284289,
+      "jaccard": 0.0425531914893617,
+      "both_flagged": 2,
+      "either_flagged": 47
+    },
     "iforest|zscore": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
+      "same_verdict_rate": 0.9925187032418953,
+      "jaccard": 0.0,
       "both_flagged": 0,
-      "either_flagged": 0
+      "either_flagged": 3
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.885286783042394,
+      "jaccard": 0.02127659574468085,
+      "both_flagged": 1,
+      "either_flagged": 47
     }
   },
   "data_quality": {
-    "rows": 1568,
+    "rows": 1606,
     "unique_rows": 5,
-    "unique_fraction": 0.0031887755102040817,
+    "unique_fraction": 0.00311332503113325,
     "feature_std": {
-      "z_cpu_percent": 1.1095317057482432,
-      "z_memory_percent": 1.1116020052802216,
-      "z_network_rx_rate": 1.1179198046354317,
-      "z_network_tx_rate": 1.1179626468879231
+      "z_cpu_percent": 1.1004198325925905,
+      "z_memory_percent": 0.9581899766657563,
+      "z_network_rx_rate": 0.9994833203827357,
+      "z_network_tx_rate": 0.9753903567977196
     }
   },
   "training_window": {
