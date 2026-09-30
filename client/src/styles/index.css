@@ -393,3 +393,132 @@ p {
   font-size: 12px;
   color: var(--color-text-muted);
 }
+
+/* ---------------------------------------------------------------------------
+   Sidebar navigation.
+
+   These live here rather than inline because the nav needs real :hover and
+   :focus-visible states — the items are buttons, and keyboard focus has to be
+   visible to someone who never touches a mouse.
+   --------------------------------------------------------------------------- */
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  /* The list is taller than a short viewport. Without this it silently clips
+     the last items and they become unreachable. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.sidebar-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 9px 3px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.sidebar-item:hover {
+  color: var(--color-text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--color-accent-cyan);
+  outline-offset: -2px;
+  color: var(--color-text-main);
+}
+
+.sidebar-item.active {
+  color: var(--color-accent-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+/* The active marker: a bar on the rail's edge, aligned to the item. */
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 22px;
+  width: 3px;
+  background: var(--color-accent-cyan);
+  box-shadow: 2px 0 10px var(--color-accent-cyan);
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.sidebar-item-label {
+  width: 100%;
+  font-size: 8.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.sidebar-item.active .sidebar-item-label {
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* Separates the three groups without spending vertical space on headings —
+   at 80px wide there is no room for section titles. */
+.sidebar-group-sep {
+  height: 1px;
+  margin: 7px 16px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.sidebar-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 0 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-accent-magenta);
+  font-family: inherit;
+  transition: color var(--transition-fast);
+}
+
+.sidebar-add-btn:hover,
+.sidebar-add-btn:focus-visible {
+  color: #fff;
+}
+
+.sidebar-add-btn:focus-visible {
+  outline: 2px solid var(--color-accent-magenta);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
