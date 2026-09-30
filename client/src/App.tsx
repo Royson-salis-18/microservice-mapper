@@ -20,6 +20,7 @@ import { TerminalPanel } from './components/TerminalPanel';
 import { TracesView } from './components/TracesView';
 import { MLPipelineView } from './components/MLPipelineView';
 import { FindingsView } from './components/FindingsView';
+import { ReliabilityView } from './components/ReliabilityView';
 import { ProjectSections } from './components/ProjectSections';
 import { computeLayout2D, type Layout2DId } from './components/layouts2d';
 import type { ServiceNode, DependencyEdge } from './types';
@@ -343,6 +344,8 @@ export default function App() {
           <MLPipelineView selectedProject={selectedProjectId} />
         ) : activeTab === 'FINDINGS' ? (
           <FindingsView selectedProject={selectedProjectId} />
+        ) : activeTab === 'RELIABILITY' ? (
+          <ReliabilityView selectedProject={selectedProjectId} nodes={nodes} />
         ) : (
           <ReactFlowProvider>
             <GraphControls 

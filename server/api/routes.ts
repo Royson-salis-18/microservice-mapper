@@ -11,6 +11,7 @@ import type { WebSocketManager } from './websocket.js';
 import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
+import type { RiskEngine } from '../graph/RiskEngine.js';
 import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 
@@ -41,7 +42,7 @@ function coerceLoad(raw: { users?: unknown; maxConcurrency?: unknown; durationSe
   return out;
 }
 
-export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManager, incidentManager?: IncidentManager, trafficController?: TrafficController, experimentManager?: ExperimentManager) {
+export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManager, incidentManager?: IncidentManager, trafficController?: TrafficController, experimentManager?: ExperimentManager, riskEngine?: RiskEngine) {
   const router = Router();
   const analytics = new GraphAnalytics(graphStore);
 
@@ -128,6 +129,16 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
 
   router.get('/analytics', (_req, res) => {
     res.json(analytics.getAnalytics());
+  });
+
+  // Read-only: a BFS over already-observed traffic, nothing touches the
+  // target. Ranked risk scores need no endpoint of their own — every node
+  // already carries analytics.riskScore via /api/graph.
+  router.get('/reliability/blast-radius/:nodeId', (req, res) => {
+    if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
+    const result = riskEngine.simulateBlastRadius(req.params.nodeId);
+    if (!result) return res.status(404).json({ error: 'Node not found' });
+    res.json(result);
   });
 
 

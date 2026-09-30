@@ -64,14 +64,24 @@ export interface ServiceNode {
     };
   } | null;
   analytics?: {
+    // healthScore/riskScore/criticality/centrality/upstreamCount/downstreamCount
+    // are computed server-side every poll cycle by RiskEngine — see
+    // server/graph/RiskEngine.ts. healthBreakdown is the named factors behind
+    // healthScore/riskScore, same style as CandidateCause.scoreBreakdown below.
     healthScore?: number | null;
+    /** Current exposure — half current health, half how much observed
+     *  traffic structurally depends on this node. Not a predicted probability. */
     riskScore?: number | null;
+    /** Deliberately never populated — would need labelled failure outcomes
+     *  this system doesn't collect. See server/models/ServiceNode.ts. */
     failureProbability?: number | null;
+    /** Deliberately never populated — same reason as failureProbability. */
     affectedProbability?: number | null;
     criticality?: number | null;
     centrality?: number | null;
     upstreamCount?: number;
     downstreamCount?: number;
+    healthBreakdown?: ScoreContribution[];
     anomalyScore?: number;
     anomalyPersistent?: boolean;
   };
