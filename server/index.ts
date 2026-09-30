@@ -8,6 +8,7 @@ import { config } from './config.js';
 import { createRouter } from './api/routes.js';
 import { WebSocketManager } from './api/websocket.js';
 import { GraphStore } from './graph/GraphStore.js';
+import { RiskEngine } from './graph/RiskEngine.js';
 
 import { IncidentManager } from './rca/IncidentManager.js';
 import { TrafficController } from './traffic/TrafficController.js';
@@ -40,6 +41,7 @@ async function main() {
 
   const graphStore = new GraphStore(wsManager);
   const incidentManager = new IncidentManager(graphStore);
+  const riskEngine = new RiskEngine(graphStore);
   const trafficController = new TrafficController(graphStore);
   const experimentManager = new ExperimentManager(graphStore, graphStore.metricStore, trafficController);
   trafficController.onStatsCallback = (targetId, stats) => experimentManager.updateExperimentStats(targetId, stats);
@@ -47,7 +49,7 @@ async function main() {
   // someone clicks Stop. Without this, the experiment record and the
   // traffic status UI would both keep reporting it as live forever.
   trafficController.onStoppedCallback = (targetId) => experimentManager.stopExperiment(targetId, 'STOPPED');
-  app.use('/api', createRouter(graphStore, wsManager, incidentManager, trafficController, experimentManager));
+  app.use('/api', createRouter(graphStore, wsManager, incidentManager, trafficController, experimentManager, riskEngine));
 
   server.listen(Number(config.PORT), '0.0.0.0', () => {
     // Auto-detect local network IP for MAPPER_PUBLIC_URL hint
@@ -80,12 +82,15 @@ async function main() {
     console.log(`Polling interval: ${config.POLLING_INTERVAL_MS}ms (Remote Telemetry Mode)`);
   });
 
-  // Periodic RCA Evaluation Cycle & Broadcast
-  setInterval(() => {
+  // Periodic RCA evaluation, risk recompute, and broadcast.
+  //
+  // Order matters: incidents run first so RiskEngine's "is this node part of
+  // an open incident" factor reflects this cycle rather than lagging by one
+  // poll, and risk runs before the broadcast so /api/graph and graph-update
+  // both go out already carrying it. Runs once immediately (not just on the
+  // first timer tick) so the first broadcast after boot isn't 5s stale.
+  function runPollingCycle() {
     try {
-      wsManager.broadcast('graph-update', graphStore.getGraph());
-
-      // Target-isolated RCA Evaluation
       const targets = graphStore.getGraph().targets;
       for (const target of targets) {
         const incident = incidentManager.evaluateTarget(target.targetId);
@@ -93,10 +98,17 @@ async function main() {
           wsManager.broadcast('incident.updated', incident);
         }
       }
+
+      riskEngine.recomputeAll(incidentManager.getAllActiveIncidents());
+
+      wsManager.broadcast('graph-update', graphStore.getGraph());
     } catch (e) {
       console.error('Error during polling cycle:', e);
     }
-  }, config.POLLING_INTERVAL_MS);
+  }
+
+  runPollingCycle();
+  setInterval(runPollingCycle, config.POLLING_INTERVAL_MS);
 }
 
 // A long-running collector polls hosts that are frequently unreachable. A

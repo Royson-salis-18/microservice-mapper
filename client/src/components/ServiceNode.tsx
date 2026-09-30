@@ -108,6 +108,31 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
         }}
       />
 
+      {(data.analytics?.riskScore ?? 0) > 0.6 && (
+        <div
+          title={`Risk ${((data.analytics?.riskScore ?? 0) * 100).toFixed(0)}% — current exposure, not a predicted probability. See the Reliability tab for the breakdown.`}
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            left: '-8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            background: (data.analytics!.riskScore! > 0.8) ? 'rgba(255, 23, 68, 0.15)' : 'rgba(255, 171, 0, 0.15)',
+            border: `1px solid ${(data.analytics!.riskScore! > 0.8) ? 'var(--color-critical)' : 'var(--color-degraded)'}`,
+            borderRadius: '10px',
+            padding: '2px 6px',
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.5px',
+            color: (data.analytics!.riskScore! > 0.8) ? 'var(--color-critical)' : 'var(--color-degraded)',
+            zIndex: 2,
+          }}
+        >
+          RISK {((data.analytics?.riskScore ?? 0) * 100).toFixed(0)}%
+        </div>
+      )}
+
       {data.analytics?.anomalyPersistent && (
         <div
           title={`Isolation Forest: anomaly score ${((data.analytics?.anomalyScore ?? 0) * 100).toFixed(0)}%, sustained over multiple windows`}
