@@ -90,7 +90,14 @@ export function Panel({
   return (
     <section style={{
       background: 'var(--color-bg-panel)',
-      border: '1px solid var(--color-border)',
+      // Longhand rather than the `border` shorthand: callers spread their own
+      // `style` over this, and a caller passing `borderTop` alone would leave
+      // React diffing a shorthand against a longhand for the same value, which
+      // it warns about. Four longhands merge cleanly with whatever arrives.
+      borderTop: '1px solid var(--color-border)',
+      borderRight: '1px solid var(--color-border)',
+      borderBottom: '1px solid var(--color-border)',
+      borderLeft: '1px solid var(--color-border)',
       borderRadius: '14px',
       padding: `${SPACE.card}px ${SPACE.card + 2}px`,
       ...style,
