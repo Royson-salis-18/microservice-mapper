@@ -1,0 +1,1568 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>Microservice Mapper | Visual Wiki & Interactive Master Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <style>
+  :root {
+    --bg:        #f6f7f9;
+    --panel:     #ffffff;
+    --panel-2:   #eceff4;
+    --ink:       #141413;
+    --ink-2:     #334155;
+    --muted:     #76828f;
+    --faint:     #97a1af;
+    --rule:      #dbe0e8;
+    --rule-2:    #e9ecf2;
+
+    --sig:       #00e5ff;
+    --sig-bg:    rgba(0, 229, 255, 0.12);
+    --ok:        #0a7a46;
+    --warn:      #96620a;
+    --err:       #b41f3c;
+    --t0:        #626d7d;
+    --t1:        #96620a;
+    --t2:        #0a7ea4;
+
+    --body: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:      #05080d;
+      --panel:   #0b1119;
+      --panel-2: #121a25;
+      --ink:     #e6ecf4;
+      --ink-2:   #aeb9c8;
+      --muted:   #76828f;
+      --faint:   #545e6c;
+      --rule:    #1a2430;
+      --rule-2:  #131b25;
+      --sig:     #3ec8ee;
+      --sig-bg:  #3ec8ee14;
+      --ok:      #35d38b;
+      --warn:    #f0ab2e;
+      --err:     #ff5f7a;
+      --t0:      #76828f;
+      --t1:      #f0ab2e;
+      --t2:      #3ec8ee;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:      #05080d;  --panel:   #0b1119;  --panel-2: #121a25;
+    --ink:     #e6ecf4;  --ink-2:   #aeb9c8;  --muted:   #76828f;
+    --faint:   #545e6c;  --rule:    #1a2430;  --rule-2:  #131b25;
+    --sig:     #3ec8ee;  --sig-bg:  #3ec8ee14;
+    --ok:      #35d38b;  --warn:    #f0ab2e;  --err:     #ff5f7a;
+    --t0:      #76828f;  --t1:      #f0ab2e;  --t2:      #3ec8ee;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; margin: 0; padding: 0; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 0 90px; }
+
+  .hd { padding-block: 54px 26px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+  .hd .eye { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sig); margin-bottom: 14px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.03em; line-height: 1.05; margin: 0 0 14px; color: var(--ink); }
+  .hd p, .lead { color: var(--ink-2); max-width: 76ch; margin: 0 0 14px; font-size: 15px; }
+
+  .metadata-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; margin-bottom: 14px; }
+  .meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 7px; padding-block: 22px 8px; }
+  .toc a {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em;
+    color: var(--muted); text-decoration: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 5px 11px;
+    background: var(--panel); transition: all 0.2s;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--sig); border-color: var(--sig); outline: none; background: var(--panel-2); }
+
+  section { padding-block: 44px 0; scroll-margin-top: 20px; }
+  h2 {
+    font-size: 24px; font-weight: 700; letter-spacing: -.022em; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;
+    color: var(--ink); border-bottom: 1px solid var(--rule); padding-bottom: 8px;
+  }
+  h2 .id { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--sig); letter-spacing: .06em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 9px; letter-spacing: -.008em; color: var(--ink); }
+  h4 { font-size: 13.5px; font-weight: 600; margin: 18px 0 7px; color: var(--ink-2); }
+  p { margin: 0 0 14px; max-width: 76ch; color: var(--ink-2); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  a {
+    color: var(--sig);
+    text-decoration: underline;
+    text-decoration-color: rgba(62, 200, 238, 0.4);
+    text-underline-offset: 3px;
+    font-weight: 500;
+  }
+  a:hover {
+    color: var(--sig);
+    text-decoration-color: var(--sig);
+  }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--panel-2); padding: 1.5px 5px; border-radius: 4px; color: var(--ink);
+  }
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.62;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 16px; color: var(--ink-2);
+  }
+  pre b { color: var(--sig); font-weight: 500; }
+  pre i { color: var(--muted); font-style: normal; }
+  pre .g { color: var(--ok); }
+  pre .r { color: var(--err); }
+
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; }
+
+  .t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .t th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+    padding: 0 14px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  .t td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; color: var(--ink-2); }
+  .t tr:last-child td { border-bottom: none; }
+  .t td:first-child { color: var(--ink); font-weight: 500; }
+  .t code { background: none; padding: 0; color: var(--sig); }
+  .scroll { overflow-x: auto; margin: 1rem 0; }
+
+  .box { border-radius: 9px; padding: 16px 19px; margin: 18px 0; border: 1px solid var(--rule); background: var(--panel); }
+  .box.why  { border-left: 3px solid var(--sig); }
+  .box.trap { border-left: 3px solid var(--err); }
+  .box.perf { border-left: 3px solid var(--ok); }
+  .box h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--mono); font-weight: 500; }
+  .box.why h4  { color: var(--sig); }
+  .box.trap h4 { color: var(--err); }
+  .box.perf h4 { color: var(--ok); }
+  .box p { font-size: 14px; margin-bottom: 10px; }
+  .box p:last-child { margin-bottom: 0; }
+
+  /* Plain English Code Explainer Box */
+  .code-explainer-box {
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--sig);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: -8px 0 20px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .code-explainer-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sig);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .code-explainer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .code-explainer-col {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .code-explainer-col strong {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .m { background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; padding: 15px 16px; }
+  .m .v { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-bottom: 3px; color: var(--ink); }
+  .m .v s { text-decoration: none; color: var(--faint); font-size: 14px; font-weight: 400; }
+  .m .k { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .m.ok .v { color: var(--ok); } .m.err .v { color: var(--err); }
+
+  figure { margin: 0 0 16px; }
+  figure:last-child { margin-bottom: 0; }
+  .fx { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; overflow-x: auto; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.55; max-width: 76ch; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+  .s-n { font-family: var(--body); font-size: 12px; font-weight: 500; fill: var(--ink); }
+  .s-m { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); }
+  .s-s { font-family: var(--body); font-size: 11px; fill: var(--muted); }
+
+  ul { margin: 0 0 14px; padding-left: 20px; color: var(--ink-2); max-width: 76ch; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--faint); }
+
+  .pill { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .pill.t0 { background: color-mix(in srgb, var(--t0) 15%, transparent); color: var(--t0); }
+  .pill.t1 { background: color-mix(in srgb, var(--t1) 15%, transparent); color: var(--t1); }
+  .pill.t2 { background: color-mix(in srgb, var(--t2) 15%, transparent); color: var(--t2); }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
+  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid rgba(0, 229, 255, 0.3); }
+  .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-orange { background: rgba(245, 158, 11, 0.15); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--err); border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
+  .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+  /* Flowchart / Architecture Styles */
+  .flow-container { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .flow-layer { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+  .flow-layer-title { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+  .flow-node-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; }
+  .flow-node-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; text-decoration: none; color: inherit; display: block; transition: all 0.2s; }
+  .flow-node-card:hover { border-color: var(--sig); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .flow-node-card.highlighted { border-color: var(--sig); box-shadow: 0 0 14px var(--sig); transform: scale(1.02); }
+  .flow-node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .flow-node-name { font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+  .flow-node-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-bottom: 0.6rem; }
+  .flow-node-footer { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); }
+  .flow-arrow-down { text-align: center; color: var(--sig); font-family: var(--mono); font-size: 0.8rem; margin: 0.6rem 0; font-weight: 600; letter-spacing: 0.1em; }
+
+  /* Interactive Lab Box */
+  .interactive-lab { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--sig); border-radius: 10px; padding: 1.5rem; margin: 2rem 0; }
+  .lab-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.6rem; }
+  .lab-btn { background: var(--sig); color: #070b14; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .lab-btn:hover { filter: brightness(1.2); box-shadow: 0 0 12px var(--sig-bg); transform: translateY(-1px); }
+  .lab-output { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); min-height: 60px; }
+
+  /* Grid Cards on Hub */
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+  .feature-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+  .feature-card:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+  .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+  .feature-card-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+  .feature-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+  .feature-card-footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); font-weight: 600; }
+
+  /* Chronological Stepper */
+  .chrono-timeline { position: relative; margin: 2rem 0; padding-left: 1.8rem; }
+  .chrono-timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: linear-gradient(to bottom, var(--sig), #c084fc, var(--ok)); }
+  .chrono-step { position: relative; margin-bottom: 1.6rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; transition: all 0.2s; }
+  .chrono-step:hover { border-color: var(--sig); transform: translateX(4px); }
+  .chrono-step::before { content: ''; position: absolute; top: 1.2rem; left: -2.15rem; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--sig); box-shadow: 0 0 8px var(--sig); }
+  .step-num { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--sig); letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  .step-title { font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+
+  /* Page Navigation Footer */
+  .page-nav-footer { display: flex; justify-content: space-between; gap: 1.5rem; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
+  .page-nav-btn { flex: 1; min-width: 240px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.2rem; text-decoration: none; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; }
+  .page-nav-btn:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); }
+  .page-nav-btn.next { text-align: right; }
+  .page-nav-label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; }
+  .page-nav-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr !important; } }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+    <div class="wrap">
+        
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-block: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div style="font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;">
+        <a href="index.html" style="color: var(--ink); text-decoration: none;">Wiki Visualizer</a>
+        <span>/</span>
+        <span>1. Master Hub &amp; Foundations</span>
+        <span>/</span>
+        <span style="color: var(--sig); font-weight: 600;">Master Hub</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <select id="quick-jump" class="quick-jump-select" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;" title="Jump directly to any document">
+<option value="" disabled selected>⚡ Jump to document...</option>
+<optgroup label="1. Master Hub &amp; Foundations">
+<option value="index.html" selected>Master Visual Wiki &amp; Architecture ...</option>
+<option value="architecture-map.html">Master Architecture Flowchart Map</option>
+<option value="19-how-it-all-works.html">19 — How It All Works (Plain &amp; Det...</option>
+<option value="01-overview.html">01 — Overview &amp; Design Philosophy</option>
+<option value="02-architecture.html">02 — System Layers &amp; Data Flow</option>
+<option value="readme.html">Project README &amp; Quickstart</option>
+<option value="wiki-deep-dive.html">Complete System Wiki (30 Sections)</option>
+<option value="wiki-index.html">Wiki Table of Contents</option>
+</optgroup>
+<optgroup label="2. Core Graph Engine">
+<option value="03-graphstore.html">03 — GraphStore Central Nervous Sy...</option>
+<option value="04-id-system.html">04 — Node &amp; Edge ID System</option>
+<option value="05-telemetry-ingestion.html">05 — Telemetry Ingestion Pipeline</option>
+<option value="06-node-edge-lifecycle.html">06 — Node &amp; Edge Lifecycle</option>
+</optgroup>
+<optgroup label="3. Connection &amp; Discovery">
+<option value="21-connection-layer.html">21 — Connection Layer &amp; Target Agent</option>
+<option value="23-endpoint-discovery.html">23 — Endpoint Discovery Engine</option>
+</optgroup>
+<optgroup label="4. Remote Collection">
+<option value="07-remote-collector.html">07 — Remote Collector Daemon</option>
+<option value="25-telemetry-sources.html">25 — Telemetry Sources &amp; Ingestion</option>
+<option value="18-telemetry-tiers-plan.html">18 — Telemetry Tiers Plan (0, 1, 2)</option>
+<option value="telemetry-platform-readme.html">Telemetry Platform Daemon Readme</option>
+</optgroup>
+<optgroup label="5. RCA &amp; Risk">
+<option value="08-rca-engine.html">08 — RCA Engine &amp; Incident Manager</option>
+<option value="22-risk-engine.html">22 — Risk Engine &amp; Centrality Scor...</option>
+<option value="17-findings-vs-incidents.html">17 — Findings vs Incidents Archite...</option>
+</optgroup>
+<optgroup label="6. Frontend &amp; UI">
+<option value="09-frontend.html">09 — Frontend Architecture &amp; 2D/3D...</option>
+<option value="24-client-frontend.html">24 — Client Frontend &amp; 3D Spatial ...</option>
+<option value="10-websocket.html">10 — WebSocket &amp; Real-Time Streaming</option>
+<option value="traces-section-prompt.html">Traces Section Specification</option>
+</optgroup>
+<optgroup label="7. Traffic &amp; ML Pipeline">
+<option value="20-traffic-experiments.html">20 — Traffic Controller &amp; Load Gen...</option>
+<option value="traffic-gen-readme.html">Traffic Generator Readme</option>
+<option value="11-ml-pipeline.html">11 — ML Anomaly Detection Pipeline</option>
+<option value="26-ml-pipeline-deep-dive.html">26 — ML Pipeline Deep Dive (Code-L...</option>
+<option value="ml-readme.html">ML Subsystem Readme</option>
+</optgroup>
+<optgroup label="8. Reference &amp; Operations">
+<option value="27-project-technical-reference.html">27 — Engineering Manual &amp; Technica...</option>
+<option value="28-mapper-technical-reference.html">28 — Mapper Technical Reference (1...</option>
+<option value="12-data-models.html">12 — Data Models &amp; Schemas</option>
+<option value="13-api-reference.html">13 — API Reference</option>
+<option value="14-configuration.html">14 — Configuration Reference</option>
+<option value="15-troubleshooting.html">15 — Troubleshooting Runbook</option>
+<option value="16-change-log-and-rationale.html">16 — Change Log &amp; Design Rationale</option>
+</optgroup>
+</select>
+        <button id="theme-toggle-btn" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;">🌓 Mode</button>
+        <a href="architecture-map.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🗺 Architecture Map</a>
+        <a href="index.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🏠 Master Hub</a>
+      </div>
+    </div>
+    
+
+        <header class="hd">
+            <div class="eye">Autonomous Observability &middot; Visual Reference &middot; 2026</div>
+            <h1>Microservice Mapper</h1>
+            <p class="lead">
+                The authoritative visual reference, engineering manual, and interactive learning visualizer for Microservice Mapper — an autonomous, zero-instrumentation observability platform for Docker microservices on AWS EC2.
+            </p>
+            <div class="strip">
+                <div class="m"><div class="v">37</div><div class="k">Interactive documentation modules</div></div>
+                <div class="m ok"><div class="v">5.0 s</div><div class="k">Continuous telemetry loop & pulse</div></div>
+                <div class="m"><div class="v">3 Tiers</div><div class="k">Data provenance (Kernel / Logs / Prom)</div></div>
+                <div class="m ok"><div class="v">97&times;</div><div class="k">Tail CSV feature table read speedup</div></div>
+            </div>
+            <nav class="toc">
+                <a href="#master-architecture-map">01 Master Architecture Flowchart</a>
+                <a href="#interactive-topology-lab">02 Live Multi-Mode Sandbox</a>
+                <a href="#chronological-architecture-guide">03 Chronological Progression</a>
+                <a href="#documentation-directory">04 Documentation Catalog</a>
+            </nav>
+        </header>
+
+        <!-- Master Interactive Architecture Flowchart -->
+        <section id="master-architecture-map">
+            <h2><span class="id">01</span> End-to-End System Architecture Flowchart</h2>
+            <p class="lead">
+                Every subsystem mapped out with directional data flows. Click any card below to navigate directly into its specific deep-dive documentation:
+            </p>
+            
+    <div class="flow-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3 style="margin: 0; color: var(--ink); font-size: 1.1rem;">🗺️ End-to-End System Flowchart</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Click any component below to jump directly into its dedicated technical documentation module:</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="lab-btn flow-trace-btn" data-flow="TELEMETRY" style="font-size: 11px; padding: 4px 10px;">⚡ Trace Telemetry Flow</button>
+                <button class="lab-btn flow-trace-btn" data-flow="RCA" style="font-size: 11px; padding: 4px 10px; background: var(--err); color: #fff;">🚨 Trace Incident RCA Flow</button>
+                <button class="lab-btn flow-trace-btn" data-flow="ML" style="font-size: 11px; padding: 4px 10px; background: var(--purple); color: #070b14;">🧠 Trace ML Drift Flow</button>
+                <button class="lab-btn flow-trace-btn" data-flow="RESET" style="font-size: 11px; padding: 4px 10px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--rule);">🔄 Reset View</button>
+            </div>
+        </div>
+
+        <!-- Layer 1: Target Host Data Plane -->
+        <div class="flow-layer" id="layer-target" style="border-left: 3px solid var(--sig);">
+            <div class="flow-layer-title">
+                <span>1. Target Host Data Plane (Zero-Touch EC2 & Docker Compose)</span>
+                <span class="badge badge-cyan">PORT 22 &bull; ZERO AGENT</span>
+            </div>
+            <div class="flow-node-grid">
+                <a href="21-connection-layer.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🖥️ AWS EC2 Host</span>
+                        <span class="badge badge-blue">SSH2:22</span>
+                    </div>
+                    <div class="flow-node-desc">Remote target running microservice containers under Docker Compose.</div>
+                    <div class="flow-node-footer">
+                        <span>21-connection-layer</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="07-remote-collector.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">⚙️ Remote Collector Daemon</span>
+                        <span class="badge badge-purple">NODE DAEMON</span>
+                    </div>
+                    <div class="flow-node-desc">Autonomous daemon polling kernel socket tables and docker.sock frames.</div>
+                    <div class="flow-node-footer">
+                        <span>07-remote-collector</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="25-telemetry-sources.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🔬 /proc/net/tcp Demuxer</span>
+                        <span class="badge badge-green">TIER 0</span>
+                    </div>
+                    <div class="flow-node-desc">Reads socket inodes to detect active ESTABLISHED connections without APM.</div>
+                    <div class="flow-node-footer">
+                        <span>25-telemetry-sources</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="18-telemetry-tiers-plan.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">📦 Docker Access Log Parser</span>
+                        <span class="badge badge-orange">TIER 1</span>
+                    </div>
+                    <div class="flow-node-desc">Demuxes 8-byte framed streams from /var/run/docker.sock for HTTP codes.</div>
+                    <div class="flow-node-footer">
+                        <span>18-telemetry-tiers-plan</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="flow-arrow-down">⬇️ Reverse SSH2 Encrypted Tunnel (Port 3001) ⬇️</div>
+
+        <!-- Layer 2: Transport & Central Server Ingestion -->
+        <div class="flow-layer" id="layer-server" style="border-left: 3px solid #38bdf8;">
+            <div class="flow-layer-title">
+                <span>2. Central Server Ingestion & Concurrency Core (Express 5 & TSX)</span>
+                <span class="badge badge-blue">PORT 3001 &bull; REVERSE TUNNEL</span>
+            </div>
+            <div class="flow-node-grid">
+                <a href="05-telemetry-ingestion.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">⚡ 8-Stage Ingestion Pipeline</span>
+                        <span class="badge badge-green">POST /ingest</span>
+                    </div>
+                    <div class="flow-node-desc">Validates Bearer token, unpacks envelopes, and feeds state engines.</div>
+                    <div class="flow-node-footer">
+                        <span>05-telemetry-ingestion</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="04-id-system.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🔑 Canonical ID Resolver</span>
+                        <span class="badge badge-red">normalizeId()</span>
+                    </div>
+                    <div class="flow-node-desc">Eliminates ghost duplicates by hashing compose names to canonical keys.</div>
+                    <div class="flow-node-footer">
+                        <span>04-id-system</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="03-graphstore.html" class="flow-node-card flow-node" data-tags="telemetry,rca,ml">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🧠 In-Memory GraphStore</span>
+                        <span class="badge badge-cyan">CENTRAL NERVOUS</span>
+                    </div>
+                    <div class="flow-node-desc">Central Map&lt;string, Node&gt; tracking topology, status, and edge heat.</div>
+                    <div class="flow-node-footer">
+                        <span>03-graphstore</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="06-node-edge-lifecycle.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🔄 MetricStore Ring Buffers</span>
+                        <span class="badge badge-purple">1H BUFFER</span>
+                    </div>
+                    <div class="flow-node-desc">Circular 1-hour buffers holding 10,000 metrics events with zero leak.</div>
+                    <div class="flow-node-footer">
+                        <span>06-node-edge-lifecycle</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="flow-arrow-down">⬇️ Internal Event Emitter & Analysis Bus ⬇️</div>
+
+        <!-- Layer 3: Automated Intelligence & RCA Engines -->
+        <div class="flow-layer" id="layer-intel" style="border-left: 3px solid var(--err);">
+            <div class="flow-layer-title">
+                <span>3. Intelligence, Anomaly Detection & RCA Core</span>
+                <span class="badge badge-red">ANOMALY ENGINE</span>
+            </div>
+            <div class="flow-node-grid">
+                <a href="22-risk-engine.html" class="flow-node-card flow-node" data-tags="rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🛡️ Risk Engine & Centrality</span>
+                        <span class="badge badge-red">BLAST RADIUS</span>
+                    </div>
+                    <div class="flow-node-desc">Computes Betweenness Centrality and flags Single Points of Failure (SPOFs).</div>
+                    <div class="flow-node-footer">
+                        <span>22-risk-engine</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="08-rca-engine.html" class="flow-node-card flow-node" data-tags="rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🎯 RCA Incident Engine</span>
+                        <span class="badge badge-red">BFS CASCADE</span>
+                    </div>
+                    <div class="flow-node-desc">4-factor weighted scoring + reverse BFS dependency traversal.</div>
+                    <div class="flow-node-footer">
+                        <span>08-rca-engine</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="11-ml-pipeline.html" class="flow-node-card flow-node" data-tags="ml">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🤖 Python ML Sidecar</span>
+                        <span class="badge badge-purple">IFOREST / LOF</span>
+                    </div>
+                    <div class="flow-node-desc">4 unsupervised models detecting metric drift with 97x tail CSV speedup.</div>
+                    <div class="flow-node-footer">
+                        <span>11-ml-pipeline</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="17-findings-vs-incidents.html" class="flow-node-card flow-node" data-tags="rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">📋 Findings vs Incidents</span>
+                        <span class="badge badge-orange">TAXONOMY</span>
+                    </div>
+                    <div class="flow-node-desc">Clear separation of static architectural findings from live incidents.</div>
+                    <div class="flow-node-footer">
+                        <span>17-findings-vs-incidents</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="flow-arrow-down">⬇️ Real-Time WebSocket Frames & REST API (Port 5173 / 4400) ⬇️</div>
+
+        <!-- Layer 4: Presentation, Traffic Gen & Visualization -->
+        <div class="flow-layer" id="layer-presentation" style="border-left: 3px solid var(--ok);">
+            <div class="flow-layer-title">
+                <span>4. Presentation & Real-Time Visualization (React 19 & Three.js)</span>
+                <span class="badge badge-green">VITE :5173</span>
+            </div>
+            <div class="flow-node-grid">
+                <a href="09-frontend.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">📊 2D XYFlow Graph Canvas</span>
+                        <span class="badge badge-cyan">@XYFLOW/REACT</span>
+                    </div>
+                    <div class="flow-node-desc">Interactive 2D graph with auto-layout and service health indicators.</div>
+                    <div class="flow-node-footer">
+                        <span>09-frontend</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="24-client-frontend.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🌐 3D Spatial Mesh Canvas</span>
+                        <span class="badge badge-purple">THREE.JS 3D</span>
+                    </div>
+                    <div class="flow-node-desc">Spatial node orbits, live request packet pulses, and camera controls.</div>
+                    <div class="flow-node-footer">
+                        <span>24-client-frontend</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="10-websocket.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">⚡ WebSocket Broadcaster</span>
+                        <span class="badge badge-green">WS PUSH</span>
+                    </div>
+                    <div class="flow-node-desc">Sub-second delta broadcasting and SSH terminal multiplexing.</div>
+                    <div class="flow-node-footer">
+                        <span>10-websocket</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+
+                <a href="20-traffic-experiments.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">🚦 Traffic Generator (Port 4400)</span>
+                        <span class="badge badge-orange">LOAD GEN</span>
+                    </div>
+                    <div class="flow-node-desc">Simulates real user workflows to generate runtime telemetry.</div>
+                    <div class="flow-node-footer">
+                        <span>20-traffic-experiments</span>
+                        <span>Explore →</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+        </section>
+
+        <!-- Master Multi-Mode Topology Simulator matching Screenshots -->
+        <section id="interactive-topology-lab">
+            <h2><span class="id">02</span> Master Multi-Mode Topology Simulator & Sandbox</h2>
+            <p class="lead">Interactive simulator reproducing the 2D XYFlow graph, 2D Circular Ring, and 3D Spatial Canvas layouts with live packet animators and failure injection:</p>
+
+            <div class="interactive-lab">
+                <div class="lab-title">🎮 Live Multi-Mode Topology Sandbox</div>
+                <p style="color: var(--ink-2); font-size: 0.88rem; margin-bottom: 1rem;">
+                    Watch live request packet pulses travel between services. Click fault injection to watch status halos, CPU meters, and RCA propagation respond in real time:
+                </p>
+
+                <div style="background: var(--panel-2); border-radius: 8px; padding: 1rem; border: 1px solid var(--rule); margin-bottom: 1.2rem; position: relative;">
+                    <canvas id="topo-canvas" style="width: 100%; display: block;"></canvas>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <button id="topo-btn-fault" class="lab-btn" style="background: var(--err); color: #fff;">⚡ Inject Payment CPU Spike (98.4%)</button>
+                    <button id="topo-btn-reset" class="lab-btn" style="background: var(--ok); color: #fff;">✓ Reset Healthy Baseline</button>
+                    <div id="topo-status-text" style="font-size: 0.88rem; color: var(--ink-2); margin-left: 10px;">
+                        <span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chronological Step-by-Step Architecture Guide -->
+        <section id="chronological-architecture-guide">
+            <h2><span class="id">03</span> The Engineering Progression: "First We Did This, Then We Did This"</h2>
+            <p class="lead">
+                Understanding the architecture as a logical chronological progression from raw target discovery to automated root-cause intelligence:
+            </p>
+
+            <div class="chrono-timeline">
+                <div class="chrono-step">
+                    <div class="step-num">Step 1 &bull; Infrastructure & Connection Layer</div>
+                    <div class="step-title">Zero-Touch SSH Discovery & Docker Compose Parsing</div>
+                    <p>
+                        <strong>First:</strong> We connect to the target EC2 instance via SSH (<a href="21-connection-layer.html">21-connection-layer.html</a>). The system scans the remote filesystem, locates <code>docker-compose.yml</code>, and extracts the <em>declared</em> microservice architecture without installing any agent packages beforehand.
+                    </p>
+                </div>
+
+                <div class="chrono-step">
+                    <div class="step-num">Step 2 &bull; Data Plane & Daemon Runtime</div>
+                    <div class="step-title">Deploy Remote Collector & Extract Host Telemetry</div>
+                    <p>
+                        <strong>Then:</strong> We spin up the lightweight <code>remote-collector</code> daemon (<a href="07-remote-collector.html">07-remote-collector.html</a>). It hooks into <code>/var/run/docker.sock</code> for live CPU/memory stats, demuxes the Docker 8-byte log framing to stream HTTP access logs, and reads <code>/proc/net/tcp</code> to detect live ESTABLISHED socket connections.
+                    </p>
+                </div>
+
+                <div class="chrono-step">
+                    <div class="step-num">Step 3 &bull; Ingestion Pipeline & Canonical GraphStore</div>
+                    <div class="step-title">Ingest Telemetry, Normalize Canonical IDs & Prune Ghosts</div>
+                    <p>
+                        <strong>Next:</strong> The telemetry envelope streams back via reverse SSH tunnel to the central server (<a href="05-telemetry-ingestion.html">05-telemetry-ingestion.html</a>). The <code>GraphStore</code> executes <code>normalizeId()</code> (<a href="04-id-system.html">04-id-system.html</a>) to eliminate ghost duplicates, merges declared vs observed dependencies, and buffers metrics in circular ring buffers.
+                    </p>
+                </div>
+
+                <div class="chrono-step">
+                    <div class="step-num">Step 4 &bull; Real-Time Frontend & 3D Visualization</div>
+                    <div class="step-title">Stream Live Graph State to 2D (XYFlow) & 3D (Three.js) UI</div>
+                    <p>
+                        <strong>After That:</strong> The server broadcasts updates over WebSockets (<a href="10-websocket.html">10-websocket.html</a>). The React 19 client (<a href="09-frontend.html">09-frontend.html</a>, <a href="24-client-frontend.html">24-client-frontend.html</a>) renders interactive 2D graphs and a Three.js 3D spatial view, animating live packet pulses across active edges.
+                    </p>
+                </div>
+
+                <div class="chrono-step">
+                    <div class="step-num">Step 5 &bull; Intelligence, RCA & Risk Scoring</div>
+                    <div class="step-title">Compute Blast Radius & Trace Root Cause Cascades via BFS</div>
+                    <p>
+                        <strong>Then:</strong> When performance drops, the <code>RiskEngine</code> (<a href="22-risk-engine.html">22-risk-engine.html</a>) computes vulnerability blast radius, and the <code>RCAEngine</code> (<a href="08-rca-engine.html">08-rca-engine.html</a>) evaluates 4-factor scoring across anomalous services, performing BFS propagation to isolate the root cause.
+                    </p>
+                </div>
+
+                <div class="chrono-step">
+                    <div class="step-num">Step 6 &bull; Traffic Generation & Python ML Sidecar</div>
+                    <div class="step-title">Automate Traffic Sweeps & Train Unsupervised Anomaly Detectors</div>
+                    <p>
+                        <strong>Finally:</strong> The <code>TrafficController</code> (<a href="20-traffic-experiments.html">20-traffic-experiments.html</a>) sweeps endpoints to generate synthetic load, while the Python ML sidecar (<a href="11-ml-pipeline.html">11-ml-pipeline.html</a>, <a href="26-ml-pipeline-deep-dive.html">26-ml-pipeline-deep-dive.html</a>) fits IsolationForest models on baseline metrics to uncover subtle metric drift.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentation-directory">
+            <h2><span class="id">04</span> Comprehensive Documentation Directory</h2>
+            <p class="lead">Explore all 36 numbered documentation modules, complete specifications, and operational manuals:</p>
+
+            <h2 id="1-master-hub-foundations">1. Master Hub & Foundations</h2>
+<div class="grid-cards">
+<a href="19-how-it-all-works.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">FOUNDATION</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">19-how-it-all-works.html</span>
+                    </div>
+                    <div class="feature-card-title">19 — How It All Works (Plain &amp; Detailed)</div>
+                    <div class="feature-card-desc">Plain English and detailed technical walkthrough of the entire platform.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="01-overview.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">FOUNDATION</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">01-overview.html</span>
+                    </div>
+                    <div class="feature-card-title">01 — Overview &amp; Design Philosophy</div>
+                    <div class="feature-card-desc">Autonomous zero-instrumentation topology discovery and RCA for Docker microservices.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="02-architecture.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">CORE ARCH</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">02-architecture.html</span>
+                    </div>
+                    <div class="feature-card-title">02 — System Layers &amp; Data Flow</div>
+                    <div class="feature-card-desc">The 4-layer architecture: Collection, Server Processing, Intelligence, and Frontend UI.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="readme.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">QUICKSTART</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">readme.html</span>
+                    </div>
+                    <div class="feature-card-title">Project README &amp; Quickstart</div>
+                    <div class="feature-card-desc">Microservice Mapper primary overview, prerequisites, target setup, and installation runbook.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="wiki-deep-dive.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">MONOLITH WIKI</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">wiki-deep-dive.html</span>
+                    </div>
+                    <div class="feature-card-title">Complete System Wiki (30 Sections)</div>
+                    <div class="feature-card-desc">The comprehensive 30-section deep dive covering every subsystem, data structure, and operational detail.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="wiki-index.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">INDEX</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">wiki-index.html</span>
+                    </div>
+                    <div class="feature-card-title">Wiki Table of Contents</div>
+                    <div class="feature-card-desc">Numbered index and logical reading orders for developers, SREs, and architects.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="2-core-graph-engine">2. Core Graph Engine</h2>
+<div class="grid-cards">
+<a href="03-graphstore.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">GRAPH ENGINE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">03-graphstore.html</span>
+                    </div>
+                    <div class="feature-card-title">03 — GraphStore Central Nervous System</div>
+                    <div class="feature-card-desc">In-memory topology graph, ring buffers, and state mutations.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="04-id-system.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">GRAPH ENGINE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">04-id-system.html</span>
+                    </div>
+                    <div class="feature-card-title">04 — Node &amp; Edge ID System</div>
+                    <div class="feature-card-desc">Canonical ID formats (target:service), normalization rules, and avoiding ghost duplicates.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="05-telemetry-ingestion.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">INGESTION</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">05-telemetry-ingestion.html</span>
+                    </div>
+                    <div class="feature-card-title">05 — Telemetry Ingestion Pipeline</div>
+                    <div class="feature-card-desc">8-stage ingestion pipeline processing remote collector envelopes.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="06-node-edge-lifecycle.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">LIFECYCLE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">06-node-edge-lifecycle.html</span>
+                    </div>
+                    <div class="feature-card-title">06 — Node &amp; Edge Lifecycle</div>
+                    <div class="feature-card-desc">Heartbeat tracking, stale node pruning, exponential edge heat decay, and reconnection handling.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="3-connection-discovery">3. Connection & Discovery</h2>
+<div class="grid-cards">
+<a href="21-connection-layer.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">SSH2 / AGENT</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">21-connection-layer.html</span>
+                    </div>
+                    <div class="feature-card-title">21 — Connection Layer &amp; Target Agent</div>
+                    <div class="feature-card-desc">TargetAgent lifecycle, SSH connection pooling, reverse tunnel, and Docker Compose parsing.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="23-endpoint-discovery.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">DISCOVERY</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">23-endpoint-discovery.html</span>
+                    </div>
+                    <div class="feature-card-title">23 — Endpoint Discovery Engine</div>
+                    <div class="feature-card-desc">Automated discovery of HTTP endpoints, Swagger extraction, and dynamic probe ranking.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="4-remote-collection">4. Remote Collection</h2>
+<div class="grid-cards">
+<a href="07-remote-collector.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">DATA PLANE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">07-remote-collector.html</span>
+                    </div>
+                    <div class="feature-card-title">07 — Remote Collector Daemon</div>
+                    <div class="feature-card-desc">Lightweight daemon on target EC2 extracting /proc/net/tcp, docker.sock stats, and proxy logs.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="25-telemetry-sources.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">DATA PLANE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">25-telemetry-sources.html</span>
+                    </div>
+                    <div class="feature-card-title">25 — Telemetry Sources &amp; Ingestion</div>
+                    <div class="feature-card-desc">Deep dive into kernel socket tables, docker 8-byte framing, and Prometheus metrics.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="18-telemetry-tiers-plan.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">TIER SPEC</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">18-telemetry-tiers-plan.html</span>
+                    </div>
+                    <div class="feature-card-title">18 — Telemetry Tiers Plan (0, 1, 2)</div>
+                    <div class="feature-card-desc">Tier 0 (Zero-instrumentation), Tier 1 (Proxy access logs), Tier 2 (Prometheus/OTLP).</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="telemetry-platform-readme.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">DAEMON SPEC</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">telemetry-platform-readme.html</span>
+                    </div>
+                    <div class="feature-card-title">Telemetry Platform Daemon Readme</div>
+                    <div class="feature-card-desc">Autonomous target agent runtime, socket sniffer, and docker event streamer documentation.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="5-rca-risk">5. RCA & Risk</h2>
+<div class="grid-cards">
+<a href="08-rca-engine.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-red">RCA CORE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">08-rca-engine.html</span>
+                    </div>
+                    <div class="feature-card-title">08 — RCA Engine &amp; Incident Manager</div>
+                    <div class="feature-card-desc">4-factor scoring algorithm, topological BFS cascade traversal, and root cause classification.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="22-risk-engine.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-red">RISK SCORING</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">22-risk-engine.html</span>
+                    </div>
+                    <div class="feature-card-title">22 — Risk Engine &amp; Centrality Scoring</div>
+                    <div class="feature-card-desc">Betweenness centrality, single point of failure (SPOF) detection, and blast radius calculation.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="17-findings-vs-incidents.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">INTELLIGENCE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">17-findings-vs-incidents.html</span>
+                    </div>
+                    <div class="feature-card-title">17 — Findings vs Incidents Architecture</div>
+                    <div class="feature-card-desc">Separation of static structural findings from dynamic runtime telemetry incidents.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="6-frontend-ui">6. Frontend & UI</h2>
+<div class="grid-cards">
+<a href="09-frontend.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">FRONTEND</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">09-frontend.html</span>
+                    </div>
+                    <div class="feature-card-title">09 — Frontend Architecture &amp; 2D/3D Graph</div>
+                    <div class="feature-card-desc">React 19, Vite, @xyflow/react 2D topology, Three.js 3D spatial view, and state sync.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="24-client-frontend.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">FRONTEND</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">24-client-frontend.html</span>
+                    </div>
+                    <div class="feature-card-title">24 — Client Frontend &amp; 3D Spatial Canvas</div>
+                    <div class="feature-card-desc">Custom node components, particle packet animations, camera controls, and CSS design system.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="10-websocket.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">REAL-TIME</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">10-websocket.html</span>
+                    </div>
+                    <div class="feature-card-title">10 — WebSocket &amp; Real-Time Streaming</div>
+                    <div class="feature-card-desc">Heartbeat, graph diff broadcasts, metrics delta streaming, and reconnect logic.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="traces-section-prompt.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">SPECIFICATION</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">traces-section-prompt.html</span>
+                    </div>
+                    <div class="feature-card-title">Traces Section Specification</div>
+                    <div class="feature-card-desc">Design prompt and architecture specification for live trace views and waterfall timelines.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="7-traffic-ml-pipeline">7. Traffic & ML Pipeline</h2>
+<div class="grid-cards">
+<a href="20-traffic-experiments.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">LOAD GEN</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">20-traffic-experiments.html</span>
+                    </div>
+                    <div class="feature-card-title">20 — Traffic Controller &amp; Load Generation</div>
+                    <div class="feature-card-desc">Virtual user profiles (LIGHT, MODERATE, HEAVY, SPIKE, STRESS) and adaptive probes.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="traffic-gen-readme.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">LOAD GEN</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">traffic-gen-readme.html</span>
+                    </div>
+                    <div class="feature-card-title">Traffic Generator Readme</div>
+                    <div class="feature-card-desc">Autonomous load simulation engine, user scenario scripting, and load profiles.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="11-ml-pipeline.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">ML CORE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">11-ml-pipeline.html</span>
+                    </div>
+                    <div class="feature-card-title">11 — ML Anomaly Detection Pipeline</div>
+                    <div class="feature-card-desc">Python sidecar, IsolationForest, LOF, OCSVM, Z-Score, feature engineering, and tail CSV.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="26-ml-pipeline-deep-dive.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">ML DEEP DIVE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">26-ml-pipeline-deep-dive.html</span>
+                    </div>
+                    <div class="feature-card-title">26 — ML Pipeline Deep Dive (Code-Level)</div>
+                    <div class="feature-card-desc">Code-level walkthrough of collector.py, preprocess.py, train.py, and score.py.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="ml-readme.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">ML README</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">ml-readme.html</span>
+                    </div>
+                    <div class="feature-card-title">ML Subsystem Readme</div>
+                    <div class="feature-card-desc">Python dependencies, training workflows, hyperparameter tuning, and export schema.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+<h2 id="8-reference-operations">8. Reference & Operations</h2>
+<div class="grid-cards">
+<a href="27-project-technical-reference.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">ENGINEERING MANUAL</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">27-project-technical-reference.html</span>
+                    </div>
+                    <div class="feature-card-title">27 — Engineering Manual &amp; Technical Reference</div>
+                    <div class="feature-card-desc">Exhaustive project reference manual containing architectural diagrams and design rationale.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="28-mapper-technical-reference.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-cyan">TECH REFERENCE</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">28-mapper-technical-reference.html</span>
+                    </div>
+                    <div class="feature-card-title">28 — Mapper Technical Reference (11 Subsystems)</div>
+                    <div class="feature-card-desc">The 11 core subsystems as visual vector schematics, measured telemetry tables, and operational limits.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="12-data-models.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-blue">SCHEMAS</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">12-data-models.html</span>
+                    </div>
+                    <div class="feature-card-title">12 — Data Models &amp; Schemas</div>
+                    <div class="feature-card-desc">TypeScript interfaces and schemas for Node, Edge, MetricEnvelope, and Incident.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="13-api-reference.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-green">REST API</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">13-api-reference.html</span>
+                    </div>
+                    <div class="feature-card-title">13 — API Reference</div>
+                    <div class="feature-card-desc">Complete REST API documentation: 54 endpoints across 8 resource controllers.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="14-configuration.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">CONFIG</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">14-configuration.html</span>
+                    </div>
+                    <div class="feature-card-title">14 — Configuration Reference</div>
+                    <div class="feature-card-desc">Environment variables, remote_config.json, ml/config.json, and data locations.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="15-troubleshooting.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-orange">RUNBOOK</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">15-troubleshooting.html</span>
+                    </div>
+                    <div class="feature-card-title">15 — Troubleshooting Runbook</div>
+                    <div class="feature-card-desc">Diagnosis steps for NO DATA, missing metrics, ghost edges, SSH locks, and traffic bugs.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+<a href="16-change-log-and-rationale.html" class="feature-card">
+                <div>
+                    <div class="feature-card-header">
+                        <span class="badge badge-purple">DECISION LOG</span>
+                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">16-change-log-and-rationale.html</span>
+                    </div>
+                    <div class="feature-card-title">16 — Change Log &amp; Design Rationale</div>
+                    <div class="feature-card-desc">Record of what was changed, why, and where — architectural decisions and fixes.</div>
+                </div>
+                <div class="feature-card-footer">
+                    <span>Explore Document</span>
+                    <span>→</span>
+                </div>
+            </a>
+</div>
+        </section>
+
+        <div class="page-nav-footer">
+<div></div>
+<a href="architecture-map.html" class="page-nav-btn next">
+            <span class="page-nav-label">Next Document →</span>
+            <span class="page-nav-title">Master Architecture Flowchart Map</span>
+        </a>
+</div>
+
+        <footer>
+            Microservice Mapper &mdash; technical reference. Figures measured on live targets, September 2026.
+        </footer>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Theme Switcher matching Mapper Technical Reference
+    const initTheme = () => {
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', saved);
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.innerHTML = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+    };
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeBtn.innerHTML = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+    }
+    initTheme();
+
+    // 2. Quick Jump Dropdown
+    const quickJump = document.getElementById('quick-jump');
+    if (quickJump) {
+        quickJump.addEventListener('change', (e) => {
+            if (e.target.value) {
+                window.location.href = e.target.value;
+            }
+        });
+    }
+
+    // 3. Flowchart Path Tracing
+    const traceBtns = document.querySelectorAll('.flow-trace-btn');
+    const nodes = document.querySelectorAll('.flow-node');
+    if (traceBtns.length > 0 && nodes.length > 0) {
+        traceBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                traceBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const flow = btn.getAttribute('data-flow');
+                nodes.forEach(n => {
+                    n.classList.remove('highlighted');
+                    const tags = (n.getAttribute('data-tags') || '').split(',');
+                    if (flow === 'RESET') {
+                        n.style.opacity = '1';
+                    } else if (tags.includes(flow.toLowerCase())) {
+                        n.classList.add('highlighted');
+                        n.style.opacity = '1';
+                    } else {
+                        n.style.opacity = '0.35';
+                    }
+                });
+            });
+        });
+    }
+
+    // 4. Master Interactive Topology Canvas (Hub Page)
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let currentMode = 'xyflow'; // 'xyflow', 'ring', '3d'
+        let hasFault = false;
+        let animFrameId = null;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = 420 * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const nodesData = [
+            { id: 'gateway', name: 'api-gateway', x: 0.15, y: 0.5, r: 24, col: '#00e5ff', status: 'HEALTHY', type: 'Gateway' },
+            { id: 'auth', name: 'auth-service', x: 0.38, y: 0.22, r: 20, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'orders', name: 'orders-service', x: 0.42, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'payment', name: 'payment-svc', x: 0.68, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Payment' },
+            { id: 'postgres', name: 'orders-db', x: 0.88, y: 0.82, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Storage' },
+            { id: 'redis', name: 'session-cache', x: 0.62, y: 0.22, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Cache' },
+            { id: 'collector', name: 'collector-agent', x: 0.50, y: 0.50, r: 20, col: '#10b981', status: 'HEALTHY', type: 'Agent' }
+        ];
+
+        const edges = [
+            { from: 'gateway', to: 'auth', latency: 4 },
+            { from: 'gateway', to: 'orders', latency: 12 },
+            { from: 'auth', to: 'redis', latency: 2 },
+            { from: 'orders', to: 'payment', latency: 18 },
+            { from: 'payment', to: 'postgres', latency: 8 },
+            { from: 'collector', to: 'gateway', latency: 1 },
+            { from: 'collector', to: 'orders', latency: 1 }
+        ];
+
+        let packets = [
+            { edgeIdx: 0, progress: 0.1, speed: 0.012 },
+            { edgeIdx: 1, progress: 0.4, speed: 0.009 },
+            { edgeIdx: 3, progress: 0.7, speed: 0.007 },
+            { edgeIdx: 4, progress: 0.2, speed: 0.015 }
+        ];
+
+        let angle3D = 0;
+
+        function renderTopology() {
+            const w = canvas.getBoundingClientRect().width;
+            const h = 420;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 30) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 30) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            // Calculate Positions
+            let posMap = {};
+            if (currentMode === 'xyflow') {
+                nodesData.forEach(n => {
+                    posMap[n.id] = { x: n.x * w, y: n.y * h, z: 1 };
+                });
+            } else if (currentMode === 'ring') {
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.36;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 - Math.PI / 2;
+                        posMap[n.id] = { x: cx + Math.cos(theta) * radius, y: cy + Math.sin(theta) * radius, z: 1 };
+                    }
+                });
+            } else if (currentMode === '3d') {
+                angle3D += 0.006;
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.34;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 + angle3D;
+                        const px = Math.cos(theta) * radius;
+                        const pz = Math.sin(theta) * radius;
+                        const scale = (pz + radius * 1.5) / (radius * 2.5);
+                        posMap[n.id] = {
+                            x: cx + px * scale,
+                            y: cy + (n.y - 0.5) * 160 * scale + Math.sin(theta * 2) * 20,
+                            z: scale
+                        };
+                    }
+                });
+            }
+
+            // Draw Edges
+            edges.forEach((e) => {
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (!p1 || !p2) return;
+
+                const isDegraded = hasFault && (e.to === 'payment' || e.from === 'payment');
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = isDegraded ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 229, 255, 0.25)';
+                ctx.lineWidth = isDegraded ? 2.5 : 1.5;
+                if (isDegraded) ctx.setLineDash([4, 4]);
+                else ctx.setLineDash([]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                ctx.fillStyle = isDegraded ? '#ef4444' : '#00e5ff';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const latText = isDegraded ? `${e.latency * 18}ms ⚠` : `${e.latency}ms`;
+                ctx.fillText(latText, midX + 4, midY - 4);
+            });
+
+            // Draw Packets
+            packets.forEach(p => {
+                p.progress += p.speed;
+                if (p.progress > 1) p.progress = 0;
+                const e = edges[p.edgeIdx];
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (p1 && p2) {
+                    const px = p1.x + (p2.x - p1.x) * p.progress;
+                    const py = p1.y + (p2.y - p1.y) * p.progress;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = hasFault && e.to === 'payment' ? '#ef4444' : '#00e5ff';
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Nodes
+            nodesData.forEach(n => {
+                const pos = posMap[n.id];
+                if (!pos) return;
+                const isTargetFault = hasFault && n.id === 'payment';
+                const nodeColor = isTargetFault ? '#ef4444' : n.col;
+                const radius = n.r * (pos.z || 1);
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius + (isTargetFault ? 8 : 4), 0, Math.PI * 2);
+                ctx.fillStyle = isTargetFault ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 229, 255, 0.08)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = isTargetFault ? 3 : 2;
+                ctx.strokeStyle = nodeColor;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '600 11.5px "IBM Plex Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(n.name, pos.x, pos.y + radius + 15);
+
+                ctx.fillStyle = isTargetFault ? '#f87171' : '#94a3b8';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const statusStr = isTargetFault ? 'CPU: 98.4% [ANOMALY]' : n.type;
+                ctx.fillText(statusStr, pos.x, pos.y + radius + 27);
+                ctx.textAlign = 'left';
+            });
+
+            animFrameId = requestAnimationFrame(renderTopology);
+        }
+
+        animFrameId = requestAnimationFrame(renderTopology);
+
+        const btnFault = document.getElementById('topo-btn-fault');
+        const btnReset = document.getElementById('topo-btn-reset');
+        const statusText = document.getElementById('topo-status-text');
+
+        if (btnFault && btnReset && statusText) {
+            btnFault.addEventListener('click', () => {
+                hasFault = true;
+                statusText.innerHTML = '<span style="color: var(--err); font-weight: bold;">🚨 ANOMALY DETECTED:</span> <code>payment-svc</code> CPU Spike 98.4% &bull; RCA Score: 0.94 &bull; BFS Depth: 2';
+            });
+            btnReset.addEventListener('click', () => {
+                hasFault = false;
+                statusText.innerHTML = '<span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.';
+            });
+        }
+    }
+
+    // 5. Interactive Lab Helpers
+    window.testCanonicalId = function() {
+        const input = document.getElementById('canon-input');
+        const target = document.getElementById('canon-target');
+        const output = document.getElementById('canon-output');
+        if (input && output) {
+            const raw = input.value.trim() || 'sockshop_orders_1';
+            const tgt = target ? target.value.trim() || 'ec2-target-prod' : 'ec2-target-prod';
+            const clean = raw.toLowerCase().replace(/_\d+$/, '').replace(/^[\/_]+/, '');
+            const canonical = `${tgt}:${clean}`;
+            output.innerHTML = `<span style="color: var(--ok); font-weight: bold;">✓ Canonical ID Resolved:</span> <code style="font-size: 1rem; color: var(--sig);">${canonical}</code><br><span style="color: var(--ink-2); font-size: 0.8rem; margin-top: 4px; display: inline-block;">Stripped instance suffix <code>_1</code> &bull; Lowercased &bull; Prefixed with Target Namespace</span>`;
+        }
+    };
+
+    window.calculateHeatDecay = function() {
+        const h0Input = document.getElementById('heat-h0');
+        const lambdaInput = document.getElementById('heat-lambda');
+        const tInput = document.getElementById('heat-t');
+        const output = document.getElementById('heat-output');
+        const bar = document.getElementById('heat-bar');
+        if (h0Input && lambdaInput && tInput && output) {
+            const h0 = parseFloat(h0Input.value) || 100;
+            const lambda = parseFloat(lambdaInput.value) || 0.05;
+            const t = parseFloat(tInput.value) || 10;
+            const ht = h0 * Math.exp(-lambda * t);
+            const pct = Math.min(100, Math.max(0, (ht / h0) * 100));
+            output.innerHTML = `<span style="color: var(--sig); font-weight: bold;">Residual Heat H(${t}s):</span> <strong>${ht.toFixed(2)}</strong> / ${h0.toFixed(0)} (${pct.toFixed(1)}% remaining)`;
+            if (bar) bar.style.width = `${pct}%`;
+        }
+    };
+
+    window.calculateRcaScore = function() {
+        const cpuInput = document.getElementById('rca-cpu');
+        const memInput = document.getElementById('rca-mem');
+        const errInput = document.getElementById('rca-err');
+        const degInput = document.getElementById('rca-deg');
+        const output = document.getElementById('rca-output');
+        if (cpuInput && memInput && errInput && degInput && output) {
+            const cpuZ = parseFloat(cpuInput.value) || 3.2;
+            const memZ = parseFloat(memInput.value) || 1.1;
+            const errRate = parseFloat(errInput.value) || 0.15;
+            const deg = parseFloat(degInput.value) || 4;
+            
+            const cpuNorm = Math.min(1, cpuZ / 4.0);
+            const memNorm = Math.min(1, memZ / 4.0);
+            const errNorm = Math.min(1, errRate / 0.20);
+            const degNorm = Math.min(1, deg / 8.0);
+            
+            const totalScore = (0.35 * cpuNorm + 0.25 * memNorm + 0.30 * errNorm + 0.10 * degNorm);
+            const isRoot = totalScore > 0.65;
+            const badgeCol = isRoot ? 'var(--err)' : (totalScore > 0.4 ? 'var(--warn)' : 'var(--ok)');
+            const badgeText = isRoot ? '🚨 PRIMARY ROOT CAUSE (P1)' : (totalScore > 0.4 ? '⚠ SECONDARY SYMPTOM' : '✓ HEALTHY / NORMAL');
+            
+            output.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700; color: ${badgeCol}; margin-bottom: 6px;">${badgeText}</div>
+                <div>Root Cause Probability Score: <strong style="font-size: 1.2rem; color: #fff;">${totalScore.toFixed(3)}</strong> (Threshold: 0.650)</div>
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
+                    CPU Contribution: ${(0.35 * cpuNorm).toFixed(3)} &bull; Mem: ${(0.25 * memNorm).toFixed(3)} &bull; Err: ${(0.30 * errNorm).toFixed(3)} &bull; Degree: ${(0.10 * degNorm).toFixed(3)}
+                </div>
+            `;
+        }
+    };
+});
+</script>
+</body>
+</html>
