@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>28 — Mapper Technical Reference (11 Subsystems) | Microservice Mapper Wiki</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <style>
+  :root {
+    --bg:        #f6f7f9;
+    --panel:     #ffffff;
+    --panel-2:   #eceff4;
+    --ink:       #141413;
+    --ink-2:     #334155;
+    --muted:     #76828f;
+    --faint:     #97a1af;
+    --rule:      #dbe0e8;
+    --rule-2:    #e9ecf2;
+
+    --sig:       #00e5ff;
+    --sig-bg:    rgba(0, 229, 255, 0.12);
+    --ok:        #0a7a46;
+    --warn:      #96620a;
+    --err:       #b41f3c;
+    --t0:        #626d7d;
+    --t1:        #96620a;
+    --t2:        #0a7ea4;
+
+    --body: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:      #05080d;
+      --panel:   #0b1119;
+      --panel-2: #121a25;
+      --ink:     #e6ecf4;
+      --ink-2:   #aeb9c8;
+      --muted:   #76828f;
+      --faint:   #545e6c;
+      --rule:    #1a2430;
+      --rule-2:  #131b25;
+      --sig:     #3ec8ee;
+      --sig-bg:  #3ec8ee14;
+      --ok:      #35d38b;
+      --warn:    #f0ab2e;
+      --err:     #ff5f7a;
+      --t0:      #76828f;
+      --t1:      #f0ab2e;
+      --t2:      #3ec8ee;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:      #05080d;  --panel:   #0b1119;  --panel-2: #121a25;
+    --ink:     #e6ecf4;  --ink-2:   #aeb9c8;  --muted:   #76828f;
+    --faint:   #545e6c;  --rule:    #1a2430;  --rule-2:  #131b25;
+    --sig:     #3ec8ee;  --sig-bg:  #3ec8ee14;
+    --ok:      #35d38b;  --warn:    #f0ab2e;  --err:     #ff5f7a;
+    --t0:      #76828f;  --t1:      #f0ab2e;  --t2:      #3ec8ee;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; margin: 0; padding: 0; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 0 90px; }
+
+  .hd { padding-block: 54px 26px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+  .hd .eye { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sig); margin-bottom: 14px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.03em; line-height: 1.05; margin: 0 0 14px; color: var(--ink); }
+  .hd p, .lead { color: var(--ink-2); max-width: 76ch; margin: 0 0 14px; font-size: 15px; }
+
+  .metadata-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; margin-bottom: 14px; }
+  .meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 7px; padding-block: 22px 8px; }
+  .toc a {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em;
+    color: var(--muted); text-decoration: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 5px 11px;
+    background: var(--panel); transition: all 0.2s;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--sig); border-color: var(--sig); outline: none; background: var(--panel-2); }
+
+  section { padding-block: 44px 0; scroll-margin-top: 20px; }
+  h2 {
+    font-size: 24px; font-weight: 700; letter-spacing: -.022em; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;
+    color: var(--ink); border-bottom: 1px solid var(--rule); padding-bottom: 8px;
+  }
+  h2 .id { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--sig); letter-spacing: .06em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 9px; letter-spacing: -.008em; color: var(--ink); }
+  h4 { font-size: 13.5px; font-weight: 600; margin: 18px 0 7px; color: var(--ink-2); }
+  p { margin: 0 0 14px; max-width: 76ch; color: var(--ink-2); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  a {
+    color: var(--sig);
+    text-decoration: underline;
+    text-decoration-color: rgba(62, 200, 238, 0.4);
+    text-underline-offset: 3px;
+    font-weight: 500;
+  }
+  a:hover {
+    color: var(--sig);
+    text-decoration-color: var(--sig);
+  }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--panel-2); padding: 1.5px 5px; border-radius: 4px; color: var(--ink);
+  }
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.62;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 16px; color: var(--ink-2);
+  }
+  pre b { color: var(--sig); font-weight: 500; }
+  pre i { color: var(--muted); font-style: normal; }
+  pre .g { color: var(--ok); }
+  pre .r { color: var(--err); }
+
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; }
+
+  .t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .t th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+    padding: 0 14px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  .t td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; color: var(--ink-2); }
+  .t tr:last-child td { border-bottom: none; }
+  .t td:first-child { color: var(--ink); font-weight: 500; }
+  .t code { background: none; padding: 0; color: var(--sig); }
+  .scroll { overflow-x: auto; margin: 1rem 0; }
+
+  .box { border-radius: 9px; padding: 16px 19px; margin: 18px 0; border: 1px solid var(--rule); background: var(--panel); }
+  .box.why  { border-left: 3px solid var(--sig); }
+  .box.trap { border-left: 3px solid var(--err); }
+  .box.perf { border-left: 3px solid var(--ok); }
+  .box h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--mono); font-weight: 500; }
+  .box.why h4  { color: var(--sig); }
+  .box.trap h4 { color: var(--err); }
+  .box.perf h4 { color: var(--ok); }
+  .box p { font-size: 14px; margin-bottom: 10px; }
+  .box p:last-child { margin-bottom: 0; }
+
+  /* Plain English Code Explainer Box */
+  .code-explainer-box {
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--sig);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: -8px 0 20px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .code-explainer-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sig);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .code-explainer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .code-explainer-col {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .code-explainer-col strong {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .m { background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; padding: 15px 16px; }
+  .m .v { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-bottom: 3px; color: var(--ink); }
+  .m .v s { text-decoration: none; color: var(--faint); font-size: 14px; font-weight: 400; }
+  .m .k { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .m.ok .v { color: var(--ok); } .m.err .v { color: var(--err); }
+
+  figure { margin: 0 0 16px; }
+  figure:last-child { margin-bottom: 0; }
+  .fx { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; overflow-x: auto; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.55; max-width: 76ch; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+  .s-n { font-family: var(--body); font-size: 12px; font-weight: 500; fill: var(--ink); }
+  .s-m { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); }
+  .s-s { font-family: var(--body); font-size: 11px; fill: var(--muted); }
+
+  ul { margin: 0 0 14px; padding-left: 20px; color: var(--ink-2); max-width: 76ch; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--faint); }
+
+  .pill { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .pill.t0 { background: color-mix(in srgb, var(--t0) 15%, transparent); color: var(--t0); }
+  .pill.t1 { background: color-mix(in srgb, var(--t1) 15%, transparent); color: var(--t1); }
+  .pill.t2 { background: color-mix(in srgb, var(--t2) 15%, transparent); color: var(--t2); }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
+  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid rgba(0, 229, 255, 0.3); }
+  .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-orange { background: rgba(245, 158, 11, 0.15); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--err); border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
+  .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+  /* Flowchart / Architecture Styles */
+  .flow-container { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .flow-layer { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+  .flow-layer-title { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+  .flow-node-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; }
+  .flow-node-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; text-decoration: none; color: inherit; display: block; transition: all 0.2s; }
+  .flow-node-card:hover { border-color: var(--sig); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .flow-node-card.highlighted { border-color: var(--sig); box-shadow: 0 0 14px var(--sig); transform: scale(1.02); }
+  .flow-node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .flow-node-name { font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+  .flow-node-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-bottom: 0.6rem; }
+  .flow-node-footer { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); }
+  .flow-arrow-down { text-align: center; color: var(--sig); font-family: var(--mono); font-size: 0.8rem; margin: 0.6rem 0; font-weight: 600; letter-spacing: 0.1em; }
+
+  /* Interactive Lab Box */
+  .interactive-lab { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--sig); border-radius: 10px; padding: 1.5rem; margin: 2rem 0; }
+  .lab-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.6rem; }
+  .lab-btn { background: var(--sig); color: #070b14; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .lab-btn:hover { filter: brightness(1.2); box-shadow: 0 0 12px var(--sig-bg); transform: translateY(-1px); }
+  .lab-output { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); min-height: 60px; }
+
+  /* Grid Cards on Hub */
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+  .feature-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+  .feature-card:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+  .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+  .feature-card-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+  .feature-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+  .feature-card-footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); font-weight: 600; }
+
+  /* Chronological Stepper */
+  .chrono-timeline { position: relative; margin: 2rem 0; padding-left: 1.8rem; }
+  .chrono-timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: linear-gradient(to bottom, var(--sig), #c084fc, var(--ok)); }
+  .chrono-step { position: relative; margin-bottom: 1.6rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; transition: all 0.2s; }
+  .chrono-step:hover { border-color: var(--sig); transform: translateX(4px); }
+  .chrono-step::before { content: ''; position: absolute; top: 1.2rem; left: -2.15rem; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--sig); box-shadow: 0 0 8px var(--sig); }
+  .step-num { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--sig); letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  .step-title { font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+
+  /* Page Navigation Footer */
+  .page-nav-footer { display: flex; justify-content: space-between; gap: 1.5rem; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
+  .page-nav-btn { flex: 1; min-width: 240px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.2rem; text-decoration: none; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; }
+  .page-nav-btn:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); }
+  .page-nav-btn.next { text-align: right; }
+  .page-nav-label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; }
+  .page-nav-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr !important; } }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+    <div class="wrap">
+        
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-block: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div style="font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;">
+        <a href="index.html" style="color: var(--ink); text-decoration: none;">Wiki Visualizer</a>
+        <span>/</span>
+        <span>8. Reference &amp; Operations</span>
+        <span>/</span>
+        <span style="color: var(--sig); font-weight: 600;">28 — Mapper Technical Reference (11 Subsystems)</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <select id="quick-jump" class="quick-jump-select" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;" title="Jump directly to any document">
+<option value="" disabled selected>⚡ Jump to document...</option>
+<optgroup label="1. Master Hub &amp; Foundations">
+<option value="index.html">Master Visual Wiki &amp; Architecture ...</option>
+<option value="architecture-map.html">Master Architecture Flowchart Map</option>
+<option value="19-how-it-all-works.html">19 — How It All Works (Plain &amp; Det...</option>
+<option value="01-overview.html">01 — Overview &amp; Design Philosophy</option>
+<option value="02-architecture.html">02 — System Layers &amp; Data Flow</option>
+<option value="readme.html">Project README &amp; Quickstart</option>
+<option value="wiki-deep-dive.html">Complete System Wiki (30 Sections)</option>
+<option value="wiki-index.html">Wiki Table of Contents</option>
+</optgroup>
+<optgroup label="2. Core Graph Engine">
+<option value="03-graphstore.html">03 — GraphStore Central Nervous Sy...</option>
+<option value="04-id-system.html">04 — Node &amp; Edge ID System</option>
+<option value="05-telemetry-ingestion.html">05 — Telemetry Ingestion Pipeline</option>
+<option value="06-node-edge-lifecycle.html">06 — Node &amp; Edge Lifecycle</option>
+</optgroup>
+<optgroup label="3. Connection &amp; Discovery">
+<option value="21-connection-layer.html">21 — Connection Layer &amp; Target Agent</option>
+<option value="23-endpoint-discovery.html">23 — Endpoint Discovery Engine</option>
+</optgroup>
+<optgroup label="4. Remote Collection">
+<option value="07-remote-collector.html">07 — Remote Collector Daemon</option>
+<option value="25-telemetry-sources.html">25 — Telemetry Sources &amp; Ingestion</option>
+<option value="18-telemetry-tiers-plan.html">18 — Telemetry Tiers Plan (0, 1, 2)</option>
+<option value="telemetry-platform-readme.html">Telemetry Platform Daemon Readme</option>
+</optgroup>
+<optgroup label="5. RCA &amp; Risk">
+<option value="08-rca-engine.html">08 — RCA Engine &amp; Incident Manager</option>
+<option value="22-risk-engine.html">22 — Risk Engine &amp; Centrality Scor...</option>
+<option value="17-findings-vs-incidents.html">17 — Findings vs Incidents Archite...</option>
+</optgroup>
+<optgroup label="6. Frontend &amp; UI">
+<option value="09-frontend.html">09 — Frontend Architecture &amp; 2D/3D...</option>
+<option value="24-client-frontend.html">24 — Client Frontend &amp; 3D Spatial ...</option>
+<option value="10-websocket.html">10 — WebSocket &amp; Real-Time Streaming</option>
+<option value="traces-section-prompt.html">Traces Section Specification</option>
+</optgroup>
+<optgroup label="7. Traffic &amp; ML Pipeline">
+<option value="20-traffic-experiments.html">20 — Traffic Controller &amp; Load Gen...</option>
+<option value="traffic-gen-readme.html">Traffic Generator Readme</option>
+<option value="11-ml-pipeline.html">11 — ML Anomaly Detection Pipeline</option>
+<option value="26-ml-pipeline-deep-dive.html">26 — ML Pipeline Deep Dive (Code-L...</option>
+<option value="ml-readme.html">ML Subsystem Readme</option>
+</optgroup>
+<optgroup label="8. Reference &amp; Operations">
+<option value="27-project-technical-reference.html">27 — Engineering Manual &amp; Technica...</option>
+<option value="28-mapper-technical-reference.html" selected>28 — Mapper Technical Reference (1...</option>
+<option value="12-data-models.html">12 — Data Models &amp; Schemas</option>
+<option value="13-api-reference.html">13 — API Reference</option>
+<option value="14-configuration.html">14 — Configuration Reference</option>
+<option value="15-troubleshooting.html">15 — Troubleshooting Runbook</option>
+<option value="16-change-log-and-rationale.html">16 — Change Log &amp; Design Rationale</option>
+</optgroup>
+</select>
+        <button id="theme-toggle-btn" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;">🌓 Mode</button>
+        <a href="architecture-map.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🗺 Architecture Map</a>
+        <a href="index.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🏠 Master Hub</a>
+      </div>
+    </div>
+    
+
+        <header class="hd">
+            <div class="eye">8. Reference &amp; Operations &middot; TECHNICAL REFERENCE &middot; 2026</div>
+            <h1>28 — Mapper Technical Reference (11 Subsystems)</h1>
+            <p class="lead">The 11 core subsystems as visual vector schematics, measured telemetry tables, and operational limits.</p>
+            <div class="metadata-strip">
+                <span class="badge badge-cyan">TECH REFERENCE</span>
+                <span class="meta-item">📁 <code>wiki/28-mapper-technical-reference.md</code></span>
+                <span class="meta-item">⏱ ~11 min read</span>
+                <span class="meta-item">📝 2,240 words</span>
+            </div>
+            <nav class="toc">
+  <a href="#01-process-topology">01 Process topology</a>
+  <a href="#02-discovery">02 Discovery</a>
+  <a href="#03-the-collection-cycle">03 The collection cycle</a>
+  <a href="#04-the-graph">04 The graph</a>
+  <a href="#identity">Identity</a>
+  <a href="#edge-shape">Edge shape</a>
+  <a href="#lifecycle">Lifecycle</a>
+  <a href="#05-telemetry-tiers-provenance">05 Telemetry tiers &amp; prove...</a>
+  <a href="#enabling-tier-2">Enabling tier 2</a>
+  <a href="#06-traffic-generation">06 Traffic generation</a>
+  <a href="#entry-point-resolution-a-waterfall">a waterfall</a>
+  <a href="#the-two-phase-probe-a-funnel">a funnel</a>
+</nav>
+        </header>
+
+        
+
+        
+
+        <article class="doc-body">
+            <p> 01 </p>
+<h2 id="01-process-topology">01 Process topology</h2>
+<p>Three Node processes, one Python pipeline, one target reached only over SSH.</p>
+<div class="box trap"><p>Why traffic-gen is its own process</p></div>
+<p>      The process generating load must not be the process measuring the result. Sharing an event</p>
+<p>      loop means a slow target stalls collection, and a busy collector throttles the load</p>
+<p>      generator — each would silently distort the other.</p>
+<p> 02 </p>
+<h2 id="02-discovery">02 Discovery</h2>
+<p>What exists, what it is, and what it claims to depend on.</p>
+<div class="box trap"><p>Guard: an empty scan is almost never true</p></div>
+<p>      These hosts are resource-constrained and drop docker commands under load, and</p>
+<p>      discover() returns an empty list rather than throwing when that happens.</p>
+<p>      On a periodic rescan, a zero-service result keeps the previous set and logs the</p>
+<p>      reason. On the initial cycle it is taken as-is, because then it really is the state.</p>
+<p> 03 </p>
+<h2 id="03-the-collection-cycle">03 The collection cycle</h2>
+<p>One TargetAgent per target. This loop repeats while the agent lives — the next run is queued only after the current one finishes.</p>
+<div class="box trap"><p>Trap 1 — the scan that failed 100% of the time, silently</p></div>
+<p>      The socket scan used to run docker exec <id> sh -c 'cat /proc/net/tcp'.</p>
+<p>      That needs a shell inside the container. The OpenTelemetry demo's frontend is a</p>
+<p>      distroless image whose entrypoint is /nodejs/bin/node, so every scan returned:</p>
+<p>OCI runtime exec failed: exec: "sh": executable file not found in $PATH</p>
+<p>collectObservedEdges treated non-zero exit as “skip this service” and</p>
+<p>      moved on without a word. frontend is precisely the service that calls cart,</p>
+<p>      currency, checkout and product-catalog — so those edges could never be observed. Across</p>
+<p>      500 connection events it appeared as a source zero times, while every other</p>
+<p>      service appeared at least once.</p>
+<p>      Now it resolves the container's host PID and reads</p>
+<p>      /proc/<hostPid>/net/tcp from the host — needs nothing inside the</p>
+<p>      container, so it works on distroless, scratch and ordinary images alike.</p>
+<div class="box trap"><p>Trap 2 — overlapping cycles exhausting SSH sessions</p></div>
+<p>      The loop was setInterval(poll, 5000) with an async poll. A cycle</p>
+<p>      takes far longer than 5s on 25 services, so cycles stacked and ran concurrently until they</p>
+<p>      passed OpenSSH's MaxSessions (default 10):</p>
+<p>(SSH) Channel open failure: open failed</p>
+<p>      Measured at 2.66 refused scans per cycle. Self-scheduling — queue the</p>
+<p>      next run 5s after the last one ends, as drawn above — took that to</p>
+<p>      0.00 over 41 cycles.</p>
+<p> 04 </p>
+<h2 id="04-the-graph">04 The graph</h2>
+<p>server/graph/GraphStore.ts — the single source of truth the UI reads.</p>
+<h3 id="identity">Identity</h3>
+<p>Node ids are project:service — open-telemetry:cart. Every</p>
+<p>    ingest path runs raw ids through normalizeId(), which is what makes it impossible</p>
+<p>    for two projects' data to merge. Edge ids are source->target.</p>
+<h3 id="edge-shape">Edge shape</h3>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <div style="font-family: var(--mono); font-size: 11px; color: var(--sig); margin-bottom: 8px; font-weight: 700;">📊 SYSTEM ARCHITECTURE FLOWCHART</div>
+                        <pre style="margin: 0; background: var(--panel-2); border: none; font-size: 12px; line-height: 1.5;">{
+  id: &quot;open-telemetry:frontend-&gt;open-telemetry:cart&quot;,
+  declared: true,          // a config file said so
+  observed: true,          // a live TCP connection was caught
+  evidenceSources: [&quot;compose&quot;, &quot;network-tcp&quot;],
+
+  activity: {              // tier 0 volume proxy — absent until seen once
+    samplesPerMin: 184,   // socket OBSERVATIONS, not requests
+    windowSec: 76,
+    lastSeen: &quot;2026-09-18T…&quot;
+  },
+
+  metrics: null            // tier 1/2 only. null is correct, not missing.
+       | { p95Latency, errorRate, requestRate, provenance },
+
+  status: &quot;active&quot; | &quot;degraded&quot; | &quot;failed&quot; | &quot;unknown&quot;
+}</pre>
+                    </div></figure>
+<div class="box trap"><p>Why samplesPerMin is named that and not requestRate</p></div>
+<p>      The collector re-counts every ESTABLISHED and TIME_WAIT socket on</p>
+<p>      each sweep, so one long-lived connection contributes on every scan. It is a proxy for</p>
+<p>      concurrent traffic, not a count of requests. TIME_WAIT is counted deliberately:</p>
+<p>      the ~60s post-close linger state catches fast request cycles that begin and end between two</p>
+<p>      5-second sweeps.</p>
+<h3 id="lifecycle">Lifecycle</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Rule</th>
+    <th>Value</th>
+    <th>Reason</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Stale node pruning</td>
+      <td>STALE_NODE_MS = 900_000</td>
+      <td>15 min unseen. A flat short grace killed everything on slow hosts.</td>
+    </tr>
+    <tr>
+      <td>Load-time baseline</td>
+      <td>lastSeen stamped on disk load</td>
+      <td>Nodes restored from disk must not instantly look stale.</td>
+    </tr>
+    <tr>
+      <td>Metric retention</td>
+      <td>1 hour, 10,000 events</td>
+      <td>Ring buffer in MetricStore.</td>
+    </tr>
+    <tr>
+      <td>Edge activity window</td>
+      <td>120s, halved on rollover</td>
+      <td>Rate decays rather than snapping to zero.</td>
+    </tr>
+  </tbody>
+</table></div>
+<p> 05 </p>
+<h2 id="05-telemetry-tiers-provenance">05 Telemetry tiers & provenance</h2>
+<p>Where each number came from, enforced rather than annotated.</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Tier</th>
+    <th>Source</th>
+    <th>Resource</th>
+    <th>Topology</th>
+    <th>Latency</th>
+    <th>Errors</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>tier 0</td>
+      <td>cgroup</td>
+      <td>yes</td>
+      <td>—</td>
+      <td>no</td>
+      <td>no</td>
+    </tr>
+    <tr>
+      <td>tier 0</td>
+      <td>socket-scan</td>
+      <td>—</td>
+      <td>yes</td>
+      <td>no</td>
+      <td>no</td>
+    </tr>
+    <tr>
+      <td>tier 1</td>
+      <td>access-log</td>
+      <td>—</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>yes</td>
+    </tr>
+    <tr>
+      <td>tier 2</td>
+      <td>prometheus</td>
+      <td>yes</td>
+      <td>—</td>
+      <td>yes</td>
+      <td>yes</td>
+    </tr>
+    <tr>
+      <td>tier 2</td>
+      <td>trace-backend</td>
+      <td>—</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>yes</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>This table is SOURCE_CAPABILITIES in models/MetricProvenance.ts, and it</p>
+<p>    is checked, not documentation — a test asserts a socket scan cannot write into a latency field.</p>
+<h3 id="enabling-tier-2">Enabling tier 2</h3>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">// server/data/remote_config.json
+&quot;open-telemetry&quot;: {
+  &quot;ec2PublicIp&quot;: &quot;…&quot;,
+  &quot;sshKeyPath&quot;: &quot;~/…​.pem&quot;,
+  &quot;telemetrySources&quot;: {
+    &quot;prometheus&quot;: { &quot;enabled&quot;: true, &quot;url&quot;: &quot;http://localhost:9090&quot; }
+  }
+}</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<div class="box trap"><p>Why localhost is correct here</p></div>
+<p>      The query runs on the target, via curl over the SSH connection already held.</p>
+<p>      Prometheus is bound to localhost there and only :8080 is open in the security</p>
+<p>      group — querying from outside would mean asking someone to open a port to read a metric.</p>
+<div class="box trap"><p>Three things tier 2 refuses to do</p></div>
+<p>NaN is not zero. A missing quantile stays absent — 0ms would read as “instant”.</p>
+<p>No traffic is not 0% errors. A ratio needs a denominator; unknown stays unknown.</p>
+<p>No caller attribution. Prometheus measures the serving side and cannot say who called.</p>
+<p> 06 </p>
+<h2 id="06-traffic-generation">06 Traffic generation</h2>
+<p>Finding what actually answers, then driving load only at that.</p>
+<h3 id="entry-point-resolution-a-waterfall">Entry point resolution — a waterfall</h3>
+<div class="box trap"><p>Why observability UIs are ranked last in step 3</p></div>
+<p>      Ranking by lowest port made Grafana on :3000 beat the real app frontend on</p>
+<p>      :8080. Observability components are demoted by service name instead,</p>
+<p>      because ports collide: :3000 is Grafana here and a perfectly normal frontend elsewhere.</p>
+<h3 id="the-two-phase-probe-a-funnel">The two-phase probe — a funnel</h3>
+<p>49 404s from generic guesses on DeathStarBench — its API is </p>
+<p> → 6usable endpoints once its own workflow paths were used</p>
+<p> → 0sock-shop endpoints wrongly called dead, once timeouts adapted</p>
+<div class="box trap"><p>Adaptive timeouts, and why a timeout is retried but a 404 is not</p></div>
+<p>      A flat 6s budget called 23 of 41 sock-shop candidates dead. They were alive:</p>
+<p>      /catalogue?size=5 answered in 15.1s. Reporting a live endpoint as</p>
+<p>      dead means that service gets no load and produces no telemetry at all. Phase 2 now scales its</p>
+<p>      timeout off the slowest origin, and anything that only timed out is retried once at</p>
+<p>      25s. A refused connection or a 404 is an answer, and is not retried.</p>
+<div class="box trap"><p>The user-cap bug that made HEAVY and STRESS unstartable</p></div>
+<p>maxUsers was hard-capped at Math.min(x, 20) while profiles asked for</p>
+<p>      40 and 80, so engine.validateConfig rejected the profile's own request. The cap now</p>
+<p>      floats above whatever is requested, with one real ceiling (TRAFFIC_MAX_USERS,</p>
+<p>      default 200) an operator can see and change.</p>
+<p> 07 </p>
+<h2 id="07-the-ml-pipeline">07 The ML pipeline</h2>
+<p>Four Python scripts, driven from the UI, one model per service per detector.</p>
+<h3 id="the-four-detectors-deliberately-different-shapes-of-judgment">The four detectors — deliberately different shapes of judgment</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Key</th>
+    <th>Catches</th>
+    <th>Note</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>iforest</td>
+      <td>globally rare points</td>
+      <td>the default; cheap, mixed scales fine</td>
+    </tr>
+    <tr>
+      <td>lof</td>
+      <td>normal globally, odd locally</td>
+      <td>refuses below 20 distinct rows</td>
+    </tr>
+    <tr>
+      <td>ocsvm</td>
+      <td>outside the normal frontier</td>
+      <td>nu maps from contamination</td>
+    </tr>
+    <tr>
+      <td>zscore</td>
+      <td>large deviation on any feature</td>
+      <td>no fitting; the baseline the others must beat</td>
+    </tr>
+  </tbody>
+</table></div>
+<div class="box trap"><p>LOF and the 3.37×109 threshold</p></div>
+<p>      Fitted naively, LOF produced thresholds in the billions: the training data is mostly duplicate</p>
+<p>      rows, so a point's 20 nearest neighbours are 20 copies of itself at distance zero, and local</p>
+<p>      density goes to infinity. LOF now fits on distinct rows and refuses entirely below 20</p>
+<p>      of them — at 6 distinct rows it fired on 84.6% of its holdout, which is</p>
+<p>      not a detector.</p>
+<div class="box trap"><p>Chronological holdout, not random</p></div>
+<p>      The last 20% by time is held out, never a random split, which would leak adjacent samples</p>
+<p>      across the boundary and flatter the result. The holdout is unlabelled, so what is reported is a</p>
+<p>      firing rate, not accuracy — compare it to contamination, not to 100%.</p>
+<h3 id="suggestions-are-computed-not-quoted">Suggestions are computed, not quoted</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Project</th>
+    <th>Services</th>
+    <th>Median distinct</th>
+    <th>Suggested n_estimators</th>
+    <th>Suggested detectors</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>sock-shop</td>
+      <td>13</td>
+      <td>7 of 1960</td>
+      <td>100</td>
+      <td>iforest, ocsvm, zscore</td>
+    </tr>
+    <tr>
+      <td>death-star</td>
+      <td>10</td>
+      <td>150</td>
+      <td>200</td>
+      <td>all four</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>LOF is dropped from sock-shop's recommendation because 0 of 13 services have the</p>
+<p>    20 distinct rows it needs.</p>
+<p> 08 </p>
+<h2 id="08-incidents-root-cause">08 Incidents & root-cause</h2>
+<p>Rule-based throughout. server/rca/ imports nothing from ml/.</p>
+<h3 id="root-cause-scoring-weighted-evidence">Root-cause scoring — weighted evidence</h3>
+<h3 id="the-ten-incident-rules">The ten incident rules</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Rule</th>
+    <th>Default</th>
+    <th>Effect</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>minHistorySamples</td>
+      <td>3</td>
+      <td>below this a service is skipped, not guessed at</td>
+    </tr>
+    <tr>
+      <td>zScoreAnomaly</td>
+      <td>2.5</td>
+      <td></td>
+      <td>z</td>
+      <td>at or above this is anomalous</td>
+    </tr>
+    <tr>
+      <td>zScoreHigh / Critical</td>
+      <td>3.0 / 4.0</td>
+      <td>severity bands</td>
+    </tr>
+    <tr>
+      <td>absoluteHighPercent</td>
+      <td>70</td>
+      <td>HIGH regardless of deviation</td>
+    </tr>
+    <tr>
+      <td>absoluteCriticalPercent</td>
+      <td>85</td>
+      <td>CRITICAL regardless of deviation</td>
+    </tr>
+    <tr>
+      <td>flatlineStdDev</td>
+      <td>0.001</td>
+      <td>below this the baseline counts as flat</td>
+    </tr>
+    <tr>
+      <td>flatlineDeltaPercent</td>
+      <td>30</td>
+      <td>on a flat baseline, the jump that is the anomaly</td>
+    </tr>
+    <tr>
+      <td>flatlineCriticalPercent</td>
+      <td>80</td>
+      <td>flat-baseline CRITICAL bound</td>
+    </tr>
+    <tr>
+      <td>criticalServicesForCritical</td>
+      <td>2</td>
+      <td>how many at once make the incident CRITICAL</td>
+    </tr>
+  </tbody>
+</table></div>
+<div class="box trap"><p>Why the flat-baseline rule exists at all</p></div>
+<p>      A z-score divides by the standard deviation. sock-shop:front-end records 6</p>
+<p>      distinct values across 1,568 samples, so the deviation approaches zero and the z-score</p>
+<p>      explodes. Below flatlineStdDev the baseline is judged on absolute movement</p>
+<p>      instead — the rule that catches an idle service suddenly doing work.</p>
+<div class="box trap"><p>A validation bug worth knowing about</p></div>
+<p>Number(null) and Number([]) are both 0, and finite. So</p>
+<p>      {"zScoreAnomaly": null} passed an isFinite guard and clamped to</p>
+<p>      0.5, the most sensitive possible value, making every sample anomalous.</p>
+<p>      Non-numeric input is now rejected outright.</p>
+<p> 09 </p>
+<h2 id="09-api-surface">09 API surface</h2>
+<p>54 routes under /api. The ones worth knowing:</p>
+<h4 id="graph-telemetry">Graph & telemetry</h4>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">GET  /graph
+GET  /nodes/:id            /metrics  /logs
+GET  /traffic?targetId=    // http OR socket, tagged
+GET  /traces/events
+GET  /targets/:id/discovery  /endpoints  /routes</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h4 id="traffic">Traffic</h4>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">POST /traffic/surface/probe   // read-only, no load
+POST /experiments/start       // mode, users, durationSec
+POST /traffic/stop            // targetId or &quot;all&quot;
+GET  /traffic/entrypoints     // pinned vs resolved, stale flag</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h4 id="ml">ML</h4>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <div style="font-family: var(--mono); font-size: 11px; color: var(--sig); margin-bottom: 8px; font-weight: 700;">📊 SYSTEM ARCHITECTURE FLOWCHART</div>
+                        <pre style="margin: 0; background: var(--panel-2); border: none; font-size: 12px; line-height: 1.5;">GET  /ml/status  /models  /projects
+GET  /ml/features?serviceId=&amp;limit=
+GET  /ml/suggestions?project=
+GET  /ml/source/:name         // allow-listed, read-only
+POST /ml/retrain              // project, algorithms, hyperparams
+POST /ml/processes/:name/start|stop</pre>
+                    </div></figure>
+<h4 id="incidents">Incidents</h4>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">GET  /incidents  /:id/timeline  /evidence
+GET  /incidents/thresholds
+POST /incidents/thresholds    // clamped; {reset:true} restores</code></pre>
+                    </div>
+<div class="box trap"><p>Express route ordering</p></div>
+<p>/incidents/thresholds must be registered before</p>
+<p>/incidents/:id, or Express matches thresholds as an incident id and</p>
+<p>      returns {"error":"Incident not found"}.</p>
+<p> 10 </p>
+<h2 id="10-performance">10 Performance</h2>
+<p>Both wins came from doing less work, not from a faster runtime.</p>
+<h3 id="tail-reading-the-feature-table">Tail-reading the feature table</h3>
+<p>/api/ml/features returns the most recent 300 rows and was reading all 33 MB to do it.</p>
+<p> → 2.0 msunfiltered — 97×, byte-identical output</p>
+<p> → 57 msfiltered by service — 5.6×</p>
+<p> → 0.00refused SSH scans per collection cycle</p>
+<div class="box perf"><p>Two details that mattered more than the raw speed</p></div>
+<p>      The filter predicate reads one column with fieldAt() rather than</p>
+<p>      line.split(','), which allocates a 19-element array per line and discards it.</p>
+<p>      A filter matching nothing would otherwise walk the whole file backwards. maxBytes</p>
+<p>      caps the scan so a bad filter degrades instead of hanging.</p>
+<h3 id="still-open">Still open</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Path</th>
+    <th>Cost</th>
+    <th>Shape of the fix</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>/api/ml/suggestions</td>
+      <td>160 ms full scan</td>
+      <td>30s cache today; same tail/stream treatment available</td>
+    </tr>
+    <tr>
+      <td>telemetry_db.json save</td>
+      <td>17.9 ms stringify, 3.8 MB</td>
+      <td>blocks the event loop on every persist</td>
+    </tr>
+  </tbody>
+</table></div>
+<p> 11 </p>
+<h2 id="11-honest-limits">11 Honest limits</h2>
+<p>From outside a container you can see how much work it is doing, exactly. You</p>
+<p>    cannot see what the work was. That is physics, not a missing feature.</p>
+<p>The workaround is tier 2, genuinely available on targets that instrument themselves:</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">histogram_quantile(0.95, sum(rate(
+  demo_cart_get_cart_latency_seconds_bucket[1h])) by (le))
+  → 0.0829      // 82.9 ms p95, service_name=&quot;cart&quot;, 2,296 samples</code></pre>
+                    </div>
+<div class="box trap"><p>The models currently say very little, and it is a data problem</p></div>
+<p>sock-shop:front-end holds 1,568 training rows containing 6 distinct</p>
+<p>      values — 0.4%. No detector learns a boundary from six points, and no</p>
+<p>      hyperparameter fixes that. Latency and error rate do not behave that way, which is the</p>
+<p>      strongest argument for tier 1/2 beyond fidelity.</p>
+<h3 id="current-target-status">Current target status</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Target</th>
+    <th>Available</th>
+    <th>Note</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>open-telemetry</td>
+      <td>tier 2</td>
+      <td>full OTLP — histograms, status codes, service metadata</td>
+    </tr>
+    <tr>
+      <td>death-star</td>
+      <td>tier 0</td>
+      <td>Jaeger running on :16686 but 0 services, null spans</td>
+    </tr>
+    <tr>
+      <td>sock-shop</td>
+      <td>tier 0</td>
+      <td>909 MB box, load average 26, swapping — no APM at all</td>
+    </tr>
+    <tr>
+      <td>vertikal</td>
+      <td>tier 0</td>
+      <td>Next.js + Supabase, no APM</td>
+    </tr>
+  </tbody>
+</table></div>
+        </article>
+
+        <div class="page-nav-footer">
+<a href="27-project-technical-reference.html" class="page-nav-btn prev">
+            <span class="page-nav-label">← Previous Document</span>
+            <span class="page-nav-title">27 — Engineering Manual &amp; Technical Reference</span>
+        </a>
+<a href="12-data-models.html" class="page-nav-btn next">
+            <span class="page-nav-label">Next Document →</span>
+            <span class="page-nav-title">12 — Data Models &amp; Schemas</span>
+        </a>
+</div>
+
+        <footer>
+            Microservice Mapper &mdash; technical reference. Figures measured on live targets, September 2026.
+        </footer>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Theme Switcher matching Mapper Technical Reference
+    const initTheme = () => {
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', saved);
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.innerHTML = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+    };
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeBtn.innerHTML = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+    }
+    initTheme();
+
+    // 2. Quick Jump Dropdown
+    const quickJump = document.getElementById('quick-jump');
+    if (quickJump) {
+        quickJump.addEventListener('change', (e) => {
+            if (e.target.value) {
+                window.location.href = e.target.value;
+            }
+        });
+    }
+
+    // 3. Flowchart Path Tracing
+    const traceBtns = document.querySelectorAll('.flow-trace-btn');
+    const nodes = document.querySelectorAll('.flow-node');
+    if (traceBtns.length > 0 && nodes.length > 0) {
+        traceBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                traceBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const flow = btn.getAttribute('data-flow');
+                nodes.forEach(n => {
+                    n.classList.remove('highlighted');
+                    const tags = (n.getAttribute('data-tags') || '').split(',');
+                    if (flow === 'RESET') {
+                        n.style.opacity = '1';
+                    } else if (tags.includes(flow.toLowerCase())) {
+                        n.classList.add('highlighted');
+                        n.style.opacity = '1';
+                    } else {
+                        n.style.opacity = '0.35';
+                    }
+                });
+            });
+        });
+    }
+
+    // 4. Master Interactive Topology Canvas (Hub Page)
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let currentMode = 'xyflow'; // 'xyflow', 'ring', '3d'
+        let hasFault = false;
+        let animFrameId = null;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = 420 * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const nodesData = [
+            { id: 'gateway', name: 'api-gateway', x: 0.15, y: 0.5, r: 24, col: '#00e5ff', status: 'HEALTHY', type: 'Gateway' },
+            { id: 'auth', name: 'auth-service', x: 0.38, y: 0.22, r: 20, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'orders', name: 'orders-service', x: 0.42, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'payment', name: 'payment-svc', x: 0.68, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Payment' },
+            { id: 'postgres', name: 'orders-db', x: 0.88, y: 0.82, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Storage' },
+            { id: 'redis', name: 'session-cache', x: 0.62, y: 0.22, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Cache' },
+            { id: 'collector', name: 'collector-agent', x: 0.50, y: 0.50, r: 20, col: '#10b981', status: 'HEALTHY', type: 'Agent' }
+        ];
+
+        const edges = [
+            { from: 'gateway', to: 'auth', latency: 4 },
+            { from: 'gateway', to: 'orders', latency: 12 },
+            { from: 'auth', to: 'redis', latency: 2 },
+            { from: 'orders', to: 'payment', latency: 18 },
+            { from: 'payment', to: 'postgres', latency: 8 },
+            { from: 'collector', to: 'gateway', latency: 1 },
+            { from: 'collector', to: 'orders', latency: 1 }
+        ];
+
+        let packets = [
+            { edgeIdx: 0, progress: 0.1, speed: 0.012 },
+            { edgeIdx: 1, progress: 0.4, speed: 0.009 },
+            { edgeIdx: 3, progress: 0.7, speed: 0.007 },
+            { edgeIdx: 4, progress: 0.2, speed: 0.015 }
+        ];
+
+        let angle3D = 0;
+
+        function renderTopology() {
+            const w = canvas.getBoundingClientRect().width;
+            const h = 420;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 30) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 30) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            // Calculate Positions
+            let posMap = {};
+            if (currentMode === 'xyflow') {
+                nodesData.forEach(n => {
+                    posMap[n.id] = { x: n.x * w, y: n.y * h, z: 1 };
+                });
+            } else if (currentMode === 'ring') {
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.36;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 - Math.PI / 2;
+                        posMap[n.id] = { x: cx + Math.cos(theta) * radius, y: cy + Math.sin(theta) * radius, z: 1 };
+                    }
+                });
+            } else if (currentMode === '3d') {
+                angle3D += 0.006;
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.34;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 + angle3D;
+                        const px = Math.cos(theta) * radius;
+                        const pz = Math.sin(theta) * radius;
+                        const scale = (pz + radius * 1.5) / (radius * 2.5);
+                        posMap[n.id] = {
+                            x: cx + px * scale,
+                            y: cy + (n.y - 0.5) * 160 * scale + Math.sin(theta * 2) * 20,
+                            z: scale
+                        };
+                    }
+                });
+            }
+
+            // Draw Edges
+            edges.forEach((e) => {
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (!p1 || !p2) return;
+
+                const isDegraded = hasFault && (e.to === 'payment' || e.from === 'payment');
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = isDegraded ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 229, 255, 0.25)';
+                ctx.lineWidth = isDegraded ? 2.5 : 1.5;
+                if (isDegraded) ctx.setLineDash([4, 4]);
+                else ctx.setLineDash([]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                ctx.fillStyle = isDegraded ? '#ef4444' : '#00e5ff';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const latText = isDegraded ? `${e.latency * 18}ms ⚠` : `${e.latency}ms`;
+                ctx.fillText(latText, midX + 4, midY - 4);
+            });
+
+            // Draw Packets
+            packets.forEach(p => {
+                p.progress += p.speed;
+                if (p.progress > 1) p.progress = 0;
+                const e = edges[p.edgeIdx];
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (p1 && p2) {
+                    const px = p1.x + (p2.x - p1.x) * p.progress;
+                    const py = p1.y + (p2.y - p1.y) * p.progress;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = hasFault && e.to === 'payment' ? '#ef4444' : '#00e5ff';
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Nodes
+            nodesData.forEach(n => {
+                const pos = posMap[n.id];
+                if (!pos) return;
+                const isTargetFault = hasFault && n.id === 'payment';
+                const nodeColor = isTargetFault ? '#ef4444' : n.col;
+                const radius = n.r * (pos.z || 1);
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius + (isTargetFault ? 8 : 4), 0, Math.PI * 2);
+                ctx.fillStyle = isTargetFault ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 229, 255, 0.08)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = isTargetFault ? 3 : 2;
+                ctx.strokeStyle = nodeColor;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '600 11.5px "IBM Plex Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(n.name, pos.x, pos.y + radius + 15);
+
+                ctx.fillStyle = isTargetFault ? '#f87171' : '#94a3b8';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const statusStr = isTargetFault ? 'CPU: 98.4% [ANOMALY]' : n.type;
+                ctx.fillText(statusStr, pos.x, pos.y + radius + 27);
+                ctx.textAlign = 'left';
+            });
+
+            animFrameId = requestAnimationFrame(renderTopology);
+        }
+
+        animFrameId = requestAnimationFrame(renderTopology);
+
+        const btnFault = document.getElementById('topo-btn-fault');
+        const btnReset = document.getElementById('topo-btn-reset');
+        const statusText = document.getElementById('topo-status-text');
+
+        if (btnFault && btnReset && statusText) {
+            btnFault.addEventListener('click', () => {
+                hasFault = true;
+                statusText.innerHTML = '<span style="color: var(--err); font-weight: bold;">🚨 ANOMALY DETECTED:</span> <code>payment-svc</code> CPU Spike 98.4% &bull; RCA Score: 0.94 &bull; BFS Depth: 2';
+            });
+            btnReset.addEventListener('click', () => {
+                hasFault = false;
+                statusText.innerHTML = '<span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.';
+            });
+        }
+    }
+
+    // 5. Interactive Lab Helpers
+    window.testCanonicalId = function() {
+        const input = document.getElementById('canon-input');
+        const target = document.getElementById('canon-target');
+        const output = document.getElementById('canon-output');
+        if (input && output) {
+            const raw = input.value.trim() || 'sockshop_orders_1';
+            const tgt = target ? target.value.trim() || 'ec2-target-prod' : 'ec2-target-prod';
+            const clean = raw.toLowerCase().replace(/_\d+$/, '').replace(/^[\/_]+/, '');
+            const canonical = `${tgt}:${clean}`;
+            output.innerHTML = `<span style="color: var(--ok); font-weight: bold;">✓ Canonical ID Resolved:</span> <code style="font-size: 1rem; color: var(--sig);">${canonical}</code><br><span style="color: var(--ink-2); font-size: 0.8rem; margin-top: 4px; display: inline-block;">Stripped instance suffix <code>_1</code> &bull; Lowercased &bull; Prefixed with Target Namespace</span>`;
+        }
+    };
+
+    window.calculateHeatDecay = function() {
+        const h0Input = document.getElementById('heat-h0');
+        const lambdaInput = document.getElementById('heat-lambda');
+        const tInput = document.getElementById('heat-t');
+        const output = document.getElementById('heat-output');
+        const bar = document.getElementById('heat-bar');
+        if (h0Input && lambdaInput && tInput && output) {
+            const h0 = parseFloat(h0Input.value) || 100;
+            const lambda = parseFloat(lambdaInput.value) || 0.05;
+            const t = parseFloat(tInput.value) || 10;
+            const ht = h0 * Math.exp(-lambda * t);
+            const pct = Math.min(100, Math.max(0, (ht / h0) * 100));
+            output.innerHTML = `<span style="color: var(--sig); font-weight: bold;">Residual Heat H(${t}s):</span> <strong>${ht.toFixed(2)}</strong> / ${h0.toFixed(0)} (${pct.toFixed(1)}% remaining)`;
+            if (bar) bar.style.width = `${pct}%`;
+        }
+    };
+
+    window.calculateRcaScore = function() {
+        const cpuInput = document.getElementById('rca-cpu');
+        const memInput = document.getElementById('rca-mem');
+        const errInput = document.getElementById('rca-err');
+        const degInput = document.getElementById('rca-deg');
+        const output = document.getElementById('rca-output');
+        if (cpuInput && memInput && errInput && degInput && output) {
+            const cpuZ = parseFloat(cpuInput.value) || 3.2;
+            const memZ = parseFloat(memInput.value) || 1.1;
+            const errRate = parseFloat(errInput.value) || 0.15;
+            const deg = parseFloat(degInput.value) || 4;
+            
+            const cpuNorm = Math.min(1, cpuZ / 4.0);
+            const memNorm = Math.min(1, memZ / 4.0);
+            const errNorm = Math.min(1, errRate / 0.20);
+            const degNorm = Math.min(1, deg / 8.0);
+            
+            const totalScore = (0.35 * cpuNorm + 0.25 * memNorm + 0.30 * errNorm + 0.10 * degNorm);
+            const isRoot = totalScore > 0.65;
+            const badgeCol = isRoot ? 'var(--err)' : (totalScore > 0.4 ? 'var(--warn)' : 'var(--ok)');
+            const badgeText = isRoot ? '🚨 PRIMARY ROOT CAUSE (P1)' : (totalScore > 0.4 ? '⚠ SECONDARY SYMPTOM' : '✓ HEALTHY / NORMAL');
+            
+            output.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700; color: ${badgeCol}; margin-bottom: 6px;">${badgeText}</div>
+                <div>Root Cause Probability Score: <strong style="font-size: 1.2rem; color: #fff;">${totalScore.toFixed(3)}</strong> (Threshold: 0.650)</div>
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
+                    CPU Contribution: ${(0.35 * cpuNorm).toFixed(3)} &bull; Mem: ${(0.25 * memNorm).toFixed(3)} &bull; Err: ${(0.30 * errNorm).toFixed(3)} &bull; Degree: ${(0.10 * degNorm).toFixed(3)}
+                </div>
+            `;
+        }
+    };
+});
+</script>
+</body>
+</html>

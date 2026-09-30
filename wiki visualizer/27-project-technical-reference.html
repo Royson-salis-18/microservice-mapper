@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>27 — Engineering Manual &amp; Technical Reference | Microservice Mapper Wiki</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <style>
+  :root {
+    --bg:        #f6f7f9;
+    --panel:     #ffffff;
+    --panel-2:   #eceff4;
+    --ink:       #141413;
+    --ink-2:     #334155;
+    --muted:     #76828f;
+    --faint:     #97a1af;
+    --rule:      #dbe0e8;
+    --rule-2:    #e9ecf2;
+
+    --sig:       #00e5ff;
+    --sig-bg:    rgba(0, 229, 255, 0.12);
+    --ok:        #0a7a46;
+    --warn:      #96620a;
+    --err:       #b41f3c;
+    --t0:        #626d7d;
+    --t1:        #96620a;
+    --t2:        #0a7ea4;
+
+    --body: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:      #05080d;
+      --panel:   #0b1119;
+      --panel-2: #121a25;
+      --ink:     #e6ecf4;
+      --ink-2:   #aeb9c8;
+      --muted:   #76828f;
+      --faint:   #545e6c;
+      --rule:    #1a2430;
+      --rule-2:  #131b25;
+      --sig:     #3ec8ee;
+      --sig-bg:  #3ec8ee14;
+      --ok:      #35d38b;
+      --warn:    #f0ab2e;
+      --err:     #ff5f7a;
+      --t0:      #76828f;
+      --t1:      #f0ab2e;
+      --t2:      #3ec8ee;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:      #05080d;  --panel:   #0b1119;  --panel-2: #121a25;
+    --ink:     #e6ecf4;  --ink-2:   #aeb9c8;  --muted:   #76828f;
+    --faint:   #545e6c;  --rule:    #1a2430;  --rule-2:  #131b25;
+    --sig:     #3ec8ee;  --sig-bg:  #3ec8ee14;
+    --ok:      #35d38b;  --warn:    #f0ab2e;  --err:     #ff5f7a;
+    --t0:      #76828f;  --t1:      #f0ab2e;  --t2:      #3ec8ee;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; margin: 0; padding: 0; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 0 90px; }
+
+  .hd { padding-block: 54px 26px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+  .hd .eye { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sig); margin-bottom: 14px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.03em; line-height: 1.05; margin: 0 0 14px; color: var(--ink); }
+  .hd p, .lead { color: var(--ink-2); max-width: 76ch; margin: 0 0 14px; font-size: 15px; }
+
+  .metadata-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; margin-bottom: 14px; }
+  .meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 7px; padding-block: 22px 8px; }
+  .toc a {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em;
+    color: var(--muted); text-decoration: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 5px 11px;
+    background: var(--panel); transition: all 0.2s;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--sig); border-color: var(--sig); outline: none; background: var(--panel-2); }
+
+  section { padding-block: 44px 0; scroll-margin-top: 20px; }
+  h2 {
+    font-size: 24px; font-weight: 700; letter-spacing: -.022em; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;
+    color: var(--ink); border-bottom: 1px solid var(--rule); padding-bottom: 8px;
+  }
+  h2 .id { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--sig); letter-spacing: .06em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 9px; letter-spacing: -.008em; color: var(--ink); }
+  h4 { font-size: 13.5px; font-weight: 600; margin: 18px 0 7px; color: var(--ink-2); }
+  p { margin: 0 0 14px; max-width: 76ch; color: var(--ink-2); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  a {
+    color: var(--sig);
+    text-decoration: underline;
+    text-decoration-color: rgba(62, 200, 238, 0.4);
+    text-underline-offset: 3px;
+    font-weight: 500;
+  }
+  a:hover {
+    color: var(--sig);
+    text-decoration-color: var(--sig);
+  }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--panel-2); padding: 1.5px 5px; border-radius: 4px; color: var(--ink);
+  }
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.62;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 16px; color: var(--ink-2);
+  }
+  pre b { color: var(--sig); font-weight: 500; }
+  pre i { color: var(--muted); font-style: normal; }
+  pre .g { color: var(--ok); }
+  pre .r { color: var(--err); }
+
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; }
+
+  .t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .t th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+    padding: 0 14px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  .t td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; color: var(--ink-2); }
+  .t tr:last-child td { border-bottom: none; }
+  .t td:first-child { color: var(--ink); font-weight: 500; }
+  .t code { background: none; padding: 0; color: var(--sig); }
+  .scroll { overflow-x: auto; margin: 1rem 0; }
+
+  .box { border-radius: 9px; padding: 16px 19px; margin: 18px 0; border: 1px solid var(--rule); background: var(--panel); }
+  .box.why  { border-left: 3px solid var(--sig); }
+  .box.trap { border-left: 3px solid var(--err); }
+  .box.perf { border-left: 3px solid var(--ok); }
+  .box h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--mono); font-weight: 500; }
+  .box.why h4  { color: var(--sig); }
+  .box.trap h4 { color: var(--err); }
+  .box.perf h4 { color: var(--ok); }
+  .box p { font-size: 14px; margin-bottom: 10px; }
+  .box p:last-child { margin-bottom: 0; }
+
+  /* Plain English Code Explainer Box */
+  .code-explainer-box {
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--sig);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: -8px 0 20px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .code-explainer-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sig);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .code-explainer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .code-explainer-col {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .code-explainer-col strong {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .m { background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; padding: 15px 16px; }
+  .m .v { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-bottom: 3px; color: var(--ink); }
+  .m .v s { text-decoration: none; color: var(--faint); font-size: 14px; font-weight: 400; }
+  .m .k { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .m.ok .v { color: var(--ok); } .m.err .v { color: var(--err); }
+
+  figure { margin: 0 0 16px; }
+  figure:last-child { margin-bottom: 0; }
+  .fx { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; overflow-x: auto; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.55; max-width: 76ch; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+  .s-n { font-family: var(--body); font-size: 12px; font-weight: 500; fill: var(--ink); }
+  .s-m { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); }
+  .s-s { font-family: var(--body); font-size: 11px; fill: var(--muted); }
+
+  ul { margin: 0 0 14px; padding-left: 20px; color: var(--ink-2); max-width: 76ch; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--faint); }
+
+  .pill { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .pill.t0 { background: color-mix(in srgb, var(--t0) 15%, transparent); color: var(--t0); }
+  .pill.t1 { background: color-mix(in srgb, var(--t1) 15%, transparent); color: var(--t1); }
+  .pill.t2 { background: color-mix(in srgb, var(--t2) 15%, transparent); color: var(--t2); }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
+  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid rgba(0, 229, 255, 0.3); }
+  .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-orange { background: rgba(245, 158, 11, 0.15); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--err); border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
+  .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+  /* Flowchart / Architecture Styles */
+  .flow-container { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .flow-layer { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+  .flow-layer-title { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+  .flow-node-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; }
+  .flow-node-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; text-decoration: none; color: inherit; display: block; transition: all 0.2s; }
+  .flow-node-card:hover { border-color: var(--sig); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .flow-node-card.highlighted { border-color: var(--sig); box-shadow: 0 0 14px var(--sig); transform: scale(1.02); }
+  .flow-node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .flow-node-name { font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+  .flow-node-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-bottom: 0.6rem; }
+  .flow-node-footer { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); }
+  .flow-arrow-down { text-align: center; color: var(--sig); font-family: var(--mono); font-size: 0.8rem; margin: 0.6rem 0; font-weight: 600; letter-spacing: 0.1em; }
+
+  /* Interactive Lab Box */
+  .interactive-lab { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--sig); border-radius: 10px; padding: 1.5rem; margin: 2rem 0; }
+  .lab-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.6rem; }
+  .lab-btn { background: var(--sig); color: #070b14; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .lab-btn:hover { filter: brightness(1.2); box-shadow: 0 0 12px var(--sig-bg); transform: translateY(-1px); }
+  .lab-output { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); min-height: 60px; }
+
+  /* Grid Cards on Hub */
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+  .feature-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+  .feature-card:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+  .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+  .feature-card-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+  .feature-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+  .feature-card-footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); font-weight: 600; }
+
+  /* Chronological Stepper */
+  .chrono-timeline { position: relative; margin: 2rem 0; padding-left: 1.8rem; }
+  .chrono-timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: linear-gradient(to bottom, var(--sig), #c084fc, var(--ok)); }
+  .chrono-step { position: relative; margin-bottom: 1.6rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; transition: all 0.2s; }
+  .chrono-step:hover { border-color: var(--sig); transform: translateX(4px); }
+  .chrono-step::before { content: ''; position: absolute; top: 1.2rem; left: -2.15rem; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--sig); box-shadow: 0 0 8px var(--sig); }
+  .step-num { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--sig); letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  .step-title { font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+
+  /* Page Navigation Footer */
+  .page-nav-footer { display: flex; justify-content: space-between; gap: 1.5rem; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
+  .page-nav-btn { flex: 1; min-width: 240px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.2rem; text-decoration: none; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; }
+  .page-nav-btn:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); }
+  .page-nav-btn.next { text-align: right; }
+  .page-nav-label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; }
+  .page-nav-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr !important; } }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+    <div class="wrap">
+        
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-block: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div style="font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;">
+        <a href="index.html" style="color: var(--ink); text-decoration: none;">Wiki Visualizer</a>
+        <span>/</span>
+        <span>8. Reference &amp; Operations</span>
+        <span>/</span>
+        <span style="color: var(--sig); font-weight: 600;">27 — Engineering Manual &amp; Technical Reference</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <select id="quick-jump" class="quick-jump-select" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;" title="Jump directly to any document">
+<option value="" disabled selected>⚡ Jump to document...</option>
+<optgroup label="1. Master Hub &amp; Foundations">
+<option value="index.html">Master Visual Wiki &amp; Architecture ...</option>
+<option value="architecture-map.html">Master Architecture Flowchart Map</option>
+<option value="19-how-it-all-works.html">19 — How It All Works (Plain &amp; Det...</option>
+<option value="01-overview.html">01 — Overview &amp; Design Philosophy</option>
+<option value="02-architecture.html">02 — System Layers &amp; Data Flow</option>
+<option value="readme.html">Project README &amp; Quickstart</option>
+<option value="wiki-deep-dive.html">Complete System Wiki (30 Sections)</option>
+<option value="wiki-index.html">Wiki Table of Contents</option>
+</optgroup>
+<optgroup label="2. Core Graph Engine">
+<option value="03-graphstore.html">03 — GraphStore Central Nervous Sy...</option>
+<option value="04-id-system.html">04 — Node &amp; Edge ID System</option>
+<option value="05-telemetry-ingestion.html">05 — Telemetry Ingestion Pipeline</option>
+<option value="06-node-edge-lifecycle.html">06 — Node &amp; Edge Lifecycle</option>
+</optgroup>
+<optgroup label="3. Connection &amp; Discovery">
+<option value="21-connection-layer.html">21 — Connection Layer &amp; Target Agent</option>
+<option value="23-endpoint-discovery.html">23 — Endpoint Discovery Engine</option>
+</optgroup>
+<optgroup label="4. Remote Collection">
+<option value="07-remote-collector.html">07 — Remote Collector Daemon</option>
+<option value="25-telemetry-sources.html">25 — Telemetry Sources &amp; Ingestion</option>
+<option value="18-telemetry-tiers-plan.html">18 — Telemetry Tiers Plan (0, 1, 2)</option>
+<option value="telemetry-platform-readme.html">Telemetry Platform Daemon Readme</option>
+</optgroup>
+<optgroup label="5. RCA &amp; Risk">
+<option value="08-rca-engine.html">08 — RCA Engine &amp; Incident Manager</option>
+<option value="22-risk-engine.html">22 — Risk Engine &amp; Centrality Scor...</option>
+<option value="17-findings-vs-incidents.html">17 — Findings vs Incidents Archite...</option>
+</optgroup>
+<optgroup label="6. Frontend &amp; UI">
+<option value="09-frontend.html">09 — Frontend Architecture &amp; 2D/3D...</option>
+<option value="24-client-frontend.html">24 — Client Frontend &amp; 3D Spatial ...</option>
+<option value="10-websocket.html">10 — WebSocket &amp; Real-Time Streaming</option>
+<option value="traces-section-prompt.html">Traces Section Specification</option>
+</optgroup>
+<optgroup label="7. Traffic &amp; ML Pipeline">
+<option value="20-traffic-experiments.html">20 — Traffic Controller &amp; Load Gen...</option>
+<option value="traffic-gen-readme.html">Traffic Generator Readme</option>
+<option value="11-ml-pipeline.html">11 — ML Anomaly Detection Pipeline</option>
+<option value="26-ml-pipeline-deep-dive.html">26 — ML Pipeline Deep Dive (Code-L...</option>
+<option value="ml-readme.html">ML Subsystem Readme</option>
+</optgroup>
+<optgroup label="8. Reference &amp; Operations">
+<option value="27-project-technical-reference.html" selected>27 — Engineering Manual &amp; Technica...</option>
+<option value="28-mapper-technical-reference.html">28 — Mapper Technical Reference (1...</option>
+<option value="12-data-models.html">12 — Data Models &amp; Schemas</option>
+<option value="13-api-reference.html">13 — API Reference</option>
+<option value="14-configuration.html">14 — Configuration Reference</option>
+<option value="15-troubleshooting.html">15 — Troubleshooting Runbook</option>
+<option value="16-change-log-and-rationale.html">16 — Change Log &amp; Design Rationale</option>
+</optgroup>
+</select>
+        <button id="theme-toggle-btn" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;">🌓 Mode</button>
+        <a href="architecture-map.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🗺 Architecture Map</a>
+        <a href="index.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🏠 Master Hub</a>
+      </div>
+    </div>
+    
+
+        <header class="hd">
+            <div class="eye">8. Reference &amp; Operations &middot; TECHNICAL REFERENCE &middot; 2026</div>
+            <h1>27 — Engineering Manual &amp; Technical Reference</h1>
+            <p class="lead">Exhaustive project reference manual containing architectural diagrams and design rationale.</p>
+            <div class="metadata-strip">
+                <span class="badge badge-blue">ENGINEERING MANUAL</span>
+                <span class="meta-item">📁 <code>wiki/27-project-technical-reference.md</code></span>
+                <span class="meta-item">⏱ ~13 min read</span>
+                <span class="meta-item">📝 2,644 words</span>
+            </div>
+            <nav class="toc">
+  <a href="#1-project-vision-scope">1. Project Vision &amp; Scope</a>
+  <a href="#2-architecture-overview">2. Architecture Overview</a>
+  <a href="#21-control-plane-componentry">2.1 Control Plane Componen...</a>
+  <a href="#22-data-plane-componentry">2.2 Data Plane Componentry</a>
+  <a href="#3-core-design-principles">3. Core Design Principles</a>
+  <a href="#4-system-lifecycle">4. System Lifecycle</a>
+  <a href="#5-graphstore-specification">5. GraphStore Specification</a>
+  <a href="#51-internal-state-maps">5.1 Internal State Maps</a>
+  <a href="#52-the-ingestion-algorithm">5.2 The Ingestion Algorithm</a>
+  <a href="#6-metricstore-aggregation">6. MetricStore &amp; Aggregation</a>
+  <a href="#61-time-series-buffering">6.1 Time-Series Buffering</a>
+  <a href="#62-edge-metric-aggregation">6.2 Edge Metric Aggregation</a>
+</nav>
+        </header>
+
+        
+
+        
+
+        <article class="doc-body">
+            <h1 id="microservice-mapper-technical-spec">Microservice Mapper | Technical Spec</h1>
+<p>The definitive engineering authority for the autonomous topology discovery platform. This manual details the mathematical foundations, architectural constraints, and implementation specifics of the system.</p>
+<p> Internal Technical Reference</p>
+<p> 2026-09-15</p>
+<p> TypeScript / Node.js / React</p>
+<p> AWS EC2 / Docker</p>
+<p> Bearer Token (INGEST_TOKEN)</p>
+<h2 id="1-project-vision-scope">1. Project Vision & Scope</h2>
+<p>Microservice Mapper is engineered to solve the "Visibility Gap"—the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).</p>
+<p>Traditional observability relies on instrumentation (SDKs) or distributed tracing (OpenTelemetry). While powerful, these require significant developer effort to implement. Mapper takes a Zero-Touch approach, treating the network as the source of truth.</p>
+<div class="box why"><p>Core Value Proposition: Move from "I think Service A calls Service B" to "I can prove Service A called Service B 4,500 times in the last 5 minutes with a P95 latency of 120ms."</p></div>
+<h2 id="2-architecture-overview">2. Architecture Overview</h2>
+<p>The system is architected as a decoupled Hub-and-Spoke model, separating the Control Plane from the Data Plane to ensure scalability and security.</p>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <div style="font-family: var(--mono); font-size: 11px; color: var(--sig); margin-bottom: 8px; font-weight: 700;">📊 SYSTEM ARCHITECTURE FLOWCHART</div>
+                        <pre style="margin: 0; background: var(--panel-2); border: none; font-size: 12px; line-height: 1.5;">[ TARGET INFRASTRUCTURE ]                [ MAPPER CONTROL PLANE ]
+┌──────────────────────────┐              ┌───────────────────────────────┐
+│  Target EC2 Instance     │              │   Express API Server         │
+│  ┌────────────────────┐  │              │   ┌───────────────────────┐   │
+│  │ Docker Runtime     │  │              │   │ GraphStore (In-Memory) │   │
+│  │ ├── Svc A (Node)   │  │              │   │ MetricStore (Buffers)  │   │
+│  │ ├── Svc B (Java)   │  │              │   │ RCA Engine (Analysis)  │   │
+│  │ └── Collector       │  │              │   └───────────────────────┘   │
+│  └──────────┬─────────┘  │              │               ▲               │
+│             │            │    HTTPS POST│               │               │
+│             └────────────┼─────────────┤               │               │
+└──────────────────────────┘  /api/ingest │               │               │
+                                          │               ▼               │
+                                          │   [ React / Three.js UI ]     │
+                                          │   ┌───────────────────────┐   │
+                                          │   │ 3D Topology Visualization│   │
+                                          │   │ Live Interaction Stream  │   │
+                                          │   └───────────────────────┘   │
+                                          └───────────────────────────────┘</pre>
+                    </div></figure>
+<h3 id="21-control-plane-componentry">2.1 Control Plane Componentry</h3>
+<ul>
+  <li>GraphStore: The central repository for all nodes and edges. Implements target isolation for multi-tenancy.</li>
+  <li>DiscoveryEngine: Manages SSH tunnels to targets, executes Docker inspections, and orchestrates collector deployment.</li>
+  <li>RCA Engine: A heuristic-based analysis tool that identifies root causes of failure by correlating anomalies across the graph.</li>
+  <li>WebSocket Manager: Handles real-time broadcast of graph updates to UI clients.</li>
+</ul>
+<h3 id="22-data-plane-componentry">2.2 Data Plane Componentry</h3>
+<ul>
+  <li>Remote Collector: A Dockerized TypeScript process that reads /proc/net/tcp and tails container logs.</li>
+  <li>Telemetry Envelope: A standardized JSON schema used to transport nodes, metrics, and interaction events.</li>
+</ul>
+<h2 id="3-core-design-principles">3. Core Design Principles</h2>
+<h4 id="31-non-invasiveness">3.1 Non-Invasiveness</h4>
+<p>The system must not require modification of the target application code. It achieves this by utilizing "side-channel" telemetry (Logs, TCP tables, Docker Stats) rather than instrumenting code via SDKs.</p>
+<h4 id="32-deterministic-identity">3.2 Deterministic Identity</h4>
+<p>To prevent "Node Drift," every entity is assigned a canonical ID based on the pattern targetId:serviceName. This ensures that telemetry from multiple sources (TCP vs. Logs) correlates to the same logical node.</p>
+<h4 id="33-eventual-consistency">3.3 Eventual Consistency</h4>
+<p>The system accepts that telemetry may arrive out of order or be delayed. The GraphStore handles this by using lastSeen timestamps and a staleness-based state machine (LIVE $\rightarrow$ STALE $\rightarrow$ OFFLINE).</p>
+<h2 id="4-system-lifecycle">4. System Lifecycle</h2>
+<p>The lifecycle of a target environment within the Mapper follows a strict state transition flow:</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">[ Unconfigured ] $\rightarrow$ [ Registered ] $\rightarrow$ [ Discovering ] $\rightarrow$ [ Live ] $\rightarrow$ [ Analysis ]
+      (via API)           (via Config)      (via SSH Scan)      (via Ingest)     (via RCA Loop)</code></pre>
+                    </div>
+<ol>
+  <li>Registration: Target IP and SSH keys are added to remote_config.json.</li>
+  <li>Discovery: EndpointDiscoveryEngine connects via SSH, identifies containers, and deploys the collector.</li>
+  <li>Ingestion: The Collector starts POSTing telemetry to /api/ingest.</li>
+  <li>Visualization: The Server broadcasts the discovered graph to the UI.</li>
+  <li>Analysis: The IncidentManager begins monitoring metrics for anomalies.</li>
+</ol>
+<h2 id="5-graphstore-specification">5. GraphStore Specification</h2>
+<p>The GraphStore.ts class is the most critical component of the server. It manages the in-memory representation of the entire microservice landscape.</p>
+<h3 id="51-internal-state-maps">5.1 Internal State Maps</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Property</th>
+    <th>Type</th>
+    <th>Responsibility</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>targets</td>
+      <td>Map<string, Target></td>
+      <td>Stores environment-level metadata (Host IP, Display Name, Status).</td>
+    </tr>
+    <tr>
+      <td>nodesByTarget</td>
+      <td>Map<string, Map<string, ServiceNode>></td>
+      <td>Nested map allowing O(1) lookup of a service within a specific project.</td>
+    </tr>
+    <tr>
+      <td>edgesByTarget</td>
+      <td>Map<string, Map<string, DependencyEdge>></td>
+      <td>Tracks dependencies. Keys are formatted as source->target.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h3 id="52-the-ingestion-algorithm">5.2 The Ingestion Algorithm</h3>
+<p>When a TelemetryEnvelope arrives, the following sequence is executed in ingestRemote():</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">function ingestRemote(payload, clientIp) {
+  1. Normalize target identity and update target.lastSeen = now.
+  2. For each node in payload.events.nodes:
+     - Normalize ID to &quot;target:service&quot;.
+     - Update node.status and metadata (containerId, image).
+  3. For each edge in payload.events.edges:
+     - Normalize source/target IDs.
+     - If edge.observed is true, update edge.lastSeen.
+  4. For each metric in payload.events.metrics:
+     - Push raw snapshot to MetricStore.
+     - Update current node.metrics (cpu, mem, network).
+  5. For each interaction in payload.events.interactions:
+     - Create/Update DependencyEdge.
+     - Mark edge.observed = true.
+     - Map route to EndpointRegistry and update request counts.
+  6. Broadcast &#x27;graph-update&#x27; via WebSockets.
+}</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="6-metricstore-aggregation">6. MetricStore & Aggregation</h2>
+<p>The MetricStore.ts provides the temporal depth required for anomaly detection. It doesn't just store the current state, but a sliding window of history.</p>
+<h3 id="61-time-series-buffering">6.1 Time-Series Buffering</h3>
+<p>The store maintains a Map<string, MetricSnapshot[]>. To prevent memory exhaustion, it implements a fixed-size buffer (maxSize). When the buffer is full, the oldest sample is shifted out.</p>
+<h3 id="62-edge-metric-aggregation">6.2 Edge Metric Aggregation</h3>
+<p>The getAggregatedEdgeMetrics() method transforms raw interaction events into a statistical summary for a specific edge over a time window (default 5m):</p>
+<div class="panel" style="margin: 18px 0; font-family: var(--mono);">Error Rate = $\frac{\text{Requests with StatusCode } \ge 400}{\text{Total Requests}}$ 
+Avg Latency = $\frac{\sum \text{LatencyMs}}{\text{Total Requests}}$ 
+Throughput = $\frac{\sum \text{BytesSent}}{\text{WindowSeconds}}$</div>
+<h2 id="7-endpoint-registry">7. Endpoint Registry</h2>
+<p>The EndpointRegistry.ts manages the catalog of "reachable" interfaces. It separates the physical identity (IP/Port) from the logical identity (Service Name).</p>
+<ul>
+  <li>Service IDs: Deterministic names stripped of Docker Compose prefixes.</li>
+  <li>Endpoint IDs: Unique identifiers for a specific protocol/port pair on a service.</li>
+  <li>Route IDs: Unique identifiers for a specific HTTP Method + Path combination.</li>
+</ul>
+<h2 id="8-api-routing-layer">8. API & Routing Layer</h2>
+<p>The API is built using Express.js and organized in routes.ts. It provides both synchronous REST endpoints for the UI and an asynchronous Ingestion endpoint for the collectors.</p>
+<div class="box why"><p>Security Note: The /api/ingest endpoint is protected by a Bearer token (INGEST_TOKEN) to prevent unauthorized telemetry injection.</p></div>
+<h2 id="9-anomaly-detection-logic">9. Anomaly Detection Logic</h2>
+<p>The AnomalyDetector.ts uses a combination of static thresholds and dynamic statistical analysis to identify problematic nodes.</p>
+<h3 id="91-dynamic-z-score-analysis">9.1 Dynamic Z-Score Analysis</h3>
+<p>Instead of relying on a hard-coded "CPU > 80%" rule, the system calculates a Z-Score based on the last 15 minutes of history.</p>
+<div class="panel" style="margin: 18px 0; font-family: var(--mono);">$Z = \frac{x - \mu}{\sigma}$ 
+            Where $x$ is current value, $\mu$ is the moving average, and $\sigma$ is the standard deviation.</div>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th></th>
+    <th>Z</th>
+    <th>Value</th>
+    <th>Severity</th>
+    <th>Interpretation</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>$2.5 \le Z < 3.0$</td>
+      <td>MEDIUM</td>
+      <td>Statistically significant deviation. Monitor closely.</td>
+    </tr>
+    <tr>
+      <td>$3.0 \le Z < 4.0$</td>
+      <td>HIGH</td>
+      <td>Strong anomaly. Likely impacting performance.</td>
+    </tr>
+    <tr>
+      <td>$Z \ge 4.0$</td>
+      <td>CRITICAL</td>
+      <td>Extreme outlier. High probability of failure.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="10-rca-engine-scoring">10. RCA Engine Scoring</h2>
+<p>The RCAEngine.ts calculates a Root Cause Score for every failing node using a weighted evidence model.</p>
+<h3 id="101-the-scoring-weights">10.1 The Scoring Weights</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Factor</th>
+    <th>Weight</th>
+    <th>Condition</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Temporal Precedence</td>
+      <td>+0.30</td>
+      <td>Node was the first in the cluster to show an anomaly.</td>
+    </tr>
+    <tr>
+      <td>Critical Status</td>
+      <td>+0.35</td>
+      <td>Container process exited or is in 'critical' state.</td>
+    </tr>
+    <tr>
+      <td>Observed Dependency</td>
+      <td>+0.20</td>
+      <td>Runtime TCP traffic is confirmed between this node and others.</td>
+    </tr>
+    <tr>
+      <td>Downstream Impact</td>
+      <td>+0.15</td>
+      <td>Multiple downstream dependencies are also failing.</td>
+    </tr>
+    <tr>
+      <td>Anomaly Presence</td>
+      <td>+0.10</td>
+      <td>General metric anomaly (Z-score) detected.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="11-incident-lifecycle">11. Incident Lifecycle</h2>
+<p>An Incident is a first-class object that encapsulates a failure event. The IncidentManager` manages the following states:</p>
+<ol>
+  <li>Detection: AnomalyDetector flags one or more nodes.</li>
+  <li>Analysis: RCAEngine calculates scores and identifies the primary root cause.</li>
+  <li>Propagation: The system traces the "Blast Radius" by following edges from the root cause downwards.</li>
+  <li>Remediation: The system generates a suggested command (e.g., docker start ...) based on the root cause.</li>
+  <li>Resolution: When anomalies disappear, the incident is marked as RESOLVED.</li>
+</ol>
+<h2 id="12-graph-analytics">12. Graph Analytics</h2>
+<p>The GraphAnalytics.ts provides higher-order insights into the system topology.</p>
+<ul>
+  <li>Node Degree: Sum of upstream and downstream connections. High degree nodes are "Critical Hubs."</li>
+  <li>Top Consumers: Identifies services with the highest relative CPU/Memory usage.</li>
+  <li>Connectivity Analysis: Finds the most connected nodes to identify single points of failure (SPOFs).</li>
+</ul>
+<h2 id="13-discovery-engine-flow">13. Discovery Engine Flow</h2>
+<p>The EndpointDiscoveryEngine` implements an automation flow to map remote target environments.</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">Discovery Flow:
+1. Connect via SSH using .pem key.
+2. Run &#x27;docker ps&#x27; to identify all containers.
+3. Run &#x27;docker inspect&#x27; on each container:
+   - Extract image name, ports, and environment variables.
+   - Parse NetworkSettings to find internal IP addresses.
+4. Parse &#x27;docker-compose.yml&#x27; (if available):
+   - Extract &#x27;depends_on&#x27; blocks to build Declared Topology.
+5. Register discovered services and endpoints in EndpointRegistry.
+6. Deploy the &#x27;remote-collector&#x27; container using &#x27;docker run&#x27;.
+7. Establish continuous polling loop for runtime metrics.</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Establishes an encrypted reverse SSH tunnel between the target EC2 machine and central server without exposing open inbound firewall ports.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>Target SSH credentials and remote port 3001.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Multiplexes telemetry stream and terminal sessions with exponential reconnect backoff.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Enables secure, agentless data collection across private VPC networks.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="14-targetagent-lifecycle">14. TargetAgent Lifecycle</h2>
+<p>The TargetAgent` manages the state of a single remote target, implementing auto-recovery for SSH drops.</p>
+<div class="box why"><p>Recovery Logic: If a polling cycle fails, the agent enters recovering = true, closes the current connection, and schedules a reconnect attempt in 10 seconds.</p></div>
+<h2 id="15-telemetry-platform-lib">15. Telemetry Platform (Lib)</h2>
+<p>The telemetry-platform is a shared library used by both the server and collector.</p>
+<ul>
+  <li>ConnectionManager: Handles the complexity of SSH PTYs and tunnel persistence.</li>
+  <li>DiscoveryEngine: The logic for parsing Docker-specific metadata into a generic architecture model.</li>
+  <li>MetricCollector: Low-level primitives for reading system stats.</li>
+</ul>
+<h2 id="16-collector-runtime">16. Collector Runtime</h2>
+<p>The remote-collector` is a high-performance TypeScript process optimized for low overhead.</p>
+<h4 id="performance-characteristics">Performance Characteristics:</h4>
+<ul>
+  <li>Polling Interval: Default 5 seconds.</li>
+  <li>Log Tailing: Uses a sliding window to avoid reading the entire log file on every cycle.</li>
+  <li>Ingestion: Batches telemetry events into a single TelemetryEnvelope.</li>
+</ul>
+<h2 id="17-tcp-inference-logic">17. TCP Inference Logic</h2>
+<p>The collector reads /proc/net/tcp on the host to identify established connections.</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">Algorithm:
+1. Read /proc/net/tcp.
+2. Filter for rows where state == &#x27;01&#x27; (TCP_ESTABLISHED).
+3. Parse the local and remote hex-encoded IP addresses.
+4. Use the local Docker network map to correlate these IPs to container names.
+5. If SourceIP=SvcA and TargetIP=SvcB, mark Edge(SvcA $\rightarrow$ SvcB) as &#x27;observed&#x27;.</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Extracts live microservice telemetry directly from the host Linux kernel (/proc/net/tcp hex socket tables and docker.sock frames).</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>Linux /proc filesystem & Docker socket.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Bitwise hex IP/Port decoding and 8-byte stream demuxing.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Zero overhead: extracts full network topology without modifying container code.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="18-http-log-demuxing">18. HTTP Log Demuxing</h2>
+<p>The collector implements a Demuxer to handle multiple log formats.</p>
+<ol>
+  <li>JSON Parser: Parses structured logs and looks for upstream_addr.</li>
+  <li>Regex Parser: Applies a standard access log regex to infer target services via path analysis.</li>
+  <li>Upstream Mapping: Resolves upstream_addr back to a service name via internal IP map.</li>
+</ol>
+<h2 id="19-traffic-controller">19. Traffic Controller</h2>
+<p>The TrafficController` manages external load generation via the traffic-generator CLI.</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">Traffic Execution:
+- Spawns &#x27;node --import tsx src/cli.ts&#x27; as a child process.
+- Passes parameters: --target, --profile, --url, --mode.
+- Listens to stdout for &#x27;__STATS__&#x27; markers to update real-time experiment metrics.
+- Sends SIGTERM to the child process on stop.</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="20-experiment-logic">20. Experiment Logic</h2>
+<p>Experiments are formal test runs that define a workload and "success limits" (e.g., P95 latency < 200ms).</p>
+<div class="box why"><p>Experiment Lifecycle: START $\rightarrow$ MONITOR $\rightarrow$ EVALUATE $\rightarrow$ STOP.</p></div>
+<h2 id="21-data-model-servicenode">21. Data Model: ServiceNode</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Field</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>id</td>
+      <td>string</td>
+      <td>Canonical ID (target:service).</td>
+    </tr>
+    <tr>
+      <td>status</td>
+      <td>healthy</td>
+      <td>degraded</td>
+      <td>critical</td>
+      <td>unknown</td>
+      <td>Current health state based on metrics/z-score.</td>
+    </tr>
+    <tr>
+      <td>type</td>
+      <td>gateway</td>
+      <td>service</td>
+      <td>database</td>
+      <td>queue</td>
+      <td>frontend</td>
+      <td>Logical role of the service.</td>
+    </tr>
+    <tr>
+      <td>metrics</td>
+      <td>NodeMetrics</td>
+      <td>null</td>
+      <td>Current snapshot of CPU/Mem/Net.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="22-data-model-dependencyedge">22. Data Model: DependencyEdge</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Field</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>source</td>
+      <td>string</td>
+      <td>Source Node ID.</td>
+    </tr>
+    <tr>
+      <td>target</td>
+      <td>string</td>
+      <td>Target Node ID.</td>
+    </tr>
+    <tr>
+      <td>declared</td>
+      <td>boolean</td>
+      <td>True if found in Compose/Config.</td>
+    </tr>
+    <tr>
+      <td>observed</td>
+      <td>boolean</td>
+      <td>True if seen in TCP/Logs.</td>
+    </tr>
+    <tr>
+      <td>evidenceSources</td>
+      <td>string[]</td>
+      <td>List of sources (network-tcp, http-log, compose-config).</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="23-data-model-telemetry-envelope">23. Data Model: Telemetry Envelope</h2>
+<p>The envelope is the transport unit for all data from Collector $\rightarrow$ Server.</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">interface TelemetryEnvelope {
+  schemaVersion: string;
+  targetId: string;
+  timestamp: string;
+  events: {
+    nodes: ServiceNode[];
+    metrics: { nodeId: string; snapshot: MetricSnapshot }[];
+    edges: DependencyEdge[];
+    interactions: InteractionEvent[];
+  }
+}</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="24-data-model-incident">24. Data Model: Incident</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Field</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>rootCauseServiceId</td>
+      <td>string</td>
+      <td>null</td>
+      <td>The ID of the node determined to be the origin of failure.</td>
+    </tr>
+    <tr>
+      <td>confidence</td>
+      <td>LOW</td>
+      <td>MEDIUM</td>
+      <td>HIGH</td>
+      <td>UNKNOWN</td>
+      <td>Certainty of the RCA result.</td>
+    </tr>
+    <tr>
+      <td>propagation</td>
+      <td>PropagationStep[]</td>
+      <td>The sequence of failures cascading from the root.</td>
+    </tr>
+    <tr>
+      <td>evidence</td>
+      <td>EvidenceItem[]</td>
+      <td>The specific metrics/events that justify the incident.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="25-api-spec-graph">25. API Spec: Graph</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Endpoint</th>
+    <th>Method</th>
+    <th>Params</th>
+    <th>Response</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>/api/graph</td>
+      <td>GET</td>
+      <td>None</td>
+      <td>{ nodes: [], edges: [], targets: [] }</td>
+    </tr>
+    <tr>
+      <td>/api/nodes/:id</td>
+      <td>GET</td>
+      <td>id (path)</td>
+      <td>ServiceNode object.</td>
+    </tr>
+    <tr>
+      <td>/api/nodes/:id/metrics</td>
+      <td>GET</td>
+      <td>range (query: '5m', '15m')</td>
+      <td>MetricSnapshot[] history.</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="26-api-spec-discovery">26. API Spec: Discovery</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Endpoint</th>
+    <th>Method</th>
+    <th>Params</th>
+    <th>Response</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>/api/targets</td>
+      <td>GET</td>
+      <td>None</td>
+      <td>Target[]</td>
+    </tr>
+    <tr>
+      <td>/api/targets/:id/discovery</td>
+      <td>GET</td>
+      <td>id (path)</td>
+      <td>TargetDiscoverySummary</td>
+    </tr>
+    <tr>
+      <td>/api/discovery/refresh</td>
+      <td>POST</td>
+      <td>{ targetId: string }</td>
+      <td>{ success: boolean }</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="27-api-spec-incidents">27. API Spec: Incidents</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Endpoint</th>
+    <th>Method</th>
+    <th>Params</th>
+    <th>Response</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>/api/incidents</td>
+      <td>GET</td>
+      <td>targetId (query)</td>
+      <td>Incident[]</td>
+    </tr>
+    <tr>
+      <td>/api/incidents/:id</td>
+      <td>GET</td>
+      <td>id (path)</td>
+      <td>Incident object.</td>
+    </tr>
+    <tr>
+      <td>/api/incidents/:id/propagation</td>
+      <td>GET</td>
+      <td>id (path)</td>
+      <td>PropagationStep[]</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="28-api-spec-traffic">28. API Spec: Traffic</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Endpoint</th>
+    <th>Method</th>
+    <th>Params</th>
+    <th>Response</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>/api/traffic/start</td>
+      <td>POST</td>
+      <td>{ targetId, profile, mode }</td>
+      <td>TargetTrafficStatus[]</td>
+    </tr>
+    <tr>
+      <td>/api/traffic/stop</td>
+      <td>POST</td>
+      <td>{ targetId }</td>
+      <td>TargetTrafficStatus</td>
+    </tr>
+    <tr>
+      <td>/api/experiments/start</td>
+      <td>POST</td>
+      <td>{ targetId, profile, config }</td>
+      <td>{ experimentId, trafficStatus }</td>
+    </tr>
+  </tbody>
+</table></div>
+<h2 id="29-api-spec-ingestion">29. API Spec: Ingestion</h2>
+<h3 id="post-apiingest">POST /api/ingest</h3>
+<p>The primary entry point for all remote telemetry.</p>
+<h4 id="required-headers">Required Headers:</h4>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">Authorization: Bearer &lt;INGEST_TOKEN&gt;</code></pre>
+                    </div>
+<h4 id="payload-specification">Payload Specification:</h4>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>CODE</span>
+                            <span style="font-size: 10px;">SOURCE</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">{
+  &quot;schemaVersion&quot;: &quot;1.0&quot;,
+  &quot;targetId&quot;: &quot;sock-shop&quot;,
+  &quot;timestamp&quot;: &quot;2026-09-15T12:00:00Z&quot;,
+  &quot;events&quot;: {
+    &quot;nodes&quot;: [...],
+    &quot;metrics&quot;: [...],
+    &quot;edges&quot;: [...],
+    &quot;interactions&quot;: [...]
+  }
+}</code></pre>
+                    </div>
+    <div class="code-explainer-box">
+        <div class="code-explainer-title">
+            💡 Plain English Code Breakdown
+        </div>
+        <div style="margin-bottom: 6px;">Core implementation logic written in <code>TypeScript/Python</code> executing key observability operations.</div>
+        <div class="code-explainer-grid">
+            <div class="code-explainer-col">
+                <strong>📥 Inputs</strong>
+                <span>System configuration, telemetry state, and active graph envelopes.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>⚙️ Core Logic</strong>
+                <span>Processes data through state machines and validates invariants.</span>
+            </div>
+            <div class="code-explainer-col">
+                <strong>📤 System Impact</strong>
+                <span>Updates downstream stores and broadcasts real-time updates.</span>
+            </div>
+        </div>
+    </div>
+    
+<h2 id="30-installation-guide">30. Installation Guide</h2>
+<p>Follow these steps to set up a local development environment.</p>
+<ol>
+  <li>Clone Repository: git clone https://github.com/royson/microservice-mapper.git</li>
+  <li>Full Dependency Install: npm run install:all</li>
+  <li>Environment Setup: Create a .env file in the root: PORT=3001\nMAPPER_PUBLIC_URL=http://localhost:3001\nINGEST_TOKEN=mapper-secret-token</li>
+  <li>Launch: npm run dev</li>
+</ol>
+<h2 id="31-deployment-guide">31. Deployment Guide</h2>
+<p>For deploying to an AWS environment:</p>
+<ul>
+  <li>Server Instance: Deploy to an EC2 instance with port 3001 open.</li>
+  <li>Public URL: Set MAPPER_PUBLIC_URL to the public IP of the server instance.</li>
+  <li>Target Config: Add targets to data/remote_config.json with the correct .pem key path.</li>
+</ul>
+<h2 id="32-troubleshooting-matrix">32. Troubleshooting Matrix</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Symptom</th>
+    <th>Root Cause</th>
+    <th>Resolution</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Nodes show "NO DATA"</td>
+      <td>Collector $\rightarrow$ Server Connectivity</td>
+      <td>Check Security Group for port 3001; verify MAPPER_PUBLIC_URL.</td>
+    </tr>
+    <tr>
+      <td>SSH Auth Failure</td>
+      <td>Incorrect PEM key or User</td>
+      <td>Check sshUsername and sshKeyPath in remote_config.json.</td>
+    </tr>
+    <tr>
+      <td>Graph is static/no edges</td>
+      <td>No runtime traffic observed</td>
+      <td>Run npm run traffic:sockshop to stimulate the system.</td>
+    </tr>
+    <tr>
+      <td>RCA reports "UNKNOWN"</td>
+      <td>Insufficient history for Z-Score</td>
+      <td>Wait 15 minutes for the MetricStore to build a baseline.</td>
+    </tr>
+    <tr>
+      <td>Collector not starting</td>
+      <td>Docker daemon inaccessible on target</td>
+      <td>Ensure SSH user has permissions to run docker without sudo.</td>
+    </tr>
+  </tbody>
+</table></div>
+        </article>
+
+        <div class="page-nav-footer">
+<a href="ml-readme.html" class="page-nav-btn prev">
+            <span class="page-nav-label">← Previous Document</span>
+            <span class="page-nav-title">ML Subsystem Readme</span>
+        </a>
+<a href="28-mapper-technical-reference.html" class="page-nav-btn next">
+            <span class="page-nav-label">Next Document →</span>
+            <span class="page-nav-title">28 — Mapper Technical Reference (11 Subsystems)</span>
+        </a>
+</div>
+
+        <footer>
+            Microservice Mapper &mdash; technical reference. Figures measured on live targets, September 2026.
+        </footer>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Theme Switcher matching Mapper Technical Reference
+    const initTheme = () => {
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', saved);
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.innerHTML = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+    };
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeBtn.innerHTML = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+    }
+    initTheme();
+
+    // 2. Quick Jump Dropdown
+    const quickJump = document.getElementById('quick-jump');
+    if (quickJump) {
+        quickJump.addEventListener('change', (e) => {
+            if (e.target.value) {
+                window.location.href = e.target.value;
+            }
+        });
+    }
+
+    // 3. Flowchart Path Tracing
+    const traceBtns = document.querySelectorAll('.flow-trace-btn');
+    const nodes = document.querySelectorAll('.flow-node');
+    if (traceBtns.length > 0 && nodes.length > 0) {
+        traceBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                traceBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const flow = btn.getAttribute('data-flow');
+                nodes.forEach(n => {
+                    n.classList.remove('highlighted');
+                    const tags = (n.getAttribute('data-tags') || '').split(',');
+                    if (flow === 'RESET') {
+                        n.style.opacity = '1';
+                    } else if (tags.includes(flow.toLowerCase())) {
+                        n.classList.add('highlighted');
+                        n.style.opacity = '1';
+                    } else {
+                        n.style.opacity = '0.35';
+                    }
+                });
+            });
+        });
+    }
+
+    // 4. Master Interactive Topology Canvas (Hub Page)
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let currentMode = 'xyflow'; // 'xyflow', 'ring', '3d'
+        let hasFault = false;
+        let animFrameId = null;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = 420 * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const nodesData = [
+            { id: 'gateway', name: 'api-gateway', x: 0.15, y: 0.5, r: 24, col: '#00e5ff', status: 'HEALTHY', type: 'Gateway' },
+            { id: 'auth', name: 'auth-service', x: 0.38, y: 0.22, r: 20, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'orders', name: 'orders-service', x: 0.42, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'payment', name: 'payment-svc', x: 0.68, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Payment' },
+            { id: 'postgres', name: 'orders-db', x: 0.88, y: 0.82, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Storage' },
+            { id: 'redis', name: 'session-cache', x: 0.62, y: 0.22, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Cache' },
+            { id: 'collector', name: 'collector-agent', x: 0.50, y: 0.50, r: 20, col: '#10b981', status: 'HEALTHY', type: 'Agent' }
+        ];
+
+        const edges = [
+            { from: 'gateway', to: 'auth', latency: 4 },
+            { from: 'gateway', to: 'orders', latency: 12 },
+            { from: 'auth', to: 'redis', latency: 2 },
+            { from: 'orders', to: 'payment', latency: 18 },
+            { from: 'payment', to: 'postgres', latency: 8 },
+            { from: 'collector', to: 'gateway', latency: 1 },
+            { from: 'collector', to: 'orders', latency: 1 }
+        ];
+
+        let packets = [
+            { edgeIdx: 0, progress: 0.1, speed: 0.012 },
+            { edgeIdx: 1, progress: 0.4, speed: 0.009 },
+            { edgeIdx: 3, progress: 0.7, speed: 0.007 },
+            { edgeIdx: 4, progress: 0.2, speed: 0.015 }
+        ];
+
+        let angle3D = 0;
+
+        function renderTopology() {
+            const w = canvas.getBoundingClientRect().width;
+            const h = 420;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 30) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 30) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            // Calculate Positions
+            let posMap = {};
+            if (currentMode === 'xyflow') {
+                nodesData.forEach(n => {
+                    posMap[n.id] = { x: n.x * w, y: n.y * h, z: 1 };
+                });
+            } else if (currentMode === 'ring') {
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.36;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 - Math.PI / 2;
+                        posMap[n.id] = { x: cx + Math.cos(theta) * radius, y: cy + Math.sin(theta) * radius, z: 1 };
+                    }
+                });
+            } else if (currentMode === '3d') {
+                angle3D += 0.006;
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.34;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 + angle3D;
+                        const px = Math.cos(theta) * radius;
+                        const pz = Math.sin(theta) * radius;
+                        const scale = (pz + radius * 1.5) / (radius * 2.5);
+                        posMap[n.id] = {
+                            x: cx + px * scale,
+                            y: cy + (n.y - 0.5) * 160 * scale + Math.sin(theta * 2) * 20,
+                            z: scale
+                        };
+                    }
+                });
+            }
+
+            // Draw Edges
+            edges.forEach((e) => {
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (!p1 || !p2) return;
+
+                const isDegraded = hasFault && (e.to === 'payment' || e.from === 'payment');
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = isDegraded ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 229, 255, 0.25)';
+                ctx.lineWidth = isDegraded ? 2.5 : 1.5;
+                if (isDegraded) ctx.setLineDash([4, 4]);
+                else ctx.setLineDash([]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                ctx.fillStyle = isDegraded ? '#ef4444' : '#00e5ff';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const latText = isDegraded ? `${e.latency * 18}ms ⚠` : `${e.latency}ms`;
+                ctx.fillText(latText, midX + 4, midY - 4);
+            });
+
+            // Draw Packets
+            packets.forEach(p => {
+                p.progress += p.speed;
+                if (p.progress > 1) p.progress = 0;
+                const e = edges[p.edgeIdx];
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (p1 && p2) {
+                    const px = p1.x + (p2.x - p1.x) * p.progress;
+                    const py = p1.y + (p2.y - p1.y) * p.progress;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = hasFault && e.to === 'payment' ? '#ef4444' : '#00e5ff';
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Nodes
+            nodesData.forEach(n => {
+                const pos = posMap[n.id];
+                if (!pos) return;
+                const isTargetFault = hasFault && n.id === 'payment';
+                const nodeColor = isTargetFault ? '#ef4444' : n.col;
+                const radius = n.r * (pos.z || 1);
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius + (isTargetFault ? 8 : 4), 0, Math.PI * 2);
+                ctx.fillStyle = isTargetFault ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 229, 255, 0.08)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = isTargetFault ? 3 : 2;
+                ctx.strokeStyle = nodeColor;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '600 11.5px "IBM Plex Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(n.name, pos.x, pos.y + radius + 15);
+
+                ctx.fillStyle = isTargetFault ? '#f87171' : '#94a3b8';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const statusStr = isTargetFault ? 'CPU: 98.4% [ANOMALY]' : n.type;
+                ctx.fillText(statusStr, pos.x, pos.y + radius + 27);
+                ctx.textAlign = 'left';
+            });
+
+            animFrameId = requestAnimationFrame(renderTopology);
+        }
+
+        animFrameId = requestAnimationFrame(renderTopology);
+
+        const btnFault = document.getElementById('topo-btn-fault');
+        const btnReset = document.getElementById('topo-btn-reset');
+        const statusText = document.getElementById('topo-status-text');
+
+        if (btnFault && btnReset && statusText) {
+            btnFault.addEventListener('click', () => {
+                hasFault = true;
+                statusText.innerHTML = '<span style="color: var(--err); font-weight: bold;">🚨 ANOMALY DETECTED:</span> <code>payment-svc</code> CPU Spike 98.4% &bull; RCA Score: 0.94 &bull; BFS Depth: 2';
+            });
+            btnReset.addEventListener('click', () => {
+                hasFault = false;
+                statusText.innerHTML = '<span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.';
+            });
+        }
+    }
+
+    // 5. Interactive Lab Helpers
+    window.testCanonicalId = function() {
+        const input = document.getElementById('canon-input');
+        const target = document.getElementById('canon-target');
+        const output = document.getElementById('canon-output');
+        if (input && output) {
+            const raw = input.value.trim() || 'sockshop_orders_1';
+            const tgt = target ? target.value.trim() || 'ec2-target-prod' : 'ec2-target-prod';
+            const clean = raw.toLowerCase().replace(/_\d+$/, '').replace(/^[\/_]+/, '');
+            const canonical = `${tgt}:${clean}`;
+            output.innerHTML = `<span style="color: var(--ok); font-weight: bold;">✓ Canonical ID Resolved:</span> <code style="font-size: 1rem; color: var(--sig);">${canonical}</code><br><span style="color: var(--ink-2); font-size: 0.8rem; margin-top: 4px; display: inline-block;">Stripped instance suffix <code>_1</code> &bull; Lowercased &bull; Prefixed with Target Namespace</span>`;
+        }
+    };
+
+    window.calculateHeatDecay = function() {
+        const h0Input = document.getElementById('heat-h0');
+        const lambdaInput = document.getElementById('heat-lambda');
+        const tInput = document.getElementById('heat-t');
+        const output = document.getElementById('heat-output');
+        const bar = document.getElementById('heat-bar');
+        if (h0Input && lambdaInput && tInput && output) {
+            const h0 = parseFloat(h0Input.value) || 100;
+            const lambda = parseFloat(lambdaInput.value) || 0.05;
+            const t = parseFloat(tInput.value) || 10;
+            const ht = h0 * Math.exp(-lambda * t);
+            const pct = Math.min(100, Math.max(0, (ht / h0) * 100));
+            output.innerHTML = `<span style="color: var(--sig); font-weight: bold;">Residual Heat H(${t}s):</span> <strong>${ht.toFixed(2)}</strong> / ${h0.toFixed(0)} (${pct.toFixed(1)}% remaining)`;
+            if (bar) bar.style.width = `${pct}%`;
+        }
+    };
+
+    window.calculateRcaScore = function() {
+        const cpuInput = document.getElementById('rca-cpu');
+        const memInput = document.getElementById('rca-mem');
+        const errInput = document.getElementById('rca-err');
+        const degInput = document.getElementById('rca-deg');
+        const output = document.getElementById('rca-output');
+        if (cpuInput && memInput && errInput && degInput && output) {
+            const cpuZ = parseFloat(cpuInput.value) || 3.2;
+            const memZ = parseFloat(memInput.value) || 1.1;
+            const errRate = parseFloat(errInput.value) || 0.15;
+            const deg = parseFloat(degInput.value) || 4;
+            
+            const cpuNorm = Math.min(1, cpuZ / 4.0);
+            const memNorm = Math.min(1, memZ / 4.0);
+            const errNorm = Math.min(1, errRate / 0.20);
+            const degNorm = Math.min(1, deg / 8.0);
+            
+            const totalScore = (0.35 * cpuNorm + 0.25 * memNorm + 0.30 * errNorm + 0.10 * degNorm);
+            const isRoot = totalScore > 0.65;
+            const badgeCol = isRoot ? 'var(--err)' : (totalScore > 0.4 ? 'var(--warn)' : 'var(--ok)');
+            const badgeText = isRoot ? '🚨 PRIMARY ROOT CAUSE (P1)' : (totalScore > 0.4 ? '⚠ SECONDARY SYMPTOM' : '✓ HEALTHY / NORMAL');
+            
+            output.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 700; color: ${badgeCol}; margin-bottom: 6px;">${badgeText}</div>
+                <div>Root Cause Probability Score: <strong style="font-size: 1.2rem; color: #fff;">${totalScore.toFixed(3)}</strong> (Threshold: 0.650)</div>
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
+                    CPU Contribution: ${(0.35 * cpuNorm).toFixed(3)} &bull; Mem: ${(0.25 * memNorm).toFixed(3)} &bull; Err: ${(0.30 * errNorm).toFixed(3)} &bull; Degree: ${(0.10 * degNorm).toFixed(3)}
+                </div>
+            `;
+        }
+    };
+});
+</script>
+</body>
+</html>
