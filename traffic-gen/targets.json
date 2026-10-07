@@ -32,18 +32,12 @@
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://13.203.231.198:8080",
+    "baseUrl": "http://13.201.168.222:8080",
     "settings": {
       "profile": "MODERATE",
-      "endpointPaths": [
-        "http://13.203.231.198:8080",
-        "http://13.203.231.198:8080/",
-        "http://13.203.231.198:8080/wrk2-api/home-timeline/read?user_id=1&start=0&stop=10",
-        "http://13.203.231.198:8080/wrk2-api/home-timeline/read?user_id=3&start=0&stop=20",
-        "http://13.203.231.198:8080/wrk2-api/user-timeline/read?user_id=2&start=0&stop=10",
-        "http://13.203.231.198:8080/wrk2-api/user-timeline/read?user_id=4&start=0&stop=20"
-      ],
-      "users": 10
+      "endpointPaths": [],
+      "users": 10,
+      "durationSec": 90
     }
   },
   "open-telemetry": {
