@@ -1,5 +1,5 @@
 // accounts: customer accounts and profiles. Owns accounts-db.
-import { envInt, env, envBool, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown, call } from '../../../shared/lib/index.js';
+import { envInt, env, envBool, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown, call } from '../../lib/index.js';
 
 const db = createPool('ACCOUNTS_DB', { database: 'accounts' });
 const FRAUD = env('FRAUD_URL', 'http://fraud-screening:3104');

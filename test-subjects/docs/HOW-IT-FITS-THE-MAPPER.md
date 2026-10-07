@@ -40,14 +40,14 @@ moved first, which declared edge never lit up, which observed edge nobody declar
 
 1. Run the subject on a Linux Docker host the mapper can SSH into (an EC2 `t3.large` or better runs either system; the database
    scenarios want the DB containers to get real CPU).
-2. `lab/up.sh <subject> <scenario>` -- **use this, not `docker compose -f a -f b`.** It renders one effective compose file because
+2. `make scenario SCEN=<id>` inside the project (or `lab/up.sh <subject> <scenario>`) -- **do not hand-run `docker compose -f a -f b`.** It renders one effective compose file because
    the mapper cats the path in `com.docker.compose.project.config_files` as a single path; with two `-f` files Docker comma-joins them
    and the mapper silently loses every declared edge (see section 5).
 3. In the mapper UI: **+ Add Project**, Target ID `shopflow` or `ledgerline`, host IP, SSH user/key. The only public port is the
    gateway (`:8080` ShopFlow, `:8081` LedgerLine); everything else is on the internal Docker network, as in production.
 4. Generate traffic from outside the host: `node lab/loadgen.mjs <subject> --base http://<host>:<port> ...` (or the mapper's own
    traffic generator against the gateway; paths are in each subject's README).
-5. **Tier 2 (optional):** `PROFILES=observability lab/up.sh ...` and, in the mapper's `data/remote_config.json` for that target:
+5. **Tier 2 (optional):** `make up COMPOSE_PROFILES=observability` (or `PROFILES=observability lab/up.sh ...`) and, in the mapper's `data/remote_config.json` for that target:
    `"telemetrySources": { "prometheus": { "enabled": true } }`. Prometheus is bound to `127.0.0.1:9090` on the host, which is where
    the mapper queries it (over SSH).
 6. Score the run: `node lab/check-scenario.mjs --scenario <subject>/scenarios/<id> --target <targetId> --mapper http://localhost:3001`.
@@ -85,8 +85,8 @@ Found while building and measuring, not hypothetical:
 
 1. **Multi-file compose projects lose all declared edges.** `DiscoveryEngine.discoverComposeDependencies` runs `cat` on the whole
    `com.docker.compose.project.config_files` label value. With `-f a.yml -f b.yml` that value is `a.yml,b.yml`, which is not a file, so
-   discovery adds a warning and zero declared edges. Production Compose setups with an override file are common. `lab/up.sh`
-   avoids it here; the mapper should split the label on `,`.
+   discovery adds a warning and zero declared edges. Production Compose setups with an override file are common. The Makefile and `lab/up.sh`
+   avoid it here; the mapper should split the label on `,`.
 2. **A leaf root cause has an empty propagation path.** Edges point caller -> callee and `RCAEngine`'s propagation BFS follows
    outgoing edges from the root. Probing the real `RCAEngine` with gateway -> orders -> orders-db, all three failing and the database
    anomalous first: it ranks `orders-db` first (score 0.85 if `critical`), but `propagationPath` is just `["orders-db"]` -- it never

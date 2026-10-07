@@ -74,9 +74,16 @@ POST /api/cart/{userId}/items   {"productId":1,"qty":1,"priceCents":1000}     GE
 POST /api/checkout   {"userId":"u1","email":"u1@example.test"}                GET /api/orders?userId=u1
 ```
 
-## Run it
+## Run and test it
 
 ```bash
-lab/up.sh shopflow sf-00-baseline            # Docker host
-lab/local-stack.sh shopflow up               # no Docker (processes); `down` to stop
+make test            # build, start all containers, run the API tests (tests/api.test.mjs)
+make load            # traffic through the gateway
+make ps | make logs SVC=<service>
+make scenario SCEN=<id>      # sf-00-baseline is the control group; `make scenarios` lists the rest
+make down
+lab/local-stack.sh shopflow up    # no Docker: plain processes (needs node, postgres, redis, nats-server)
 ```
+
+`docker-compose.expose.yml` (used by `make`) publishes every service on 127.0.0.1 so each API can be called directly; the baseline file
+itself exposes only the gateway. The API tests (`tests/api.test.mjs`) are the executable description of every endpoint.

@@ -1,6 +1,6 @@
 // transfers: the orchestrator. Validates, screens, converts, posts to the ledger, announces completion.
 import crypto from 'node:crypto';
-import { envInt, env, log, createServer, HttpError, createRedis, waitFor, onShutdown, call, retryFromEnv, connectBus, ensureStream, publish } from '../../../shared/lib/index.js';
+import { envInt, env, log, createServer, HttpError, createRedis, waitFor, onShutdown, call, retryFromEnv, connectBus, ensureStream, publish } from '../../lib/index.js';
 
 const store = createRedis('STATE_STORE');
 const U = { accounts: env('ACCOUNTS_URL', 'http://accounts:3101'), fraud: env('FRAUD_URL', 'http://fraud-screening:3104'), fx: env('FX_URL', 'http://fx-rates:3105'), ledger: env('LEDGER_URL', 'http://ledger:3103') };

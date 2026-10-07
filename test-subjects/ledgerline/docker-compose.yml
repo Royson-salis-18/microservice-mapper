@@ -24,7 +24,8 @@ services:
 
   accounts:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/accounts } }
+    image: ledgerline/accounts:dev
+    build: { context: ., dockerfile: services/accounts/Dockerfile }
     environment:
       SERVICE_NAME: accounts
       ACCOUNTS_DB_HOST: accounts-db
@@ -48,7 +49,8 @@ services:
 
   transfers:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/transfers } }
+    image: ledgerline/transfers:dev
+    build: { context: ., dockerfile: services/transfers/Dockerfile }
     environment:
       SERVICE_NAME: transfers
       STATE_STORE_HOST: state-store
@@ -62,7 +64,8 @@ services:
 
   ledger:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/ledger } }
+    image: ledgerline/ledger:dev
+    build: { context: ., dockerfile: services/ledger/Dockerfile }
     environment:
       SERVICE_NAME: ledger
       LEDGER_DB_HOST: ledger-db
@@ -86,7 +89,8 @@ services:
 
   fraud-screening:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/fraud-screening } }
+    image: ledgerline/fraud-screening:dev
+    build: { context: ., dockerfile: services/fraud-screening/Dockerfile }
     environment:
       SERVICE_NAME: fraud-screening
       STATE_STORE_HOST: state-store
@@ -97,7 +101,8 @@ services:
 
   fx-rates:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/fx-rates } }
+    image: ledgerline/fx-rates:dev
+    build: { context: ., dockerfile: services/fx-rates/Dockerfile }
     environment:
       SERVICE_NAME: fx-rates
       FX_PROVIDER_URL: http://fx-provider:4100
@@ -108,13 +113,15 @@ services:
 
   fx-provider:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/fx-provider } }
+    image: ledgerline/fx-provider:dev
+    build: { context: ., dockerfile: services/fx-provider/Dockerfile }
     environment: { SERVICE_NAME: fx-provider, FX_PROVIDER_MODE: "${FX_PROVIDER_MODE:-ok}" }
     mem_limit: 96m
 
   statements-worker:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: ledgerline/Dockerfile, args: { SERVICE: ledgerline/services/statements-worker } }
+    image: ledgerline/statements-worker:dev
+    build: { context: ., dockerfile: services/statements-worker/Dockerfile }
     environment:
       SERVICE_NAME: statements-worker
       STATEMENTS_DB_HOST: ledger-db

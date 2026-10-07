@@ -1,5 +1,5 @@
 // cart: per-user carts in Redis. Prices are validated against catalog on every add.
-import { envInt, envBool, env, log, createServer, HttpError, createRedis, onShutdown, call, retryFromEnv } from '../../../shared/lib/index.js';
+import { envInt, envBool, env, log, createServer, HttpError, createRedis, onShutdown, call, retryFromEnv } from '../../lib/index.js';
 
 const store = createRedis('CART_STORE');
 const CATALOG = env('CATALOG_URL', 'http://catalog:3001');

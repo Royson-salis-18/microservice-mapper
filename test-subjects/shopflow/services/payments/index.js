@@ -1,6 +1,6 @@
 // payments: charges a card through the external PSP. Stateless; idempotency is delegated to the PSP
 // via the Idempotency-Key header, which is how card processors are designed to be used.
-import { envInt, env, log, createServer, HttpError, onShutdown, call, retryFromEnv } from '../../../shared/lib/index.js';
+import { envInt, env, log, createServer, HttpError, onShutdown, call, retryFromEnv } from '../../lib/index.js';
 
 const PSP = env('PSP_URL', 'http://psp-sandbox:4000');
 const retry = retryFromEnv('PSP', { max: 2, backoffMs: 200 });

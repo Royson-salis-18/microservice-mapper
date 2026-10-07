@@ -8,7 +8,6 @@ name: shopflow
 
 x-node: &node
   restart: always
-  build: { context: .., dockerfile: shopflow/Dockerfile }
 x-logging: &logging
   logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
 
@@ -27,7 +26,8 @@ services:
 
   catalog:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/catalog } }
+    image: shopflow/catalog:dev
+    build: { context: ., dockerfile: services/catalog/Dockerfile }
     environment:
       SERVICE_NAME: catalog
       CATALOG_DB_HOST: catalog-db
@@ -65,7 +65,8 @@ services:
 
   cart:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/cart } }
+    image: shopflow/cart:dev
+    build: { context: ., dockerfile: services/cart/Dockerfile }
     environment:
       SERVICE_NAME: cart
       CART_STORE_HOST: cart-store
@@ -83,7 +84,8 @@ services:
 
   inventory:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/inventory } }
+    image: shopflow/inventory:dev
+    build: { context: ., dockerfile: services/inventory/Dockerfile }
     environment:
       SERVICE_NAME: inventory
       INVENTORY_DB_HOST: catalog-db
@@ -96,7 +98,8 @@ services:
 
   payments:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/payments } }
+    image: shopflow/payments:dev
+    build: { context: ., dockerfile: services/payments/Dockerfile }
     environment:
       SERVICE_NAME: payments
       PSP_URL: http://psp-sandbox:4000
@@ -107,7 +110,8 @@ services:
 
   psp-sandbox:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/psp-sandbox } }
+    image: shopflow/psp-sandbox:dev
+    build: { context: ., dockerfile: services/psp-sandbox/Dockerfile }
     environment:
       SERVICE_NAME: psp-sandbox
       PSP_RATE_LIMIT_RPS: ${PSP_RATE_LIMIT_RPS:-0}
@@ -116,7 +120,8 @@ services:
 
   orders:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/orders } }
+    image: shopflow/orders:dev
+    build: { context: ., dockerfile: services/orders/Dockerfile }
     environment:
       SERVICE_NAME: orders
       ORDERS_DB_HOST: orders-db
@@ -161,7 +166,8 @@ services:
 
   notifier:
     <<: [*node, *logging]
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/notifier } }
+    image: shopflow/notifier:dev
+    build: { context: ., dockerfile: services/notifier/Dockerfile }
     environment:
       SERVICE_NAME: notifier
       NATS_URL: nats://event-bus:4222

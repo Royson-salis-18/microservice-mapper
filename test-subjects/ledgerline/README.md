@@ -45,8 +45,9 @@ back into `accounts` until a scenario turns the "account age" rule on.)
 
 ## Correctness (verified)
 
-After 3,000+ transfers under concurrent load: `sum(entries.amount_cents) = 0` (double-entry), `sum(balances)` unchanged (money conserved),
-no handler errors. Retried transfers with the same `Idempotency-Key` replay the first result.
+Enforced by the API tests on every run: each transfer posts three entries that sum to zero (payer -(amount+fee), payee +amount, treasury +fee);
+the payer's balance moves by exactly amount+fee; 60 concurrent transfers conserve the total across all touched accounts; a replayed
+`Idempotency-Key` or ledger `txnId` never posts twice. (An earlier version debited the payer without the fee; the tests caught it.)
 
 ## Traffic
 
@@ -58,9 +59,16 @@ GET  /api/accounts/{id}/risk-profile                      GET /api/statements/{i
 ```
 Seeded ids: `acct-00001` ... `acct-20000` (currency by id: USD x3, EUR, GBP) and the treasury `acct-fees`.
 
-## Run it
+## Run and test it
 
 ```bash
-lab/up.sh ledgerline ll-00-baseline
-lab/local-stack.sh ledgerline up             # no Docker
+make test            # build, start all containers, run the API tests (tests/api.test.mjs)
+make load            # traffic through the gateway
+make ps | make logs SVC=<service>
+make scenario SCEN=<id>      # ll-00-baseline is the control group; `make scenarios` lists the rest
+make down
+lab/local-stack.sh ledgerline up    # no Docker: plain processes (needs node, postgres, redis, nats-server)
 ```
+
+`docker-compose.expose.yml` (used by `make`) publishes every service on 127.0.0.1 so each API can be called directly; the baseline file
+itself exposes only the gateway. The API tests (`tests/api.test.mjs`) are the executable description of every endpoint.

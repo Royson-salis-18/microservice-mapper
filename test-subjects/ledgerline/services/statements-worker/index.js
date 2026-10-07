@@ -1,6 +1,6 @@
 // statements-worker: periodic statement runs over accounts touched since the last run, plus an on-demand API.
 // Reads the ledger database directly with a read-only role (standard for reporting workloads).
-import { envInt, env, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown, call, connectBus, ensureStream, consume, setGauge } from '../../../shared/lib/index.js';
+import { envInt, env, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown, call, connectBus, ensureStream, consume, setGauge } from '../../lib/index.js';
 
 const db = createPool('STATEMENTS_DB', { database: 'ledger', defaults: { max: 5 } });
 const ACCOUNTS = env('ACCOUNTS_URL', 'http://accounts:3101');

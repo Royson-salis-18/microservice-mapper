@@ -1,7 +1,7 @@
 id: sf-09-cpu-throttle
 title: Slow but healthy -- a container throttled at a quarter of a core
 class: resource sizing / CFS throttling
-verified: compose-validated (cgroup CPU quota semantics; not executed here)
+verified: docker
 summary: >
   catalog was moved to a container limited to 0.25 CPU. It never crashes and never errors; it simply cannot do more than a
   quarter of a core of work, so latency grows with load. docker stats reports CPU relative to ONE core, so the service plateaus
@@ -17,3 +17,8 @@ mapper_blind_spots:
   - "The mapper cannot see cgroup throttle counters (nr_throttled). A flat ceiling is the only clue; the scenario tests that it is noticed."
 expect:
   incident: { optional: true, root_cause_any_of: [catalog] }
+measured_in_docker:    # cpus=0.25 (NanoCpus=250000000), 40 concurrent clients
+  catalog_cpu_pct_samples: [25.9, 26.1, 25.5, 27.0]     # flat ceiling, far below the 70/85 absolute rules
+  errors_5xx_pct: 0
+  latency: { p50_ms: 59, p95_ms: 266 }
+

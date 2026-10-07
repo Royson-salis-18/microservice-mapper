@@ -1,5 +1,5 @@
 // fx-rates: internal rates API in front of the vendor, with a short cache and a circuit breaker.
-import { envInt, env, log, createServer, HttpError, onShutdown, call, setGauge } from '../../../shared/lib/index.js';
+import { envInt, env, log, createServer, HttpError, onShutdown, call, setGauge } from '../../lib/index.js';
 
 const PROVIDER = env('FX_PROVIDER_URL', 'http://fx-provider:4100');
 const CACHE_MS = envInt('FX_CACHE_TTL_MS', 5000);

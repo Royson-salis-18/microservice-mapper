@@ -1,5 +1,5 @@
 // catalog: product reads (cache-aside over Postgres) and a merchandising export.
-import { SERVICE, envInt, envBool, env, log, createServer, HttpError, createPool, createRedis, pingPool, waitFor, onShutdown, call, retryFromEnv } from '../../../shared/lib/index.js';
+import { SERVICE, envInt, envBool, env, log, createServer, HttpError, createPool, createRedis, pingPool, waitFor, onShutdown, call, retryFromEnv } from '../../lib/index.js';
 
 const db = createPool('CATALOG_DB', { database: 'catalog' });
 const cache = createRedis('CACHE');
