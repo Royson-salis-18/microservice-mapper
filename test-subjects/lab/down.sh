@@ -4,4 +4,4 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; SUBJECT="${1:?subject}"
 F="$ROOT/$SUBJECT/.rendered/docker-compose.yml"
 [ -f "$F" ] || { echo "nothing rendered for $SUBJECT" >&2; exit 0; }
-COMPOSE_PROFILES=observability docker compose -f "$F" down -v --remove-orphans
+COMPOSE_PROFILES=traffic docker compose -f "$F" down -v --remove-orphans

@@ -2,7 +2,7 @@
 # Bring a subject up with one scenario applied.
 #   lab/up.sh shopflow sf-05-secret-rotation        # a scenario
 #   lab/up.sh ledgerline ll-00-baseline             # the control group
-#   PROFILES=observability lab/up.sh shopflow sf-01-missing-index   # + Prometheus for the mapper's Tier 2
+#   PROFILES=traffic lab/up.sh shopflow sf-01-missing-index         # + always-on traffic generator   (monitoring: make -C shopflow obs-up)
 #
 # Why this renders ONE file instead of using `-f base -f override`:
 # the mapper learns "declared" dependencies by reading the compose file named in the container label

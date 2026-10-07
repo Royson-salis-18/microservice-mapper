@@ -3,6 +3,9 @@
 #   make test               start (if needed) and run the API tests against every service
 #   make load               generate traffic (20 concurrent users, 60 s)
 #   make scenario SCEN=sf-01-missing-index     start with one production condition applied
+#   make bench              app + always-on traffic + observability (Grafana :3000, Prometheus :9090, Loki, docker-exporter; localhost only)
+#   make obs-up | obs-down  observability only (app must be running)
+#   make urls               where to look
 #   make down               stop and delete volumes (databases re-seed on next start)
 #   make ps | logs SVC=<name> | scenarios
 #
@@ -13,11 +16,16 @@ EXPOSE_FILES  = -f docker-compose.expose.yml
 SCEN         ?= sf-00-baseline
 RENDERED      = .rendered/docker-compose.yml
 BUILD_CA_BUNDLE ?=
+PROFILES ?=
+export COMPOSE_PROFILES = $(PROFILES)
+GRAFANA_PASSWORD ?= bench
+export GRAFANA_PASSWORD
 
 # images: plain compose build normally; docker build with a CA secret when BUILD_CA_BUNDLE is set
 define build
 	@if [ -n "$(BUILD_CA_BUNDLE)" ]; then \
 	  for d in services/*/; do n=$$(basename $$d); docker build -q --secret id=ca,src=$(BUILD_CA_BUNDLE) -f $$d/Dockerfile -t shopflow/$$n:dev . >/dev/null || exit 1; done; \
+	  docker build -q --secret id=ca,src=$(BUILD_CA_BUNDLE) -f loadgen/Dockerfile -t shopflow/traffic:dev . >/dev/null; \
 	else $(1) build; fi
 endef
 
@@ -30,6 +38,7 @@ render:
 up: render
 	$(call build,docker compose -f $(RENDERED))
 	docker compose -f $(RENDERED) up -d --no-build
+	@curl -s -m 3 -u admin:$(GRAFANA_PASSWORD) -X POST http://localhost:3000/api/annotations -H 'Content-Type: application/json' -d '{"tags":["scenario"],"text":"scenario applied: $(SCEN)"}' >/dev/null 2>&1 || true
 	@echo "shopflow up: http://localhost:8080  (scenario: $(SCEN))"
 
 scenario: up
@@ -50,10 +59,27 @@ ps:
 logs:
 	docker compose -f $(RENDERED) logs --tail 80 $(SVC)
 
-down:
-	-COMPOSE_PROFILES=observability docker compose -f $(RENDERED) down -v --remove-orphans
+down: obs-down
+	-COMPOSE_PROFILES=traffic docker compose -f $(RENDERED) down -v --remove-orphans
 
 scenarios:
 	@ls scenarios
 
-.PHONY: render up scenario wait test load ps logs down scenarios
+# Observability is a separate compose project (shopflow-obs) joined to the app network -- see docker-compose.obs.yml
+obs-up:
+	docker compose -f docker-compose.obs.yml up -d
+	@echo "Grafana http://localhost:3000 (admin / $(GRAFANA_PASSWORD), anonymous viewing on)   Prometheus http://localhost:9090"
+
+obs-down:
+	-docker compose -f docker-compose.obs.yml down -v --remove-orphans
+
+bench:
+	$(MAKE) up PROFILES=traffic
+	$(MAKE) obs-up
+
+urls:
+	@echo "app gateway : http://localhost:8080"
+	@echo "Grafana     : http://localhost:3000  (dashboard: shopflow test bench)    Prometheus: http://localhost:9090"
+	@echo "from your laptop: ssh -L 3000:localhost:3000 -L 9090:localhost:9090 <user>@<ec2-host>"
+
+.PHONY: render up scenario wait test load ps logs down scenarios obs-up obs-down bench urls

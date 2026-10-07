@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 // Closed-loop load generator for the ecom system (self-contained; journeys are in ./journeys.js).
-//   node loadgen/loadgen.mjs --base http://localhost:8080 --concurrency 20 --duration 60 --users 200 [--mix browse=60,cart=25,checkout=15]
+//   node loadgen/loadgen.mjs [--continuous]  --base http://localhost:8080 --concurrency 20 --duration 60 --users 200 [--mix browse=60,cart=25,checkout=15]
 // Prints a stats line every 5s and a JSON summary at the end (stdout), so scenarios can assert on it.
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 const args = process.argv.slice(2);
 const subject = 'ecom';
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
-const base = opt('base', 'http://localhost:8080');
+const base = opt('base', process.env.BASE_URL ?? 'http://localhost:8080');
 const concurrency = Number(opt('concurrency', 10));
-const duration = Number(opt('duration', 30));
+const continuous = args.includes('--continuous');   // run until stopped; keeps no per-request history (safe for days)
+const duration = continuous ? Infinity : Number(opt('duration', 30));
+process.on('SIGTERM', () => process.exit(0));
 const users = Number(opt('users', 100));
 const thinkMs = Number(opt('think-ms', 50));
 const mixArg = opt('mix', '');
@@ -30,7 +32,7 @@ async function http(method, p, body, headers) {
     var data; try { data = JSON.parse(text); } catch { data = text; }
   } catch { status = 0; }
   const rec = { route: `${method} ${p.replace(/[0-9a-f-]{8,}|\d+/g, ':n').split('?')[0]}`, status, ms: performance.now() - t0 };
-  stats.window.push(rec); stats.all.push(rec);
+  stats.window.push(rec); if (!continuous) stats.all.push(rec);
   return { status, ms: rec.ms, data };
 }
 const pct = (a, p) => a.length ? a.sort((x, y) => x - y)[Math.min(a.length - 1, Math.floor(a.length * p))] : 0;

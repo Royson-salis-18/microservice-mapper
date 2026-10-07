@@ -47,9 +47,8 @@ moved first, which declared edge never lit up, which observed edge nobody declar
    gateway (`:8080` ShopFlow, `:8081` LedgerLine); everything else is on the internal Docker network, as in production.
 4. Generate traffic from outside the host: `node lab/loadgen.mjs <subject> --base http://<host>:<port> ...` (or the mapper's own
    traffic generator against the gateway; paths are in each subject's README).
-5. **Tier 2 (optional):** `make up COMPOSE_PROFILES=observability` (or `PROFILES=observability lab/up.sh ...`) and, in the mapper's `data/remote_config.json` for that target:
-   `"telemetrySources": { "prometheus": { "enabled": true } }`. Prometheus is bound to `127.0.0.1:9090` on the host, which is where
-   the mapper queries it (over SSH).
+5. **Tier 2 (optional):** `make obs-up` starts Prometheus (`127.0.0.1:9090`, job name == service name, `http_server_request_duration_seconds` histograms) and, in the mapper's `data/remote_config.json` for that target:
+   `"telemetrySources": { "prometheus": { "enabled": true } }`. Prometheus is where the mapper queries it (over SSH).
 6. Score the run: `node lab/check-scenario.mjs --scenario <subject>/scenarios/<id> --target <targetId> --mapper http://localhost:3001`.
 
 **Always run the baseline first and for long enough to fill the mapper's history.** The incident rules need >= 3 samples and the

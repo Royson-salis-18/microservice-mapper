@@ -29,7 +29,7 @@ for (const subject of ['shopflow', 'ledgerline']) {
     if (!fs.existsSync(spec)) { fail('missing scenario.yaml'); continue; }
     let cfg;
     try {
-      cfg = JSON.parse(execFileSync('docker', ['compose', '-f', base, '-f', override, '--profile', 'observability', 'config', '--format', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env } }));
+      cfg = JSON.parse(execFileSync('docker', ['compose', '-f', base, '-f', override, '--profile', 'traffic', 'config', '--format', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env } }));
     } catch (e) { fail(`compose config: ${String(e.stderr ?? e.message).split('\n')[0]}`); continue; }
     const services = cfg.services;
     const declared = new Set(Object.entries(services).flatMap(([s, v]) => Object.keys(v.depends_on ?? {}).map((d) => `${s}->${d}`)));
@@ -46,6 +46,18 @@ for (const subject of ['shopflow', 'ledgerline']) {
     }
     for (const n of doc.expect?.nodes_unhealthy_at_some_point ?? []) if (!services[n]) fail(`expect names unknown service "${n}"`);
   }
+}
+// ---- observability projects: compose renders, dashboard JSON parses, every Prometheus job maps to a service in the app compose
+for (const subject of ['shopflow', 'ledgerline']) {
+  console.log(`\n${subject} observability`);
+  try {
+    execFileSync('docker', ['compose', '-f', path.join(root, subject, 'docker-compose.obs.yml'), 'config', '-q'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const dash = JSON.parse(fs.readFileSync(path.join(root, subject, 'observability/grafana/dashboards/bench.json'), 'utf8'));
+    const app = JSON.parse(execFileSync('docker', ['compose', '-f', path.join(root, subject, 'docker-compose.yml'), 'config', '--format', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })).services;
+    const prom = yaml.load(fs.readFileSync(path.join(root, subject, 'observability/prometheus.yml'), 'utf8'));
+    for (const j of prom.scrape_configs) if (!['docker'].includes(j.job_name) && !app[j.job_name]) fail(`prometheus job "${j.job_name}" is not a service in the app compose`);
+    console.log(`- compose ok, dashboard "${dash.title}" (${dash.panels.length} panels), ${prom.scrape_configs.length} scrape jobs`);
+  } catch (e) { fail(`observability: ${String(e.stderr ?? e.message).split('\n')[0]}`); }
 }
 // ---- ecom-lab (third-party project pinned at a commit; only validated when ecom-lab/upstream has been fetched)
 const up = path.join(root, 'ecom-lab', 'upstream');
