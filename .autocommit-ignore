@@ -1,0 +1,4 @@
+# Paths the user-level auto-commit hook (~/.claude/hooks/auto-commit.sh) must NOT commit.
+# One git pathspec per line. These are rewritten by the running server and would bloat history.
+server/data/
+*.log

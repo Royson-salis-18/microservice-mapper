@@ -48,20 +48,20 @@
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
-    "baseUrl": "http://43.204.141.83:8080",
+    "baseUrl": "http://43.204.211.231:8080",
     "settings": {
       "profile": "STRESS",
       "endpointPaths": [
-        "http://43.204.141.83:8080",
-        "http://43.204.141.83:8080/",
-        "http://43.204.141.83:8080/api/cart",
-        "http://43.204.141.83:8080/api/checkout",
-        "http://43.204.141.83:8080/api/currency",
-        "http://43.204.141.83:8080/api/data",
-        "http://43.204.141.83:8080/api/products",
-        "http://43.204.141.83:8080/api/recommendations",
-        "http://43.204.141.83:8080/api/shipping",
-        "http://43.204.141.83:8080/cart"
+        "http://43.204.211.231:8080",
+        "http://43.204.211.231:8080/",
+        "http://43.204.211.231:8080/api/cart",
+        "http://43.204.211.231:8080/api/checkout",
+        "http://43.204.211.231:8080/api/currency",
+        "http://43.204.211.231:8080/api/data",
+        "http://43.204.211.231:8080/api/products",
+        "http://43.204.211.231:8080/api/recommendations",
+        "http://43.204.211.231:8080/api/shipping",
+        "http://43.204.211.231:8080/cart"
       ],
       "users": 10
     }
