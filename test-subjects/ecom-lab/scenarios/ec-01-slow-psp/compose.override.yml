@@ -1,0 +1,5 @@
+# The real payment provider answers in ~8 s at peak (upstream's mock sleeps app.payment.mock-delay-ms on the consumer thread).
+# 3 consumer threads / 8 s = 0.375 payments/s of capacity; any sustained purchase rate above that builds a backlog.
+services:
+  payment-service:
+    environment: { APP_PAYMENT_MOCK_DELAY_MS: "8000" }

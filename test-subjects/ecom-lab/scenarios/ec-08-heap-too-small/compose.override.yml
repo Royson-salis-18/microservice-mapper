@@ -1,0 +1,6 @@
+# inventory-service was given a ~88 MB heap (copied from a sidecar's sizing). It starts and serves reads; purchase bursts exhaust it.
+# (Layered after small.yml: replaces that profile's entrypoint for this one service.)
+services:
+  inventory-service:
+    mem_limit: 260m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms32m","-Xmx88m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]

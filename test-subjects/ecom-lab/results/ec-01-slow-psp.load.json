@@ -1,0 +1,15 @@
+{
+  "total": 7441,
+  "rps": 124,
+  "overall": "all n=7441 p50=11ms p95=51ms err5xx/net=0.0%",
+  "routes": {
+    "GET /api/catalog/products": "GET /api/catalog/products n=3187 p50=11ms p95=56ms err5xx/net=0.0%",
+    "GET /api/catalog/orders": "GET /api/catalog/orders n=598 p50=12ms p95=56ms err5xx/net=0.0%",
+    "POST /api/products/purchase": "POST /api/products/purchase n=469 p50=23ms p95=66ms err5xx/net=0.0%",
+    "GET /api/catalog/products/:n": "GET /api/catalog/products/:n n=3187 p50=10ms p95=43ms err5xx/net=0.0%"
+  },
+  "status": {
+    "200": 6972,
+    "202": 469
+  }
+}

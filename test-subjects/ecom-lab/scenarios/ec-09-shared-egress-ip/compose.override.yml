@@ -1,0 +1,5 @@
+# The gateway's rate limiter is keyed by client IP (default 100 requests/min on /api/products). Behind a corporate NAT, a CDN or a mobile carrier gateway,
+# thousands of customers share one source IP -- the limiter treats them as one very busy client. (Do NOT use the loadtest overlay with this scenario.)
+services:
+  api-gateway:
+    environment: { RATE_LIMIT_ENABLED: "true", RATE_LIMIT_DEFAULT: "100", RATE_LIMIT_WINDOW_SECONDS: "60" }

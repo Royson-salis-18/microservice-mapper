@@ -1,0 +1,74 @@
+# SMALL profile for a ~4 GiB host. Layer AFTER no-es.yml:
+#   docker compose -f compose.yaml -f ../overlays/no-es.yml -f ../overlays/small.yml up -d
+# Removes: Elasticsearch (search), Kafka UI, Grafana, Loki, Promtail (moved to profile "extras": --profile extras).
+# Keeps: every business service, Kafka, Debezium, all six Postgres, both Redis, Prometheus.
+# JVMs: upstream's entrypoint (G1, 75% of container RAM) is replaced with a small-heap one: SerialGC, C1-only JIT, capped heap/metaspace/code cache.
+#       C1-only lowers peak CPU efficiency -- fine for this footprint, but it is a deliberate trade-off to note in any load result.
+# Also turns on request-duration histogram buckets (needed for the mapper's Tier 2).
+services:
+  kafka-ui:
+    profiles: ["extras"]
+  grafana:
+    profiles: ["extras"]
+  loki:
+    profiles: ["extras"]
+  promtail:
+    profiles: ["extras"]
+  api-gateway:
+    mem_limit: 300m
+    depends_on: !override
+      redis-gateway:      { condition: service_healthy }
+      user-service:       { condition: service_healthy }
+      inventory-service:  { condition: service_healthy }
+      review-service:     { condition: service_healthy }
+      projection-service: { condition: service_healthy }
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx144m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  user-service:
+    mem_limit: 300m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx144m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  inventory-service:
+    mem_limit: 300m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx144m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  order-service:
+    mem_limit: 300m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx144m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  payment-service:
+    mem_limit: 280m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx128m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  review-service:
+    mem_limit: 280m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx128m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  projection-service:
+    mem_limit: 400m
+    entrypoint: ["java","-XX:+UseContainerSupport","-XX:+UseSerialGC","-XX:TieredStopAtLevel=1","-Xss512k","-Xms48m","-Xmx192m","-XX:MaxMetaspaceSize=128m","-XX:ReservedCodeCacheSize=40m","-Djava.security.egd=file:/dev/./urandom","-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true","-jar","app.jar"]
+  kafka:
+    mem_limit: 640m
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms96m -Xmx256m"
+  connect:
+    mem_limit: 480m
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms48m -Xmx192m"
+      HEAP_OPTS: "-Xms48m -Xmx192m"
+  prometheus:
+    mem_limit: 160m
+  redis-gateway:    { mem_limit: 48m }
+  redis-projection: { mem_limit: 48m }
+  postgres-user:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]
+  postgres-inventory:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]
+  postgres-order:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]
+  postgres-payment:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]
+  postgres-review:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]
+  postgres-projection:
+    mem_limit: 128m
+    command: !override ["postgres", "-c", "wal_level=logical", "-c", "shared_buffers=24MB", "-c", "max_connections=100"]

@@ -1,0 +1,87 @@
+### ec-02-debezium-down  (load 60s, concurrency 20)
+
+--- BEFORE fault ---
+== containers (state, restarts, oom) ==
+api-gateway-1        running restarts=0 oom=false health=healthy
+connect-1            running restarts=0 oom=false health=healthy
+connect-init-1       exited restarts=0 oom=false health=-
+inventory-service-1  running restarts=0 oom=false health=healthy
+kafka-1              running restarts=0 oom=false health=healthy
+order-service-1      running restarts=0 oom=false health=healthy
+payment-service-1    running restarts=0 oom=false health=healthy
+postgres-inventory-1 running restarts=0 oom=false health=healthy
+postgres-order-1     running restarts=0 oom=false health=healthy
+postgres-payment-1   running restarts=0 oom=false health=healthy
+postgres-projection-1 running restarts=0 oom=false health=healthy
+postgres-review-1    running restarts=0 oom=false health=healthy
+postgres-user-1      running restarts=0 oom=false health=healthy
+projection-service-1 running restarts=0 oom=false health=healthy
+prometheus-1         running restarts=0 oom=false health=-
+redis-gateway-1      running restarts=0 oom=false health=healthy
+redis-projection-1   running restarts=0 oom=false health=healthy
+review-service-1     running restarts=0 oom=false health=healthy
+user-service-1       running restarts=0 oom=false health=healthy
+== cpu / memory ==
+api-gateway cpu=39.65% mem=62.79%;connect cpu=7.81% mem=73.25%;inventory-service cpu=19.07% mem=85.18%;kafka cpu=32.46% mem=58.58%;order-service cpu=17.96% mem=81.47%;payment-service cpu=6.38% mem=84.61%;postgres-inventory cpu=5.61% mem=39.37%;postgres-order cpu=2.05% mem=36.91%;postgres-payment cpu=4.12% mem=37.06%;postgres-projection cpu=8.35% mem=47.67%;postgres-review cpu=3.50% mem=36.99%;postgres-user cpu=0.02% mem=30.11%;projection-service cpu=42.18% mem=87.17%;prometheus cpu=0.74% mem=15.89%;redis-gateway cpu=3.47% mem=6.46%;redis-projection cpu=1.27% mem=8.24%;review-service cpu=1.11% mem=77.47%;user-service cpu=0.14% mem=78.04%;
+== API outcomes (status codes) ==
+login=200 catalog_list=200 product_detail=200 my_orders=200 purchase=202 reviews=200
+== saga ==
+CANCELLED=6 DELIVERED=98 PROCESSING=9 
+kafka consumer lag: 5 messages
+
+>>> injecting: docker stop upstream-connect-1 
+
+--- orders by status, 20 s later ---
+CANCELLED=10 DELIVERED=113 PROCESSING=11 
+
+--- DURING (fault active) ---
+== containers (state, restarts, oom) ==
+api-gateway-1        running restarts=0 oom=false health=healthy
+connect-1            exited restarts=0 oom=false health=unhealthy
+connect-init-1       exited restarts=0 oom=false health=-
+inventory-service-1  running restarts=0 oom=false health=healthy
+kafka-1              running restarts=0 oom=false health=healthy
+order-service-1      running restarts=0 oom=false health=healthy
+payment-service-1    running restarts=0 oom=false health=healthy
+postgres-inventory-1 running restarts=0 oom=false health=healthy
+postgres-order-1     running restarts=0 oom=false health=healthy
+postgres-payment-1   running restarts=0 oom=false health=healthy
+postgres-projection-1 running restarts=0 oom=false health=healthy
+postgres-review-1    running restarts=0 oom=false health=healthy
+postgres-user-1      running restarts=0 oom=false health=healthy
+projection-service-1 running restarts=0 oom=false health=healthy
+prometheus-1         running restarts=0 oom=false health=-
+redis-gateway-1      running restarts=0 oom=false health=healthy
+redis-projection-1   running restarts=0 oom=false health=healthy
+review-service-1     running restarts=0 oom=false health=healthy
+user-service-1       running restarts=0 oom=false health=healthy
+== cpu / memory ==
+api-gateway cpu=47.75% mem=63.39%;inventory-service cpu=5.59% mem=86.10%;kafka cpu=23.55% mem=57.91%;order-service cpu=2.50% mem=81.74%;payment-service cpu=1.41% mem=84.62%;postgres-inventory cpu=0.62% mem=34.21%;postgres-order cpu=3.91% mem=31.93%;postgres-payment cpu=0.02% mem=31.88%;postgres-projection cpu=3.84% mem=49.76%;postgres-review cpu=0.00% mem=30.65%;postgres-user cpu=3.90% mem=30.49%;projection-service cpu=40.87% mem=87.60%;prometheus cpu=0.26% mem=16.54%;redis-gateway cpu=0.59% mem=7.50%;redis-projection cpu=1.34% mem=7.72%;review-service cpu=0.29% mem=77.56%;user-service cpu=0.15% mem=78.12%;
+== API outcomes (status codes) ==
+login=200 catalog_list=200 product_detail=200 my_orders=200 purchase=202 reviews=200
+== saga ==
+CANCELLED=10 DELIVERED=113 PROCESSING=11 
+kafka consumer lag: 0 messages
+
+--- load generator (whole run) ---
+all n=7319 p50=10ms p95=73ms err5xx/net=0.0% | rps 122 | status {'200': 6893, '202': 426}
+   GET /api/catalog/products n=3138 p50=10ms p95=86ms err5xx/net=0.0%
+   GET /api/catalog/orders n=617 p50=10ms p95=66ms err5xx/net=0.0%
+   POST /api/products/purchase n=426 p50=21ms p95=90ms err5xx/net=0.0%
+   GET /api/catalog/products/:n n=3138 p50=9ms p95=58ms err5xx/net=0.0%
+
+load ticks (5s windows):
+13:35:53 n=432 p50=78ms p95=226ms err5xx/net=0.0%
+13:35:58 n=536 p50=25ms p95=203ms err5xx/net=0.0%
+13:36:03 n=614 p50=13ms p95=46ms err5xx/net=0.0%
+13:36:08 n=560 p50=16ms p95=103ms err5xx/net=0.0%
+13:36:13 n=626 p50=11ms p95=42ms err5xx/net=0.0%
+13:36:18 n=652 p50=9ms p95=18ms err5xx/net=0.0%
+13:36:23 n=653 p50=8ms p95=17ms err5xx/net=0.0%
+13:36:28 n=651 p50=9ms p95=19ms err5xx/net=0.0%
+13:36:33 n=644 p50=9ms p95=21ms err5xx/net=0.0%
+13:36:38 n=660 p50=8ms p95=17ms err5xx/net=0.0%
+13:36:43 n=648 p50=9ms p95=22ms err5xx/net=0.0%
+13:36:48 n=640 p50=12ms p95=36ms err5xx/net=0.0%
+
+done

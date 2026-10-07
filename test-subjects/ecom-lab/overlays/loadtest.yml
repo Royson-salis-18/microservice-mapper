@@ -1,0 +1,5 @@
+# Load-test switches: the gateway's per-IP rate limiter (default 100 req/min on /api/products) would otherwise answer 429 to a single load generator.
+services:
+  api-gateway:
+    environment:
+      RATE_LIMIT_ENABLED: "false"

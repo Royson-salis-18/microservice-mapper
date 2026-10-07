@@ -1,0 +1,33 @@
+id: ec-08-heap-too-small
+title: An undersized heap lets reads work and kills inventory on the first purchase burst
+class: resource sizing / OOM
+verified: docker
+summary: inventory-service was given an ~88 MB heap. It starts, serves reads, and reaches 96% of its container memory within seconds of purchase
+  load; the container is OOM-killed and (no restart policy) stays down. Purchases then fail with 5xx while browsing continues.
+run: './run-scenario.sh ec-08-heap-too-small   # purchase-heavy mix: browse 20 / purchase 80'
+production_condition: inventory-service -Xmx88m, mem_limit 260m
+measured_in_docker:
+  inventory: running at 96% memory 8 s into load; OOMKilled=true by t+16 s and stayed exited
+  http: purchase 81.4% 5xx (1,960 x 500); browse 0% errors
+ground_truth:
+  root_cause: inventory-service
+  mechanism: heap exhaustion
+  symptomatic:
+  - api-gateway
+mapper_signals:
+- signal: inventory-service memoryPercent jumps to >90% (CRITICAL band) then the container exits (OOMKilled)
+  where: node metric + container state
+  strength: strong
+- signal: api-gateway -> inventory-service edge loses its observed connections
+  where: edge
+  strength: strong
+mapper_blind_spots:
+- Memory is sampled every 5 s; the climb to 96% took ~8 s, so there may be a single sample before the kill. The exit is the reliable evidence.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  nodes_unhealthy_at_some_point:
+  - inventory-service
+  incident:
+    root_cause_any_of:
+    - inventory-service
+fix: size heap from measured live set, restart policy, memory alert on slope, load-test with a purchase burst before release

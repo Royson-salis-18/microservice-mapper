@@ -1,0 +1,42 @@
+id: ec-02-debezium-down
+title: The change-data-capture connector stops and the order pipeline freezes
+class: infrastructure failure / silent data stall
+verified: docker
+summary: 'Debezium Connect streams the outbox tables to Kafka. When it stops, purchases are still accepted (stock is reserved and the outbox row
+  is committed) but nothing reaches Kafka: orders are never created and projections stop updating. HTTP stays green. Nothing is lost: when the
+  connector returns the backlog flows.'
+run: './run-scenario.sh ec-02-debezium-down   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment provider
+
+  then: scenarios/ec-02-debezium-down/inject.sh (docker stop upstream-connect-1); restore.sh to recover'
+production_condition: connect container stopped/crashed (a deploy, an OOM, an unhealthy node)
+measured_in_docker:
+  http: 0% 5xx; 426 purchases accepted (202) during the run
+  orders_total: '134 at fault time, 134 twenty seconds later and at run end: no new orders despite continuing purchases'
+  connect_state: exited
+ground_truth:
+  root_cause: connect
+  symptomatic:
+  - order-service
+  - payment-service
+  - projection-service
+  note: only a stalled pipeline; user-visible paths stay healthy
+mapper_signals:
+- signal: connect container exits (state exited/unhealthy)
+  where: container state
+  strength: strong
+- signal: order-service, payment-service and Kafka activity decay to idle while gateway/inventory traffic continues
+  where: node metric
+  strength: partial
+- signal: connect -> kafka and connect -> postgres-* edges disappear from the observed set (declared remain)
+  where: edge
+  strength: strong
+mapper_blind_spots:
+- The accepted-but-never-processed purchases are invisible from outside; the container exit is the reliable evidence.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  nodes_unhealthy_at_some_point:
+  - connect
+  incident:
+    root_cause_any_of:
+    - connect
+fix: run connect with a restart policy and a lag alert on the outbox; alert on "accepted purchases without orders"

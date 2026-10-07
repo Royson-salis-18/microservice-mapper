@@ -31,9 +31,17 @@ Everything a project needs lives in its own directory: `docker-compose.yml`, one
 (`lib/`), database seeds, nginx config, load generator, API tests, scenarios and a `Makefile`. Behind a TLS-intercepting proxy add
 `BUILD_CA_BUNDLE=/path/ca.crt` to any `make` command.
 
-From the repo root: `npm run install:all && npm test` (syntax + static validation of all 19 scenarios, needs the docker CLI but no
+From the repo root: `npm run install:all && npm test` (syntax + static validation of all 29 scenarios, needs the docker CLI but no
 daemon) and `npm run test:api` (both projects in real containers). No Docker at all? `lab/local-stack.sh shopflow up` runs the same
 services as plain processes.
+
+## A third subject: ecom-lab (a real open-source project)
+
+[`ecom-lab/`](ecom-lab/README.md) runs [`tahaberkamcadev/ecom`](https://github.com/tahaberkamcadev/ecom) -- Spring Boot, Kafka + Debezium outbox, saga with compensation, CQRS read model --
+**unmodified** at a pinned commit, with overlays to run it in ~2.7 GB (`stack.sh`), a load generator, a health probe, and **10 scenarios with ground truth**
+(`ec-00` ... `ec-09`), each run in Docker with the measurements recorded. Its README documents what the mapper can and cannot see there:
+Tier 1 is blind, and Tier 2 reports "unavailable" until three small additions are made to the mapper (checked by running the mapper's own `PrometheusSource`).
+Start with [`ecom-lab/README.md`](ecom-lab/README.md) and [`ecom-lab/EC2.md`](ecom-lab/EC2.md).
 
 ## What is in the box
 
@@ -47,6 +55,7 @@ shopflow/                 self-contained project
   scenarios/sf-*/           compose.override.yml + scenario.yaml (ground truth) [+ local.env]
   Makefile
 ledgerline/               same layout
+ecom-lab/                 third-party project pinned at a commit + overlays, scenarios, load generator (see above)
 lab/                      cross-project tools: up.sh/down.sh (render one compose file), validate.mjs, check-scenario.mjs, local-stack.sh
 docs/                     HOW-IT-FITS-THE-MAPPER.md, SCENARIO-CATALOG.md
 ```

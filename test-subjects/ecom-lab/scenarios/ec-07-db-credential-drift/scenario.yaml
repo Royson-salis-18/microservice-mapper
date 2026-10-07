@@ -1,0 +1,43 @@
+id: ec-07-db-credential-drift
+title: order-service holds the old database password and stays down
+class: deployment / configuration drift
+verified: docker
+summary: order-service starts with the pre-rotation database password, fails to start and exits. Upstream's compose has no restart policy, so
+  it simply stays down (no restart loop). Purchases keep being accepted (202) because inventory commits the outbox event, but no order is ever
+  created.
+run: './run-scenario.sh ec-07-db-credential-drift   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment
+  provider'
+production_condition: SPRING_DATASOURCE_PASSWORD on order-service differs from postgres-order
+measured_in_docker:
+  order_service: exited at startup (health unhealthy), restarts 0
+  http: 0% 5xx; 411 purchases accepted (202)
+  postgres_order: healthy
+ground_truth:
+  root_cause: order-service
+  symptomatic:
+  - payment-service
+  - projection-service
+  note: postgres-order is healthy; the failing service is the client
+mapper_signals:
+- signal: order-service container exited; order-service -> postgres-order edge is DECLARED but never OBSERVED
+  where: container state + edge
+  strength: strong
+  note: the canonical declared-vs-observed case with a healthy database
+- signal: payment-service and Kafka consumer activity for order topics fall to idle
+  where: node metric
+  strength: partial
+mapper_blind_spots:
+- Why it cannot connect (password vs network) is only in the container log.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  edges:
+  - source: order-service
+    target: postgres-order
+    declared: true
+    observed: false
+  nodes_unhealthy_at_some_point:
+  - order-service
+  incident:
+    root_cause_any_of:
+    - order-service
+fix: atomic secret rollout, restart policy plus alert on restarts, readiness gate in the deploy

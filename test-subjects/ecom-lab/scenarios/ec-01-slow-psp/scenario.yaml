@@ -1,0 +1,39 @@
+id: ec-01-slow-psp
+title: The payment provider slows down and orders silently pile up
+class: asynchronous capacity / silent degradation
+verified: docker
+summary: 'The mock payment provider sleeps app.payment.mock-delay-ms on the Kafka consumer thread. At 8 s with 3 consumer threads, payment capacity
+  is 0.375/s. Purchases are accepted (HTTP 202) and checkout looks fine, but orders sit in PROCESSING and customers never get a result. Payment-service
+  is parked, not busy: its CPU stays low.'
+why_code_review_and_tests_pass: Saga logic is correct at any delay; upstream's own README notes the thread-parking trade-off. Tests use no delay.
+run: './run-scenario.sh ec-01-slow-psp   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment provider'
+production_condition: APP_PAYMENT_MOCK_DELAY_MS=8000 on payment-service
+measured_in_docker:
+  http: 0% 5xx, purchase p95 66 ms
+  orders_after_60s: 'PROCESSING=312 DELIVERED=10 CANCELLED=2 (baseline: PROCESSING=16 DELIVERED=219)'
+  kafka_lag_messages: 327
+  baseline_lag_messages: 4
+ground_truth:
+  root_cause: payment-service
+  mechanism: consumer threads parked on a slow provider
+  symptomatic:
+  - order-service
+  note: every customer-facing HTTP path stays healthy
+mapper_signals:
+- signal: payment-service CPU stays near idle while purchase traffic is unchanged; Kafka network activity on the payment edges is flat
+  where: node metric + edge activity
+  strength: partial
+- signal: no container is unhealthy, no restart, no 5xx anywhere
+  where: container state
+  strength: strong
+  note: 'the absence of any alarm is the diagnosis: a backlog hidden behind a green front door'
+mapper_blind_spots:
+- Backlog depth and order status live in Kafka and Postgres; nothing outside the containers shows them. Expect the mapper to stay quiet; record
+  that as a documented miss, not a bug.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  incident:
+    optional: true
+    root_cause_any_of:
+    - payment-service
+fix: asynchronous provider integration (webhook), more partitions/threads sized from provider latency, consumer-lag alert

@@ -1,0 +1,104 @@
+id: ec-00-baseline
+title: Healthy baseline (control group)
+class: control
+verified: docker
+summary: 'The small profile under realistic mixed load with a responsive (200 ms) payment provider. Everything should be quiet: saga drains, nothing
+  restarts, no errors. Keep this run as the false-positive reference.'
+run: './run-scenario.sh ec-00-baseline   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment provider'
+measured_in_docker:
+  requests: 7,325 in 60 s (122 rps)
+  errors_5xx: 0
+  latency:
+    p50_ms: 13
+    p95_ms: 61
+  saga: DELIVERED=219 CANCELLED=27 (simulated 10% decline) PROCESSING=16 (steady)
+  kafka_lag_messages: 4
+ground_truth:
+  root_cause: null
+  symptomatic: []
+expect:
+  edges:
+  - source: api-gateway
+    target: user-service
+    declared: true
+    observed: true
+  - source: api-gateway
+    target: inventory-service
+    declared: true
+    observed: true
+  - source: api-gateway
+    target: projection-service
+    declared: true
+    observed: true
+  - source: user-service
+    target: postgres-user
+    declared: true
+    observed: true
+  - source: inventory-service
+    target: postgres-inventory
+    declared: true
+    observed: true
+  - source: order-service
+    target: postgres-order
+    declared: true
+    observed: true
+  - source: payment-service
+    target: postgres-payment
+    declared: true
+    observed: true
+  - source: projection-service
+    target: postgres-projection
+    declared: true
+    observed: true
+  - source: projection-service
+    target: redis-projection
+    declared: true
+    observed: true
+  - source: inventory-service
+    target: kafka
+    declared: true
+    observed: true
+  - source: order-service
+    target: kafka
+    declared: true
+    observed: true
+  - source: payment-service
+    target: kafka
+    declared: true
+    observed: true
+  - source: projection-service
+    target: kafka
+    declared: true
+    observed: true
+  - source: connect
+    target: kafka
+    declared: true
+    observed: true
+  - source: connect
+    target: postgres-inventory
+    declared: true
+    observed: true
+  - source: connect
+    target: postgres-order
+    declared: true
+    observed: true
+  - source: connect
+    target: postgres-payment
+    declared: true
+    observed: true
+  incident: null
+natural_findings:
+- finding: review-service -> user-service is an undeclared dependency in upstream's own compose file (review depends_on only its database and
+    connect-init). It is a real HTTP call (GET /api/v1/internal/users/{id}/name) made on every review creation.
+  verified: posting one review moved user-service's internal-endpoint request counter 0 -> 1
+  light_it_up: POST /api/reviews {productId, rating, comment} with a Bearer token
+  expect:
+    source: review-service
+    target: user-service
+    declared: false
+    observed: true
+- finding: The declared graph includes edges to connect-init, a one-shot job that exits 0 after registering Debezium connectors; a declared edge
+    to an exited container is normal here, not a fault.
+mapper_notes:
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+- Tier 2 needs three additions to the mapper (family http_server_requests_seconds, label 'application', status label 'status'); see ecom-lab/README.md

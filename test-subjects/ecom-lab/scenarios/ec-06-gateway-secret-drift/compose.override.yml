@@ -1,0 +1,5 @@
+# The shared gateway secret was rotated on the gateway and on every backend except inventory-service (a missed deploy).
+# inventory rejects everything the gateway forwards; nothing else notices.
+services:
+  inventory-service:
+    environment: { GATEWAY_SECRET: "0000000000000000000000000000000000000000000000000000000000000000" }
