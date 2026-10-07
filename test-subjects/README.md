@@ -30,6 +30,16 @@ docker-exporter** with a provisioned dashboard. Only the gateway port is public;
 `sudo make -C <project> scenario SCEN=sf-05-secret-rotation` (each change is stamped on the Grafana timeline). `bootstrap/ec2-setup.sh` has not been run on a real EC2 instance yet;
 its pieces (bench, monitoring, dashboards) were each run and verified in Docker. If the repo is private, clone it first instead of using `curl | bash`.
 
+## Try a failure on the instance (one command)
+
+```bash
+cd ~/bench/test-subjects && lab/bench-scenario.sh shopflow sf-05-secret-rotation 60      # or any scenario id: make -C shopflow scenarios
+```
+
+Applies the scenario, drives the load that triggers it, prints container states and API status codes next to the scenario's expected result, saves the report to
+`~/bench-results/`, then resets to the baseline (`KEEP=1` leaves it applied). Verified here against real containers (sf-05: orders restarted 8 times, `/api/orders` and `/api/checkout`
+returned 502 while the catalog stayed 200).
+
 ## Quick start (each project is self-contained)
 
 ```bash
