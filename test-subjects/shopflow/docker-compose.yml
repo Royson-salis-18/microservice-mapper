@@ -179,13 +179,14 @@ services:
     depends_on: [event-bus, orders]
     mem_limit: 192m
 
-  # Optional Tier-2 telemetry for the mapper:  docker compose --profile observability up
-  prometheus:
-    profiles: [observability]
-    image: prom/prometheus:v2.54.1
+  # Always-on realistic traffic so the bench has live data without an external client:  --profile traffic  (make bench)
+  traffic:
+    profiles: [traffic]
+    image: shopflow/traffic:dev
+    build: { context: ., dockerfile: loadgen/Dockerfile }
     restart: always
-    ports: ["127.0.0.1:9090:9090"]
-    volumes: ["./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
-    mem_limit: 256m
+    environment: { BASE_URL: "http://api-gateway:8080", CONCURRENCY: "${TRAFFIC_CONCURRENCY:-4}", THINK_MS: "${TRAFFIC_THINK_MS:-300}", USERS: "100" }
+    depends_on: [api-gateway]
+    mem_limit: 96m
 
 volumes: { catalog-db-data: {}, orders-db-data: {}, cart-store-data: {}, event-bus-data: {} }

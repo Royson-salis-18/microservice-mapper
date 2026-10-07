@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# One-command setup of a test bench on a fresh Ubuntu/Debian or Amazon Linux EC2 instance.
+#
+#   curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/<branch>/test-subjects/bootstrap/ec2-setup.sh | bash -s -- shopflow
+#   (or:  git clone <repo> && cd <repo>/test-subjects && bash bootstrap/ec2-setup.sh ledgerline)
+#
+# What it does: installs Docker + git + make, adds swap on small instances, clones the repo, and runs `make bench` for the chosen project:
+# the application containers + an always-on traffic generator + Prometheus/Grafana/Loki/Promtail/docker-exporter (all monitoring on localhost only).
+# Only the application gateway (:8080 shopflow, :8081 ledgerline) is published on the network. Everything restarts on reboot (restart: always).
+#
+# Env: REPO_URL (default below), BRANCH, SUBJECT (or first arg), DRY_RUN=1 (print the commands, change nothing), GRAFANA_PASSWORD (default "bench").
+# NOT yet run on a real EC2 instance -- the steps below were each exercised separately in a sandbox (the bench itself, the monitoring, the dashboards).
+set -euo pipefail
+SUBJECT="${1:-${SUBJECT:-shopflow}}"
+REPO_URL="${REPO_URL:-https://github.com/Royson-salis-18/microservice-mapper.git}"
+BRANCH="${BRANCH:-claude/zen-knuth-z3f9cj}"
+DEST="${DEST:-$HOME/bench}"
+run() { echo "+ $*"; [ -n "${DRY_RUN:-}" ] || eval "$*"; }
+case "$SUBJECT" in shopflow|ledgerline) ;; *) echo "subject must be shopflow or ledgerline" >&2; exit 2;; esac
+SUDO=""; [ "$(id -u)" = 0 ] || SUDO="sudo"
+
+echo "== 1/5 packages"
+if command -v apt-get >/dev/null; then run "$SUDO apt-get update -y && $SUDO apt-get install -y git make curl ca-certificates"
+elif command -v dnf >/dev/null; then run "$SUDO dnf install -y git make curl"
+elif command -v yum >/dev/null; then run "$SUDO yum install -y git make curl"
+else echo "unsupported OS (need apt, dnf or yum)" >&2; exit 1; fi
+
+echo "== 2/5 docker"
+if ! command -v docker >/dev/null; then run "curl -fsSL https://get.docker.com | $SUDO sh"; fi
+run "$SUDO systemctl enable --now docker"
+run "$SUDO docker compose version"
+
+echo "== 3/5 swap (small instances: the whole bench needs ~0.65 GiB of containers)"
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 4096)
+if [ "$MEM_MB" -lt 3000 ] && ! swapon --show | grep -q .; then
+  run "$SUDO fallocate -l 2G /swapfile && $SUDO chmod 600 /swapfile && $SUDO mkswap /swapfile && $SUDO swapon /swapfile && echo '/swapfile none swap sw 0 0' | $SUDO tee -a /etc/fstab >/dev/null"
+fi
+
+echo "== 4/5 source"
+if [ -d "$DEST/.git" ]; then run "git -C '$DEST' fetch --depth 1 origin '$BRANCH' && git -C '$DEST' checkout -q FETCH_HEAD"
+else run "git clone --depth 1 --branch '$BRANCH' '$REPO_URL' '$DEST'"; fi
+ROOT="$DEST"; [ -d "$DEST/test-subjects" ] && ROOT="$DEST/test-subjects"
+
+echo "== 5/5 start $SUBJECT (first run builds the images: a few minutes)"
+run "cd '$ROOT' && $SUDO env GRAFANA_PASSWORD='${GRAFANA_PASSWORD:-bench}' make -C $SUBJECT bench"
+
+PUB=$(curl -s -m 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "<this-instance-public-ip>")
+PORT=8080; [ "$SUBJECT" = ledgerline ] && PORT=8081
+cat <<MSG
+
+============================================================ $SUBJECT bench is up
+ application gateway   http://$PUB:$PORT        (open this port in the security group; keep everything else closed)
+ Grafana (localhost)   ssh -L 3000:localhost:3000 -L 9090:localhost:9090 ubuntu@$PUB   then http://localhost:3000  (admin / ${GRAFANA_PASSWORD:-bench})
+ source on this box    $ROOT/$SUBJECT
+ apply a scenario      cd $ROOT/$SUBJECT && sudo make scenario SCEN=<id>     (ids: make scenarios)
+ stop                  cd $ROOT/$SUBJECT && sudo make down
+
+ point the mapper at it:  + Add Project -> Target ID "$SUBJECT", Host $PUB, SSH user ubuntu (ec2-user on Amazon Linux), your .pem key.
+ The compose file the mapper reads is $ROOT/$SUBJECT/.rendered/docker-compose.yml (one merged file, so declared dependencies are discovered).
+=====================================================================================
+MSG

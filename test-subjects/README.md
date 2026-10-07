@@ -10,17 +10,31 @@ Two production-style microservice systems, built as **test subjects for [Microse
 
 | Subject | Domain | Containers | Shape | Scenarios |
 |---|---|---|---|---|
-| [**ShopFlow**](shopflow/README.md) | Online retail / checkout | 12 (+ optional Prometheus) | sync HTTP fan-out, cache-aside, Postgres x2, Redis x2, NATS JetStream consumer | 12 (`sf-00` ... `sf-11`) |
-| [**LedgerLine**](ledgerline/README.md) | Retail-banking transfers | 12 (+ optional Prometheus) | saga orchestrator, double-entry ledger, third-party FX + breaker, batch worker, possible dependency cycle | 7 (`ll-00` ... `ll-06`) |
+| [**ShopFlow**](shopflow/README.md) | Online retail / checkout | 13 + traffic + 5 monitoring | sync HTTP fan-out, cache-aside, Postgres x2, Redis x2, NATS JetStream consumer | 12 (`sf-00` ... `sf-11`) |
+| [**LedgerLine**](ledgerline/README.md) | Retail-banking transfers | 12 + traffic + 5 monitoring | saga orchestrator, double-entry ledger, third-party FX + breaker, batch worker, possible dependency cycle | 7 (`ll-00` ... `ll-06`) |
 
 Each subject has a **healthy baseline** (the control group) and one scenario per production condition. Every scenario ships with
 a machine-readable **ground truth** (`scenario.yaml`): the true root cause, the symptomatic services, which signals the mapper can
 see (strong / partial / blind), and which graph edges must be declared and/or observed.
 
+## Run it on an EC2 instance (one command)
+
+```bash
+# on a fresh Ubuntu / Amazon Linux instance (>= 2 GiB RAM recommended; the whole ShopFlow bench is ~0.6 GiB of containers):
+curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/<branch>/test-subjects/bootstrap/ec2-setup.sh | bash -s -- shopflow     # or: ledgerline
+```
+
+It installs Docker, clones the repo, and runs `make bench`: the application, an always-on traffic generator, and **Prometheus + Grafana + Loki + Promtail +
+docker-exporter** with a provisioned dashboard. Only the gateway port is public; Grafana/Prometheus listen on localhost -- view them through
+`ssh -L 3000:localhost:3000 -L 9090:localhost:9090 ubuntu@<ip>`. Then add the instance to the mapper (Target ID `shopflow`, the IP, SSH user, key) and apply faults with
+`sudo make -C <project> scenario SCEN=sf-05-secret-rotation` (each change is stamped on the Grafana timeline). `bootstrap/ec2-setup.sh` has not been run on a real EC2 instance yet;
+its pieces (bench, monitoring, dashboards) were each run and verified in Docker. If the repo is private, clone it first instead of using `curl | bash`.
+
 ## Quick start (each project is self-contained)
 
 ```bash
 cd shopflow            # or: cd ledgerline
+make bench             # app + always-on traffic + Prometheus/Grafana/Loki, then see `make urls`
 make test              # builds the images, starts every container, runs the API tests (14 tests, every service), leaves it running
 make load              # 60 s of realistic traffic against the gateway
 make scenario SCEN=sf-05-secret-rotation   # inject one production condition (make scenarios lists them)
@@ -50,7 +64,7 @@ shopflow/                 self-contained project
   docker-compose.yml        healthy baseline (12 containers)       docker-compose.expose.yml   publishes every service on 127.0.0.1 for tests
   services/<name>/          index.js + Dockerfile (one per service)
   lib/                      service plumbing: HTTP server/client, pools, metrics, queue consumer, lifecycle
-  db/  nginx/  observability/   seeds, gateway config, optional Prometheus (Tier 2)
+  db/  nginx/  observability/   seeds, gateway config; docker-compose.obs.yml + observability/ = Prometheus, Grafana (provisioned dashboard), Loki, Promtail, docker-exporter
   loadgen/                  traffic generator + journeys          tests/   API tests (node:test)
   scenarios/sf-*/           compose.override.yml + scenario.yaml (ground truth) [+ local.env]
   Makefile
@@ -72,7 +86,7 @@ Verified by running it (real Docker containers: nginx, Postgres 16, Redis 7, NAT
 * **API tests: 14/14 pass for each project from a clean `make test`** -- every endpoint of every service, validation and error paths,
   idempotency, the full checkout and transfer sagas, double-entry conservation under concurrency, the async event path, the gateway
   routing table, and the access-log shape the mapper parses.
-* **Optional Tier 2:** `make up COMPOSE_PROFILES=observability` -- Prometheus scrapes all 7 ShopFlow services (7/7 up) and returns exact per-service p95 from `http_server_request_duration_seconds`.
+* **Observability (verified):** `make bench` starts app + traffic + monitoring; `lab/verify-observability.mjs` runs every dashboard panel's query: ShopFlow 31/31 and LedgerLine 31/31 checks pass (targets up, datasources healthy, dashboard provisioned, every panel returns data). Whole ShopFlow bench = ~610 MiB of containers (373 app+traffic, 236 monitoring).
 * **Baselines under load:** ShopFlow ~520 req/s with 0 errors; LedgerLine correct books (entries sum to 0, money conserved).
 * **Scenarios reproduced in Docker with measurements recorded in their `scenario.yaml`:** `sf-03` (memory ramp to 95% then restart),
   `sf-05` (real scram auth failure, restart loop, healthy DB), `sf-09` (flat ~26% CPU at 0.25 cpus), `ll-05` (batch restart loop on 2M rows).
