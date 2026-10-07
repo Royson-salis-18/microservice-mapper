@@ -9,7 +9,7 @@
 # Only the application gateway (:8080 shopflow, :8081 ledgerline) is published on the network. Everything restarts on reboot (restart: always).
 #
 # Env: REPO_URL (default below), BRANCH, SUBJECT (or first arg), DRY_RUN=1 (print the commands, change nothing), GRAFANA_PASSWORD (default "bench").
-# NOT yet run on a real EC2 instance -- the steps below were each exercised separately in a sandbox (the bench itself, the monitoring, the dashboards).
+# Run end to end on Ubuntu 24.04 (c7i-flex.large, ap-south-1): packages, Docker 29, build, app + traffic + monitoring all came up. Not yet run on Amazon Linux.
 set -euo pipefail
 SUBJECT="${1:-${SUBJECT:-shopflow}}"
 REPO_URL="${REPO_URL:-https://github.com/Royson-salis-18/microservice-mapper.git}"
