@@ -1,0 +1,9 @@
+# Production's treasury account has a year of fee entries (2M rows). The statement run loads one account's entries into memory;
+# fine for ordinary accounts, fatal for the treasury account against a 256 MB limit. There is no checkpoint, so every restart
+# starts the run again.
+services:
+  ledger-db:
+    environment: { SEED_FEE_ENTRIES: "1000000" }
+  statements-worker:
+    mem_limit: 256m
+    environment: { STATEMENT_BATCH_INTERVAL_S: "60" }

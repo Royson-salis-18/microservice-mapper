@@ -1,0 +1,26 @@
+id: ll-03-hot-row
+title: Every transfer in the bank queues on one row
+class: lock contention / data skew
+verified: local-process
+summary: >
+  The ledger takes row locks in a consistent order (so it never deadlocks) and posts fees to the treasury account. Finance asked for
+  an always-current fee balance, so the fee is now added to ONE balance row inside every transfer's transaction. All concurrent
+  transfers serialise on that row lock. Throughput stops scaling with concurrency and latency grows with queue depth, while the database
+  is not CPU-bound -- it is waiting.
+why_code_review_and_tests_pass: "Correct, deadlock-free, atomic. A single-threaded test never queues on the lock."
+production_condition: "FEE_POSTING=inline"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 80 --duration 300 --think-ms 0 --mix transfer=100,fx-transfer=0,profile=0,statement=0" }
+measured_locally:
+  baseline_deferred: { rps: 438.6, p95_ms: 137 }
+  inline: { rps: 274.8, p95_ms: 368 }
+  note: "-37% throughput on a fast local disk; real storage with fsync latency widens the gap"
+ground_truth: { root_cause: ledger-db, mechanism: "single hot row lock", symptomatic: [ledger, transfers, edge] }
+mapper_signals:
+  - { signal: "ledger-db CPU is moderate while ledger/transfers latency rises; ledger -> ledger-db edge activity pinned at the pool size (many connections, mostly waiting)", where: node + edge, strength: partial }
+  - { signal: "edge p95 on /api/transfers rises with concurrency, 5xx only after client timeouts", where: Tier-1 edge log, strength: strong }
+mapper_blind_spots:
+  - "Lock waits are invisible from outside the database (no pg_locks, no query data). The mapper narrows the incident to the ledger path; a developer opens pg_stat_activity and sees every session waiting on the same tuple."
+  - "Do not expect a CPU/memory incident rule to fire. This scenario separates 'slow because busy' from 'slow because waiting'."
+expect:
+  incident: { optional: true, root_cause_any_of: [ledger-db, ledger] }
+fix: "keep fee posting insert-only (deferred) and aggregate on close; shard the treasury account into N buckets; SELECT ... FOR UPDATE SKIP LOCKED where order doesn't matter"

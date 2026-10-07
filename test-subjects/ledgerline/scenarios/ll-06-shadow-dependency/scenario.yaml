@@ -1,0 +1,19 @@
+id: ll-06-shadow-dependency
+title: fraud-screening quietly depends on fx-rates
+class: undocumented dependency
+verified: local-process (flag path)
+summary: >
+  A new fraud rule normalises foreign-currency amounts to USD by asking fx-rates. depends_on and every diagram still show
+  fraud-screening needing only the state-store. The consequence is hidden: fx-rates (and transitively the FX vendor) is now in the
+  blast radius of every fraud screening of a foreign-currency transfer. (The call is fail-soft here, so the failure shows up as degraded
+  screening quality rather than errors -- which makes it even less visible.)
+production_condition: "FRAUD_NORMALISE_AMOUNTS=true"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 10 --duration 180 --mix transfer=40,fx-transfer=60,profile=0,statement=0" }
+ground_truth: { root_cause: null, finding: "undeclared edge fraud-screening -> fx-rates" }
+mapper_signals:
+  - { signal: "fraud-screening -> fx-rates OBSERVED, NOT DECLARED", where: edge, strength: strong }
+expect:
+  edges:
+    - { source: fraud-screening, target: fx-rates, declared: false, observed: true }
+  incident: null
+fix: "declare it, give it an explicit timeout and fallback (present), and reflect it in the dependency map and runbooks"

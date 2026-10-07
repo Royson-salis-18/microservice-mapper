@@ -1,0 +1,4 @@
+# The FX vendor is down. fx-rates trips its circuit breaker; same-currency transfers keep working.
+services:
+  fx-provider:
+    environment: { FX_PROVIDER_MODE: "down" }

@@ -1,0 +1,9 @@
+# Each service's pool is sensible in isolation. Together they exceed what the database will accept:
+# ledger 25 + statements-worker 20 = 45 > max_connections 40 (minus 3 reserved for superusers).
+services:
+  ledger-db:
+    command: ["postgres", "-c", "max_connections=40"]
+  ledger:
+    environment: { LEDGER_DB_POOL_MAX: "25" }
+  statements-worker:
+    environment: { STATEMENTS_DB_POOL_MAX: "20", STATEMENT_CONCURRENCY: "20", STATEMENT_BATCH_INTERVAL_S: "20" }
