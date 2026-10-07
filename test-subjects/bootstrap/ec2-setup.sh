@@ -28,6 +28,8 @@ else echo "unsupported OS (need apt, dnf or yum)" >&2; exit 1; fi
 echo "== 2/5 docker"
 if ! command -v docker >/dev/null; then run "curl -fsSL https://get.docker.com | $SUDO sh"; fi
 run "$SUDO systemctl enable --now docker"
+# the mapper SSHes in as this user and runs `docker ps/inspect/stats`, so the user must be in the docker group (takes effect on the next login)
+[ "$(id -u)" = 0 ] || run "$SUDO usermod -aG docker $USER"
 run "$SUDO docker compose version"
 
 echo "== 3/5 swap (small instances: the whole bench needs ~0.65 GiB of containers)"
