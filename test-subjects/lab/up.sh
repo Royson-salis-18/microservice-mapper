@@ -15,8 +15,13 @@ DIR="$ROOT/$SUBJECT"; OVR="$DIR/scenarios/$SCEN/compose.override.yml"
 [ -f "$OVR" ] || { echo "no such scenario: $OVR" >&2; exit 2; }
 mkdir -p "$DIR/.rendered"
 [ -n "${PROFILES:-}" ] && export COMPOSE_PROFILES="$PROFILES"
-docker compose -f "$DIR/docker-compose.yml" -f "$OVR" config > "$DIR/.rendered/docker-compose.yml"
+FILES=(-f "$DIR/docker-compose.yml" -f "$OVR")
+# EXPOSE=1 also publishes every internal service on 127.0.0.1 (for the API tests)
+[ -n "${EXPOSE:-}" ] && FILES+=(-f "$DIR/docker-compose.expose.yml")
+docker compose "${FILES[@]}" config > "$DIR/.rendered/docker-compose.yml"
 echo "rendered $DIR/.rendered/docker-compose.yml  (scenario: $SCEN)"
-docker compose -f "$DIR/.rendered/docker-compose.yml" up -d --build "$@"
+BUILD_ARGS=(--build)
+if [ -n "${BUILD_CA_BUNDLE:-}" ]; then "$ROOT/lab/build.sh" "$SUBJECT"; BUILD_ARGS=(--no-build); fi
+docker compose -f "$DIR/.rendered/docker-compose.yml" up -d "${BUILD_ARGS[@]}" "$@"
 echo "scenario spec : $DIR/scenarios/$SCEN/scenario.yaml"
 echo "tear down     : lab/down.sh $SUBJECT"

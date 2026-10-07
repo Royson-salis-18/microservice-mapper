@@ -1,7 +1,7 @@
 id: sf-05-secret-rotation
 title: Rotated database password; one service still has the old one
 class: deployment / configuration drift
-verified: local-process (exit behaviour); auth failure itself requires the real Postgres container (scram)
+verified: docker
 summary: >
   The orders database password was rotated. orders-db has the new password, but the orders deployment still carries the old
   secret. orders retries the connection 5 times, logs the error, exits 1, and the restart policy brings it back -- forever.
@@ -23,3 +23,9 @@ expect:
   nodes_unhealthy_at_some_point: [orders]
   incident: { root_cause_any_of: [orders] }
 fix: "roll the secret to orders; make secret rotation a single atomic deploy; alert on restart loops"
+measured_in_docker:    # real postgres:16 with scram auth
+  orders_restarts_in_45s: 7
+  orders_log: 'password authentication failed for user "app"'
+  orders_db_health: healthy
+  gateway: { "/api/catalog": 200, "/api/orders": 502 }
+

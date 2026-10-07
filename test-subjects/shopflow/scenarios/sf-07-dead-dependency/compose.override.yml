@@ -3,7 +3,7 @@
 services:
   recommendations:
     restart: always
-    build: { context: .., dockerfile: shopflow/Dockerfile, args: { SERVICE: shopflow/services/recommendations } }
+    build: { context: ., dockerfile: services/recommendations/Dockerfile }
     environment: { SERVICE_NAME: recommendations }
     mem_limit: 128m
   catalog:

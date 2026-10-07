@@ -1,6 +1,6 @@
 // notifier: consumes order.placed and sends the confirmation e-mail. Customer-facing path never waits on it.
 import crypto from 'node:crypto';
-import { envInt, env, envBool, log, onShutdown, call, connectBus, ensureStream, consume, createServer, waitFor, streamLag, setGauge } from '../../../shared/lib/index.js';
+import { envInt, env, envBool, log, onShutdown, call, connectBus, ensureStream, consume, createServer, waitFor, streamLag, setGauge } from '../../lib/index.js';
 
 const ORDERS = env('ORDERS_URL', 'http://orders:3005');
 const CATALOG = env('CATALOG_URL', 'http://catalog:3001');

@@ -1,5 +1,5 @@
 // fraud-screening: scores a transfer or an account. Velocity counters live in the shared state-store.
-import { envInt, env, envBool, log, createServer, HttpError, createRedis, onShutdown, call } from '../../../shared/lib/index.js';
+import { envInt, env, envBool, log, createServer, HttpError, createRedis, onShutdown, call } from '../../lib/index.js';
 
 const store = createRedis('STATE_STORE');
 const ACCOUNTS = env('ACCOUNTS_URL', 'http://accounts:3101');

@@ -1,7 +1,7 @@
 id: ll-05-batch-oom
 title: The month-end job that kills itself, restarts, and tries again
 class: data skew / batch memory / restart loop
-verified: local-process (memory spike measured); OOM kill itself requires the container memory limit
+verified: docker + local-process
 summary: >
   The statement run loads one account's entries into memory -- fine for ordinary accounts (tens of rows). The treasury account has a
   year of fee entries (2M rows here; 1M measured below), so its statement needs far more memory than the 256 MB container limit. The
@@ -21,3 +21,8 @@ expect:
   nodes_unhealthy_at_some_point: [statements-worker]
   incident: { root_cause_any_of: [statements-worker] }
 fix: "stream with a cursor, per-account row cap / chunking, checkpoint progress, memory alert on the worker"
+measured_in_docker:    # real postgres, 2M ledger entries, statements-worker mem_limit 256m
+  worker_restarts_in_112s: 5
+  memory_samples_pct: "7, 11, 9, 7, 79 (only 1 of 14 samples caught the spike), 9, ..."
+  note: "restart count is the reliable signal; the memory spike is shorter than the mapper's 5 s sampling interval"
+

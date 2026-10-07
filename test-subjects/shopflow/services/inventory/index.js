@@ -1,5 +1,5 @@
 // inventory: stock reservations. Lives in its own database on the shared catalog-db Postgres instance.
-import { envInt, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown } from '../../../shared/lib/index.js';
+import { envInt, log, createServer, HttpError, createPool, pingPool, waitFor, onShutdown } from '../../lib/index.js';
 
 const db = createPool('INVENTORY_DB', { database: 'inventory' });
 

@@ -1,6 +1,6 @@
 // orders: checkout orchestration + order history. Owns orders-db and publishes order.placed.
 import crypto from 'node:crypto';
-import { envInt, env, envBool, log, createServer, HttpError, createPool, pingPool, poolStats, waitFor, onShutdown, call, retryFromEnv, connectBus, ensureStream, publish, setGauge } from '../../../shared/lib/index.js';
+import { envInt, env, envBool, log, createServer, HttpError, createPool, pingPool, poolStats, waitFor, onShutdown, call, retryFromEnv, connectBus, ensureStream, publish, setGauge } from '../../lib/index.js';
 
 const db = createPool('ORDERS_DB', { database: 'orders' });
 const CART = env('CART_URL', 'http://cart:3002');

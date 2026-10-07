@@ -1,6 +1,6 @@
 // psp-sandbox: stand-in for a third-party card processor (think stripe-mock / a vendor sandbox).
 // It is infrastructure the team does NOT own: its latency and rate limits are facts of life.
-import { envInt, envFloat, log, createServer, HttpError, onShutdown } from '../../../shared/lib/index.js';
+import { envInt, envFloat, log, createServer, HttpError, onShutdown } from '../../lib/index.js';
 
 const LATENCY_MS = envInt('PSP_LATENCY_MS', 40);
 const LATENCY_JITTER_MS = envInt('PSP_LATENCY_JITTER_MS', 20);
