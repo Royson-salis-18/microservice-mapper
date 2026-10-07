@@ -1,0 +1,5 @@
+# A responsive payment provider (200 ms) instead of upstream's 2 s demo delay. With 3 consumer threads that is ~15 payments/s of saga capacity,
+# so a healthy system drains realistic purchase traffic. Scenarios that are about a slow provider override it.
+services:
+  payment-service:
+    environment: { APP_PAYMENT_MOCK_DELAY_MS: "200" }

@@ -47,5 +47,30 @@ for (const subject of ['shopflow', 'ledgerline']) {
     for (const n of doc.expect?.nodes_unhealthy_at_some_point ?? []) if (!services[n]) fail(`expect names unknown service "${n}"`);
   }
 }
+// ---- ecom-lab (third-party project pinned at a commit; only validated when ecom-lab/upstream has been fetched)
+const up = path.join(root, 'ecom-lab', 'upstream');
+console.log('\necom-lab');
+if (!fs.existsSync(path.join(up, 'compose.yaml'))) console.log('- skipped (run ecom-lab/fetch.sh to enable)');
+else for (const sc of fs.readdirSync(path.join(root, 'ecom-lab', 'scenarios')).sort()) {
+  const sdir = path.join(root, 'ecom-lab', 'scenarios', sc);
+  process.stdout.write(`- ${sc}\n`);
+  const spec = path.join(sdir, 'scenario.yaml'), ovr = path.join(sdir, 'compose.override.yml');
+  if (!fs.existsSync(spec)) { fail('missing scenario.yaml'); continue; }
+  let cfg;
+  try {
+    const files = ['-f', 'compose.yaml', '-f', path.join(root, 'ecom-lab/overlays/no-es.yml'), '-f', path.join(root, 'ecom-lab/overlays/small.yml'), ...(fs.existsSync(ovr) ? ['-f', ovr] : [])];
+    cfg = JSON.parse(execFileSync('docker', ['compose', ...files, 'config', '--format', 'json'], { cwd: up, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  } catch (e) { fail(`compose config: ${String(e.stderr ?? e.message).split('\n')[0]}`); continue; }
+  const declared = new Set(Object.entries(cfg.services).flatMap(([n, v]) => Object.keys(v.depends_on ?? {}).map((d) => `${n}->${d}`)));
+  const doc = yaml.load(fs.readFileSync(spec, 'utf8'));
+  for (const k of ['id', 'title', 'class', 'summary']) if (!doc[k]) fail(`scenario.yaml missing "${k}"`);
+  if (doc.id !== sc) fail(`id "${doc.id}" != folder "${sc}"`);
+  const edges = [...(doc.expect?.edges ?? []), ...((doc.natural_findings ?? []).map((f) => f.expect).filter(Boolean))];
+  for (const e of edges) {
+    for (const end of [e.source, e.target]) if (!cfg.services[end]) fail(`edge ${e.source}->${e.target}: service "${end}" not in compose`);
+    if (e.declared !== declared.has(`${e.source}->${e.target}`)) fail(`edge ${e.source}->${e.target}: scenario says declared=${e.declared}, compose says ${declared.has(`${e.source}->${e.target}`)}`);
+  }
+  for (const n of doc.expect?.nodes_unhealthy_at_some_point ?? []) if (!cfg.services[n]) fail(`expect names unknown service "${n}"`);
+}
 console.log(failures ? `\n${failures} failure(s)` : '\nall scenarios consistent');
 process.exit(failures ? 1 : 0);

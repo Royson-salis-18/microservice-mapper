@@ -1,0 +1,53 @@
+### ec-01-slow-psp  (load 60s, concurrency 20)
+
+--- DURING (fault active) ---
+== containers (state, restarts, oom) ==
+api-gateway-1        running restarts=0 oom=false health=healthy
+connect-1            running restarts=0 oom=false health=healthy
+connect-init-1       exited restarts=0 oom=false health=-
+inventory-service-1  running restarts=0 oom=false health=healthy
+kafka-1              running restarts=0 oom=false health=healthy
+order-service-1      running restarts=0 oom=false health=healthy
+payment-service-1    running restarts=0 oom=false health=healthy
+postgres-inventory-1 running restarts=0 oom=false health=healthy
+postgres-order-1     running restarts=0 oom=false health=healthy
+postgres-payment-1   running restarts=0 oom=false health=healthy
+postgres-projection-1 running restarts=0 oom=false health=healthy
+postgres-review-1    running restarts=0 oom=false health=healthy
+postgres-user-1      running restarts=0 oom=false health=healthy
+projection-service-1 running restarts=0 oom=false health=healthy
+prometheus-1         running restarts=0 oom=false health=-
+redis-gateway-1      running restarts=0 oom=false health=healthy
+redis-projection-1   running restarts=0 oom=false health=healthy
+review-service-1     running restarts=0 oom=false health=healthy
+user-service-1       running restarts=0 oom=false health=healthy
+== cpu / memory ==
+api-gateway cpu=45.11% mem=63.50%;connect cpu=4.75% mem=86.21%;inventory-service cpu=6.76% mem=85.85%;kafka cpu=16.63% mem=78.68%;order-service cpu=16.29% mem=82.67%;payment-service cpu=1.54% mem=83.48%;postgres-inventory cpu=1.02% mem=38.39%;postgres-order cpu=5.47% mem=38.50%;postgres-payment cpu=0.02% mem=36.46%;postgres-projection cpu=5.16% mem=47.25%;postgres-review cpu=0.00% mem=36.32%;postgres-user cpu=0.00% mem=30.08%;projection-service cpu=44.73% mem=87.53%;prometheus cpu=1.19% mem=16.19%;redis-gateway cpu=0.56% mem=6.99%;redis-projection cpu=1.22% mem=7.25%;review-service cpu=0.36% mem=76.88%;user-service cpu=1.47% mem=78.60%;
+== API outcomes (status codes) ==
+login=200 catalog_list=200 product_detail=200 my_orders=200 purchase=202 reviews=200
+== saga ==
+CANCELLED=2 DELIVERED=10 PROCESSING=312 
+kafka consumer lag: 327 messages
+
+--- load generator (whole run) ---
+all n=7441 p50=11ms p95=51ms err5xx/net=0.0% | rps 124 | status {'200': 6972, '202': 469}
+   GET /api/catalog/products n=3187 p50=11ms p95=56ms err5xx/net=0.0%
+   GET /api/catalog/orders n=598 p50=12ms p95=56ms err5xx/net=0.0%
+   POST /api/products/purchase n=469 p50=23ms p95=66ms err5xx/net=0.0%
+   GET /api/catalog/products/:n n=3187 p50=10ms p95=43ms err5xx/net=0.0%
+
+load ticks (5s windows):
+12:28:31 n=487 p50=41ms p95=219ms err5xx/net=0.0%
+12:28:36 n=578 p50=22ms p95=99ms err5xx/net=0.0%
+12:28:41 n=628 p50=11ms p95=33ms err5xx/net=0.0%
+12:28:46 n=626 p50=11ms p95=30ms err5xx/net=0.0%
+12:28:51 n=625 p50=11ms p95=41ms err5xx/net=0.0%
+12:28:56 n=624 p50=9ms p95=27ms err5xx/net=0.0%
+12:29:01 n=621 p50=11ms p95=34ms err5xx/net=0.0%
+12:29:06 n=663 p50=10ms p95=26ms err5xx/net=0.0%
+12:29:11 n=635 p50=13ms p95=34ms err5xx/net=0.0%
+12:29:16 n=654 p50=9ms p95=25ms err5xx/net=0.0%
+12:29:21 n=658 p50=8ms p95=22ms err5xx/net=0.0%
+12:29:26 n=642 p50=9ms p95=24ms err5xx/net=0.0%
+
+done

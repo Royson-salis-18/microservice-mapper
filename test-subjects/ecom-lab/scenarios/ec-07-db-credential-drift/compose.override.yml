@@ -1,0 +1,4 @@
+# order-service still holds the pre-rotation database password. Postgres has the new one. Spring fails startup; restart policy loops it.
+services:
+  order-service:
+    environment: { SPRING_DATASOURCE_PASSWORD: "pre-rotation-password" }

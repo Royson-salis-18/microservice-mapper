@@ -1,0 +1,12 @@
+# Run without Elasticsearch. Upstream supports this: projection-service has app.elasticsearch.enabled (APP_ELASTICSEARCH_ENABLED).
+# Effect: full-text search is unavailable; browse, product detail (Redis cache-aside), checkout, saga and everything else work.
+services:
+  elasticsearch-projection:
+    profiles: ["es"]          # not started unless --profile es is given
+  projection-service:
+    environment:
+      APP_ELASTICSEARCH_ENABLED: "false"
+    depends_on: !override
+      postgres-projection: { condition: service_healthy }
+      redis-projection:    { condition: service_healthy }
+      kafka:               { condition: service_healthy }

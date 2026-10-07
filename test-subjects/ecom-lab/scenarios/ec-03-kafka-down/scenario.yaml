@@ -1,0 +1,42 @@
+id: ec-03-kafka-down
+title: Kafka goes away; the shop keeps selling and nothing is processed
+class: infrastructure failure / outbox resilience
+verified: docker
+summary: 'The transactional outbox makes the HTTP path independent of Kafka: purchases keep returning 202 while Kafka is down. Consumers log reconnect
+  errors, Debezium retries, and the saga stops advancing. A textbook example of an outage the user cannot see.'
+run: './run-scenario.sh ec-03-kafka-down   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment provider
+
+  then: scenarios/ec-03-kafka-down/inject.sh'
+production_condition: kafka container stopped
+measured_in_docker:
+  http: 0% 5xx; 428 purchases accepted
+  orders: 126 at fault, 126 twenty seconds later and at run end
+  kafka_state: exited (exit 143, oom=false)
+ground_truth:
+  root_cause: kafka
+  symptomatic:
+  - connect
+  - order-service
+  - payment-service
+  - projection-service
+  - inventory-service
+mapper_signals:
+- signal: kafka container exits
+  where: container state
+  strength: strong
+- signal: every Kafka client edge (inventory/order/payment/projection/connect -> kafka) loses its observed connections while declared edges remain
+  where: edge
+  strength: strong
+- signal: consumer services show reconnect-loop CPU/log noise
+  where: node metric
+  strength: partial
+mapper_blind_spots:
+- Customer impact is nil until the outbox backlog matters; the mapper reports the infrastructure failure, not user harm.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  nodes_unhealthy_at_some_point:
+  - kafka
+  incident:
+    root_cause_any_of:
+    - kafka
+fix: broker redundancy (3 nodes, RF=3), alert on consumer lag and outbox age
