@@ -30,6 +30,8 @@ export interface IncidentThresholds {
   zScoreHigh: number;
   /** …and CRITICAL at or above this. */
   zScoreCritical: number;
+  /** A z-score only counts if the metric also moved at least this many points from its baseline mean. */
+  minDeltaPercent: number;
   /** Absolute percent that forces HIGH regardless of z. */
   absoluteHighPercent: number;
   /** Absolute percent that forces CRITICAL regardless of z. */
@@ -49,10 +51,11 @@ export interface IncidentThresholds {
 }
 
 export const DEFAULT_THRESHOLDS: IncidentThresholds = {
-  minHistorySamples: 3,
+  minHistorySamples: 12,
   zScoreAnomaly: 2.5,
   zScoreHigh: 3.0,
   zScoreCritical: 4.0,
+  minDeltaPercent: 5,
   absoluteHighPercent: 70,
   absoluteCriticalPercent: 85,
   flatlineStdDev: 0.001,
@@ -67,6 +70,7 @@ const LIMITS: Record<keyof IncidentThresholds, [number, number]> = {
   zScoreAnomaly: [0.5, 10],
   zScoreHigh: [0.5, 15],
   zScoreCritical: [0.5, 20],
+  minDeltaPercent: [0, 100],
   absoluteHighPercent: [1, 100],
   absoluteCriticalPercent: [1, 100],
   flatlineStdDev: [0.0000001, 10],
@@ -148,6 +152,8 @@ export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
     'How far from its own recent baseline a metric must move to count as anomalous, in standard deviations. Lower fires more often.',
   zScoreHigh: 'Deviation at or above this is HIGH rather than MEDIUM.',
   zScoreCritical: 'Deviation at or above this is CRITICAL.',
+  minDeltaPercent:
+    'Even a large z-score is ignored unless the metric moved this many percentage points from its baseline. Stops an idle service going from 0.05% to 2% CPU from raising an incident.',
   absoluteHighPercent:
     'A CPU or memory reading above this is HIGH no matter how calm the baseline is — a service pinned at 75% is worth seeing even if it has been there long enough to look normal.',
   absoluteCriticalPercent: 'A reading above this is CRITICAL regardless of deviation.',

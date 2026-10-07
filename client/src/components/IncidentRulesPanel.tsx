@@ -27,7 +27,7 @@ const GROUPS: { title: string; note: string; keys: string[] }[] = [
   {
     title: 'How far from normal counts',
     note: 'Deviation from each service’s own recent baseline, in standard deviations.',
-    keys: ['zScoreAnomaly', 'zScoreHigh', 'zScoreCritical'],
+    keys: ['zScoreAnomaly', 'zScoreHigh', 'zScoreCritical', 'minDeltaPercent'],
   },
   {
     title: 'Absolute limits',
@@ -50,6 +50,7 @@ const LABELS: Record<string, string> = {
   zScoreAnomaly: 'Anomalous at |z| ≥',
   zScoreHigh: 'HIGH at |z| ≥',
   zScoreCritical: 'CRITICAL at |z| ≥',
+  minDeltaPercent: 'Must also move by ≥ (points)',
   absoluteHighPercent: 'HIGH above %',
   absoluteCriticalPercent: 'CRITICAL above %',
   flatlineStdDev: 'Flat below std dev',
