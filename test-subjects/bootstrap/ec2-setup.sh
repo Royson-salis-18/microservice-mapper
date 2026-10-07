@@ -46,7 +46,10 @@ ROOT="$DEST"; [ -d "$DEST/test-subjects" ] && ROOT="$DEST/test-subjects"
 echo "== 5/5 start $SUBJECT (first run builds the images: a few minutes)"
 run "cd '$ROOT' && $SUDO env GRAFANA_PASSWORD='${GRAFANA_PASSWORD:-bench}' make -C $SUBJECT bench"
 
-PUB=$(curl -s -m 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "<this-instance-public-ip>")
+# EC2 metadata needs a session token (IMDSv2) on current Ubuntu AMIs
+IMDS_TOKEN=$(curl -s -m 2 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60" 2>/dev/null || true)
+PUB=$(curl -s -m 2 -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
+[ -n "$PUB" ] || PUB="<this-instance-public-ip>"
 PORT=8080; [ "$SUBJECT" = ledgerline ] && PORT=8081
 cat <<MSG
 
