@@ -55,36 +55,36 @@ export class WebSocketManager {
       }
 
       if (!session) {
-        let spawnCmd = 'bash';
-        let spawnArgs = ['--login'];
-        
-        if (data.targetId) {
-          let sshUser = 'ubuntu';
-          let targetIp = data.ip;
-          let targetKey = data.key;
+        let targetId = data.targetId;
+        let sshUser = 'ubuntu';
+        let targetIp = data.ip;
+        let targetKey = data.key;
 
-          try {
-            const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
-            if (fs.existsSync(configPath)) {
-              const remoteConf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-              const tVal = remoteConf[data.targetId];
-              if (tVal) {
-                targetIp = tVal.ec2PublicIp || targetIp;
-                targetKey = tVal.sshKeyPath || targetKey;
-                sshUser = tVal.sshUsername || sshUser;
-              }
+        try {
+          const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
+          if (fs.existsSync(configPath)) {
+            const remoteConf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            let tVal = (targetId && targetId !== 'ALL') ? remoteConf[targetId] : undefined;
+            if (!tVal) {
+              const preferredKey = remoteConf['open-telemetry'] ? 'open-telemetry' : Object.keys(remoteConf).find(k => remoteConf[k]?.ec2PublicIp && remoteConf[k]?.sshKeyPath);
+              if (preferredKey) tVal = remoteConf[preferredKey];
             }
-          } catch (e) {
-            // Swallowing this silently meant a malformed remote_config.json
-            // dropped us onto the DEFAULT ssh host/key without a word, so the
-            // terminal connected somewhere the user never asked for.
-            console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
+            if (tVal) {
+              targetIp = tVal.ec2PublicIp || targetIp;
+              targetKey = tVal.sshKeyPath || targetKey;
+              sshUser = tVal.sshUsername || sshUser;
+            }
           }
+        } catch (e) {
+          console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
+        }
 
-          if (targetIp && targetKey) {
-            spawnCmd = 'ssh';
-            spawnArgs = ['-tt', '-F', '/dev/null', '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
-          }
+        let spawnCmd = process.platform === 'win32' ? 'powershell.exe' : 'bash';
+        let spawnArgs = process.platform === 'win32' ? ['-NoLogo'] : ['--login'];
+
+        if (targetIp && targetKey) {
+          spawnCmd = 'ssh';
+          spawnArgs = ['-tt', '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
         }
 
         session = spawn(spawnCmd, spawnArgs, {

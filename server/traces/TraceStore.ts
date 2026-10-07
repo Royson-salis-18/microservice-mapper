@@ -1,5 +1,6 @@
 import type { ConnectionEvent } from "./types.js";
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 
 /**
@@ -19,6 +20,15 @@ export class TraceStore {
   constructor(targetId: string) {
     // Store in the project's data/ directory (same level as graph_db.json)
     this.filePath = path.join(process.cwd(), "data", `traces_${targetId}.json`);
+    try {
+      if (fsSync.existsSync(this.filePath)) {
+        const raw = fsSync.readFileSync(this.filePath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.recentEvents = parsed.slice(-this.maxRecentEvents);
+        }
+      }
+    } catch {}
   }
 
   async saveEvents(events: ConnectionEvent[]): Promise<void> {
@@ -62,6 +72,17 @@ export class TraceStore {
   }
 
   getRecentEvents(limit: number = 100): ConnectionEvent[] {
+    if (this.recentEvents.length === 0) {
+      try {
+        if (fsSync.existsSync(this.filePath)) {
+          const raw = fsSync.readFileSync(this.filePath, "utf-8");
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.recentEvents = parsed.slice(-this.maxRecentEvents);
+          }
+        }
+      } catch {}
+    }
     return this.recentEvents.slice(-limit);
   }
 

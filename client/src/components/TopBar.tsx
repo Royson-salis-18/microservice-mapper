@@ -12,11 +12,13 @@ interface TopBarProps {
   onSearchChange: (query: string) => void;
   onToggleTrafficPanel?: () => void;
   isTrafficPanelOpen?: boolean;
+  onToggleTerminal?: () => void;
+  isTerminalOpen?: boolean;
   onEditProject?: (projectId: string) => void;
   onReloadGraph?: (targetId: string) => Promise<void>;
 }
 
-export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onEditProject, onReloadGraph }: TopBarProps) {
+export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph }: TopBarProps) {
   const [isReloading, setIsReloading] = useState(false);
   const getStatusColor = (s: string | undefined) => {
     if (s === 'healthy') return 'var(--color-healthy)';
@@ -236,6 +238,32 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
               }}
             >
               <span>⚡</span> TRAFFIC
+            </button>
+          )}
+
+          {onToggleTerminal && (
+            <button
+              onClick={onToggleTerminal}
+              style={{
+                background: isTerminalOpen
+                  ? 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))'
+                  : 'rgba(255,255,255,0.03)',
+                color: '#fff',
+                border: `1px solid ${isTerminalOpen ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontWeight: 700,
+                fontSize: '11px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: isTerminalOpen ? '0 0 12px rgba(0,212,255,0.4)' : 'none',
+                transition: 'all var(--transition-fast)'
+              }}
+            >
+              <span>💻</span> SSH TERMINAL
             </button>
           )}
 
