@@ -1,0 +1,23 @@
+id: ll-05-batch-oom
+title: The month-end job that kills itself, restarts, and tries again
+class: data skew / batch memory / restart loop
+verified: local-process (memory spike measured); OOM kill itself requires the container memory limit
+summary: >
+  The statement run loads one account's entries into memory -- fine for ordinary accounts (tens of rows). The treasury account has a
+  year of fee entries (2M rows here; 1M measured below), so its statement needs far more memory than the 256 MB container limit. The
+  kernel kills the worker (exit 137); restart: always brings it back; the run has no checkpoint, so it starts over, loads the same
+  account and dies again. The spike lasts seconds per cycle.
+why_code_review_and_tests_pass: "Per-account processing is a reasonable design; the skewed account only exists in production."
+production_condition: "SEED_FEE_ENTRIES=1000000 (2M entries), statements-worker mem_limit=256m"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 10 --duration 300 --mix transfer=90,statement=10,fx-transfer=0,profile=0" }
+measured_locally: { rss_before_mb: 83, rss_peak_mb_at_1M_entries: 551, batch_duration_s: 4 }
+ground_truth: { root_cause: statements-worker, symptomatic: [] , note: "customer-facing flows are unaffected; statements stop being produced" }
+mapper_signals:
+  - { signal: "statements-worker memory jumps abruptly then the container exits and restarts (restartCount climbs on a ~60 s rhythm)", where: node metric + container state, strength: strong }
+  - { signal: "transfers/edge completely healthy", where: Tier-1 edge log, strength: strong, note: "contrast again: a back-office failure with a clean front door" }
+mapper_blind_spots:
+  - "The spike lasts ~4 s and the mapper samples every 5 s, so the memory signal can be missed entirely; the exit/restart is the reliable evidence. This is a good test of the 'flat baseline, sudden jump' rule."
+expect:
+  nodes_unhealthy_at_some_point: [statements-worker]
+  incident: { root_cause_any_of: [statements-worker] }
+fix: "stream with a cursor, per-account row cap / chunking, checkpoint progress, memory alert on the worker"

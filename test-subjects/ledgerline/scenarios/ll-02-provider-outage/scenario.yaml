@@ -1,0 +1,28 @@
+id: ll-02-provider-outage
+title: Third-party outage with a circuit breaker -- the silence is the symptom
+class: external dependency failure / partial outage
+verified: local-process
+summary: >
+  The FX vendor is down. fx-rates does everything right: short timeout, one retry, circuit breaker. After 5 failures the breaker opens
+  for 15 s and every request fails fast. Transfers needing a conversion return 503; USD-to-USD transfers are unaffected, so the
+  system is 'partly up'. Because the breaker is working, almost no traffic reaches the vendor: the failing edge goes QUIET.
+why_code_review_and_tests_pass: "The resilience pattern is implemented correctly; that is why the failure is clean and partial."
+production_condition: "FX_PROVIDER_MODE=down"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 10 --duration 300 --think-ms 20 --mix transfer=60,fx-transfer=40,profile=0,statement=0" }
+measured_locally:
+  transfer_failures_pct: 66.7          # every transfer from a EUR/GBP account needs a conversion
+  fx_rates_requests: 4587
+  fx_provider_requests: 44             # the breaker absorbed ~99% of the attempts
+  breaker_openings: 4
+ground_truth: { root_cause: fx-provider, symptomatic: [fx-rates, transfers, edge] }
+mapper_signals:
+  - { signal: "fx-rates -> fx-provider edge activity collapses (absence of traffic, not presence)", where: edge, strength: strong }
+  - { signal: "edge 503 on /api/transfers (only for cross-currency payers); /api/accounts and /api/statements unaffected", where: Tier-1 edge log, strength: strong }
+  - { signal: "fx-provider is itself 'healthy' (container up, low CPU)", where: node metric, strength: partial, note: "container state alone will never blame the vendor" }
+mapper_blind_spots:
+  - "The vendor's 503s are not visible to the mapper (fx-rates -> fx-provider is not a logged gateway). RCA must rely on the edge going quiet while upstream demand stays high."
+expect:
+  edges:
+    - { source: fx-rates, target: fx-provider, declared: true, observed: true }
+  incident: { optional: true, root_cause_any_of: [fx-provider, fx-rates] }
+fix: "stale-while-error cache for rates (FX_STALE_IF_ERROR_MS), secondary vendor, degrade to 'rate unavailable, retry later' UX"

@@ -1,0 +1,5 @@
+# fraud-screening now normalises foreign-currency amounts to USD via fx-rates (new rule). depends_on and the architecture doc
+# were not updated: fx-rates is now on the critical path of EVERY screening, not just cross-currency transfers.
+services:
+  fraud-screening:
+    environment: { FRAUD_NORMALISE_AMOUNTS: "true", FX_URL: "http://fx-rates:3105" }

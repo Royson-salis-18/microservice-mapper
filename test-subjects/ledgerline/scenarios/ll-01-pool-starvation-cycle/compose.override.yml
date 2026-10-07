@@ -1,0 +1,7 @@
+# fraud-screening gained an "account age" rule and now calls accounts; accounts already calls fraud-screening for the profile
+# page's risk badge. The cycle only bites when concurrent profile views >= accounts' DB pool. Pool sized for the old call graph.
+services:
+  fraud-screening:
+    environment: { FRAUD_ENRICH_FROM_ACCOUNTS: "true", ACCOUNTS_TIMEOUT_MS: "2500" }
+  accounts:
+    environment: { ACCOUNTS_DB_POOL_MAX: "5", FRAUD_TIMEOUT_MS: "3000" }

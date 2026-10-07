@@ -1,0 +1,5 @@
+# Finance asked for an always-current fee balance, so ledger now updates the single treasury balance row inside every transfer's
+# transaction. Every transfer in the bank now serialises on one row lock.
+services:
+  ledger:
+    environment: { FEE_POSTING: "inline" }

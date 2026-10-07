@@ -1,0 +1,38 @@
+id: ll-01-pool-starvation-cycle
+title: Two healthy services wait on each other and nothing looks busy
+class: circular dependency / resource starvation
+verified: local-process
+summary: >
+  accounts' profile endpoint holds a database connection (a FOR SHARE snapshot) while it asks fraud-screening for a risk score.
+  A new fraud rule makes fraud-screening call accounts back for account age -- which needs a connection from the very pool the
+  waiting profile requests are holding. At low concurrency nothing is wrong. Once concurrent profile views reach the pool size (5),
+  every pooled connection is held by a request waiting on fraud, fraud's callbacks wait for a connection, timeouts fire, requests
+  fail, new ones arrive, repeat. Both services sit at ~2-3% CPU throughout.
+why_code_review_and_tests_pass: >
+  Each change was reviewed alone: accounts-calls-fraud shipped months ago, fraud-calls-accounts last week. The cycle exists only in
+  the combination, and only above a concurrency threshold that tests never reach.
+production_condition: "FRAUD_ENRICH_FROM_ACCOUNTS=true; ACCOUNTS_DB_POOL_MAX=5; >=5 concurrent profile views"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 40 --duration 300 --think-ms 0 --mix profile=100,transfer=0,fx-transfer=0,statement=0" }
+measured_locally:
+  p50_at_3_concurrent_ms: 9
+  at_40_concurrent: { p50_ms: 2007, p95_ms: 4016, error_pct: 84.7 }
+  accounts_cpu_pct: 3.1
+  fraud_cpu_pct: 2.0
+ground_truth:
+  root_cause: "accounts <-> fraud-screening (cycle)"
+  note: "no single culprit; the defect is the loop plus an undersized pool"
+  symptomatic: [edge, transfers]
+mapper_signals:
+  - { signal: "accounts -> fraud-screening AND fraud-screening -> accounts both OBSERVED: a cycle in the dependency graph", where: edge, strength: strong }
+  - { signal: "fraud-screening -> accounts is OBSERVED but NOT DECLARED (it was added in code only)", where: edge, strength: strong }
+  - { signal: "edge latency/5xx on /api/accounts/*/risk-profile while accounts and fraud CPU stay near idle", where: Tier-1 edge log + node metric, strength: strong, note: "'slow but not busy' is the diagnostic fingerprint of waiting, not working" }
+  - { signal: "accounts -> accounts-db connection count pinned at pool size", where: edge activity, strength: partial }
+mapper_blind_spots:
+  - "No CPU/memory metric moves. A purely resource-based incident rule will not fire; the topology (cycle) and the gateway error rate are the evidence."
+  - "RCA's single-root-cause model has no natural answer for a cycle. Record how the mapper presents it (propagation must terminate; both nodes should appear as candidates)."
+expect:
+  edges:
+    - { source: accounts,        target: fraud-screening, declared: true,  observed: true }
+    - { source: fraud-screening, target: accounts,        declared: false, observed: true }
+  incident: { optional: true }
+fix: "never hold a DB connection across a remote call; break the cycle (pass account age in the request, or cache it); size pools from measured concurrency; per-request deadline propagation"
