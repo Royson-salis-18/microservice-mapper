@@ -41,7 +41,9 @@ up: render
 	@curl -s -m 3 -u admin:$(GRAFANA_PASSWORD) -X POST http://localhost:3000/api/annotations -H 'Content-Type: application/json' -d '{"tags":["scenario"],"text":"scenario applied: $(SCEN)"}' >/dev/null 2>&1 || true
 	@echo "ledgerline up: http://localhost:8081  (scenario: $(SCEN))"
 
-scenario: up
+# keeps the always-on traffic container part of the project when a scenario is applied (no 'orphan' warning)
+scenario:
+	$(MAKE) up PROFILES=traffic
 
 wait:
 	@for i in $$(seq 1 90); do docker compose -f $(RENDERED) ps --format '{{.Status}}' | grep -qE 'starting|unhealthy' || break; sleep 2; done; sleep 3
