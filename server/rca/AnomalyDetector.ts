@@ -27,7 +27,8 @@ export class AnomalyDetector {
           observedValue: 0,
           baselineMean: 1,
           baselineStdDev: 0,
-          zScore: 99.0,
+          zScore: null,
+          reason: 'container-exited-or-critical',
           severity: 'CRITICAL',
           evidenceSource: 'container-runtime'
         });
@@ -82,8 +83,9 @@ export class AnomalyDetector {
           timestamp,
           observedValue: currentValue,
           baselineMean: mean,
-          baselineStdDev: 0.1,
-          zScore: 5.0,
+          baselineStdDev: Math.round(stdDev * 1000) / 1000,
+          zScore: null,
+          reason: 'flat-baseline-jump',
           severity: currentValue > t.flatlineCriticalPercent ? 'CRITICAL' : 'HIGH',
           evidenceSource: 'dynamic-baseline'
         };
@@ -92,6 +94,7 @@ export class AnomalyDetector {
     }
 
     const zScore = (currentValue - mean) / stdDev;
+    if (Math.abs(currentValue - mean) < t.minDeltaPercent) return null;
 
     // Every bound here comes from data/incident_thresholds.json (see
     // thresholds.ts), so what fires an incident is visible and editable
@@ -112,6 +115,7 @@ export class AnomalyDetector {
         baselineMean: Math.round(mean * 10) / 10,
         baselineStdDev: Math.round(stdDev * 10) / 10,
         zScore: Math.round(zScore * 100) / 100,
+        reason: 'zscore',
         severity,
         evidenceSource: 'dynamic-zscore'
       };

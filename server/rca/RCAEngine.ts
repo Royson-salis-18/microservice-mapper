@@ -162,7 +162,7 @@ export class RCAEngine {
               propagationSteps.push({
                 sourceId: curr,
                 targetId: tgtNode.id,
-                timestamp: new Date().toISOString(),
+                timestamp: targetAnomalies.filter(a => a.nodeId === tgtNode.id).map(a => a.timestamp).sort()[0],
                 edgeId: edge.id,
                 evidenceSource: edge.observed ? 'network-tcp' : 'compose-declarative',
                 metricChange: `Status: ${tgtNode.status}`,
