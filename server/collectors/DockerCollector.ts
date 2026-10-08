@@ -60,6 +60,10 @@ export class DockerCollector extends BaseCollector {
           status = 'critical';
         } else if (c.State === 'exited' || c.State === 'dead') {
           status = 'critical';
+        } else if (c.State === 'paused') {
+          // A paused container is frozen: listed, "up", but it answers nothing. It used to fall through to
+          // 'unknown', which made a frozen service invisible to incidents and RCA.
+          status = 'critical';
         }
         // Containers that are restarting show State=restarting
         if (c.Status.toLowerCase().includes('restarting')) {
