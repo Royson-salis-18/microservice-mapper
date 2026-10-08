@@ -208,9 +208,9 @@ export class GraphStore {
           });
           clearTimeout(timeoutId);
           if (res && res.status < 500) {
+            // A reachable website says nothing about telemetry: it no longer refreshes lastSeen, which made a
+            // target with zero collected services show as LIVE. Status comes from telemetry only (see touchTarget).
             target.endpointStatus = 'REACHABLE';
-            // Keep target alive if endpoint is reachable
-            target.lastSeen = new Date().toISOString();
           } else {
             target.endpointStatus = 'UNREACHABLE';
           }
@@ -329,9 +329,11 @@ export class GraphStore {
     const nodesMap = this.getTargetNodes(targetId);
     const edgesMap = this.getTargetEdges(targetId);
 
-    // Update target lastSeen so it stays LIVE
+    // Update target lastSeen so it stays LIVE, but only when discovery actually found services:
+    // an empty discovery is "no data", not a sign of life.
     const target = this.targets.get(targetId);
-    if (target) {
+    const found = services.filter(s => !String(s?.name ?? '').includes('mapper-collector')).length;
+    if (target && found > 0) {
       target.lastSeen = new Date().toISOString();
       target.status = 'LIVE';
     }
