@@ -1,5 +1,20 @@
 # RCA Engine — Root Cause Analysis
 
+> **Corrected 2026-10-08 (commit e66d261). Parts of this page below describe the OLD scoring; read this box first.**
+>
+> | Old rule | Problem (found by tests / live faults) | Now |
+> |---|---|---|
+> | +0.15 "downstream blast radius" when a service's **callee** is failing | edges are caller -> callee and failures travel callee -> caller, so this **rewarded victims**: the caller of a broken service outranked the broken service | **-0.25 "likely victim"** if a callee is also failing/anomalous; **+0.15 "explains callers"** if its callers fail while its own callees are fine |
+> | candidates = services with Docker status critical/degraded only | an incident raised by metric anomalies on running services had **no root cause** | candidates = failing **or** anomalous services |
+> | propagation path walks root -> its callees | drawn **backwards** | walks root -> its callers (where the failure goes) |
+> | +0.30 temporal precedence ("strongest signal") | samples are seconds apart, calls take milliseconds: order is mostly sampling noise (rca-lab measured it making rankings worse) | +0.10 |
+> | +0.20 for having observed edges | almost every service has traffic; not evidence of being the cause | no score; still raises confidence |
+> | detector: mean/std over a 15 min window that includes the anomaly, one sample fires, missing reading = 0 | the fault inflated its own baseline; a single noisy sample raised an incident; gaps looked like drops | median/MAD baseline of history **before** the judged samples, **two** consecutive samples must agree, missing = unknown |
+> | `docker pause` -> status `unknown` | frozen containers were invisible | `paused` = critical, `container-paused` anomaly |
+>
+> Tests: `tests/rca.test.ts` (9 tests; 7 fail on the old code). Known limits not fixed: in **remote** mode the collector sees only `docker stats`, so stopped/paused containers are not visible remotely; `MAPPER_AUTO_RESTART` restarts crashed containers by default (set `off` during fault experiments).
+
+
 **Files:** `server/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
 
 ---
