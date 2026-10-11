@@ -1,5 +1,6 @@
 import Docker from 'dockerode';
 import { BaseCollector } from './BaseCollector.js';
+import { dockerOptions } from '../util/platform.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
@@ -13,7 +14,7 @@ export class DockerCollector extends BaseCollector {
 
   constructor() {
     super();
-    this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+    this.docker = new Docker(dockerOptions());
   }
 
   private inferProject(name: string): ServiceNode['project'] {

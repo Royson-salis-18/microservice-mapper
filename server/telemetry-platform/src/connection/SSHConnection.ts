@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolveKeyPath } from '../../../util/platform.js';
 import { Client as SSHClient } from "ssh2";
 import type { Connection } from "./Connection.js";
 import type { RemoteCommand, RemoteCommandResult } from "./RemoteCommand.js";
@@ -26,7 +27,13 @@ export class SSHConnection implements Connection {
   }
 
   async connect(): Promise<void> {
-    const privateKey = readFileSync(this.config.privateKeyPath);
+    const keyPath = resolveKeyPath(this.config.privateKeyPath);
+    let privateKey: Buffer;
+    try {
+      privateKey = readFileSync(keyPath);
+    } catch {
+      throw new Error(`SSH key not found: ${this.config.privateKeyPath} (looked for ${keyPath}). Set the key path in Add Project.`);
+    }
     const passphrase = this.config.passphraseEnvVar
       ? process.env[this.config.passphraseEnvVar]
       : undefined;

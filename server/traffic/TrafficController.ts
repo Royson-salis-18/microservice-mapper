@@ -243,7 +243,7 @@ export class TrafficController {
 
       const trafficGenDir = path.resolve(process.cwd(), '../traffic-gen');
       console.log(`[TrafficController] traffic-gen not reachable on :${TRAFFIC_GEN_PORT}, starting it from ${trafficGenDir}`);
-      const child = spawn('node', ['server.js'], {
+      const child = spawn(process.execPath, ['server.js'], {
         cwd: trafficGenDir,
         env: { ...process.env, PORT: TRAFFIC_GEN_PORT },
         stdio: ['ignore', 'pipe', 'pipe'],

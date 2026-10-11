@@ -4,12 +4,10 @@ import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { resolveKeyPath, keyPathForOpenSSH, localShell } from '../util/platform.js';
 
 const SENTINEL = '___CMD_DONE___';
 
-function resolveKeyPath(keyPath: string): string {
-  return keyPath.startsWith('~/') ? path.join(os.homedir(), keyPath.slice(2)) : keyPath;
-}
 
 export class WebSocketManager {
   private wss: WebSocketServer;
@@ -79,12 +77,11 @@ export class WebSocketManager {
           console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
         }
 
-        let spawnCmd = process.platform === 'win32' ? 'powershell.exe' : 'bash';
-        let spawnArgs = process.platform === 'win32' ? ['-NoLogo'] : ['--login'];
+        let { cmd: spawnCmd, args: spawnArgs } = localShell();
 
         if (targetIp && targetKey) {
           spawnCmd = 'ssh';
-          spawnArgs = ['-tt', '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
+          spawnArgs = ['-tt', '-i', keyPathForOpenSSH(resolveKeyPath(targetKey)), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
         }
 
         session = spawn(spawnCmd, spawnArgs, {

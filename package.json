@@ -8,10 +8,13 @@
     "server": "cd server && npm run start",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "install:all": "cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
     "traffic-gen": "cd traffic-gen && npm start",
-    "export-telemetry": "server/node_modules/.bin/tsx scripts/export_vectorized_telemetry.ts",
-    "test": "./server/node_modules/.bin/tsx --test tests/*.test.ts"
+    "export-telemetry": "node server/node_modules/tsx/dist/cli.mjs scripts/export_vectorized_telemetry.ts",
+    "test": "node server/node_modules/tsx/dist/cli.mjs --test \"tests/*.test.ts\"",
+    "setup": "npm run install:all && npm run doctor",
+    "doctor": "node scripts/doctor.mjs",
+    "start": "npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -56,28 +56,39 @@ This is not a distributed tracing tool. There are no OpenTelemetry spans or requ
 
 ### Prerequisites
 
-- Node.js ≥ 18, npm ≥ 9
-- Docker ≥ 20.10 on target EC2 instances
-- SSH key (`.pem`) with access to your EC2 instance
-- Python 3.8+ (optional — only for the ML anomaly pipeline)
+- Node.js 20+ (22 recommended), npm 9+
+- An SSH key (`.pem`) for your EC2 instances (Docker runs on the instances, not on your machine)
+- Optional: Python 3.10+ for the ML panel, an `ssh` client for the in-app terminal, Docker only to map containers on this machine
+
+The mapper runs the same on **macOS, Linux and Windows**: the targets are always reached over SSH, and everything that
+differs by OS (Python binary name, Docker socket, local shell, SSH key paths and permissions) is handled in
+`server/util/platform.ts`.
 
 ### Install & Run
 
+macOS (Terminal):
 ```bash
-# Clone
+# once: brew install node@22   (Homebrew from https://brew.sh)
 git clone https://github.com/Royson-salis-18/microservice-mapper.git
 cd microservice-mapper
-
-# Install all sub-projects
-npm run install:all
-
-# Start server + client
+npm run setup        # installs every sub-project, then runs the doctor
 npm run dev
 ```
+Windows (PowerShell): the same commands. Install Node with `winget install OpenJS.NodeJS.LTS` (or nodejs.org).
+Linux: the same commands, with Node 22 from your package manager or nodejs.org.
 
-Open **http://localhost:5173**
+Open **http://localhost:5173**. The server runs on **:3001**; the Vite client on **:5173** proxies `/api` + `/ws` to it.
 
-The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies `/api` + `/ws` to the backend.
+`npm run doctor` checks this machine and says how to fix anything missing (Node, dependencies, Python, ssh, Docker, and
+whether each target's SSH key file exists here).
+
+**SSH keys across machines.** Key paths may be written as `~/Downloads/key.pem`, `~\Downloads\key.pem`, a quoted path or
+an absolute path from another computer. If the exact path is not found, the mapper looks for a file with the same name in
+`~/.ssh`, `~/Downloads`, `~/Desktop` and `~/Documents`, so a config made on Windows works on a Mac. A freshly downloaded
+key that is readable by others is fine for discovery; for the in-app terminal the mapper hands `ssh` a private copy
+instead of changing your file.
+
+**Overrides:** `MAPPER_PYTHON=/path/to/python` (for example a virtualenv), `DOCKER_HOST=...` (a non-default Docker).
 
 ### npm Scripts
 
@@ -87,9 +98,11 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run server` | Start backend only |
 | `npm run client` | Start Vite dev server only |
 | `npm run build` | Production client build |
-| `npm run install:all` | Install server, client, remote-collector, traffic-gen |
+| `npm run install:all` | Install the root tools and server, client, remote-collector, traffic-gen |
+| `npm run setup` | `install:all` + `doctor` |
+| `npm run doctor` | Check this machine (any OS) and print fixes |
 | `npm run traffic-gen` | Run traffic generator |
-| `npm test` | Run the logic test suite (layouts, cycle handling, edge heat bands) |
+| `npm test` | Run the test suite (logic, RCA, security, cross-platform) |
 
 ---
 
