@@ -4,7 +4,7 @@ export interface TemporalTimelinePoint {
   timestamp: string;
   nodeId: string;
   metric: string;
-  zScore: number;
+  zScore: number | null;
   observedValue: number;
   isEarliest: boolean;
 }

@@ -29,10 +29,10 @@ export function createTraceRouter(
     const store = graphStore.getTraceStore?.(targetId as string);
     const recentEvents = store?.getRecentEvents(1) || [];
     const hasRecentData = recentEvents.length > 0 && 
-      (Date.now() - new Date(recentEvents[0]?.timestamp || 0).getTime()) < 60000;
+      (Date.now() - new Date(recentEvents[recentEvents.length - 1]?.timestamp || 0).getTime()) < 180000;
 
     res.json({
-      active: hasRecentData,
+      active: Boolean(hasRecentData),
       targetId,
       eventCount: store?.getRecentEvents(500)?.length || 0,
       timestamp: new Date().toISOString()
@@ -80,13 +80,13 @@ export function createTraceRouter(
     const store = graphStore.getTraceStore?.(targetId as string);
     if (!store) return res.json([]);
 
+    const maxEvents = parseInt(limit as string) || 200;
     if (since) {
       const events = await store.loadEvents(since as string);
-      return res.json(events);
+      if (events.length > 0) return res.json(events.slice(-maxEvents));
     }
 
     // Return recent in-memory events for fast response
-    const maxEvents = parseInt(limit as string) || 200;
     res.json(store.getRecentEvents(maxEvents));
   });
 

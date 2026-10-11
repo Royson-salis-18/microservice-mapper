@@ -266,6 +266,8 @@ export default function App() {
           onSearchChange={setSearchQuery}
           onToggleTrafficPanel={() => { setIsTrafficPanelOpen(!isTrafficPanelOpen); setIsAwsPanelOpen(false); }}
           isTrafficPanelOpen={isTrafficPanelOpen}
+          onToggleTerminal={() => setIsTerminalVisible(!isTerminalVisible)}
+          isTerminalOpen={isTerminalVisible}
           onReloadGraph={reloadGraph}
           onEditProject={(projectId) => { 
             setEditingProjectId(projectId);
