@@ -2,6 +2,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { spawn, execFileSync } from 'child_process';
+import { pythonCmd, IS_WINDOWS } from '../util/platform.js';
 import { GraphStore } from '../graph/GraphStore.js';
 import { GraphAnalytics } from '../graph/GraphAnalytics.js';
 import type { TelemetryEnvelope } from '../models/index.js';
@@ -688,7 +689,9 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       // Anchored: an unanchored match also hits shell wrappers whose command
       // line merely contains "python3 <script>", and killing the wrapper
       // would leave the actual interpreter running.
-      const pattern = `^python3 ${script.replace('.', '\\.')}$`;
+      // pgrep does not exist on Windows; there we only know about processes we started.
+      if (IS_WINDOWS) return null;
+      const pattern = `^python[0-9.]* ${script.replace('.', '\\.')}$`;
       const out = execFileSync('pgrep', ['-f', pattern], { encoding: 'utf8' }).trim();
       const pid = out.split('\n').map((l) => parseInt(l, 10)).find((n) => Number.isFinite(n));
       return pid ?? null;
@@ -733,7 +736,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     fs.mkdirSync(mlLogsDir, { recursive: true });
     const logPath = path.join(mlLogsDir, `${name}.log`);
     const logFd = fs.openSync(logPath, 'a');
-    const child = spawn('python3', [ML_PROC_SCRIPTS[name]], {
+    const child = spawn(pythonCmd(), [ML_PROC_SCRIPTS[name]], {
       cwd: mlDir,
       stdio: ['ignore', logFd, logFd],
     });
@@ -874,7 +877,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       // not project-scoped and is the slow step, so a caller tuning
       // hyperparameters against unchanged data can skip it.
       if (!skipPreprocess) {
-        const preCode = await runStep('python3', ['preprocess.py']);
+        const preCode = await runStep(pythonCmd(), ['preprocess.py']);
         if (preCode !== 0) {
           retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: preCode };
           return;
@@ -899,8 +902,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       numericArg('--min-samples', minSamples, trainArgs);
       numericArg('--holdout-fraction', holdoutFraction, trainArgs);
 
-      appendLog(`[retrain] python3 ${trainArgs.join(' ')}`);
-      const trainCode = await runStep('python3', trainArgs);
+      appendLog(`[retrain] ${pythonCmd()} ${trainArgs.join(' ')}`);
+      const trainCode = await runStep(pythonCmd(), trainArgs);
       retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: trainCode };
     })();
 

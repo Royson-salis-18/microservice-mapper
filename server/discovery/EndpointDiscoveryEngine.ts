@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { resolveKeyPath } from '../util/platform.js';
 import path from 'path';
 import os from 'os';
 import { EndpointRegistry } from '../registry/EndpointRegistry.js';
@@ -76,9 +77,7 @@ class TargetAgent {
   private get ec2Ip(): string { return this.tConf.ec2PublicIp; }
   private get sshUser(): string { return this.tConf.sshUsername || 'ubuntu'; }
   private get sshKeyPath(): string {
-    let p = this.tConf.sshKeyPath || '';
-    if (p.startsWith('~/')) p = path.join(os.homedir(), p.slice(2));
-    return p;
+    return resolveKeyPath(this.tConf.sshKeyPath);
   }
 
   private log(msg: string) {
