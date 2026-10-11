@@ -7,7 +7,15 @@ export class TraceGraphAggregator {
   async aggregate(windowSec: number): Promise<TraceGraph> {
     const now = Date.now();
     const since = new Date(now - windowSec * 1000).toISOString();
-    const events = await this.traceStore.loadEvents(since);
+    let events = await this.traceStore.loadEvents(since);
+
+    if (events.length === 0) {
+      events = this.traceStore.getRecentEvents(500);
+      if (events.length === 0) {
+        const allEvents = await this.traceStore.loadEvents();
+        events = allEvents.slice(-500);
+      }
+    }
 
     const edgeMap = new Map<string, TraceGraphEdge>();
     const nodes = new Set<string>();

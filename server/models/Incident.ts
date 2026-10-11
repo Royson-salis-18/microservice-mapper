@@ -11,7 +11,10 @@ export interface AnomalyRecord {
   observedValue: number;
   baselineMean: number;
   baselineStdDev: number;
-  zScore: number;
+  /** null when the rule that fired is not a z-score (exited container, flat-baseline jump). */
+  zScore: number | null;
+  /** Which rule fired, so a null zScore is explained rather than faked. */
+  reason?: string;
   severity: IncidentSeverity;
   evidenceSource?: string;
 }
@@ -19,7 +22,8 @@ export interface AnomalyRecord {
 export interface PropagationStep {
   sourceId: string;
   targetId: string;
-  timestamp: string;
+  /** First anomaly seen on the target; absent when none was recorded. */
+  timestamp?: string;
   edgeId: string;
   evidenceSource: string;
   metricChange: string;

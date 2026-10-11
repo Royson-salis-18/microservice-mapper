@@ -10,6 +10,23 @@ symptom is what you will be looking at when you come back to this.
 
 ---
 
+## 2026-10-08: RCA and target-status correctness fixes (commit e66d261)
+
+**Symptoms.** (1) In an incident, the service that called the broken one was named as root cause. (2) Incidents raised by CPU/memory anomalies on running services showed no root cause. (3) The propagation path pointed from the cause to its dependencies. (4) A `docker pause`d container never appeared in incidents. (5) sock-shop and train-ticket showed **LIVE** with 0 services discovered.
+
+**Causes and fixes.**
+* `server/rca/RCAEngine.ts`: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -> 0.10; observed-edge bonus removed from the score.
+* `server/rca/AnomalyDetector.ts`: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise `container-paused`.
+* `server/collectors/DockerCollector.ts`: `State === 'paused'` -> status critical (was `unknown`).
+* `server/graph/GraphStore.ts`: an HTTP ping of the app's website no longer refreshes `lastSeen` (it said nothing about telemetry), and a discovery that found zero services no longer marks the target LIVE.
+
+**Evidence.** `tests/rca.test.ts`, 9 tests; 7 fail on the previous code. All 60 tests pass. Background and live measurements: rca-lab `docs/WHAT_IS_WRONG.md` (github.com/Royson-salis-18/new-repo).
+
+**Not fixed (known).** Remote mode has no container state; auto-restart on by default; `server/data/remote_config.json` had stale IPs for death-star and open-telemetry on 2026-10-08.
+
+---
+
+
 ## 1. Discovery and the graph
 
 ### 1.1 Discovery ran once and never again

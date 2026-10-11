@@ -77,7 +77,7 @@ export class GraphStore {
       try {
         const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         for (const [targetId, tConf] of Object.entries<any>(configData)) {
-          this.registerNewProject(targetId, tConf.displayName || targetId, tConf.ec2PublicIp);
+          this.registerNewProject(targetId, tConf.displayName || targetId, tConf.ec2PublicIp, tConf.trafficBaseUrl);
         }
       } catch (e) {
         console.error('[GraphStore] Error loading remote_config.json:', e);
@@ -85,8 +85,20 @@ export class GraphStore {
     }
   }
 
-  public registerNewProject(targetId: string, displayName: string, hostIp: string) {
+  public registerNewProject(targetId: string, displayName: string, hostIp: string, trafficBaseUrl?: string) {
     const nowIso = new Date().toISOString();
+    const defaultPort = targetId === 'vertikal' ? 54321 : (targetId === 'open-telemetry' || targetId === 'death-star' ? 8080 : 80);
+    let resolvedPort = defaultPort;
+    let resolvedBaseUrl = trafficBaseUrl;
+    if (resolvedBaseUrl) {
+      try {
+        const parsed = new URL(resolvedBaseUrl);
+        if (parsed.port) resolvedPort = Number(parsed.port);
+      } catch {}
+    } else if (hostIp && hostIp !== 'unknown') {
+      resolvedBaseUrl = `http://${hostIp}:${defaultPort}`;
+    }
+
     this.upsertTarget({
       targetId,
       displayName,
@@ -95,8 +107,8 @@ export class GraphStore {
       transport: 'http',
       status: 'NO DATA',
       lastSeen: nowIso,
-      baseUrl: hostIp && hostIp !== 'unknown' ? `http://${hostIp}:80` : undefined, // default
-      publicPort: 80,
+      baseUrl: resolvedBaseUrl,
+      publicPort: resolvedPort,
       endpointStatus: hostIp && hostIp !== 'unknown' ? 'REACHABLE' : 'UNCONFIGURED',
       capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
     });
@@ -196,9 +208,9 @@ export class GraphStore {
           });
           clearTimeout(timeoutId);
           if (res && res.status < 500) {
+            // A reachable website says nothing about telemetry: it no longer refreshes lastSeen, which made a
+            // target with zero collected services show as LIVE. Status comes from telemetry only (see touchTarget).
             target.endpointStatus = 'REACHABLE';
-            // Keep target alive if endpoint is reachable
-            target.lastSeen = new Date().toISOString();
           } else {
             target.endpointStatus = 'UNREACHABLE';
           }
@@ -317,9 +329,11 @@ export class GraphStore {
     const nodesMap = this.getTargetNodes(targetId);
     const edgesMap = this.getTargetEdges(targetId);
 
-    // Update target lastSeen so it stays LIVE
+    // Update target lastSeen so it stays LIVE, but only when discovery actually found services:
+    // an empty discovery is "no data", not a sign of life.
     const target = this.targets.get(targetId);
-    if (target) {
+    const found = services.filter(s => !String(s?.name ?? '').includes('mapper-collector')).length;
+    if (target && found > 0) {
       target.lastSeen = new Date().toISOString();
       target.status = 'LIVE';
     }
@@ -488,8 +502,9 @@ export class GraphStore {
     const remoteHost = (cleanClientIp && cleanClientIp !== '127.0.0.1') ? cleanClientIp : 'unknown';
 
     const existingTarget = this.targets.get(targetId);
-    const hostToUse = remoteHost !== 'unknown' ? remoteHost : (existingTarget?.host || 'unknown');
-    const port = existingTarget?.publicPort || (targetId === 'vertikal' ? 54321 : 80);
+    const defaultPort = targetId === 'vertikal' ? 54321 : (targetId === 'open-telemetry' || targetId === 'death-star' ? 8080 : 80);
+    const port = existingTarget?.publicPort || defaultPort;
+    const hostToUse = (existingTarget?.host && existingTarget.host !== 'unknown') ? existingTarget.host : remoteHost;
 
     this.upsertTarget({
       targetId,
@@ -500,7 +515,7 @@ export class GraphStore {
       status: 'LIVE',
       lastSeen: new Date().toISOString(),
       baseUrl: hostToUse !== 'unknown' ? `http://${hostToUse}:${port}` : existingTarget?.baseUrl,
-      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: false }
+      capabilities: { dockerMetrics: true, serviceHealth: true, topology: true, httpInteractions: true, traces: true }
     });
 
     const nodesMap = this.getTargetNodes(targetId);
