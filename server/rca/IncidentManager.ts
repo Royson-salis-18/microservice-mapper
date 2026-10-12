@@ -19,6 +19,7 @@ export class IncidentManager {
     const targetNodes = nodes.filter(n => n.project === targetId);
     const targetEdges = edges.filter(e => e.id.startsWith(targetId) || targetNodes.some(n => n.id === e.source));
 
+    const t = loadThresholds();
     // 1. Detect Anomaly Records for Target
     const anomalies = this.anomalyDetector.detectAnomaliesForTarget(targetId, targetNodes);
 
@@ -27,7 +28,8 @@ export class IncidentManager {
       targetId,
       nodes: targetNodes,
       edges: targetEdges,
-      anomalies
+      anomalies,
+      thresholds: t,
     });
 
     const existing = this.activeIncidents.get(targetId);
@@ -49,11 +51,19 @@ export class IncidentManager {
     let severity: IncidentSeverity = 'LOW';
     let status: IncidentStatus = 'DEGRADED';
 
-    const t = loadThresholds();
-    if (criticalCount > 0) {
+    if (rcaResult.monitoringGap) {
+      severity = 'MEDIUM';
+      status = 'DEGRADED';
+    } else if (criticalCount > 0) {
       severity = criticalCount > t.criticalServicesForCritical ? 'CRITICAL' : 'HIGH';
       status = 'INCIDENT';
     } else if (degradedCount > 0) {
+      severity = 'MEDIUM';
+      status = 'DEGRADED';
+    } else if (anomalies.some(a => a.severity === 'CRITICAL')) {
+      severity = 'HIGH';
+      status = 'INCIDENT';
+    } else if (anomalies.some(a => a.severity === 'HIGH')) {
       severity = 'MEDIUM';
       status = 'DEGRADED';
     }
@@ -73,7 +83,9 @@ export class IncidentManager {
       existing.candidateCauses = rcaResult.candidateCauses;
       existing.evidence = rcaResult.evidence;
       existing.explanation = rcaResult.explanation;
-      existing.remediationGuide = primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : [];
+      existing.remediationGuide = this.remediation(primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap);
+      existing.atRisk = rcaResult.atRisk;
+      existing.monitoringGap = rcaResult.monitoringGap;
       return existing;
     }
 
@@ -98,11 +110,29 @@ export class IncidentManager {
       candidateCauses: rcaResult.candidateCauses,
       evidence: rcaResult.evidence,
       explanation: rcaResult.explanation,
-      remediationGuide: primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : []
+      remediationGuide: this.remediation(primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap),
+      atRisk: rcaResult.atRisk,
+      monitoringGap: rcaResult.monitoringGap,
     };
 
     this.activeIncidents.set(targetId, newIncident);
     return newIncident;
+  }
+
+  /**
+   * What to type, based on what is actually wrong. The old guide was always `docker start docker-compose-<name>-1`,
+   * a container name that only existed on one host and the wrong command for a paused or running container.
+   */
+  private remediation(serviceId: string | undefined, nodes: any[], monitoringGap: boolean): string[] {
+    if (monitoringGap) return ['Check the SSH session / collector on the host', 'docker ps', 'docker stats --no-stream'];
+    const n = nodes.find(x => x.id === serviceId);
+    if (!n) return [];
+    const container = n.metadata?.containerName || n.metadata?.containerId?.slice(0, 12) || n.name;
+    const state = String(n.metadata?.state ?? '');
+    if (state === 'paused') return [`docker unpause ${container}`, `docker logs --tail 100 ${container}`];
+    if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker start ${container}`];
+    if (state === 'restarting') return [`docker logs --tail 200 ${container}`, `docker inspect --format '{{.State.ExitCode}} {{.State.Error}}' ${container}`];
+    return [`docker logs --tail 100 ${container}`, `docker stats --no-stream ${container}`];
   }
 
   public getIncidentForTarget(targetId: string): Incident | null {

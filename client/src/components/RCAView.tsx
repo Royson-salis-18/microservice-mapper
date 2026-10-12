@@ -210,13 +210,27 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
                   Total Root Cause Score: <strong style={{ color: 'var(--color-accent-cyan)' }}>{selectedCandidate.score.toFixed(2)}</strong>
                 </div>
+                {selectedCandidate.own !== undefined && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+                    {[
+                      ['Own evidence', selectedCandidate.own, 'its own CPU / memory / silence'],
+                      ['Symptoms', selectedCandidate.symptoms, 'errors, latency, traffic (can be inherited)'],
+                      ['Explained by a dependency', selectedCandidate.explained, 'a broken service it calls'],
+                    ].map(([label, v, hint]) => (
+                      <div key={label as string} title={hint as string} style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '8px', padding: '8px 10px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{label as string}</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', fontFamily: 'monospace' }}>{Number(v ?? 0).toFixed(1)}×</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {selectedCandidate.scoreBreakdown.map((b, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '12px' }}>
                       <span style={{ color: 'var(--color-text-muted)' }}>{b.reason}</span>
-                      <span style={{ fontWeight: 700, color: 'var(--color-healthy)', fontFamily: 'monospace' }}>
-                        +{(b.score).toFixed(2)}
+                      <span style={{ fontWeight: 700, color: b.score < 0 ? 'var(--color-critical)' : 'var(--color-healthy)', fontFamily: 'monospace' }}>
+                        {b.score < 0 ? '−' : '+'}{Math.abs(b.score).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -227,6 +241,45 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
 
           {/* Right Column: Deterministic Report, Evidence & Propagation */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {activeIncident.monitoringGap && (
+              <div style={{ background: 'rgba(255, 184, 0, 0.08)', border: '1px solid var(--color-degraded)', borderRadius: '12px', padding: '16px 20px' }}>
+                <div style={{ fontWeight: 700, color: 'var(--color-degraded)', marginBottom: '4px' }}>Monitoring outage, not a service fault</div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  Most services stopped reporting at the same moment. Independent services do not all freeze together; a broken telemetry
+                  path (SSH session, collector, Docker daemon) does. No service is blamed until data comes back.
+                </div>
+              </div>
+            )}
+
+            {activeIncident.atRisk && activeIncident.atRisk.length > 0 && (
+              <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700 }}>At risk next</h3>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
+                  Healthy services that call a broken one. A ranking of who to watch, not a calibrated probability.
+                </div>
+                {activeIncident.atRisk.slice(0, 6).map(r => (
+                  <div key={r.serviceId} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px 44px', gap: '10px', alignItems: 'center', padding: '6px 0', fontSize: '12px' }}>
+                    <span style={{ color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`calls ${r.via.join(', ')}`}>
+                      {getCleanName(r.serviceName)} <span style={{ color: 'var(--color-text-muted)' }}>← {r.via.map(getCleanName).join(', ')}</span>
+                    </span>
+                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.round(r.risk * 100)}%`, height: '100%', background: 'var(--color-degraded)' }} />
+                    </div>
+                    <span style={{ textAlign: 'right', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>{Math.round(r.risk * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeIncident.remediationGuide && activeIncident.remediationGuide.length > 0 && (
+              <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '16px 20px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px' }}>Try first (on the host)</div>
+                {activeIncident.remediationGuide.map((c, i) => (
+                  <code key={i} style={{ display: 'block', fontSize: '12px', background: 'rgba(0,0,0,0.35)', padding: '6px 10px', borderRadius: '6px', marginBottom: '6px', color: 'var(--color-accent-cyan)' }}>{c}</code>
+                ))}
+              </div>
+            )}
             
             {/* Human Explanation Engine Report */}
             {activeIncident.explanation && (

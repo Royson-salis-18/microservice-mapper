@@ -14,4 +14,10 @@ export interface MetricSnapshot {
   errorCount?: number | null;
   errorRate?: number | null;
   restartCount?: number;
+  /** Bytes per second since the previous sample (the cumulative networkRx/Tx counters cannot show a drop). */
+  networkRxRate?: number | null;
+  networkTxRate?: number | null;
+  /** Restarts since the previous sample. */
+  restartDelta?: number | null;
+  pids?: number | null;
 }

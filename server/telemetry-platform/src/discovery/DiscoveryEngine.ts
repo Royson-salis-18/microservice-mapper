@@ -155,6 +155,7 @@ export class DiscoveryEngine {
         networks: inspected?.networks.map((n) => n.networkName) ?? [],
         addresses: inspected?.networks.map((n) => n.ipAddress).filter((a): a is string => !!a) ?? [],
         metadata: {
+          containerName: String(entry.Names ?? "").split(",")[0].replace(/^\//, "").trim() || null,
           composeProject: mergedLabels["com.docker.compose.project"] ?? null,
           composeConfigFiles: mergedLabels["com.docker.compose.project.config_files"] ?? null,
           restartCount: inspected?.restartCount ?? null,
