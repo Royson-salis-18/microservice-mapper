@@ -17,44 +17,32 @@ export function LayoutPicker2D({ layout, onChange, nodeCount, edgeCount }: Layou
   const active = LAYOUTS_2D.find((l) => l.id === layout);
 
   return (
-    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', color: '#7dd3fc', textTransform: 'uppercase', marginBottom: '8px' }}>
-        Arrangement
-      </div>
+    <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--color-border)' }}>
+      <div className="mm-eyebrow" style={{ marginBottom: '10px' }}>Arrangement</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-        {LAYOUTS_2D.map((opt) => {
-          const isActive = opt.id === layout;
-          return (
-            <button
-              key={opt.id}
-              onClick={() => onChange(opt.id)}
-              title={opt.hint}
-              style={{
-                padding: '6px 4px',
-                background: isActive ? 'rgba(0, 212, 255, 0.18)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${isActive ? 'rgba(0,212,255,0.55)' : 'rgba(255,255,255,0.08)'}`,
-                color: isActive ? '#e0f2fe' : '#94a3b8',
-                borderRadius: '6px',
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.4px',
-                cursor: 'pointer',
-              }}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      <div className="mm-seg">
+        {LAYOUTS_2D.map((opt) => (
+          <button
+            key={opt.id}
+            className={opt.id === layout ? 'on' : undefined}
+            onClick={() => onChange(opt.id)}
+            title={opt.hint}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {active && (
-        <div style={{ marginTop: '8px', fontSize: '10px', color: '#64748b', lineHeight: 1.4 }}>
+        <div style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--color-text-muted)', lineHeight: 1.45 }}>
           {active.hint}
         </div>
       )}
 
-      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '10px', color: '#475569' }}>
+      <div style={{
+        marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--color-border)',
+        fontSize: '11.5px', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums'
+      }}>
         {nodeCount} services · {edgeCount} dependencies
       </div>
     </div>

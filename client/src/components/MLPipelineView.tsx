@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, Legend,
   LineChart, Line, ReferenceLine, ScatterChart, Scatter, ZAxis,
 } from 'recharts';
+import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { MLExecutionPanel } from './MLExecutionPanel';
 import { InfoTip, PageHeader, Panel, Stat as KitStat, StatRow } from './ui/Panel';
 import { createContext, useContext } from 'react';
@@ -101,21 +102,71 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function ScoreBar({ score, persistent, aboveThreshold }: { score: number; persistent: boolean; aboveThreshold: boolean }) {
-  const color = persistent ? 'var(--color-critical)' : aboveThreshold ? 'var(--color-degraded)' : 'var(--color-healthy)';
+  // Neutral unless the value is actually bad.
+  const color = persistent ? 'var(--color-critical)' : aboveThreshold ? 'var(--color-degraded)' : '#9aa3b0';
   const pct = Math.round(Math.min(1, Math.max(0, score)) * 100);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100px' }}>
-      <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '110px' }}>
+      <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: color, transition: 'width 0.3s ease' }} />
       </div>
-      <span style={{ fontSize: '11px', color, fontWeight: 600, width: '30px', textAlign: 'right' }}>{pct}%</span>
+      <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', width: '32px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
     </div>
   );
 }
 
-const AXIS_COLOR = 'var(--color-text-muted)';
-const GRID_COLOR = 'rgba(255,255,255,0.06)';
-const TOOLTIP_STYLE = { background: '#0d1117', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '11px' };
+const AXIS_COLOR = '#5d636c';
+const GRID_COLOR = 'rgba(255,255,255,0.05)';
+const TOOLTIP_STYLE = {
+  background: '#1a1d22', border: '1px solid var(--color-border)', borderRadius: '8px',
+  fontSize: '12px', color: 'var(--color-text-main)', fontVariantNumeric: 'tabular-nums' as const,
+};
+const TOOLTIP_LABEL = { color: 'var(--color-text-muted)', marginBottom: '2px' };
+const TOOLTIP_ITEM = { color: 'var(--color-text-main)' };
+const LEGEND_STYLE = { fontSize: '11.5px', color: 'var(--color-text-muted)' };
+/** Muted categorical palette for charts with several series. */
+const SERIES = ['#8ab4ff', '#b4a5ff', '#7dc4c4', '#c9a46b', '#9aa3b0'];
+
+const TH: React.CSSProperties = {
+  padding: '0 10px', height: '36px', fontSize: '11.5px', fontWeight: 500,
+  color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
+  borderBottom: '1px solid var(--color-border)',
+};
+const TD: React.CSSProperties = {
+  padding: '0 10px', height: '40px', fontSize: '13px', fontVariantNumeric: 'tabular-nums',
+  borderBottom: '1px solid var(--color-border)',
+};
+const EMPTY: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+  fontSize: '12px', color: 'var(--color-text-muted)', padding: '0 20px',
+};
+const FIELD_LABEL: React.CSSProperties = {
+  fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '6px',
+};
+const INPUT: React.CSSProperties = {
+  width: '100%', height: '30px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)',
+  borderRadius: '8px', padding: '0 10px', fontSize: '13px', color: 'var(--color-text-main)', outline: 'none',
+  fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums', colorScheme: 'dark',
+};
+const LOG: React.CSSProperties = {
+  margin: '8px 0 0', overflowY: 'auto', background: 'var(--color-bg-body)', border: '1px solid var(--color-border)',
+  borderRadius: '8px', padding: '10px 12px', fontSize: '12px', lineHeight: 1.55, color: 'var(--color-text-muted)',
+  whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)',
+};
+const PANEL_TITLE: React.CSSProperties = { margin: 0, fontSize: '14px', fontWeight: 600, letterSpacing: '-0.005em' };
+
+function StatusChip({ tone, children }: { tone: 'healthy' | 'degraded' | 'critical' | 'unknown'; children: React.ReactNode }) {
+  const bg = {
+    healthy: 'rgba(62,207,142,0.1)', degraded: 'rgba(232,163,61,0.1)',
+    critical: 'rgba(239,95,103,0.1)', unknown: 'rgba(255,255,255,0.05)',
+  }[tone];
+  return (
+    <span className="mm-chip" style={{ background: bg, color: `var(--color-${tone === 'unknown' ? 'text-muted' : tone})`, whiteSpace: 'nowrap' }}>
+      <i className="mm-dot" style={{ background: tone === 'unknown' ? 'var(--color-unknown)' : 'currentColor' }} />
+      {children}
+    </span>
+  );
+}
 
 /**
  * Panel used by every chart on ML Pipeline and Findings.
@@ -153,7 +204,7 @@ function CollapsiblePanel({
           style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', minWidth: 0 }}
           onClick={() => setCollapsed(!collapsed)}
         >
-          <h3 className="ml-chart-title" style={{ margin: 0 }}>{title}</h3>
+          <h3 className="ml-chart-title" style={PANEL_TITLE}>{title}</h3>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }} onClick={e => e.stopPropagation()}>
           {desc && <InfoTip>{desc}</InfoTip>}
@@ -161,14 +212,11 @@ function CollapsiblePanel({
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
-            title={collapsed ? 'expand' : 'collapse'}
-            style={{
-              background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--color-text-muted)',
-              cursor: 'pointer', fontSize: '10px', width: '24px', height: '24px', borderRadius: '6px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-            }}
+            title={collapsed ? 'Expand' : 'Collapse'}
+            className="mm-icon-btn"
+            style={{ width: '26px', height: '26px', flexShrink: 0 }}
           >
-            {collapsed ? '▼' : '▲'}
+            {collapsed ? <ChevronDown size={15} strokeWidth={1.75} /> : <ChevronUp size={15} strokeWidth={1.75} />}
           </button>
         </div>
       </div>
@@ -197,15 +245,15 @@ function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string
       <div style={{ height: '220px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-            <XAxis dataKey="project" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} />
-            <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} allowDecimals={false} />
-            <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Legend wrapperStyle={{ fontSize: '11px' }} />
-            <Bar dataKey="collected" name="Collected" fill="#94a3b8" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="featureReady" name="Feature-ready" fill="#00d4ff" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="trained" name="Trained" fill="#00e676" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="scored" name="Scored" fill="#e040fb" radius={[3, 3, 0, 0]} />
+            <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+            <XAxis dataKey="project" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Legend wrapperStyle={LEGEND_STYLE} iconType="circle" iconSize={7} />
+            <Bar dataKey="collected" name="Collected" fill={SERIES[4]} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="featureReady" name="Feature-ready" fill={SERIES[0]} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="trained" name="Trained" fill={SERIES[2]} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="scored" name="Scored" fill={SERIES[1]} radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -214,9 +262,9 @@ function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string
 }
 
 function severityColor(score: { persistent: boolean; above_threshold: boolean }): string {
-  if (score.persistent) return '#ff1744';
-  if (score.above_threshold) return '#ffab00';
-  return '#00e676';
+  if (score.persistent) return '#ef5f67';
+  if (score.above_threshold) return '#e8a33d';
+  return '#9aa3b0';
 }
 
 export function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{ sid: string; live?: { anomaly_score: number; persistent: boolean; above_threshold: boolean } }>; onSelect: (sid: string) => void; selectedSid: string | null }) {
@@ -236,18 +284,18 @@ export function LiveScoresChart({ rows, onSelect, selectedSid }: { rows: Array<{
   return (
     <CollapsiblePanel 
       title="Live anomaly scores" 
-      desc="Click a bar to see its trend below · red = persistent anomaly, amber = above threshold, green = normal"
+      desc="Click a bar to see its trend below · Red is a persistent anomaly, amber is above threshold, grey is within baseline"
     >
       <div style={{ height: `${Math.max(160, data.length * 26)}px` }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
-            <XAxis type="number" domain={[0, 100]} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} unit="%" />
-            <YAxis type="category" dataKey="name" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} width={140} />
-            <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.03)' }} formatter={(v: any) => [`${v}%`, 'anomaly score']} />
-            <Bar dataKey="score" radius={[0, 3, 3, 0]} onClick={(d: any) => onSelect(d.sid)} style={{ cursor: 'pointer' }}>
+            <CartesianGrid stroke={GRID_COLOR} horizontal={false} />
+            <XAxis type="number" domain={[0, 100]} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+            <YAxis type="category" dataKey="name" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} width={140} />
+            <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} cursor={{ fill: 'rgba(255,255,255,0.03)' }} formatter={(v: any) => [`${v}%`, 'Anomaly score']} />
+            <Bar dataKey="score" radius={[0, 2, 2, 0]} barSize={14} onClick={(d: any) => onSelect(d.sid)} style={{ cursor: 'pointer' }}>
               {data.map((entry) => (
-                <Cell key={entry.sid} fill={severityColor(entry.live)} fillOpacity={entry.sid === selectedSid ? 1 : 0.75} />
+                <Cell key={entry.sid} fill={severityColor(entry.live)} fillOpacity={selectedSid && entry.sid !== selectedSid ? 0.45 : 0.9} />
               ))}
             </Bar>
           </BarChart>
@@ -290,19 +338,19 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
       desc="From score_history.csv, written every scoring cycle"
     >
       {data.length < 2 ? (
-        <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+        <div style={{ height: '160px', ...EMPTY }}>
           Not enough history yet for this service
         </div>
       ) : (
         <div style={{ height: '200px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-              <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} minTickGap={30} />
-              <YAxis domain={[0, 100]} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} unit="%" />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [`${v}%`, 'anomaly score']} labelStyle={{ color: AXIS_COLOR }} />
-              <ReferenceLine y={100} stroke="#ff1744" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'threshold', fill: '#ff1744', fontSize: 10, position: 'insideTopRight' }} />
-              <Line type="monotone" dataKey="score" stroke="#00d4ff" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+              <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={30} />
+              <YAxis domain={[0, 100]} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [`${v}%`, 'Anomaly score']} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} />
+              <ReferenceLine y={100} stroke="#ef5f67" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'Threshold', fill: '#5d636c', fontSize: 11, position: 'insideTopRight' }} />
+              <Line type="monotone" dataKey="score" stroke="#8ab4ff" strokeWidth={1.5} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -312,10 +360,10 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
 }
 
 const FEATURE_SERIES = [
-  { raw: 'cpu_percent', z: 'z_cpu_percent', label: 'cpu %', color: '#00d4ff' },
-  { raw: 'memory_percent', z: 'z_memory_percent', label: 'mem %', color: '#00e676' },
-  { raw: 'network_rx_rate', z: 'z_network_rx_rate', label: 'rx B/s', color: '#ffab00' },
-  { raw: 'network_tx_rate', z: 'z_network_tx_rate', label: 'tx B/s', color: '#e040fb' },
+  { raw: 'cpu_percent', z: 'z_cpu_percent', label: 'CPU %', color: SERIES[0] },
+  { raw: 'memory_percent', z: 'z_memory_percent', label: 'Memory %', color: SERIES[1] },
+  { raw: 'network_rx_rate', z: 'z_network_rx_rate', label: 'RX B/s', color: SERIES[2] },
+  { raw: 'network_tx_rate', z: 'z_network_tx_rate', label: 'TX B/s', color: SERIES[3] },
 ];
 
 // Shows the exact rows train.py fits on — raw values on the left, the
@@ -354,46 +402,44 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
         <select
           value={sid ?? ''}
           onChange={(e) => onSelect(e.target.value)}
-          style={{
-            background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '6px',
-            padding: '5px 8px', fontSize: '11px', color: '#fff', outline: 'none', maxWidth: '280px',
-          }}
+          style={{ ...INPUT, width: 'auto', maxWidth: '280px', fontSize: '12.5px' }}
         >
-          <option value="">select a service…</option>
+          <option value="">Select a service…</option>
           {serviceIds.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       }
     >
-      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', margin: '10px 0' }}>
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', margin: '0 0 14px' }}>
         {FEATURE_SERIES.map(f => (
-          <label key={f.raw} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', cursor: 'pointer', color: visible.includes(f.raw) ? f.color : 'var(--color-text-muted)' }}>
-            <input type="checkbox" checked={visible.includes(f.raw)} onChange={() => toggle(f.raw)} style={{ accentColor: f.color }} />
+          <label key={f.raw} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: visible.includes(f.raw) ? 'var(--color-text-main)' : 'var(--color-text-dim)' }}>
+            <input type="checkbox" checked={visible.includes(f.raw)} onChange={() => toggle(f.raw)} style={{ accentColor: 'var(--color-accent-cyan)' }} />
+            <i className="mm-dot" style={{ background: f.color, opacity: visible.includes(f.raw) ? 1 : 0.35 }} />
             {f.label}
           </label>
         ))}
       </div>
 
       {!sid ? (
-        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+        <div style={{ height: '180px', ...EMPTY }}>
           Pick a service to inspect its training features
         </div>
       ) : loading && data.length === 0 ? (
-        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)' }}>Loading features…</div>
+        <div style={{ height: '180px', ...EMPTY }}>Loading features…</div>
       ) : data.length < 2 ? (
-        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-          No feature rows for this service yet — it needs more samples, then a Retrain
+        <div style={{ height: '180px', ...EMPTY }}>
+          No feature rows for this service yet. It needs more samples, then a retrain.
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Raw values</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>Raw values</div>
             <div style={{ height: '190px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-                  <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} minTickGap={40} />
-                  <YAxis tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} width={45} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: AXIS_COLOR }} />
+                  <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+                  <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={40} />
+                  <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} width={45} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} />
                   {FEATURE_SERIES.filter(f => visible.includes(f.raw)).map(f => (
                     <Line key={f.raw} type="monotone" dataKey={f.raw} name={f.label} stroke={f.color} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
                   ))}
@@ -402,16 +448,16 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Z-scores (model input) — dashed lines at ±3σ</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>Z-scores (model input), dashed lines at ±3σ</div>
             <div style={{ height: '190px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-                  <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} minTickGap={40} />
-                  <YAxis tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} width={45} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: AXIS_COLOR }} formatter={(v: any) => (typeof v === 'number' ? v.toFixed(2) : v)} />
-                  <ReferenceLine y={3} stroke="#ff1744" strokeDasharray="4 4" strokeOpacity={0.4} />
-                  <ReferenceLine y={-3} stroke="#ff1744" strokeDasharray="4 4" strokeOpacity={0.4} />
+                  <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+                  <XAxis dataKey="t" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={40} />
+                  <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} width={45} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} formatter={(v: any) => (typeof v === 'number' ? v.toFixed(2) : v)} />
+                  <ReferenceLine y={3} stroke="#969ca5" strokeDasharray="4 4" strokeOpacity={0.35} />
+                  <ReferenceLine y={-3} stroke="#969ca5" strokeDasharray="4 4" strokeOpacity={0.35} />
                   {FEATURE_SERIES.filter(f => visible.includes(f.raw)).map(f => (
                     <Line key={f.z} type="monotone" dataKey={f.z} name={f.label} stroke={f.color} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
                   ))}
@@ -448,20 +494,20 @@ export function ScoreDistributionChart({ rows }: { rows: Array<{ live?: { anomal
       defaultCollapsed={true}
     >
       {scored === 0 ? (
-        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-          Nothing scored right now — the scorer needs live metrics from a reachable target
+        <div style={{ height: '180px', ...EMPTY }}>
+          Nothing scored right now. The scorer needs live metrics from a reachable target.
         </div>
       ) : (
         <div style={{ height: '200px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={buckets} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
-              <XAxis dataKey="bucket" tick={{ fill: AXIS_COLOR, fontSize: 9 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} interval={0} angle={-30} textAnchor="end" height={45} />
-              <YAxis allowDecimals={false} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} width={30} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: AXIS_COLOR }} formatter={(v: any) => [`${v} service(s)`, 'count']} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+              <CartesianGrid stroke={GRID_COLOR} vertical={false} />
+              <XAxis dataKey="bucket" tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={45} />
+              <YAxis allowDecimals={false} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} formatter={(v: any) => [`${v} service(s)`, 'Count']} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Bar dataKey="count" radius={[2, 2, 0, 0]} isAnimationActive={false}>
                 {buckets.map((b) => (
-                  <Cell key={b.bucket} fill={b.index >= 8 ? '#ff1744' : b.index >= 5 ? '#ffab00' : '#00e676'} />
+                  <Cell key={b.bucket} fill={b.index >= 8 ? '#ef5f67' : b.index >= 5 ? '#e8a33d' : '#9aa3b0'} />
                 ))}
               </Bar>
             </BarChart>
@@ -564,18 +610,18 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
       {projects.map(project => {
         const rows = byProject.get(project)!;
         return (
-          <div key={project} style={{ marginBottom: '18px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-cyan)', marginBottom: '6px' }}>
-              {project} <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>· {rows.length} service{rows.length === 1 ? '' : 's'}</span>
+          <div key={project} style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '8px' }}>
+              {project} <span style={{ color: 'var(--color-text-dim)', fontWeight: 400, fontSize: '12px' }}>· {rows.length} service{rows.length === 1 ? '' : 's'}</span>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ color: 'var(--color-text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Detector</th>
-                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Fitted</th>
-                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Refused</th>
-                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>Mean firing rate on holdout</th>
-                  <th style={{ padding: '4px 6px', fontWeight: 600 }}>What it measures</th>
+                <tr>
+                  <th style={TH}>Detector</th>
+                  <th style={TH}>Fitted</th>
+                  <th style={TH}>Refused</th>
+                  <th style={TH}>Mean firing rate on holdout</th>
+                  <th style={TH}>What it measures</th>
                 </tr>
               </thead>
               <tbody>
@@ -588,17 +634,17 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
                     ? withHoldout.reduce((acc, e) => acc + (e.holdout!.flag_rate), 0) / withHoldout.length
                     : null;
                   return (
-                    <tr key={algo} style={{ borderTop: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '5px 6px', fontWeight: 600 }}>{ALGO_LABEL[algo] || algo}</td>
-                      <td style={{ padding: '5px 6px', color: fitted.length ? 'var(--color-healthy)' : 'var(--color-text-dim)' }}>{fitted.length}</td>
-                      <td style={{ padding: '5px 6px', color: refused.length ? 'var(--color-degraded)' : 'var(--color-text-dim)' }}
+                    <tr key={algo} className="ml-table-row">
+                      <td style={{ ...TD, fontWeight: 550 }}>{ALGO_LABEL[algo] || algo}</td>
+                      <td style={{ ...TD, color: fitted.length ? 'var(--color-text-main)' : 'var(--color-text-dim)' }}>{fitted.length}</td>
+                      <td style={{ ...TD, color: refused.length ? 'var(--color-degraded)' : 'var(--color-text-dim)' }}
                           title={refused[0]?.error || ''}>
                         {refused.length || '—'}
                       </td>
-                      <td style={{ padding: '5px 6px' }}>
-                        {meanRate === null ? '—' : `${(meanRate * 100).toFixed(1)}%`}
+                      <td style={TD}>
+                        {meanRate === null ? <span style={{ color: 'var(--color-text-dim)' }}>—</span> : `${(meanRate * 100).toFixed(1)}%`}
                       </td>
-                      <td style={{ padding: '5px 6px', color: 'var(--color-text-dim)' }}>{ALGO_NOTE[algo] || ''}</td>
+                      <td style={{ ...TD, fontSize: '12px', color: 'var(--color-text-muted)' }}>{ALGO_NOTE[algo] || ''}</td>
                     </tr>
                   );
                 })}
@@ -649,24 +695,24 @@ export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
       defaultCollapsed={true}
     >
       <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ color: 'var(--color-text-muted)', textAlign: 'left' }}>
-              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Service</th>
-              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Rows</th>
-              <th style={{ padding: '4px 6px', fontWeight: 600 }}>Distinct</th>
-              <th style={{ padding: '4px 6px', fontWeight: 600 }}>%</th>
+            <tr>
+              <th style={{ ...TH, position: 'sticky', top: 0, background: 'var(--color-bg-panel)' }}>Service</th>
+              <th style={{ ...TH, position: 'sticky', top: 0, background: 'var(--color-bg-panel)' }}>Rows</th>
+              <th style={{ ...TH, position: 'sticky', top: 0, background: 'var(--color-bg-panel)' }}>Distinct</th>
+              <th style={{ ...TH, position: 'sticky', top: 0, background: 'var(--color-bg-panel)' }}>Distinct share</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.sid} style={{ borderTop: '1px solid var(--color-border)' }}>
-                <td style={{ padding: '4px 6px' }}>
+              <tr key={r.sid} className="ml-table-row">
+                <td style={TD}>
                   <span style={{ color: 'var(--color-text-dim)' }}>{r.project}:</span>{r.sid.split(':').slice(1).join(':')}
                 </td>
-                <td style={{ padding: '4px 6px', color: 'var(--color-text-dim)' }}>{r.rows}</td>
-                <td style={{ padding: '4px 6px' }}>{r.unique_rows}</td>
-                <td style={{ padding: '4px 6px', color: r.unique_fraction < 0.05 ? 'var(--color-degraded)' : 'var(--color-healthy)', fontWeight: 600 }}>
+                <td style={{ ...TD, color: 'var(--color-text-muted)' }}>{r.rows}</td>
+                <td style={TD}>{r.unique_rows}</td>
+                <td style={{ ...TD, color: r.unique_fraction < 0.05 ? 'var(--color-degraded)' : 'var(--color-text-main)' }}>
                   {(r.unique_fraction * 100).toFixed(1)}%
                 </td>
               </tr>
@@ -693,50 +739,50 @@ export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; o
     })), [models]);
 
   const projects = useMemo(() => Array.from(new Set(points.map(p => p.project))).sort(), [points]);
-  const colors = ['#00d4ff', '#00e676', '#ffab00', '#e040fb', '#ff1744'];
+  const colors = SERIES;
 
   return (
     <CollapsiblePanel 
-      title="Model check — holdout firing rate" 
+      title="Model check: holdout firing rate" 
       desc="Each model trained on the earlier part of its data and scored on the held-out tail. Unlabelled data, so this is a firing rate, not accuracy — compare it to contamination."
       defaultCollapsed={true}
     >
       {points.length === 0 ? (
-        <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--color-text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '0 20px' }}>
-          No holdout evaluations yet — set a holdout fraction above 0 and hit Retrain
+        <div style={{ height: '200px', ...EMPTY }}>
+          No holdout evaluations yet. Set a holdout fraction above 0 and retrain.
         </div>
       ) : (
         <div style={{ height: '230px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 5, right: 15, left: 0, bottom: 15 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <CartesianGrid stroke={GRID_COLOR} />
               <XAxis
                 type="number" dataKey="samples" name="training samples"
-                tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false}
-                label={{ value: 'training samples', fill: AXIS_COLOR, fontSize: 10, position: 'insideBottom', offset: -10 }}
+                tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false}
+                label={{ value: 'Training samples', fill: AXIS_COLOR, fontSize: 11, position: 'insideBottom', offset: -10 }}
               />
               <YAxis
                 type="number" dataKey="flagRate" name="holdout flagged" unit="%"
-                tick={{ fill: AXIS_COLOR, fontSize: 10 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} width={45}
+                tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={false} tickLine={false} width={45}
               />
               <ZAxis type="number" dataKey="holdoutSamples" range={[40, 200]} name="holdout rows" />
               <Tooltip
-                contentStyle={TOOLTIP_STYLE} labelStyle={{ color: AXIS_COLOR }} cursor={{ strokeDasharray: '3 3' }}
+                contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL} itemStyle={TOOLTIP_ITEM} cursor={{ stroke: 'rgba(255,255,255,0.12)', strokeDasharray: '3 3' }}
                 formatter={(value: any, name: any) => [value, name]}
                 content={({ payload }) => {
                   const p = payload?.[0]?.payload;
                   if (!p) return null;
                   return (
-                    <div style={{ ...TOOLTIP_STYLE, padding: '8px 10px', color: '#c9d1d9' }}>
-                      <div style={{ fontWeight: 700, marginBottom: '3px' }}>{p.sid}</div>
-                      <div>{p.samples} training rows</div>
-                      <div>{p.holdoutSamples} holdout rows</div>
+                    <div style={{ ...TOOLTIP_STYLE, padding: '8px 10px', lineHeight: 1.6 }}>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>{p.sid}</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>{p.samples} training rows</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>{p.holdoutSamples} holdout rows</div>
                       <div>{p.flagRate}% of holdout flagged</div>
                     </div>
                   );
                 }}
               />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Legend wrapperStyle={LEGEND_STYLE} iconType="circle" iconSize={7} />
               {projects.map((project, i) => (
                 <Scatter
                   key={project}
@@ -780,47 +826,39 @@ function ProcessCard({ proc, label, description, onAction, busy }: {
     <div className="ml-process-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <span style={{
-            width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-            background: running ? 'var(--color-healthy)' : 'var(--color-text-muted)',
-            boxShadow: running ? '0 0 8px var(--color-healthy)' : 'none',
-          }} />
-          <span style={{ fontSize: '14px', fontWeight: 700 }}>{label}</span>
-          <code style={{ fontSize: '10px', color: 'var(--color-text-muted)', padding: '2px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>{proc?.script}</code>
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>{label}</span>
+          <code style={{ fontSize: '11.5px', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', padding: '1px 6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)', borderRadius: '5px' }}>{proc?.script}</code>
         </div>
         <button
           onClick={() => onAction(running ? 'stop' : 'start')}
           disabled={busy}
-          className={`ml-btn ${running ? 'ml-btn-stop' : 'ml-btn-start'}`}
+          className="mm-btn"
+          style={{ opacity: busy ? 0.5 : 1, cursor: busy ? 'not-allowed' : 'pointer' }}
         >
-          {busy ? '...' : running ? 'Stop' : 'Start'}
+          {busy ? 'Working…' : running ? 'Stop' : 'Start'}
         </button>
       </div>
 
-      <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', margin: '6px 0 8px 0' }}>{description}</div>
+      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '6px 0 12px 0' }}>{description}</div>
 
-      <div style={{ display: 'flex', gap: '14px', fontSize: '11px', flexWrap: 'wrap' }}>
-        <span style={{ color: running ? 'var(--color-healthy)' : 'var(--color-text-muted)', fontWeight: 600 }}>
-          {running ? 'RUNNING' : 'STOPPED'}
-        </span>
-        {proc?.pid && <span style={{ color: 'var(--color-text-muted)' }}>pid {proc.pid}</span>}
-        {running && !proc?.managed && <span style={{ color: 'var(--color-degraded)' }} title="Started outside this app — can still be stopped here">external</span>}
-        {proc?.startedAt && <span style={{ color: 'var(--color-text-muted)' }}>up {timeAgo(proc.startedAt).replace(' ago', '')}</span>}
+      <div style={{ display: 'flex', gap: '12px', fontSize: '11.5px', flexWrap: 'wrap', alignItems: 'center', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>
+        <StatusChip tone={running ? 'healthy' : 'unknown'}>{running ? 'Running' : 'Stopped'}</StatusChip>
+        {proc?.pid && <span>PID <span style={{ fontFamily: 'var(--font-mono)' }}>{proc.pid}</span></span>}
+        {running && !proc?.managed && <span style={{ color: 'var(--color-degraded)' }} title="Started outside this app — can still be stopped here">External</span>}
+        {proc?.startedAt && <span>Up {timeAgo(proc.startedAt).replace(' ago', '')}</span>}
       </div>
 
       {(proc?.log.length ?? 0) > 0 && (
         <>
           <button
             onClick={() => setShowLog(v => !v)}
-            style={{ marginTop: '8px', background: 'none', border: 'none', color: 'var(--color-accent-cyan)', fontSize: '10px', cursor: 'pointer', padding: 0 }}
+            style={{ marginTop: '10px', background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '12px', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'inherit' }}
           >
-            {showLog ? '▾ hide log' : `▸ show log (${proc!.log.length} lines)`}
+            {showLog ? <ChevronDown size={14} strokeWidth={1.75} /> : <ChevronRight size={14} strokeWidth={1.75} />}
+            {showLog ? 'Hide log' : `Show log (${proc!.log.length} lines)`}
           </button>
           {showLog && (
-            <pre style={{
-              marginTop: '6px', maxHeight: '140px', overflowY: 'auto', background: '#010409', border: '1px solid #30363d',
-              borderRadius: '6px', padding: '8px', fontSize: '10px', color: '#c9d1d9', whiteSpace: 'pre-wrap',
-            }}>
+            <pre style={{ ...LOG, maxHeight: '160px' }}>
               {proc!.log.slice(-40).join('\n')}
             </pre>
           )}
@@ -866,7 +904,7 @@ function ProcessPanel() {
   return (
     <div className="ml-panel">
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <h3 className="ml-chart-title" style={{ margin: 0 }}>Pipeline processes</h3>
+        <h3 className="ml-chart-title" style={PANEL_TITLE}>Pipeline processes</h3>
         <InfoTip>
           The two long-running stages. The <strong>collector</strong> polls the mapper and appends raw
           metrics; the <strong>scorer</strong> runs live metrics against the trained models each cycle.
@@ -875,7 +913,7 @@ function ProcessPanel() {
           "Collected" and "Scored live" read 0 on this page when they are not running.
         </InfoTip>
       </div>
-      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <ProcessCard
           proc={procs.collector}
           label="Collector"
@@ -891,7 +929,7 @@ function ProcessPanel() {
           onAction={(a) => handleAction('scorer', a)}
         />
       </div>
-      {err && <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-critical)' }}>{err}</div>}
+      {err && <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--color-critical)' }}>{err}</div>}
     </div>
   );
 }
@@ -1028,72 +1066,60 @@ function ConfigPanel() {
 
   return (
     <div className="ml-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h3 className="ml-chart-title" style={{ margin: 0 }}>Parameters</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+        <h3 className="ml-chart-title" style={PANEL_TITLE}>Parameters</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            style={{
-              background: dirty ? 'var(--color-accent-cyan)' : 'rgba(255,255,255,0.05)',
-              color: dirty ? '#000' : 'var(--color-text-muted)',
-              border: 'none', borderRadius: '6px', padding: '5px 12px', fontSize: '11px', fontWeight: 700,
-              cursor: dirty && !saving ? 'pointer' : 'not-allowed',
-            }}
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
           <button
             onClick={handleRetrain}
             disabled={retrain?.running}
             title="Re-runs preprocess.py then train.py with the saved parameters"
-            style={{
-              background: retrain?.running ? 'rgba(255,255,255,0.05)' : 'rgba(0, 230, 118, 0.12)',
-              color: retrain?.running ? 'var(--color-text-muted)' : 'var(--color-healthy)',
-              border: `1px solid ${retrain?.running ? 'var(--color-border)' : 'rgba(0,230,118,0.3)'}`,
-              borderRadius: '6px', padding: '5px 12px', fontSize: '11px', fontWeight: 700,
-              cursor: retrain?.running ? 'not-allowed' : 'pointer',
-            }}
+            className="mm-btn"
+            style={{ opacity: retrain?.running ? 0.5 : 1, cursor: retrain?.running ? 'not-allowed' : 'pointer' }}
           >
-            {retrain?.running ? 'Retraining...' : 'Retrain now'}
+            {retrain?.running ? 'Retraining…' : 'Retrain now'}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className={dirty ? 'mm-btn primary' : 'mm-btn'}
+            style={{ opacity: dirty && !saving ? 1 : 0.5, cursor: dirty && !saving ? 'pointer' : 'not-allowed' }}
+          >
+            {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {CONFIG_GROUPS.map(({ group, applies, fields }) => (
           <div key={group}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{group}</span>
-              <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>applies {applies}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
+              <span className="mm-eyebrow">{group}</span>
+              <span style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>Applies {applies}</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 20px' }}>
               {fields.map(({ key, label, step, hint }) => (
                 <div key={key}>
-                  <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '3px' }} title={hint}>{label}</label>
+                  <label style={FIELD_LABEL} title={hint}>{label}</label>
                   <input
                     type="number"
                     step={step}
                     value={draft[key] as number}
                     onChange={(e) => setDraft({ ...draft, [key]: parseFloat(e.target.value) })}
                     title={hint}
-                    style={{
-                      width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '6px',
-                      padding: '5px 8px', fontSize: '12px', color: '#fff', outline: 'none',
-                    }}
+                    style={INPUT}
                   />
                 </div>
               ))}
               {group === 'Training' && (
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '5px' }}>
+                  <label style={{ ...FIELD_LABEL, marginBottom: '8px' }}>
                     Features the model trains on (each service is z-scored against its own baseline)
                   </label>
                   <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                     {ALL_FEATURE_COLUMNS.map((col) => {
                       const on = (draft.feature_columns ?? ALL_FEATURE_COLUMNS).includes(col);
                       return (
-                        <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', cursor: 'pointer', color: on ? 'var(--color-text-main)' : 'var(--color-text-muted)' }}>
+                        <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontFamily: 'var(--font-mono)', cursor: 'pointer', color: on ? 'var(--color-text-main)' : 'var(--color-text-dim)' }}>
                           <input type="checkbox" checked={on} onChange={() => toggleFeature(col)} style={{ accentColor: 'var(--color-accent-cyan)' }} />
                           {col.replace('z_', '')}
                         </label>
@@ -1107,43 +1133,45 @@ function ConfigPanel() {
         ))}
 
         <div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Training window</span>
-            <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-              optional — limit training to a window you know was baseline-only, so stress runs don't teach the model that stress is normal
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <span className="mm-eyebrow">Training window</span>
+            <span style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>
+              Optional. Limit training to a window you know was baseline-only, so stress runs don't teach the model that stress is normal
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px 20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px 20px' }}>
             <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '3px' }}>From (blank = earliest)</label>
+              <label style={FIELD_LABEL}>From <span style={{ color: 'var(--color-text-dim)' }}>(blank = earliest)</span></label>
               <input
                 type="datetime-local" value={since} onChange={(e) => setSince(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '5px 8px', fontSize: '12px', color: '#fff', outline: 'none' }}
+                style={INPUT}
               />
             </div>
             <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '3px' }}>To (blank = now)</label>
+              <label style={FIELD_LABEL}>To <span style={{ color: 'var(--color-text-dim)' }}>(blank = now)</span></label>
               <input
                 type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '5px 8px', fontSize: '12px', color: '#fff', outline: 'none' }}
+                style={INPUT}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {saveMsg && <div style={{ marginTop: '10px', fontSize: '11px', color: saveMsg.startsWith('Failed') ? 'var(--color-critical)' : 'var(--color-text-muted)' }}>{saveMsg}</div>}
+      {saveMsg && <div style={{ marginTop: '14px', fontSize: '12px', color: saveMsg.startsWith('Failed') ? 'var(--color-critical)' : 'var(--color-text-muted)' }}>{saveMsg}</div>}
 
       {retrain && (retrain.running || retrain.finishedAt) && (
-        <div style={{ marginTop: '10px', fontSize: '11px' }}>
-          <div style={{ color: retrain.running ? 'var(--color-accent-cyan)' : retrain.exitCode === 0 ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
-            {retrain.running ? 'Running preprocess.py + train.py...' : `Last retrain: exit code ${retrain.exitCode} (${timeAgo(retrain.finishedAt)})`}
+        <div style={{ marginTop: '14px', fontSize: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)' }}>
+            <StatusChip tone={retrain.running ? 'unknown' : retrain.exitCode === 0 ? 'healthy' : 'critical'}>
+              {retrain.running ? 'Running' : retrain.exitCode === 0 ? 'Succeeded' : 'Failed'}
+            </StatusChip>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {retrain.running ? 'Running preprocess.py + train.py…' : `Last retrain: exit code ${retrain.exitCode} (${timeAgo(retrain.finishedAt)})`}
+            </span>
           </div>
           {retrain.log.length > 0 && (
-            <pre style={{
-              marginTop: '6px', maxHeight: '120px', overflowY: 'auto', background: '#010409', border: '1px solid #30363d',
-              borderRadius: '6px', padding: '8px', fontSize: '10px', color: '#c9d1d9', whiteSpace: 'pre-wrap',
-            }}>
+            <pre style={{ ...LOG, maxHeight: '140px' }}>
               {retrain.log.slice(-30).join('\n')}
             </pre>
           )}
@@ -1216,19 +1244,17 @@ function ScopeSummary({ rows, models, training }: {
         <KitStat
           label="Collected"
           value={collected}
-          tone={collected ? undefined : 'var(--color-text-dim)'}
-          sub={collected ? undefined : 'collector stopped'}
+          sub={collected ? undefined : 'Collector stopped'}
         />
         <KitStat label="Feature-ready" value={featureReady} />
-        <KitStat label="Trained" value={trained} tone={trained ? 'var(--color-healthy)' : undefined} />
+        <KitStat label="Trained" value={trained} />
         <KitStat
           label="Scored live"
           value={scored}
-          tone={scored ? 'var(--color-healthy)' : 'var(--color-text-dim)'}
-          sub={scored ? undefined : 'scorer stopped'}
+          sub={scored ? undefined : 'Scorer stopped'}
         />
         {thinData > 0 && (
-          <KitStat label="Thin data" value={thinData} tone="var(--color-degraded)" sub="under 5% distinct" />
+          <KitStat label="Thin data" value={thinData} sub="Under 5% distinct" />
         )}
         {age && <KitStat label="Last trained" value={<span style={{ fontSize: '17px' }}>{age}</span>} />}
       </StatRow>
@@ -1238,14 +1264,13 @@ function ScopeSummary({ rows, models, training }: {
           marginTop: '18px', paddingTop: '16px', borderTop: '1px solid var(--color-border)',
           display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center',
         }}>
-          <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>Detectors fitted</span>
+          <span className="mm-eyebrow" style={{ marginRight: '4px' }}>Detectors fitted</span>
           {Array.from(detectorCounts).map(([algo, n]) => (
-            <span key={algo} style={{
-              fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)',
+            <span key={algo} className="mm-chip" style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)',
               color: 'var(--color-text-main)',
             }}>
-              {algo} <span style={{ color: 'var(--color-accent-cyan)' }}>{n}</span>
+              {ALGO_LABEL[algo] || algo} <span style={{ color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
             </span>
           ))}
         </div>
@@ -1303,10 +1328,10 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
   }, []);
 
   if (error && !status) {
-    return <div style={{ padding: '24px', color: 'var(--color-critical)' }}>Failed to load ML pipeline status: {error}</div>;
+    return <div style={{ padding: '24px', fontSize: '13px', color: 'var(--color-critical)' }}>Failed to load ML pipeline status: {error}</div>;
   }
   if (!status) {
-    return <div style={{ padding: '24px', color: 'var(--color-text-muted)' }}>Loading...</div>;
+    return <div style={{ padding: '24px', fontSize: '13px', color: 'var(--color-text-muted)' }}>Loading…</div>;
   }
 
   const { collection, preprocessing, training, scoring, liveScores } = status;
@@ -1348,7 +1373,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
 
   return (
     <div className="ml-pipeline-container">
-      <PageHeader title="ML Pipeline" scope={selectedProject}>
+      <PageHeader title="ML pipeline" scope={selectedProject}>
         {scoped
           ? 'How the pipeline is configured and how far each service has got through it. Model outputs live under Findings.'
           : `Configuration and per-service progress across ${projectNames.join(', ') || 'no projects yet'} — pick one in the top bar to scope this page.`}
@@ -1367,7 +1392,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
         <StageCard
           title="1. Collection"
           ready={!!collection && collection.consecutive_failures === 0}
-          subtitle={collection ? `polling every ${collection.poll_interval_sec}s` : 'not running'}
+          subtitle={collection ? `Polling every ${collection.poll_interval_sec}s` : 'Not running'}
         >
           {collection ? (
             <>
@@ -1376,18 +1401,18 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
               <Stat label="Last write" value={timeAgo(collection.last_write_at)} />
               <Stat label="Consecutive failures" value={collection.consecutive_failures} />
               {collection.last_error && (
-                <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--color-critical)' }}>{collection.last_error}</div>
+                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-critical)', fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>{collection.last_error}</div>
               )}
             </>
           ) : (
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>collector.py hasn't written a summary yet</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}><code style={{ fontFamily: 'var(--font-mono)' }}>collector.py</code> hasn't written a summary yet</div>
           )}
         </StageCard>
 
         <StageCard
           title="2. Preprocessing"
           ready={preprocessing?.status === 'ok'}
-          subtitle={preprocessing ? `last run ${timeAgo(preprocessing.generated_at)}` : 'not run yet'}
+          subtitle={preprocessing ? `Last run ${timeAgo(preprocessing.generated_at)}` : 'Not run yet'}
         >
           {preprocessing ? (
             <>
@@ -1397,14 +1422,14 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
               <Stat label="Min samples/service" value={preprocessing.min_samples_per_service} />
             </>
           ) : (
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>run: python3 preprocess.py</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Run <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-main)' }}>python3 preprocess.py</code></div>
           )}
         </StageCard>
 
         <StageCard
           title="3. Training"
           ready={!!training && Object.keys(training.trained).length > 0}
-          subtitle={training ? `last run ${timeAgo(training.generated_at)}` : 'not run yet'}
+          subtitle={training ? `Last run ${timeAgo(training.generated_at)}` : 'Not run yet'}
         >
           {training ? (
             <>
@@ -1414,23 +1439,23 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
               <Stat label="Trees / features" value={`${training.n_estimators ?? '—'} / ${training.feature_columns?.length ?? '—'}`} />
               <Stat
                 label="Holdout"
-                value={training.holdout_fraction ? `${Math.round(training.holdout_fraction * 100)}% of each series` : 'off'}
+                value={training.holdout_fraction ? `${Math.round(training.holdout_fraction * 100)}% of each series` : 'Off'}
               />
               {training.training_window.since && (
-                <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                  window: {training.training_window.since} → {training.training_window.until || 'now'}
+                <div style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>
+                  Window: {training.training_window.since} → {training.training_window.until || 'now'}
                 </div>
               )}
             </>
           ) : (
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>run: python3 train.py</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Run <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-main)' }}>python3 train.py</code></div>
           )}
         </StageCard>
 
         <StageCard
-          title="4. Live Scoring"
+          title="4. Live scoring"
           ready={!!scoring}
-          subtitle={scoring ? `every ${scoring.score_interval_sec}s` : 'not running'}
+          subtitle={scoring ? `Every ${scoring.score_interval_sec}s` : 'Not running'}
         >
           {scoring ? (
             <>
@@ -1438,14 +1463,14 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
               <Stat label="Scored last cycle" value={scoring.services_scored_this_cycle} />
               <Stat label="Persistence window" value={`${scoring.persistence_windows_required} windows`} />
               <Stat label="Last cycle" value={timeAgo(scoring.last_cycle_at)} />
-              <div style={{ marginTop: '6px', fontSize: '11px', color: scoring.persistent_anomalies_now.length > 0 ? 'var(--color-critical)' : 'var(--color-text-muted)' }}>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: scoring.persistent_anomalies_now.length > 0 ? 'var(--color-critical)' : 'var(--color-text-muted)' }}>
                 {scoring.persistent_anomalies_now.length > 0
                   ? `${scoring.persistent_anomalies_now.length} persistent anomaly(s): ${scoring.persistent_anomalies_now.join(', ')}`
-                  : 'no persistent anomalies right now'}
+                  : 'No persistent anomalies right now'}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>run: python3 score.py</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Run <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-main)' }}>python3 score.py</code></div>
           )}
         </StageCard>
       </div>
@@ -1459,12 +1484,12 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           the machine: how the pipeline is configured and how far each service
           has got through it. */}
       <div style={{
-        background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.22)',
-        borderRadius: '10px', padding: '12px 14px', fontSize: '11px',
+        background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-md)', padding: '12px 16px', fontSize: '12px',
         color: 'var(--color-text-muted)', lineHeight: 1.6,
       }}>
         Looking for scores, model quality, detector agreement or the feature explorer? Those are model
-        <em> outputs</em> and live under <strong style={{ color: 'var(--color-accent-cyan)' }}>Findings</strong>.
+        <em> outputs</em> and live under <strong style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>Findings</strong>.
         This page covers the pipeline itself — processes, execution, configuration, and how far each
         service has got through collection, preprocessing and training.
       </div>
@@ -1477,22 +1502,22 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
         return (
           <div key={project} className="ml-panel">
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
-              <h3 className="ml-chart-title" style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{project}</h3>
-              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              <h3 className="ml-chart-title" style={PANEL_TITLE}>{project}</h3>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>
                 {projectRows.length} services · {trainedCount} trained · {scoredCount} scored
               </span>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 10px' }}>Service</th>
-                  <th style={{ padding: '8px 10px' }}>Collected</th>
-                  <th style={{ padding: '8px 10px' }}>Feature-ready</th>
-                  <th style={{ padding: '8px 10px' }}>Trained</th>
-                  <th style={{ padding: '8px 10px' }} title="Share of the held-out tail this model flagged — unlabelled data, so a firing rate rather than an error rate">Holdout flagged</th>
-                  <th style={{ padding: '8px 10px' }}>Threshold</th>
-                  <th style={{ padding: '8px 10px' }}>Live score</th>
-                  <th style={{ padding: '8px 10px' }}>Status</th>
+                <tr>
+                  <th style={TH}>Service</th>
+                  <th style={TH}>Collected</th>
+                  <th style={TH}>Feature-ready</th>
+                  <th style={TH}>Trained</th>
+                  <th style={TH} title="Share of the held-out tail this model flagged — unlabelled data, so a firing rate rather than an error rate">Holdout flagged</th>
+                  <th style={TH}>Threshold</th>
+                  <th style={TH}>Live score</th>
+                  <th style={TH}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -1505,38 +1530,38 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
                       className={`ml-table-row ${sid === selectedSid ? 'selected' : ''}`}
                       style={{ cursor: live ? 'pointer' : 'default' }}
                     >
-                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>{shortName}</td>
-                      <td style={{ padding: '8px 10px' }}>{collected?.samples ?? 0}</td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={{ ...TD, fontWeight: 550 }}>{shortName}</td>
+                      <td style={TD}>{collected?.samples ?? 0}</td>
+                      <td style={TD}>
                         {featured?.status === 'ok'
                           ? `${featured.feature_samples}${featured.zero_variance_features?.length ? ` (${featured.zero_variance_features.length} flat)` : ''}`
                           : featured?.status === 'skipped_too_few_samples' ? `${featured.raw_samples} (too few)` : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={TD}>
                         {trainedEntry ? (
-                          <span style={{ color: 'var(--color-healthy)' }}>yes ({trainedEntry.samples})</span>
+                          <span>Yes <span style={{ color: 'var(--color-text-dim)' }}>({trainedEntry.samples})</span></span>
                         ) : skippedEntry ? (
-                          <span style={{ color: 'var(--color-text-muted)' }}>no ({skippedEntry.samples} samples)</span>
+                          <span style={{ color: 'var(--color-text-muted)' }}>No <span style={{ color: 'var(--color-text-dim)' }}>({skippedEntry.samples} samples)</span></span>
                         ) : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={TD}>
                         {trainedEntry?.holdout
                           ? <span title={`${trainedEntry.holdout.samples} held-out rows`}>{(trainedEntry.holdout.flag_rate * 100).toFixed(1)}%</span>
-                          : trainedEntry ? <span style={{ color: 'var(--color-text-muted)' }}>no holdout</span> : '—'}
+                          : trainedEntry ? <span style={{ color: 'var(--color-text-dim)' }}>No holdout</span> : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px' }}>{trainedEntry ? trainedEntry.threshold_p99.toFixed(3) : '—'}</td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={TD}>{trainedEntry ? trainedEntry.threshold_p99.toFixed(3) : '—'}</td>
+                      <td style={TD}>
                         {live ? <ScoreBar score={live.anomaly_score} persistent={live.persistent} aboveThreshold={live.above_threshold} /> : '—'}
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={TD}>
                         {live?.persistent ? (
-                          <span style={{ color: 'var(--color-critical)', fontWeight: 700 }}>PERSISTENT ANOMALY</span>
+                          <StatusChip tone="critical">Persistent anomaly</StatusChip>
                         ) : live?.above_threshold ? (
-                          <span style={{ color: 'var(--color-degraded)' }}>{live.consecutive_windows}/{scoring?.persistence_windows_required ?? '?'} windows above threshold</span>
+                          <StatusChip tone="degraded">{live.consecutive_windows}/{scoring?.persistence_windows_required ?? '?'} windows above threshold</StatusChip>
                         ) : trainedEntry ? (
-                          <span style={{ color: 'var(--color-healthy)' }}>normal</span>
+                          <StatusChip tone="healthy">Normal</StatusChip>
                         ) : (
-                          <span style={{ color: 'var(--color-text-muted)' }}>not scored yet</span>
+                          <span style={{ color: 'var(--color-text-dim)', fontSize: '12px' }}>Not scored yet</span>
                         )}
                       </td>
                     </tr>

@@ -1,15 +1,20 @@
+import { useEffect, useState } from 'react';
 import {
   Box,
   Network,
   Activity,
   GitMerge,
-  BarChart2,
+  BarChart3,
   AlertTriangle,
   FlaskConical,
-  Zap,
+  Waypoints,
   Brain,
-  Microscope
+  Microscope,
+  Plus,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { GlobalStatus } from '../types';
 
 interface SidebarProps {
@@ -19,172 +24,115 @@ interface SidebarProps {
   onAddProject: () => void;
 }
 
-export function Sidebar({ activeTab, onTabChange, status, onAddProject }: SidebarProps) {
-  const tabs = [
-    { id: '3D Vision', icon: Box, label: '3D Vision' },
-    { id: 'Architecture', icon: Network, label: 'Architecture' },
-    { id: 'Telemetry', icon: Activity, label: 'Telemetry' },
-    { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
-    { id: 'Analytics', icon: BarChart2, label: 'Analytics' },
-    { id: 'ML PIPELINE', icon: Brain, label: 'ML Pipeline' },
-    // Model outputs. Sits next to the pipeline that produces them, and apart
-    // from Incidents, which are rule-based and involve no model.
-    { id: 'FINDINGS', icon: Microscope, label: 'Findings' },
-    { id: 'TRACES', icon: Zap, label: 'Traces' },
-    { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
-    { id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' },
-  ];
+interface NavItem { id: string; icon: LucideIcon; label: string }
 
-  const hasActiveIncident = status && (status.critical > 0 || status.degraded > 0);
+// Tab ids are what App.tsx switches on, so they stay as they were; only the labels are for people.
+const GROUPS: { title: string; items: NavItem[] }[] = [
+  {
+    title: 'Map',
+    items: [
+      { id: '3D Vision', icon: Box, label: 'Spatial view' },
+      { id: 'Architecture', icon: Network, label: 'Architecture' },
+      { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
+    ],
+  },
+  {
+    title: 'Observe',
+    items: [
+      { id: 'Telemetry', icon: Activity, label: 'Telemetry' },
+      { id: 'TRACES', icon: Waypoints, label: 'Traces' },
+      { id: 'Analytics', icon: BarChart3, label: 'Analytics' },
+    ],
+  },
+  {
+    title: 'Diagnose',
+    items: [
+      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
+      // Model outputs sit next to the pipeline that produces them, apart from Incidents, which involve no model.
+      { id: 'FINDINGS', icon: Microscope, label: 'Findings' },
+      { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline' },
+    ],
+  },
+  {
+    title: 'Test',
+    items: [{ id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' }],
+  },
+];
+
+function BrandMark() {
+  // Three services and the calls between them; the one that matters is the only one with colour.
+  return (
+    <svg className="mm-brand-mark" viewBox="0 0 26 26" fill="none" aria-hidden>
+      <rect x="0.5" y="0.5" width="25" height="25" rx="7" fill="#15171b" stroke="rgba(255,255,255,0.09)" />
+      <path d="M8 17.5 L13 8.5 L18.5 16" stroke="rgba(236,237,239,0.38)" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M8 17.5 H18.5" stroke="rgba(236,237,239,0.22)" strokeWidth="1.1" strokeDasharray="1.6 1.8" />
+      <circle cx="13" cy="8.5" r="2.4" fill="#ecedef" />
+      <circle cx="8" cy="17.5" r="2.4" fill="#7c828b" />
+      <circle cx="18.5" cy="16.5" r="2.4" fill="#8ab4ff" />
+    </svg>
+  );
+}
+
+const COLLAPSE_KEY = 'mm.sidebar.collapsed';
+
+export function Sidebar({ activeTab, onTabChange, status, onAddProject }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch { /* storage unavailable */ }
+  }, [collapsed]);
+
+  const troubled = status ? status.critical + status.degraded : 0;
+  const isActive = (id: string) => activeTab === id || (id === 'RCA / INCIDENTS' && activeTab === 'RCA');
 
   return (
-    <div style={{
-      width: '80px',
-      height: '100%',
-      background: 'var(--color-bg-glass)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderRight: '1px solid var(--color-border)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '24px 0',
-      zIndex: 20,
-      position: 'relative'
-    }}>
-      {/* Logo */}
-      <div style={{ 
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '40px',
-        height: '40px',
-        borderRadius: '10px',
-        background: 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))',
-        boxShadow: '0 0 16px rgba(0,212,255,0.4)',
-        color: '#fff',
-        fontSize: '20px',
-        marginBottom: '40px'
-      }}>
-        ⎈
-      </div>
-
-      {/* Navigation Icons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const isRcaTab = tab.id === 'RCA / INCIDENTS';
-          const Icon = tab.icon;
-
-          return (
-            <div 
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              title={tab.label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                position: 'relative',
-                cursor: 'pointer',
-                color: isActive ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                transition: 'all var(--transition-fast)'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.color = 'var(--color-text-main)';
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.color = 'var(--color-text-muted)';
-              }}
-            >
-              {isActive && (
-                <div style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  height: '24px',
-                  width: '3px',
-                  background: 'var(--color-accent-cyan)',
-                  boxShadow: '2px 0 10px var(--color-accent-cyan)',
-                  borderTopRightRadius: '4px',
-                  borderBottomRightRadius: '4px'
-                }} />
-              )}
-              
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                <Icon 
-                  size={24} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                  style={{ 
-                    filter: isActive ? 'drop-shadow(0 0 8px rgba(0,212,255,0.4))' : 'none'
-                  }} 
-                />
-                
-                <span style={{
-                  fontSize: '9px',
-                  fontWeight: isActive ? 700 : 500,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  opacity: isActive ? 1 : 0.6,
-                  textAlign: 'center'
-                }}>
-                  {tab.label}
-                </span>
-
-                {/* Incident Alert Dot */}
-                {isRcaTab && hasActiveIncident && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    right: '12px',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'var(--color-critical)',
-                    boxShadow: '0 0 8px var(--color-critical)',
-                    animation: 'pulse-critical 1.5s infinite'
-                  }} />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ flex: 1 }} />
-
-      {/* Add Project Button */}
-      <div 
-        onClick={onAddProject}
-        title="Add Project"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '6px',
-          width: '100%',
-          cursor: 'pointer',
-          color: 'var(--color-accent-magenta)',
-          transition: 'all var(--transition-fast)',
-          marginTop: 'auto'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#fff';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = 'var(--color-accent-magenta)';
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(224,64,251,0.1)', border: '1px solid rgba(224,64,251,0.3)' }}>
-          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>+</span>
+    <nav className={`mm-side${collapsed ? ' collapsed' : ''}`} aria-label="Main">
+      <div className="mm-brand">
+        <BrandMark />
+        <div className="mm-brand-text">
+          <div className="mm-brand-name">Microservice Mapper</div>
+          <div className="mm-brand-sub">Topology &amp; root cause</div>
         </div>
-        <span style={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          ADD PROJ
-        </span>
       </div>
-    </div>
+
+      {GROUPS.map(group => (
+        <div key={group.title}>
+          <div className="mm-side-group">{group.title}</div>
+          {group.items.map(item => {
+            const Icon = item.icon;
+            const showCount = item.id === 'RCA / INCIDENTS' && troubled > 0;
+            return (
+              <div
+                key={item.id}
+                className={`mm-nav${isActive(item.id) ? ' active' : ''}`}
+                onClick={() => onTabChange(item.id)}
+                title={collapsed ? item.label : undefined}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTabChange(item.id); } }}
+              >
+                <Icon size={16} strokeWidth={1.75} />
+                <span className="label">{item.label}</span>
+                {showCount && <span className="count" title={`${troubled} services need attention`}>{troubled}</span>}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      <div className="mm-side-foot">
+        <div className="mm-nav" onClick={onAddProject} role="button" tabIndex={0} title={collapsed ? 'Add project' : undefined}
+          onKeyDown={e => { if (e.key === 'Enter') onAddProject(); }}>
+          <Plus size={16} strokeWidth={1.75} />
+          <span className="label">Add project</span>
+        </div>
+        <div className="mm-nav" onClick={() => setCollapsed(c => !c)} role="button" tabIndex={0} title={collapsed ? 'Expand sidebar' : undefined}
+          onKeyDown={e => { if (e.key === 'Enter') setCollapsed(c => !c); }}>
+          {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.75} /> : <PanelLeftClose size={16} strokeWidth={1.75} />}
+          <span className="label">Collapse</span>
+        </div>
+      </div>
+    </nav>
   );
 }

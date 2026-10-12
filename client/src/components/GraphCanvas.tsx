@@ -62,25 +62,18 @@ export function GraphCanvas({ nodes, edges, layoutKey, onNodeClick, onEdgeClick,
         proOptions={{ hideAttribution: false }}
       >
         <RefitOnLayoutChange layoutKey={layoutKey} nodeCount={nodes.length} />
-        <Background color="rgba(125, 211, 252, 0.07)" variant={BackgroundVariant.Dots} gap={24} size={1.4} />
+        <Background color="rgba(255, 255, 255, 0.06)" variant={BackgroundVariant.Dots} gap={24} size={1.2} />
         <MiniMap
           zoomable
           pannable
-          maskColor="rgba(4, 6, 15, 0.75)"
-          style={{ background: 'rgba(8, 12, 22, 0.9)', border: '1px solid rgba(125,211,252,0.18)', borderRadius: '8px' }}
+          maskColor="rgba(10, 11, 13, 0.72)"
+          style={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '10px' }}
           nodeColor={(n) => {
             // Warm colours are reserved for trouble, matching the 3D scene:
             // anything amber or red on the minimap is a real problem.
-            if (n.data?.status === 'degraded') return '#ffab00';
-            if (n.data?.status === 'critical') return '#ff1744';
-            const type = (n.data as any)?.type;
-            if (type === 'gateway') return '#00e5ff';
-            if (type === 'frontend') return '#6f8cff';
-            if (type === 'database') return '#00ff9d';
-            if (type === 'cache') return '#a78bfa';
-            if (type === 'queue') return '#c084fc';
-            if (type === 'service') return '#4fd1c5';
-            return '#9f8fd6';
+            if (n.data?.status === 'degraded') return '#e8a33d';
+            if (n.data?.status === 'critical') return '#ef5f67';
+            return '#3a3f47';
           }}
         />
       </ReactFlow>

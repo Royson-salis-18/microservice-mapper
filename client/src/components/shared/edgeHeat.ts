@@ -24,8 +24,10 @@ export interface EdgeAppearance {
  * failed/degraded status still wins over activity: a broken link matters
  * more than a busy one.
  *
- * Intensities are held 20% below full so links read as lighting rather
- * than glare.
+ * Warm colours mean trouble and nothing else. Traffic volume is shown by
+ * brightness and thickness on a cool neutral scale, so a merely busy link
+ * never looks like a failing one. (It used to run yellow to orange to red with
+ * load, which made a healthy busy gateway look like an incident.)
  *
  * Thresholds are socket samples per minute, absolute rather than relative to
  * the busiest link, so a link's colour doesn't change meaning when an
@@ -36,29 +38,25 @@ export function edgeAppearance(edge: DependencyEdge | undefined): EdgeAppearance
   const latency = edge?.metrics?.latency ?? 0;
 
   if (edge?.status === 'failed' || errRate > 5) {
-    return { heat: 'failed', color: '#ff1744', glow: '#ff5c7a', intensity: 0.8, label: 'failed' };
+    return { heat: 'failed', color: '#ef5f67', glow: '#f58a90', intensity: 0.95, label: 'failed' };
   }
   if (edge?.status === 'degraded' || latency > 500) {
-    return { heat: 'degraded', color: '#ff8a00', glow: '#ffb457', intensity: 0.72, label: 'degraded' };
+    return { heat: 'degraded', color: '#e8a33d', glow: '#f0bd6a', intensity: 0.9, label: 'degraded' };
   }
 
   if (!edge?.observed) {
-    // Declared by config, never seen carrying anything. Deliberately inert
-    // grey so it recedes behind links that are actually doing work.
-    return { heat: 'idle', color: '#5b6778', glow: '#7c8a9e', intensity: 0.34, label: 'declared, not observed' };
+    // Declared by config, never seen carrying anything: recedes behind links doing work.
+    return { heat: 'idle', color: '#4a4f57', glow: '#5d636c', intensity: 0.55, label: 'declared, not observed' };
   }
 
   const perMin = edge.activity?.samplesPerMin;
   if (perMin === undefined) {
-    // Seen at least once, but no rate measured yet.
-    return { heat: 'calm', color: '#22e4ff', glow: '#7df3ff', intensity: 0.64, label: 'observed' };
+    return { heat: 'calm', color: '#7d8590', glow: '#a9b0ba', intensity: 0.7, label: 'observed' };
   }
 
-  // Calibrated against the live spread across 47 measured links
-  // (median 112, p75 256, p90 1774, max 5571) so the four bands actually
-  // separate traffic instead of painting almost everything red.
-  if (perMin > 1200) return { heat: 'saturated', color: '#ff1744', glow: '#ff6b85', intensity: 0.8, label: `${perMin}/min — saturated` };
-  if (perMin > 250) return { heat: 'heavy', color: '#ff8a00', glow: '#ffc06b', intensity: 0.76, label: `${perMin}/min — heavy` };
-  if (perMin > 60) return { heat: 'busy', color: '#ffd400', glow: '#ffe873', intensity: 0.72, label: `${perMin}/min — busy` };
-  return { heat: 'calm', color: '#22e4ff', glow: '#7df3ff', intensity: 0.64, label: `${perMin}/min` };
+  // Calibrated against the live spread across 47 measured links (median 112, p75 256, p90 1774, max 5571).
+  if (perMin > 1200) return { heat: 'saturated', color: '#c9dbff', glow: '#e6eeff', intensity: 0.95, label: `${perMin}/min, saturated` };
+  if (perMin > 250) return { heat: 'heavy', color: '#8ab4ff', glow: '#b8d0ff', intensity: 0.88, label: `${perMin}/min, heavy` };
+  if (perMin > 60) return { heat: 'busy', color: '#9aa3b0', glow: '#c3c9d2', intensity: 0.8, label: `${perMin}/min, busy` };
+  return { heat: 'calm', color: '#7d8590', glow: '#a9b0ba', intensity: 0.7, label: `${perMin}/min` };
 }
