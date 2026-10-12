@@ -1,4 +1,5 @@
 import { useState, type ReactNode, type CSSProperties } from 'react';
+import { ChevronDown, ChevronRight, Info } from 'lucide-react';
 
 /**
  * Shared layout primitives for the analysis pages.
@@ -10,14 +11,14 @@ import { useState, type ReactNode, type CSSProperties } from 'react';
  *
  * The fix is not to delete the explanations — they are the difference between
  * a number and a number you can trust — but to put them one click away. The
- * heading states what the section is; the ⓘ holds why it is there and how to
+ * heading states what the section is; the info button holds why it is there and how to
  * read it. Nothing is lost, and the data gets to be the loudest thing on the
  * page.
  */
 
 export const SPACE = {
-  page: 28,
-  section: 22,
+  page: 24,
+  section: 16,
   card: 20,
   tight: 12,
 } as const;
@@ -31,34 +32,35 @@ export function InfoTip({ children, label = 'about this' }: { children: ReactNod
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        title={open ? 'hide' : label}
+        aria-label={open ? 'Hide' : label}
+        title={open ? 'Hide' : label}
         style={{
-          background: open ? 'rgba(0,212,255,0.14)' : 'transparent',
-          border: `1px solid ${open ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
+          background: open ? 'rgba(138,180,255,.1)' : 'transparent',
+          border: 'none',
           color: open ? 'var(--color-accent-cyan)' : 'var(--color-text-dim)',
-          borderRadius: '999px',
-          width: '20px',
-          height: '20px',
-          fontSize: '11px',
-          lineHeight: 1,
+          borderRadius: '6px',
+          width: '22px',
+          height: '22px',
+          padding: 0,
           cursor: 'pointer',
           flexShrink: 0,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: 700,
+          transition: 'color var(--transition-fast), background var(--transition-fast)',
         }}
-      >i</button>
+      ><Info size={14} strokeWidth={1.75} /></button>
       {open && (
         <div style={{
+          flexBasis: '100%',
           gridColumn: '1 / -1',
-          marginTop: '10px',
+          marginTop: '4px',
           padding: '12px 14px',
-          background: 'rgba(0,212,255,0.04)',
-          border: '1px solid rgba(0,212,255,0.18)',
+          background: 'rgba(255,255,255,.02)',
+          border: '1px solid var(--color-border)',
           borderRadius: '8px',
-          fontSize: '12px',
-          lineHeight: 1.65,
+          fontSize: '12.5px',
+          lineHeight: 1.6,
           color: 'var(--color-text-muted)',
         }}>{children}</div>
       )}
@@ -70,7 +72,7 @@ interface PanelProps {
   title: string;
   /** Short, always visible. One clause, not a paragraph. */
   subtitle?: string;
-  /** The long explanation. Hidden behind the ⓘ. */
+  /** The long explanation. Hidden behind the info button. */
   about?: ReactNode;
   /** Rendered at the right of the title row — counts, badges, controls. */
   actions?: ReactNode;
@@ -88,39 +90,36 @@ export function Panel({
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
 
   return (
-    <section style={{
-      background: 'var(--color-bg-panel)',
-      border: '1px solid var(--color-border)',
-      borderRadius: '14px',
-      padding: `${SPACE.card}px ${SPACE.card + 2}px`,
+    <section className="mm-card" style={{
+      padding: '18px 20px',
       ...style,
     }}>
       <header style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '8px',
         flexWrap: 'wrap',
-        marginBottom: collapsed ? 0 : SPACE.tight + 2,
+        marginBottom: collapsed ? 0 : 14,
       }}>
         {collapsible && (
           <button
             type="button"
             onClick={() => setCollapsed(c => !c)}
+            aria-label={collapsed ? 'Expand' : 'Collapse'}
             style={{
-              background: 'none', border: 'none', color: 'var(--color-text-muted)',
-              cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: 1,
+              background: 'none', border: 'none', color: 'var(--color-text-dim)',
+              cursor: 'pointer', padding: 0, lineHeight: 0, display: 'inline-flex',
             }}
-          >{collapsed ? '▸' : '▾'}</button>
+          >{collapsed ? <ChevronRight size={14} strokeWidth={1.75} /> : <ChevronDown size={14} strokeWidth={1.75} />}</button>
         )}
         <h3 style={{
           margin: 0,
-          fontSize: '15px',
-          fontWeight: 650,
-          letterSpacing: '-0.01em',
+          fontSize: '14px',
+          fontWeight: 600,
           color: 'var(--color-text-main)',
         }}>{title}</h3>
         {subtitle && (
-          <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>{subtitle}</span>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{subtitle}</span>
         )}
         {about && <InfoTip>{about}</InfoTip>}
         {actions && <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>{actions}</div>}
@@ -130,7 +129,8 @@ export function Panel({
   );
 }
 
-/** A single number with its label. Sized so the number leads, not the label. */
+/** A single number with its label. The number leads; `tone` marks status
+ * with a dot beside the label rather than colouring the number itself. */
 export function Stat({ label, value, tone, hint, sub }: {
   label: string;
   value: ReactNode;
@@ -141,20 +141,26 @@ export function Stat({ label, value, tone, hint, sub }: {
   return (
     <div style={{ minWidth: '116px' }} title={hint}>
       <div style={{
-        fontSize: '24px',
-        fontWeight: 660,
+        fontSize: '12px',
+        color: 'var(--color-text-muted)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+      }}>
+        {tone && <i className="mm-dot" style={{ background: tone }} />}
+        {label}
+      </div>
+      <div style={{
+        fontSize: '26px',
+        fontWeight: 600,
         lineHeight: 1.15,
         letterSpacing: '-0.02em',
-        color: tone || 'var(--color-text-main)',
+        marginTop: '6px',
+        color: 'var(--color-text-main)',
+        fontVariantNumeric: 'tabular-nums',
       }}>{value}</div>
-      <div style={{
-        fontSize: '11px',
-        color: 'var(--color-text-muted)',
-        marginTop: '4px',
-        letterSpacing: '0.01em',
-      }}>{label}</div>
       {sub && (
-        <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginTop: '2px' }}>{sub}</div>
+        <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)', marginTop: '4px' }}>{sub}</div>
       )}
     </div>
   );
@@ -175,28 +181,26 @@ export function StatRow({ children }: { children: ReactNode }) {
 export function PageHeader({ title, scope, children }: {
   title: string;
   scope?: string;
-  /** One short sentence. Anything longer belongs in a Panel's ⓘ. */
+  /** One short sentence. Anything longer belongs in a Panel's info button. */
   children?: ReactNode;
 }) {
   const scoped = scope && scope !== 'ALL';
   return (
     <header>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 680, letterSpacing: '-0.02em' }}>{title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--color-text-main)' }}>{title}</h1>
         {scope && (
-          <span style={{
-            fontSize: '11px', fontWeight: 650, letterSpacing: '0.04em', textTransform: 'uppercase',
-            color: scoped ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-            background: scoped ? 'rgba(0,212,255,0.1)' : 'transparent',
-            border: `1px solid ${scoped ? 'rgba(0,212,255,0.45)' : 'var(--color-border)'}`,
-            borderRadius: '999px', padding: '3px 11px',
-          }}>{scoped ? scope : 'all projects'}</span>
+          <span className="mm-chip" style={scoped ? {
+            color: '#dfe8ff',
+            background: 'rgba(138,180,255,.1)',
+            borderColor: 'rgba(138,180,255,.25)',
+          } : undefined}>{scoped ? scope : 'All projects'}</span>
         )}
       </div>
       {children && (
         <p style={{
-          margin: '8px 0 0 0', fontSize: '13px', color: 'var(--color-text-muted)',
-          lineHeight: 1.6, maxWidth: '78ch',
+          margin: '6px 0 0 0', fontSize: '13px', color: 'var(--color-text-muted)',
+          lineHeight: 1.55, maxWidth: '78ch',
         }}>{children}</p>
       )}
     </header>
@@ -226,11 +230,11 @@ export function EmptyNote({ children }: { children: ReactNode }) {
     <div style={{
       fontSize: '12.5px',
       color: 'var(--color-text-muted)',
-      lineHeight: 1.65,
-      padding: '18px',
-      background: 'rgba(255,255,255,0.015)',
-      border: '1px dashed var(--color-border)',
-      borderRadius: '10px',
+      lineHeight: 1.6,
+      padding: '16px 18px',
+      background: 'rgba(255,255,255,.02)',
+      border: '1px solid var(--color-border)',
+      borderRadius: 'var(--radius-md)',
     }}>{children}</div>
   );
 }

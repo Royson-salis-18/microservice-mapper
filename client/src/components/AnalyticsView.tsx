@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type CSSProperties } from 'react';
+import { AlertTriangle, Inbox } from 'lucide-react';
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, DependencyEdge } from '../types';
 import { pageRootStyle } from './ProjectSections';
@@ -96,62 +97,83 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
     return { total, healthy, degraded, critical, healthScore, topCpu, topMem, mostConnected };
   }, [serviceNodes, parsedEdges]);
 
+  const num: CSSProperties = { fontVariantNumeric: 'tabular-nums' };
+  const kpiValue: CSSProperties = { fontSize: '26px', fontWeight: 600, letterSpacing: '-0.02em', marginTop: '8px', color: 'var(--color-text-main)', ...num };
+  const kpiSub: CSSProperties = { fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' };
+  const cardTitle: CSSProperties = { margin: '0 0 14px 0', fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' };
+  const rank: CSSProperties = { fontSize: '12px', color: 'var(--color-text-dim)', width: '18px', flexShrink: 0, ...num };
+  const meterColor = (pct: number) => (pct >= 90 ? 'var(--color-critical)' : pct >= 75 ? 'var(--color-degraded)' : '#9aa3b0');
+  const meter = (pct: number) => (
+    <div style={{ height: '4px', background: 'rgba(255,255,255,.06)', borderRadius: '2px', overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: meterColor(pct) }} />
+    </div>
+  );
+  const emptyList = (
+    <div style={{ padding: '20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' }}>
+      <Inbox size={20} strokeWidth={1.75} color="var(--color-text-dim)" />
+      <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No services yet</div>
+      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Rankings appear once services report metrics</div>
+    </div>
+  );
+  const causeCount = rcaData?.primaryRootCauses?.length || 0;
+
   return (
     <div style={pageRootStyle(embedded)}>
-      {/* Root Cause Analysis (RCA) Incident Alert Banner */}
+      {/* Root cause analysis incident banner */}
       {rcaData?.incidentDetected && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(255,23,68,0.15) 0%, rgba(20,10,20,0.9) 100%)',
-          border: '1px solid var(--color-critical)',
-          boxShadow: '0 0 20px rgba(255,23,68,0.2)',
-          borderRadius: '12px',
-          padding: '20px',
+        <div className="mm-card" style={{
+          padding: '18px 20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px'
+          gap: '16px',
+          borderColor: 'rgba(239,95,103,.3)',
+          boxShadow: 'inset 2px 0 0 var(--color-critical), var(--shadow-1)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}>🚨</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <AlertTriangle size={16} strokeWidth={1.75} color="var(--color-critical)" style={{ marginTop: '1px', flexShrink: 0 }} />
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--color-critical)' }}>
-                  AUTOMATED ROOT CAUSE ANALYSIS (RCA)
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                  Active incident
                 </h3>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                  Incident Timestamp: {rcaData.timestamp ? new Date(rcaData.timestamp).toLocaleTimeString() : 'NOW'}
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px', ...num }}>
+                  Automated root cause analysis · started {rcaData.timestamp ? new Date(rcaData.timestamp).toLocaleTimeString() : 'now'}
                 </div>
               </div>
             </div>
-            <span style={{ background: 'var(--color-critical)', color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
-              {rcaData.primaryRootCauses?.length || 0} PRIMARY ROOT CAUSE(S) IDENTIFIED
+            <span className="mm-chip" style={{ background: 'rgba(239,95,103,.1)', color: 'var(--color-critical)', border: 'none', ...num }}>
+              <i className="mm-dot" style={{ background: 'currentColor' }} />
+              {causeCount} primary root {causeCount === 1 ? 'cause' : 'causes'}
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* Primary Root Cause Card */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(255,23,68,0.3)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--color-critical)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Primary Root Cause</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            {/* Primary root cause */}
+            <div style={{ background: 'rgba(255,255,255,.02)', borderRadius: 'var(--radius-md)', padding: '14px 16px', border: '1px solid var(--color-border)' }}>
+              <div className="mm-eyebrow">Root cause</div>
               {rcaData.primaryRootCauses?.map((rc: any) => (
                 <div key={rc.nodeId} style={{ marginTop: '8px' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{rc.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                    Reason: <span style={{ color: 'var(--color-critical)' }}>{rc.failureReason}</span>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' }}>{rc.name}</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--color-text-muted)', marginTop: '4px', lineHeight: 1.55 }}>
+                    {rc.failureReason}
                   </div>
-                  <ul style={{ margin: '8px 0 0 0', paddingLeft: '18px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                    {rc.evidence?.map((ev: string, idx: number) => <li key={idx}>{ev}</li>)}
-                  </ul>
+                  {rc.evidence?.length > 0 && (
+                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '16px', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                      {rc.evidence.map((ev: string, idx: number) => <li key={idx}>{ev}</li>)}
+                    </ul>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Blast Radius & Remediation Guide */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(0,212,255,0.2)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Blast Radius & Remediation</div>
-              <div style={{ marginTop: '8px', fontSize: '13px' }}>
-                Impacted Services: <span style={{ fontWeight: 600, color: '#fff' }}>{rcaData.blastRadius?.affectedServices?.join(', ') || 'None'}</span>
+            {/* Blast radius and remediation */}
+            <div style={{ background: 'rgba(255,255,255,.02)', borderRadius: 'var(--radius-md)', padding: '14px 16px', border: '1px solid var(--color-border)' }}>
+              <div className="mm-eyebrow">Blast radius and remediation</div>
+              <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+                Impacted services: <span style={{ fontWeight: 500, color: 'var(--color-text-main)' }}>{rcaData.blastRadius?.affectedServices?.join(', ') || 'None'}</span>
               </div>
-              <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--color-text-muted)' }}>Recommended Recovery Action:</div>
-              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--color-healthy)', marginTop: '4px', wordBreak: 'break-all' }}>
+              <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--color-text-muted)' }}>Recommended recovery action</div>
+              <div style={{ background: 'var(--color-bg-body)', border: '1px solid var(--color-border)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-text-main)', marginTop: '6px', wordBreak: 'break-all' }}>
                 {rcaData.remediationGuide || 'docker start container'}
               </div>
             </div>
@@ -159,97 +181,110 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
         </div>
       )}
 
-      {/* Top Analytics KPI Cards */}
+      {/* Top analytics KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>System Health Index</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: analytics.healthScore > 80 ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
-            {analytics.healthScore} / 100
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">System health index</div>
+          <div style={kpiValue}>
+            {analytics.healthScore} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ 100</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Topological Resilience Score</div>
+          <div style={kpiSub}>
+            <i className="mm-dot" style={{ background: analytics.healthScore > 80 ? 'var(--color-healthy)' : 'var(--color-critical)' }} />
+            Topological resilience score
+          </div>
         </div>
 
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Healthy Microservices</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: 'var(--color-healthy)' }}>
-            {analytics.healthy} <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>/ {analytics.total}</span>
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Healthy services</div>
+          <div style={kpiValue}>
+            {analytics.healthy} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ {analytics.total}</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Normal operating parameters</div>
+          <div style={kpiSub}>
+            <i className="mm-dot" style={{ background: 'var(--color-healthy)' }} />
+            Normal operating parameters
+          </div>
         </div>
 
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Degraded Nodes</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: 'var(--color-degraded)' }}>
-            {analytics.degraded}
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Degraded</div>
+          <div style={kpiValue}>{analytics.degraded}</div>
+          <div style={kpiSub}>
+            <i className="mm-dot" style={{ background: analytics.degraded > 0 ? 'var(--color-degraded)' : 'var(--color-unknown)' }} />
+            Elevated resource utilization
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Elevated resource utilization</div>
         </div>
 
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Critical / Failed Nodes</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: 'var(--color-critical)' }}>
-            {analytics.critical}
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Critical or failed</div>
+          <div style={kpiValue}>{analytics.critical}</div>
+          <div style={kpiSub}>
+            <i className="mm-dot" style={{ background: analytics.critical > 0 ? 'var(--color-critical)' : 'var(--color-unknown)' }} />
+            Immediate attention required
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Immediate attention required</div>
         </div>
       </div>
 
-      {/* Analytics Ranking Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
-        <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700 }}>Most Connected Services (Centrality)</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Analytics ranking grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px' }}>
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <h3 style={cardTitle}>Most connected services</h3>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {analytics.mostConnected.length === 0 && emptyList}
             {analytics.mostConnected.map((item, i) => (
-              <div key={item.node.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-cyan)', width: '20px' }}>#{i+1}</span>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{item.node.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{item.upstream} Upstream • {item.downstream} Downstream</div>
+              <div key={item.node.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <span style={rank}>{i + 1}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.node.name}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)', ...num }}>{item.upstream} upstream · {item.downstream} downstream</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(0, 212, 255, 0.15)', color: 'var(--color-accent-cyan)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
-                  {item.degree} Edges
-                </div>
+                <span style={{ fontSize: '12.5px', color: 'var(--color-text-muted)', flexShrink: 0, ...num }}>
+                  <span style={{ color: 'var(--color-text-main)', fontWeight: 500 }}>{item.degree}</span> edges
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700 }}>Top CPU Load Consumers</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <h3 style={cardTitle}>Top CPU load</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {analytics.topCpu.length === 0 && emptyList}
             {analytics.topCpu.map((node, i) => {
               const cpu = node.metrics?.cpu || 0;
               return (
-                <div key={node.id} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 600 }}>#{i+1} {node.name}</span>
-                    <span style={{ color: 'var(--color-accent-cyan)', fontWeight: 700 }}>{cpu.toFixed(1)}%</span>
+                <div key={node.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', fontSize: '13px', marginBottom: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '10px', minWidth: 0 }}>
+                      <span style={rank}>{i + 1}</span>
+                      <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</span>
+                    </span>
+                    <span style={{ color: 'var(--color-text-main)', ...num }}>{cpu.toFixed(1)}%</span>
                   </div>
-                  <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.min(cpu, 100)}%`, background: 'var(--color-accent-cyan)' }} />
-                  </div>
+                  <div style={{ paddingLeft: '28px' }}>{meter(cpu)}</div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700 }}>Top Memory Usage</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <h3 style={cardTitle}>Top memory usage</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {analytics.topMem.length === 0 && emptyList}
             {analytics.topMem.map((node, i) => {
               const mem = node.metrics?.memoryPercent || 0;
               return (
-                <div key={node.id} style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 600 }}>#{i+1} {node.name}</span>
-                    <span style={{ color: 'var(--color-accent-magenta)', fontWeight: 700 }}>{mem.toFixed(1)}%</span>
+                <div key={node.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', fontSize: '13px', marginBottom: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '10px', minWidth: 0 }}>
+                      <span style={rank}>{i + 1}</span>
+                      <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</span>
+                    </span>
+                    <span style={{ color: 'var(--color-text-main)', ...num }}>{mem.toFixed(1)}%</span>
                   </div>
-                  <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.min(mem, 100)}%`, background: 'var(--color-accent-magenta)' }} />
-                  </div>
+                  <div style={{ paddingLeft: '28px' }}>{meter(mem)}</div>
                 </div>
               );
             })}

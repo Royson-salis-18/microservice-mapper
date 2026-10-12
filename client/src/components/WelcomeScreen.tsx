@@ -1,6 +1,14 @@
+import { Plus } from 'lucide-react';
+
 interface WelcomeScreenProps {
   onAddProject: () => void;
 }
+
+const steps = [
+  { n: '1', label: 'Add an SSH target' },
+  { n: '2', label: 'We discover your services' },
+  { n: '3', label: 'Explore the live map' },
+];
 
 export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
   return (
@@ -11,96 +19,89 @@ export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%)',
+      background: 'var(--color-bg-body)',
       fontFamily: 'var(--font-family)',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      padding: '24px',
     }}>
-      {/* Background decorations */}
-      <div style={{
-        position: 'absolute',
-        width: '600px',
-        height: '600px',
-        background: 'radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%)',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1,
-        pointerEvents: 'none'
-      }} />
-
-      <div style={{ zIndex: 2, textAlign: 'center', maxWidth: '600px' }}>
-        <div style={{ 
-          display: 'inline-flex',
+      <div style={{ textAlign: 'center', maxWidth: '440px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '12px',
+          background: 'var(--color-bg-panel)',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-1)',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '64px',
-          height: '64px',
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))',
-          boxShadow: '0 0 32px rgba(0,212,255,0.4)',
-          color: '#fff',
-          fontSize: '32px',
-          marginBottom: '24px'
-        }}>⎈</div>
-        
-        <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 800, 
-          color: '#fff', 
-          letterSpacing: '2px',
-          marginBottom: '16px',
-          textShadow: '0 0 20px rgba(255,255,255,0.2)'
+          marginBottom: '24px',
         }}>
-          MICROSERVICE MAPPER
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <line x1="7" y1="18" x2="13" y2="7" stroke="#5d636c" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="13" y1="7" x2="19" y2="18" stroke="#5d636c" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="7" y1="18" x2="19" y2="18" stroke="#5d636c" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="13" cy="7" r="3" fill="#8ab4ff" />
+            <circle cx="7" cy="18" r="3" fill="#969ca5" />
+            <circle cx="19" cy="18" r="3" fill="#969ca5" />
+          </svg>
+        </div>
+
+        <h1 style={{
+          fontSize: '22px',
+          fontWeight: 600,
+          color: 'var(--color-text-main)',
+          letterSpacing: '-0.015em',
+          margin: '0 0 8px',
+        }}>
+          Map your first system
         </h1>
-        
-        <p style={{ 
-          fontSize: '16px', 
-          color: 'var(--color-text-muted)', 
+
+        <p style={{
+          fontSize: '13.5px',
+          color: 'var(--color-text-muted)',
           lineHeight: 1.6,
-          marginBottom: '40px'
+          margin: '0 0 24px',
         }}>
-          Your dynamic observability platform. Connect a remote environment via SSH to automatically discover, map, and analyze your microservice architecture in real-time.
+          Connect a remote host over SSH and Microservice Mapper will discover your services and chart how they talk to each other.
         </p>
 
-        <button 
-          onClick={onAddProject}
-          style={{
-            background: 'linear-gradient(135deg, rgba(224,64,251,0.8), rgba(0,212,255,0.8))',
-            border: '1px solid var(--color-accent-magenta)',
-            color: '#fff',
-            padding: '16px 32px',
-            borderRadius: '30px',
-            fontWeight: 700,
-            fontSize: '14px',
-            letterSpacing: '1px',
-            cursor: 'pointer',
-            boxShadow: '0 10px 30px rgba(224,64,251,0.3)',
-            transition: 'all 0.3s ease',
-            textTransform: 'uppercase'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 15px 40px rgba(224,64,251,0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = '0 10px 30px rgba(224,64,251,0.3)';
-          }}
-        >
-          <span>☁️</span> ADD YOUR FIRST AWS PROJECT
+        <button className="mm-btn primary" onClick={onAddProject} style={{ height: '32px', padding: '0 14px', cursor: 'pointer' }}>
+          <Plus size={15} strokeWidth={1.75} />
+          Add project
         </button>
-      </div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: '32px',
-        color: 'rgba(255,255,255,0.2)',
-        fontSize: '12px',
-        letterSpacing: '1px'
-      }}>
-        Zero Configuration Required • Autonomous SSH Discovery • Real-Time Telemetry
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: '20px',
+          marginTop: '40px',
+          paddingTop: '20px',
+          borderTop: '1px solid var(--color-border)',
+          fontSize: '12px',
+          color: 'var(--color-text-dim)',
+        }}>
+          {steps.map(s => (
+            <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: '1px solid var(--color-border-hover)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10.5px',
+                fontVariantNumeric: 'tabular-nums',
+                color: 'var(--color-text-muted)',
+              }}>{s.n}</span>
+              {s.label}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

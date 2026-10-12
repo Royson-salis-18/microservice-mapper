@@ -42,7 +42,7 @@ export default function App() {
   const [isTrafficPanelOpen, setIsTrafficPanelOpen] = useState(false);
   const [isAwsPanelOpen, setIsAwsPanelOpen] = useState(false);
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
-  const [isTerminalVisible, setIsTerminalVisible] = useState(true);
+  const [isTerminalVisible, setIsTerminalVisible] = useState(false);
   const [terminalPosition, setTerminalPosition] = useState({ x: window.innerWidth - 340, y: window.innerHeight - 440 });
   
   const [filters, setFilters] = useState<Record<string, boolean>>({
@@ -269,6 +269,7 @@ export default function App() {
           onToggleTerminal={() => setIsTerminalVisible(!isTerminalVisible)}
           isTerminalOpen={isTerminalVisible}
           onReloadGraph={reloadGraph}
+          activeTab={activeTab}
           onEditProject={(projectId) => { 
             setEditingProjectId(projectId);
             setIsAwsPanelOpen(true); 
@@ -278,8 +279,8 @@ export default function App() {
         
         <div className="main-content" style={{ flex: 1, position: 'relative' }}>
         {isLoading ? (
-          <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-cyan)' }}>
-            LOADING TELEMETRY...
+          <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
+            Loading telemetry…
           </div>
         ) : targets.length === 0 && !error ? (
           <WelcomeScreen onAddProject={() => { setEditingProjectId(null); setIsAwsPanelOpen(true); }} />
@@ -410,22 +411,22 @@ export default function App() {
         )}
       </div>
       
-      {/* GLOBAL TERMINAL PANEL (Draggable Card) */}
-      <div style={{
+      {/* Terminal: opened from the top bar, draggable, closed by its header. */}
+      {isTerminalVisible && <div style={{
         position: 'absolute',
         left: terminalLeft,
         top: terminalPosition.y,
         width: `${TERMINAL_WIDTH}px`,
         height: isTerminalVisible ? '400px' : '40px',
-        background: 'rgba(12, 12, 24, 0.95)',
-        backdropFilter: 'blur(24px)',
-        border: '1px solid var(--color-border)',
+        background: 'rgba(17, 19, 23, 0.97)',
+                border: '1px solid var(--color-border)',
         borderRadius: '12px',
+        overflow: 'hidden',
         zIndex: 1000,
         transition: 'height 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        boxShadow: 'var(--shadow-pop)'
       }} onMouseDown={isTerminalVisible ? (e => {
         if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('terminal-content')) {
           const startX = e.clientX - terminalPosition.x;
@@ -465,8 +466,8 @@ export default function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--color-accent-cyan)' }}>_</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '1px' }}>GLOBAL TERMINAL</span>
+            <span style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>$</span>
+            <span style={{ fontSize: '12px', fontWeight: 550 }}>Terminal</span>
           </div>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>{isTerminalVisible ? '▼' : '▲'}</span>
         </div>
@@ -481,7 +482,7 @@ export default function App() {
             />
           </div>
         )}
-      </div>
+      </div>}
       
       {error && (
         <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'var(--color-critical)', color: '#fff', padding: '8px 16px', borderRadius: '4px', zIndex: 100 }}>

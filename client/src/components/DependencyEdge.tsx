@@ -50,10 +50,6 @@ export function CustomDependencyEdge({
   );
 
   const evidenceBadge = edgeData?.evidenceSources?.[0];
-  const evidenceColor = evidenceBadge === 'compose' ? '#7c4dff' :
-    evidenceBadge === 'docker-network' ? '#00d4ff' :
-    evidenceBadge === 'network-tcp' ? '#00e676' :
-    evidenceBadge === 'http-log' ? '#ffab00' : '#64748b';
 
   return (
     <>
@@ -77,13 +73,12 @@ export function CustomDependencyEdge({
           stroke: hovered ? color.replace(/[\d.]+\)$/, '1)') : color,
           strokeDasharray: isDashed ? '6 6' : 'none',
           transition: 'stroke 0.2s, stroke-width 0.2s, opacity 0.3s',
-          filter: isAnimated ? `drop-shadow(0 0 3px ${color})` : 'none',
         }}
       />
 
       {/* Animated flow dot for observed/active edges */}
       {isAnimated && (
-        <circle r="3" fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }}>
+        <circle r="2.5" fill={color}>
           <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} />
         </circle>
       )}
@@ -95,40 +90,37 @@ export function CustomDependencyEdge({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: 'rgba(10, 13, 24, 0.95)',
-              backdropFilter: 'blur(12px)',
-              padding: '6px 10px',
+              background: 'var(--color-bg-raised)',
+              padding: '8px 10px',
               borderRadius: '8px',
-              fontSize: '10px',
-              fontWeight: 600,
-              border: `1px solid ${evidenceColor}44`,
-              color: '#fff',
-              boxShadow: `0 4px 16px rgba(0,0,0,0.6), 0 0 8px ${evidenceColor}33`,
+              fontSize: '11.5px',
+              border: '1px solid var(--color-border-hover)',
+              color: 'var(--color-text-main)',
+              boxShadow: 'var(--shadow-2)',
               pointerEvents: 'none',
               display: 'flex',
               flexDirection: 'column',
-              gap: '4px',
-              minWidth: '100px',
+              gap: '6px',
+              minWidth: '120px',
               zIndex: 1000,
+              fontVariantNumeric: 'tabular-nums',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: color }} />
-              <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: evidenceColor }}>
-                {evidenceBadge || 'dependency'}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span className="mm-dot" style={{ background: color }} />
+              <span style={{ fontWeight: 550 }}>{evidenceBadge || 'Dependency'}</span>
             </div>
-            <div style={{ display: 'flex', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '9px' }}>
-              <span>{edgeData?.declared ? '✓ Declared' : '○ Candidate'}</span>
-              <span>{edgeData?.observed ? `● ${heatLabel}` : '○ Not seen'}</span>
+            <div style={{ display: 'flex', gap: '10px', color: 'var(--color-text-muted)', fontSize: '11px' }}>
+              <span>{edgeData?.declared ? 'Declared' : 'Candidate'}</span>
+              <span>{edgeData?.observed ? heatLabel.charAt(0).toUpperCase() + heatLabel.slice(1) : 'Not seen'}</span>
             </div>
             {hasMetrics && (
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '4px', display: 'flex', gap: '8px' }}>
+              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '6px', display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
                 {(edgeData!.metrics!.latency ?? 0) > 0 && (
-                  <span style={{ color: '#00d4ff' }}>{edgeData!.metrics!.latency?.toFixed(0)}ms</span>
+                  <span>{edgeData!.metrics!.latency?.toFixed(0)} ms</span>
                 )}
                 {(edgeData!.metrics!.errorRate ?? 0) > 0 && (
-                  <span style={{ color: '#ff1744' }}>{((edgeData!.metrics!.errorRate ?? 0) * 100).toFixed(1)}% err</span>
+                  <span style={{ color: 'var(--color-critical)' }}>{((edgeData!.metrics!.errorRate ?? 0) * 100).toFixed(1)}% errors</span>
                 )}
               </div>
             )}

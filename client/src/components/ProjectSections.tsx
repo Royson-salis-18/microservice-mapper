@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, FolderOpen } from 'lucide-react';
 
 interface ProjectSectionsProps {
   /** 'ALL', or a single project id. */
@@ -27,8 +28,10 @@ export function ProjectSections({ selectedProject, projects, summary, children }
 
   if (projects.length === 0) {
     return (
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '13px' }}>
-        No projects with data yet.
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', textAlign: 'center' }}>
+        <FolderOpen size={20} strokeWidth={1.75} color="var(--color-text-dim)" />
+        <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No projects with data yet</div>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Add a target to start discovering services</div>
       </div>
     );
   }
@@ -53,32 +56,35 @@ export function ProjectSections({ selectedProject, projects, summary, children }
                 zIndex: 5,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
+                gap: '10px',
+                height: '44px',
+                padding: '0 24px',
                 cursor: 'pointer',
-                background: 'rgba(13, 17, 23, 0.95)',
-                backdropFilter: 'blur(6px)',
+                userSelect: 'none',
+                background: 'var(--color-bg-body)',
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              <span style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', width: '10px' }}>
-                {isCollapsed ? '▸' : '▾'}
+              <span style={{ display: 'inline-flex', color: 'var(--color-text-dim)', width: '14px' }}>
+                {isCollapsed
+                  ? <ChevronRight size={14} strokeWidth={1.75} />
+                  : <ChevronDown size={14} strokeWidth={1.75} />}
               </span>
               <h2 style={{
                 margin: 0,
-                fontSize: '13px',
-                fontWeight: 700,
-                letterSpacing: '0.8px',
-                textTransform: 'uppercase',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                letterSpacing: '-0.005em',
+                color: 'var(--color-text-main)',
               }}>
                 {project}
               </h2>
               {summary && (
-                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{summary(project)}</span>
+                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>{summary(project)}</span>
               )}
             </header>
             {!isCollapsed && (
-              <div style={{ padding: '4px 0 20px 0' }}>
+              <div style={{ padding: '16px 0 24px 0' }}>
                 {children(project)}
               </div>
             )}
@@ -94,7 +100,7 @@ export function ProjectSections({ selectedProject, projects, summary, children }
  * either or each section would get its own scrollbar. */
 export function pageRootStyle(embedded: boolean): React.CSSProperties {
   return embedded
-    ? { padding: '4px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: '24px' }
+    ? { padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '16px' }
     : {
         flex: 1,
         height: '100%',
@@ -104,6 +110,6 @@ export function pageRootStyle(embedded: boolean): React.CSSProperties {
         color: 'var(--color-text-main)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '16px',
       };
 }

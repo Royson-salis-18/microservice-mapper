@@ -178,7 +178,7 @@ function edge(partial: Partial<DependencyEdge>): DependencyEdge {
 test('heat: unobserved links are inert grey, never a traffic colour', () => {
   const a = edgeAppearance(edge({ observed: false, declared: true }));
   assert.equal(a.heat, 'idle');
-  assert.match(a.color, /^#5b6778$/i);
+  assert.match(a.color, /^#4a4f57$/i);
 });
 
 test('heat: observed but unmeasured is calm, not a fabricated zero', () => {
@@ -213,14 +213,23 @@ test('heat: failure and degradation outrank traffic volume', () => {
   assert.equal(edgeAppearance(edge({ observed: true, status: 'failed' })).heat, 'failed');
 });
 
-test('heat: intensity stays below full so links read as lighting, not glare', () => {
+test('heat: traffic volume never uses a warm (trouble) colour', () => {
+  const warm = new Set(['#ef5f67', '#e8a33d']);
+  for (const samplesPerMin of [5, 100, 600, 5000]) {
+    const a = edgeAppearance(edge({ observed: true, activity: { samplesPerMin, windowSec: 60, lastSeen: new Date().toISOString() } }));
+    assert.ok(!warm.has(a.color.toLowerCase()), `${samplesPerMin}/min painted ${a.color}`);
+  }
+  assert.equal(edgeAppearance(edge({ observed: true, status: 'failed' })).color, '#ef5f67');
+});
+
+test('heat: intensity is an opacity in (0, 1)', () => {
   const all = [
     edgeAppearance(edge({ observed: false })),
     edgeAppearance(edge({ observed: true })),
     edgeAppearance(edge({ observed: true, status: 'failed' })),
   ];
   for (const a of all) {
-    assert.ok(a.intensity <= 0.8, `intensity ${a.intensity} is too hot`);
+    assert.ok(a.intensity < 1, `intensity ${a.intensity} is opaque`);
     assert.ok(a.intensity > 0, 'intensity must be visible');
   }
 });
