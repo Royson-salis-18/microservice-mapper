@@ -523,7 +523,7 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
       </div>
 
       {/* KPI Stats Bar */}
-      <div style={{
+      <div className="mm-kpis" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
         gap: '16px'

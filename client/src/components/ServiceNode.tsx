@@ -3,6 +3,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Router, Database, Layers, Rows3, Monitor, Box, Cpu, Globe } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ServiceNode } from '../types';
+import { typeColor, tint } from './shared/palette';
 
 interface ServiceNodeProps {
   data: ServiceNode;
@@ -88,8 +89,9 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
     <div
       style={{
         width: '180px',
-        background: hovered && !selected ? 'var(--color-bg-panel-hover)' : 'var(--color-bg-panel)',
+        background: `linear-gradient(180deg, ${tint(typeColor(data.type as string), hovered ? 0.1 : 0.06)}, transparent 60%), ${hovered && !selected ? 'var(--color-bg-panel-hover)' : 'var(--color-bg-panel)'}`,
         border: `1px solid ${borderColor}`,
+        borderTop: `2px solid ${selected ? borderColor : tint(typeColor(data.type as string), 0.7)}`,
         borderRadius: '10px',
         boxShadow: shadows.join(', '),
         padding: '12px',
@@ -127,7 +129,10 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '10px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <TypeIcon size={14} strokeWidth={1.75} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+            <span style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, display: 'grid', placeItems: 'center',
+              background: tint(typeColor(data.type as string), 0.14), border: `1px solid ${tint(typeColor(data.type as string), 0.28)}` }}>
+              <TypeIcon size={13} strokeWidth={1.9} style={{ color: typeColor(data.type as string) }} />
+            </span>
             <span style={{
               fontWeight: 600,
               fontSize: '13px',

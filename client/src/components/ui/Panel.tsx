@@ -169,7 +169,7 @@ export function Stat({ label, value, tone, hint, sub }: {
 /** Evenly spread stats that wrap rather than squeeze. */
 export function StatRow({ children }: { children: ReactNode }) {
   return (
-    <div style={{
+    <div className="mm-stats" style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(126px, 1fr))',
       gap: `${SPACE.tight + 4}px`,

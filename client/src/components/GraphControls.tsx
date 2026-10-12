@@ -3,6 +3,9 @@ import { Maximize, Plus, Minus, Check, Box, Database, Rows3, Router, Cpu, Layout
 import type { LucideIcon } from 'lucide-react';
 import { LayoutPicker2D } from './LayoutPicker2D';
 import type { Layout2DId } from './layouts2d';
+import { typeColor } from './shared/palette';
+
+const FILTER_TYPE: Record<string, string> = { services: 'service', databases: 'database', queues: 'queue', gateways: 'gateway', infrastructure: 'infrastructure', caches: 'cache', frontends: 'frontend' };
 
 interface GraphControlsProps {
   viewMode: string;
@@ -119,7 +122,7 @@ export function GraphControls({ viewMode, setViewMode, filters, setFilters, layo
                 onChange={() => handleFilterToggle(key)}
               />
               <span className="gc-check">{value && <Check size={10} strokeWidth={2.5} />}</span>
-              <Icon size={14} strokeWidth={1.75} style={{ color: 'var(--color-text-dim)', flexShrink: 0 }} />
+              <Icon size={14} strokeWidth={1.9} style={{ color: FILTER_TYPE[key] ? typeColor(FILTER_TYPE[key]) : 'var(--color-text-dim)', flexShrink: 0 }} />
               <span className="gc-label">{key}</span>
             </label>
           );
