@@ -53,8 +53,14 @@ export class RCAEngine {
       || (byNode.get(n.id) ?? []).some(a => kindOf(a) === 'hard' && a.reason !== 'container-exited-or-critical')
       || (n.status === 'critical' && !state(n));
 
+    // Datastores and queues answer calls; they do not make them. Edges inferred from TCP connections are seen from both
+    // ends (cart -> cart-store AND cart-store -> cart), so an edge whose caller is a datastore is the reverse view of a
+    // real call and is ignored for attribution and cascade risk (measured live: cart-store was listed as "at risk").
+    const STORE = /(^|[-_])(db|store|cache|redis|memcached|mongo|mongodb|postgres|mysql|queue|bus|kafka|nats|rabbitmq)([-_]|$)/i;
+    const isStore = (id: string) => { const n = targetNodes.find(x => x.id === id); return !!n && (n.type === 'database' || n.type === 'queue' || STORE.test(n.name)); };
     const callees = new Map<string, string[]>(), callers = new Map<string, string[]>();
     for (const e of targetEdges) {
+      if (isStore(e.source) && !isStore(e.target)) continue;
       callees.set(e.source, [...(callees.get(e.source) ?? []), e.target]);
       callers.set(e.target, [...(callers.get(e.target) ?? []), e.source]);
     }
@@ -173,28 +179,34 @@ export class RCAEngine {
     const primaryRootCause = candidates[0] ?? null;
     const overallConfidence = primaryRootCause?.confidence ?? 'UNKNOWN';
 
-    // ---- propagation: from the root to its callers (failures travel callee -> caller), through affected services
+    // ---- propagation: from the root to its callers (failures travel callee -> caller), over the corrected caller graph
+    // (reverse TCP views and datastore->service edges removed), at most 3 hops
     const propagationPath: string[] = [], propagationSteps: PropagationStep[] = [];
     if (primaryRootCause) {
       propagationPath.push(primaryRootCause.serviceName);
-      const queue = [primaryRootCause.serviceId], visited = new Set(queue);
-      while (queue.length) {
-        const curr = queue.shift()!;
-        for (const e of targetEdges.filter(x => x.target === curr)) {
-          if (visited.has(e.source)) continue;
-          visited.add(e.source);
-          const caller = targetNodes.find(x => x.id === e.source);
-          if (!caller) continue;
-          propagationPath.push(caller.name);
-          queue.push(caller.id);
-          propagationSteps.push({
-            sourceId: curr, targetId: caller.id,
-            timestamp: (byNode.get(caller.id) ?? []).map(a => a.timestamp).sort()[0],
-            edgeId: e.id, evidenceSource: e.observed ? 'network-tcp' : 'compose-declarative',
-            metricChange: (sym.get(caller.id) ?? 0) > 0 ? `symptoms ${round(sym.get(caller.id)!)}x normal` : `status ${caller.status}`,
-            confidence: e.observed ? 'HIGH' : 'MEDIUM',
-          });
+      let frontier = [primaryRootCause.serviceId];
+      const visited = new Set(frontier);
+      for (let hop = 0; hop < 3 && frontier.length; hop++) {
+        const next: string[] = [];
+        for (const curr of frontier) {
+          for (const callerId of callers.get(curr) ?? []) {
+            if (visited.has(callerId)) continue;
+            visited.add(callerId);
+            const caller = targetNodes.find(x => x.id === callerId);
+            const e = targetEdges.find(x => x.source === callerId && x.target === curr);
+            if (!caller || !e) continue;
+            propagationPath.push(caller.name);
+            next.push(caller.id);
+            propagationSteps.push({
+              sourceId: curr, targetId: caller.id,
+              timestamp: (byNode.get(caller.id) ?? []).map(a => a.timestamp).sort()[0],
+              edgeId: e.id, evidenceSource: e.observed ? 'network-tcp' : 'compose-declarative',
+              metricChange: (sym.get(caller.id) ?? 0) > 0 ? `symptoms ${round(sym.get(caller.id)!)}x normal` : `status ${caller.status}`,
+              confidence: e.observed ? 'HIGH' : 'MEDIUM',
+            });
+          }
         }
+        frontier = next;
       }
     }
 
