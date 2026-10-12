@@ -24,3 +24,11 @@ export function tint(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
+
+/** Health, the one thing the map and graphs colour by. */
+export const STATE_HEX: Record<string, string> = {
+  healthy: '#3ecf8e',
+  degraded: '#e8a33d',
+  critical: '#ef5f67',
+  unknown: '#6b7079',
+};

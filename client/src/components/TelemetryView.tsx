@@ -3,7 +3,6 @@ import { Activity, ArrowDown, ArrowUp, MousePointerClick, Search } from 'lucide-
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, MetricSnapshot } from '../types';
 import { pageRootStyle } from './ProjectSections';
-import { typeColor } from './shared/palette';
 
 interface TelemetryViewProps {
   nodes: Node[];
@@ -196,7 +195,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
       <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color }} />
     </div>
   );
-  const meterColor = (pct: number) => (pct >= 90 ? 'var(--color-critical)' : pct >= 75 ? 'var(--color-degraded)' : '#9aa3b0');
+  const meterColor = (pct: number) => (pct >= 90 ? 'var(--color-critical)' : pct >= 75 ? 'var(--color-degraded)' : 'var(--color-healthy)');
 
   return (
     <div style={pageRootStyle(embedded)}>
@@ -360,7 +359,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                       <td style={{ ...td, fontWeight: 500, color: 'var(--color-text-main)' }}>{node.name}</td>
                       <td style={{ ...td, fontSize: '12px', color: 'var(--color-text-muted)' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                          <i style={{ width: 8, height: 8, borderRadius: 2, background: typeColor(node.type), display: 'inline-block' }} />{sentence(node.type)}
+                          <i style={{ width: 8, height: 8, borderRadius: 2, background: '#5d636c', display: 'inline-block' }} />{sentence(node.type)}
                         </span>
                       </td>
                       <td style={td}>

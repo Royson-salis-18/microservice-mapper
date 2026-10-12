@@ -38,7 +38,7 @@ const typeIcons: Record<string, LucideIcon> = {
 };
 
 const sentence = (v: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v);
-const meterColor = (v: number) => (v > 95 ? 'var(--color-critical)' : v > 80 ? 'var(--color-degraded)' : '#9aa3b0');
+const meterColor = (v: number) => (v > 95 ? 'var(--color-critical)' : v > 80 ? 'var(--color-degraded)' : 'var(--color-healthy)');
 const edgeStatusColor = (st?: string) => (st === 'failed' ? 'var(--color-critical)' : st === 'degraded' ? 'var(--color-degraded)' : 'var(--color-text-dim)');
 
 const section: CSSProperties = { padding: '20px', borderBottom: '1px solid var(--color-border)' };

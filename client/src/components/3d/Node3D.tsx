@@ -5,7 +5,6 @@ import * as THREE from 'three';
 
 import type { ServiceNode } from '../../types';
 import type { PositionMap } from './Scene3D';
-import { typeColor } from '../shared/palette';
 
 interface Node3DProps {
   node: { id: string; data: ServiceNode };
@@ -55,13 +54,14 @@ const PLATFORM_Y = 0.14;
 const RING_GEOM = new THREE.RingGeometry(2.78, 2.92, 64);
 const SELECT_GEOM = new THREE.RingGeometry(3.15, 3.24, 64);
 
-// Healthy services wear their category colour, softened into the clay so it reads as a
-// painted model rather than a light. Trouble overrides it completely.
+// The body colour is the service's health: green, amber, red, or grey for no data.
+// Shape tells you what kind of service it is.
 function bodyColor(status: string, type: string): THREE.Color {
   if (status === 'unknown') return CLAY_NO_DATA.clone();
   if (status === 'critical') return new THREE.Color(STATUS_COLORS.critical).lerp(CLAY, 0.12);
   if (status === 'degraded') return new THREE.Color(STATUS_COLORS.degraded).lerp(CLAY, 0.15);
-  return CLAY.clone().lerp(new THREE.Color(typeColor(type)), 0.82);
+  void type;
+  return CLAY.clone().lerp(new THREE.Color(STATUS_COLORS.healthy), 0.72);
 }
 
 /** Grooves on a chassis face; the lower ones light up with load, like a level meter. */

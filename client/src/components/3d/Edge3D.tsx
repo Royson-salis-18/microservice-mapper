@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import type { DependencyEdge } from '../../types';
 import type { PositionMap } from './Scene3D';
 import { edgeAppearance } from '../shared/edgeHeat';
-import { typeColor } from '../shared/palette';
 
 interface Edge3DProps {
   edge: { id: string; data: DependencyEdge };
@@ -46,12 +45,11 @@ export function Edge3D({ edge, sourceId, targetId, live, dimmed = false, sourceT
     : heat === 'saturated' ? 4 : heat === 'heavy' ? 3 : heat === 'busy' ? 2 : 1;
   const speed = heat === 'saturated' ? 0.42 : heat === 'heavy' ? 0.34 : 0.26;
 
-  // Healthy observed links carry the caller's colour; failing/degraded keep their warning colour,
-  // and declared-only links stay grey.
+  // Link colour is its state (see edgeHeat).
   const trouble = heat === 'failed' || heat === 'degraded';
-  const lineColor = trouble || heat === 'idle' ? appearance.color
-    : new THREE.Color(appearance.color).lerp(new THREE.Color(typeColor(sourceType)), 0.55).getStyle();
-  const packetColor = trouble || heat === 'idle' ? appearance.glow : typeColor(sourceType);
+  void trouble; void sourceType;
+  const lineColor = appearance.color;
+  const packetColor = appearance.glow;
   const coreMat = useMemo(
     () => new THREE.MeshBasicMaterial({ color: lineColor, transparent: true, opacity, depthWrite: opacity > 0.5 }),
     [lineColor, opacity]

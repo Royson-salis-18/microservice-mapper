@@ -120,6 +120,10 @@ export default function App() {
     });
   }, [nodes, selectedProjectId, searchQuery, filters, viewMode, highlightedNodeIds]);
 
+  const statusById = useMemo(
+    () => new Map(filteredNodes.map(n => [n.id, (n.data as unknown as ServiceNode).status])),
+    [filteredNodes]
+  );
   const filteredEdges = useMemo(() => {
     const validNodeIds = new Set(filteredNodes.map(n => n.id));
     return edges.filter(edge => {
@@ -138,8 +142,14 @@ export default function App() {
           isHighlighted = edge.source === selectedNodeId || edge.target === selectedNodeId;
         }
       }
+      // A call into a broken service is a broken call: the link takes the callee's health
+      // (critical -> failed, degraded -> degraded) unless the edge already reports worse.
+      const data = edge.data as unknown as DependencyEdge;
+      const calleeStatus = statusById.get(edge.target);
+      const derived = calleeStatus === 'critical' ? 'failed' : calleeStatus === 'degraded' && data.status !== 'failed' ? 'degraded' : null;
       return {
         ...edge,
+        data: derived && data.status !== 'failed' ? { ...edge.data, status: derived } : edge.data,
         style: {
           ...edge.style,
           opacity: isHighlighted ? 1 : 0.2,
@@ -147,7 +157,7 @@ export default function App() {
         }
       };
     });
-  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode]);
+  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode, statusById]);
 
   // Projects that actually have nodes right now, so the per-project stack
   // never renders an empty section for a target that's down or not yet
