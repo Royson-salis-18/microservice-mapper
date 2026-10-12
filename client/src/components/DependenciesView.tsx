@@ -64,7 +64,7 @@ export function DependenciesView({ nodes: _nodes, edges, selectedProject, embedd
   return (
     <div style={pageRootStyle(embedded)}>
       {/* Top dependency KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div className="mm-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div className="mm-card" style={{ padding: '18px 20px' }}>
           <div className="mm-eyebrow">Total connections</div>
           <div style={kpiValue}>{stats.total}</div>

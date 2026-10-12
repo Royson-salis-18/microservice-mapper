@@ -322,3 +322,23 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 .mm-alert { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 6px 0 12px; font-size: 12.5px; border-radius: 999px; }
 .mm-alert button { height: 24px; border-radius: 999px; border: 1px solid rgba(239, 95, 103, 0.35); background: rgba(239, 95, 103, 0.12); color: #ffd9db; font: inherit; font-size: 12px; padding: 0 10px; cursor: pointer; }
 .mm-alert button:hover { background: rgba(239, 95, 103, 0.2); }
+
+/* ---------------------------------------------------------------- colour accents
+   KPI cards each carry one hue from the category palette: a coloured marker on the label, a
+   hairline of colour along the top and a faint wash in the corner. */
+.mm-kpis > :nth-child(5n+1), .mm-stats > :nth-child(5n+1) { --hue: 111, 141, 255; }
+.mm-kpis > :nth-child(5n+2), .mm-stats > :nth-child(5n+2) { --hue: 63, 184, 240; }
+.mm-kpis > :nth-child(5n+3), .mm-stats > :nth-child(5n+3) { --hue: 185, 140, 255; }
+.mm-kpis > :nth-child(5n+4), .mm-stats > :nth-child(5n+4) { --hue: 56, 199, 147; }
+.mm-kpis > :nth-child(5n+5), .mm-stats > :nth-child(5n+5) { --hue: 242, 123, 189; }
+.mm-kpis > .mm-card { position: relative; overflow: hidden;
+  background: radial-gradient(120% 90% at 100% 0%, rgba(var(--hue), 0.10), transparent 55%), var(--color-bg-panel);
+  border-top-color: rgba(var(--hue), 0.45); }
+.mm-kpis .mm-eyebrow { display: flex; align-items: center; gap: 7px; color: rgba(var(--hue), 0.95); }
+.mm-kpis .mm-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 2px; background: rgb(var(--hue)); flex-shrink: 0; }
+.mm-stats > * { padding-left: 10px; box-shadow: inset 2px 0 0 rgba(var(--hue), 0.75); }
+
+/* sidebar: every section icon has its own colour, brighter when active */
+.mm-nav svg { color: var(--nav-hue, var(--color-text-muted)); opacity: 0.8; transition: opacity var(--transition-fast); }
+.mm-nav:hover svg, .mm-nav.active svg { opacity: 1; color: var(--nav-hue, var(--color-accent-cyan)); }
+.mm-nav.active { background: rgba(var(--nav-rgb, 255, 255, 255), 0.09); }

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 
 import type { ServiceNode } from '../../types';
 import type { PositionMap } from './Scene3D';
+import { typeColor } from '../shared/palette';
 
 interface Node3DProps {
   node: { id: string; data: ServiceNode };
@@ -49,16 +50,18 @@ const CLAY_NO_DATA = new THREE.Color('#5f646c');
 const DETAIL = '#24272c';
 const PLINTH = '#17191d';
 const DIM_TO = new THREE.Color('#1b1d21');
-const LOAD_ON = '#8ab4ff';
+const LOAD_ON = '#f4f6fa';
 const PLATFORM_Y = 0.14;
 const RING_GEOM = new THREE.RingGeometry(2.78, 2.92, 64);
 const SELECT_GEOM = new THREE.RingGeometry(3.15, 3.24, 64);
 
-function bodyColor(status: string): THREE.Color {
+// Healthy services wear their category colour, softened into the clay so it reads as a
+// painted model rather than a light. Trouble overrides it completely.
+function bodyColor(status: string, type: string): THREE.Color {
   if (status === 'unknown') return CLAY_NO_DATA.clone();
-  if (status === 'critical') return CLAY.clone().lerp(new THREE.Color(STATUS_COLORS.critical), 0.62);
-  if (status === 'degraded') return CLAY.clone().lerp(new THREE.Color(STATUS_COLORS.degraded), 0.5);
-  return CLAY.clone();
+  if (status === 'critical') return new THREE.Color(STATUS_COLORS.critical).lerp(CLAY, 0.12);
+  if (status === 'degraded') return new THREE.Color(STATUS_COLORS.degraded).lerp(CLAY, 0.15);
+  return CLAY.clone().lerp(new THREE.Color(typeColor(type)), 0.82);
 }
 
 /** Grooves on a chassis face; the lower ones light up with load, like a level meter. */
@@ -98,8 +101,8 @@ export function Node3D({ node, live, isSelected, onClick, showLabel = true, dimm
   const lit = (n: number) => (status === 'unknown' ? 0 : Math.min(n, Math.round(load * n + (load > 0.02 ? 0.5 : 0))));
 
   // One material for the whole chassis, so dimming and health are a single colour change.
-  const clay = useMemo(() => new THREE.MeshStandardMaterial({ color: bodyColor(status), roughness: 0.58, metalness: 0.04 }), [status]);
-  const clayTarget = useMemo(() => bodyColor(status), [status]);
+  const clay = useMemo(() => new THREE.MeshStandardMaterial({ color: bodyColor(status, data.type as string), roughness: 0.5, metalness: 0.05 }), [status, data.type]);
+  const clayTarget = useMemo(() => bodyColor(status, data.type as string), [status, data.type]);
   useEffect(() => () => clay.dispose(), [clay]);
 
   const shortName = useMemo(() => {

@@ -5,6 +5,7 @@ import type { Node, Edge } from '@xyflow/react';
 import * as THREE from 'three';
 import { Node3D, TYPE_STYLE, type NodeShape } from './Node3D';
 import { Edge3D } from './Edge3D';
+import { typeColor } from '../shared/palette';
 import { LAYOUTS, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
 
 interface Scene3DProps {
@@ -210,8 +211,8 @@ function GroundShadows({ target }: { target: Positions }) {
 }
 
 /** Tiny silhouettes for the legend, matching the 3D forms. */
-function ShapeGlyph({ shape }: { shape: NodeShape }) {
-  const c = '#b9bdc4';
+function ShapeGlyph({ shape, color }: { shape: NodeShape; color: string }) {
+  const c = color;
   return (
     <svg width="16" height="14" viewBox="0 0 16 14" aria-hidden>
       {shape === 'rack' && <><rect x="4.5" y="1" width="7" height="12" rx="1.4" fill={c} /><path d="M6.5 4h3M6.5 6.5h3M6.5 9h3" stroke="#24272c" strokeWidth="0.9" /></>}
@@ -327,6 +328,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   }, [nodes.length]);
 
   const activeLayout = LAYOUTS.find((l) => l.id === layout);
+  const typeById = useMemo(() => new Map(layoutNodes.map(n => [n.id, n.type])), [layoutNodes]);
 
   // Critical first, then degraded; drives the "needs attention" pill.
   const troubled = useMemo(() => nodes
@@ -425,6 +427,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               targetId={edge.target}
               live={live}
               dimmed={focus ? !focus.relatedEdges.has(edge.id) : false}
+              sourceType={typeById.get(edge.source)}
             />
           ))}
 
@@ -476,18 +479,18 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         {presentTypes.length > 0 && (
           <>
             <hr />
-            <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Shape is the role</div>
+            <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Service types</div>
             <div className="mm-legend">
               {presentTypes.map(([type, style]) => (
-                <div key={type}><ShapeGlyph shape={style.shape} />{style.label}</div>
+                <div key={type}><ShapeGlyph shape={style.shape} color={typeColor(type)} />{style.label}</div>
               ))}
             </div>
           </>
         )}
         <hr />
-        <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Colour is only for trouble</div>
+        <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Health</div>
         <div className="mm-legend">
-          <div><i className="mm-dot" style={{ background: '#c9ccd2' }} />Healthy</div>
+          <div><i className="mm-dot" style={{ background: 'var(--color-healthy)' }} />Healthy</div>
           <div><i className="mm-dot" style={{ background: '#6b7079' }} />No data</div>
           <div><i className="mm-dot" style={{ background: 'var(--color-degraded)' }} />Degraded</div>
           <div><i className="mm-dot" style={{ background: 'var(--color-critical)' }} />Critical</div>

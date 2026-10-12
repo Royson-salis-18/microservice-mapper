@@ -3,6 +3,7 @@ import { Activity, ArrowDown, ArrowUp, MousePointerClick, Search } from 'lucide-
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, MetricSnapshot } from '../types';
 import { pageRootStyle } from './ProjectSections';
+import { typeColor } from './shared/palette';
 
 interface TelemetryViewProps {
   nodes: Node[];
@@ -200,7 +201,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
   return (
     <div style={pageRootStyle(embedded)}>
       {/* Top telemetry KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div className="mm-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div className="mm-card" style={{ padding: '18px 20px' }}>
           <div className="mm-eyebrow">Monitored services</div>
           <div style={kpiValue}>{summary.totalServices}</div>
@@ -357,7 +358,11 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                       }}
                     >
                       <td style={{ ...td, fontWeight: 500, color: 'var(--color-text-main)' }}>{node.name}</td>
-                      <td style={{ ...td, fontSize: '12px', color: 'var(--color-text-dim)' }}>{sentence(node.type)}</td>
+                      <td style={{ ...td, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                          <i style={{ width: 8, height: 8, borderRadius: 2, background: typeColor(node.type), display: 'inline-block' }} />{sentence(node.type)}
+                        </span>
+                      </td>
                       <td style={td}>
                         <span className="mm-chip" style={{ background: tone.bg, color: tone.fg, border: 'none' }}>
                           <i className="mm-dot" style={{ background: 'currentColor' }} />
