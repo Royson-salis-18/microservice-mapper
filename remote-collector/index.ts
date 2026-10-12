@@ -75,8 +75,9 @@ interface ConnectionEvent {
 function determineType(name: string, image: string): string {
   const n = name.toLowerCase();
   const img = image.toLowerCase();
-  if (n.includes('db') || img.includes('mongo') || img.includes('mysql') || img.includes('postgres')) return 'database';
-  if (n.includes('rabbitmq') || n.includes('queue')) return 'queue';
+  if (n.includes('db') || /(^|[-_])(store|cache|redis|memcached|mongo|postgres|mysql)([-_]|$)/.test(n)
+      || /mongo|mysql|postgres|redis|memcached|valkey/.test(img)) return 'database';
+  if (/rabbitmq|queue|kafka|nats|(^|[-_])bus([-_]|$)/.test(n) || /rabbitmq|kafka|nats/.test(img)) return 'queue';
   if (n.includes('edge-router') || n.includes('gateway') || img.includes('traefik')) return 'gateway';
   if (n.includes('front-end') || n.includes('ui')) return 'frontend';
   return 'service';
@@ -360,6 +361,7 @@ async function discoverAndCollect() {
       status,
       metadata: {
         containerId: containerInfo.Id.substring(0, 12),
+        containerName: (containerInfo.Names?.[0] ?? '').replace(/^\//, '') || undefined,
         image,
         state: containerInfo.State,
         status: containerInfo.Status

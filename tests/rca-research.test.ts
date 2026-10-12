@@ -150,3 +150,13 @@ test('incident: remediation names the real container and the right command', () 
   assert.equal(inc.rootCauseServiceId, 'cart');
   assert.equal(inc.remediationGuide[0], 'docker unpause shopflow-cart-1');
 });
+
+test('rca: a datastore is never "at risk" via the reverse view of a TCP connection', () => {
+  // cart <-> cart-store observed both ways; api -> cart. cart paused.
+  const nodes = [node('api'), node('cart', { status: 'critical', metadata: { state: 'paused' } }), node('cart-store', { type: 'service' })];
+  const edges = [edge('api', 'cart'), edge('cart', 'cart-store'), edge('cart-store', 'cart')];
+  const res = new RCAEngine().analyzeIncident({ targetId: 'p', nodes, edges, anomalies: [] });
+  assert.equal(res.primaryRootCause?.serviceId, 'cart');
+  assert.deepEqual(res.atRisk.map(a => a.serviceId), ['api']);
+  assert.deepEqual(res.explanation.propagationPath, ['cart', 'api']);
+});
