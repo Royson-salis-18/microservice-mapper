@@ -1,6 +1,48 @@
 # RCA Engine — Root Cause Analysis
 
-> **Corrected 2026-10-08 (commit e66d261). Parts of this page below describe the OLD scoring; read this box first.**
+> **Rewritten 2026-10-12: the research method (rca-lab `core/`) is now the mapper's RCA. This box replaces the scoring
+> described further down, which is kept only as history.**
+>
+> **Detector** (`AnomalyDetector.ts`), every metric judged against the service's own last 15 minutes:
+>
+> | Piece | What it does | Why (measured in rca-lab on 751 labelled faults) |
+> |---|---|---|
+> | robust baseline | median + MAD of past samples only | one spike cannot move it |
+> | self-healing | samples that were part of a **sustained** anomaly are left out of the baseline | a long fault never becomes "normal" |
+> | one-sided, log scale | latency/errors only count going up, traffic only going down; ratios not differences | a speed-up is not a fault; big services do not dominate |
+> | noise normalisation | a series that is jumpy when healthy is shrunk so its healthy extreme sits at z = 3 | without it: −9 points of accuracy, 8× the false alarms |
+> | **silence** | a usually-busy service with no CPU and no network for 3 samples | frozen services found 100% instead of 1% |
+> | hard evidence | container paused / exited / restarting / restarted / **vanished** | a fact, not a degree |
+> | persistence | two consecutive samples must agree; missing = unknown | single noisy samples do not alarm |
+>
+> Signals: CPU, memory, network rx/tx **rates**, and when a request-level source exists, p95 latency, error rate and
+> request rate. Each anomaly is tagged **own** (about the service itself), **symptom** (can be inherited from a broken
+> dependency) or **hard**.
+>
+> **Ranking** (`RCAEngine.ts`): `score = max(own, symptoms − γ·evidence of the services it calls) + 100 if hard`.
+> A broken dependency explains its callers; a silent service is not blamed when something it calls broke loudly; a
+> service with no telemetry whose callers fail unexplained is inferred (blind spot); if most services go silent at
+> once, it is reported as a **monitoring outage** and nobody is blamed. Incidents now carry **`atRisk`**: healthy
+> callers of a broken service, ranked by noisy-OR risk (a watch list, not a calibrated probability).
+> Honest note from the research: explain-away was not better than "most abnormal" on the bench; the scoring is what
+> matters. `explainAwayGamma = 0` gives plain "most abnormal".
+>
+> **Remote targets, fixed:** container state from `docker inspect` now reaches the graph (it was hard-coded to
+> `running`, so stopped and paused containers on EC2 were invisible); a discovered container missing from `docker stats`
+> while the others still report is marked **exited (vanished)**. **`MAPPER_AUTO_RESTART` is now opt-in** (`=on`):
+> on by default it silently undid injected faults on reconnect. Remediation hints name the real container and the
+> right command (`docker unpause` for a paused one).
+>
+> **Measured on the mapper's own stored history** (50 real series, 323 series-hours from train-ticket, vertikal and
+> bench1, no labels): alarm episodes fell from **0.30 to 0.034 per series-hour** (about 9× fewer; the threshold change
+> alone accounts for ~13%). Faults injected into the same real series: memory leak caught 14/14 (old 7/14), CPU busy
+> loop 5/14 (old 4/14), frozen service 2/2 (old 0/2). Small samples; the stored series are unlabelled, so some of the
+> removed alarms may have been real.
+>
+> Tests: `tests/rca.test.ts` + `tests/rca-research.test.ts` (16 new tests).
+
+> **Earlier correction (2026-10-08, commit e66d261), superseded by the box above.**
+
 >
 > | Old rule | Problem (found by tests / live faults) | Now |
 > |---|---|---|
@@ -12,7 +54,7 @@
 > | detector: mean/std over a 15 min window that includes the anomaly, one sample fires, missing reading = 0 | the fault inflated its own baseline; a single noisy sample raised an incident; gaps looked like drops | median/MAD baseline of history **before** the judged samples, **two** consecutive samples must agree, missing = unknown |
 > | `docker pause` -> status `unknown` | frozen containers were invisible | `paused` = critical, `container-paused` anomaly |
 >
-> Tests: `tests/rca.test.ts` (9 tests; 7 fail on the old code). Known limits not fixed: in **remote** mode the collector sees only `docker stats`, so stopped/paused containers are not visible remotely; `MAPPER_AUTO_RESTART` restarts crashed containers by default (set `off` during fault experiments).
+> Tests: `tests/rca.test.ts` (9 tests; 7 fail on the old code).
 
 
 **Files:** `server/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`

@@ -88,7 +88,7 @@ an absolute path from another computer. If the exact path is not found, the mapp
 key that is readable by others is fine for discovery; for the in-app terminal the mapper hands `ssh` a private copy
 instead of changing your file.
 
-**Overrides:** `MAPPER_PYTHON=/path/to/python` (for example a virtualenv), `DOCKER_HOST=...` (a non-default Docker).
+**Overrides:** `MAPPER_PYTHON=/path/to/python` (for example a virtualenv), `DOCKER_HOST=...` (a non-default Docker), `MAPPER_AUTO_RESTART=on` (restart crashed containers on reconnect; off by default so injected faults are not silently repaired).
 
 ### npm Scripts
 
@@ -153,17 +153,21 @@ State persists to `data/graph_db.json` (debounced 2-second write). Nodes not upd
 
 ## Root Cause Analysis
 
-When services fail, the RCA engine scores each failing node on:
+The RCA is the rca-lab research method, ported and tested (details and measurements: [wiki/08-rca-engine.md](wiki/08-rca-engine.md)).
 
-| Signal | Weight | Why |
-|---|---|---|
-| Temporal precedence (earliest anomaly) | +0.30 | Failure propagates downstream; the first anomaly is most likely the origin |
-| Container exited / critical status | +0.35 | Process exits are definitive failure signals |
-| Degraded resource utilization | +0.15 | High CPU/memory is a secondary indicator |
-| Observed runtime dependency | +0.20 | TCP traffic confirms the causal path exists |
-| Downstream failure correlation | +0.15 | More failing downstream services = higher blast radius = stronger root cause signal |
+1. **Detect.** Every service's CPU, memory, network rates (and latency, error rate and traffic when a request-level
+   source exists) are compared with that service's own last 15 minutes. The comparison uses a robust baseline that
+   drops past incidents, counts only the bad direction, uses a log scale and normalises for noise. Two samples in a
+   row must agree. A busy service that suddenly does **nothing** is flagged as **silent** (frozen). A paused, stopped,
+   restarting or vanished container is **hard evidence**.
+2. **Attribute.** `score = max(own evidence, symptoms not explained by a broken dependency) + hard evidence`. A broken
+   service explains its callers' errors, so victims fall down the list. If most services go silent at once, a
+   **monitoring outage** is reported instead of blaming anyone.
+3. **Cascade.** Healthy services calling a broken one are listed as **at risk next** (noisy-OR).
 
-Score ≥ 0.75 → `HIGH` confidence. RCA runs automatically every 5 seconds when failures are detected.
+Measured on the mapper's own stored history (323 series-hours from real targets): about **9× fewer alarms** than the
+previous detector, while catching as many or more of the faults injected into the same data. Every rule and threshold
+is visible and editable in the UI (Incident rules), and `data/incident_thresholds.json` overrides the defaults.
 
 ---
 

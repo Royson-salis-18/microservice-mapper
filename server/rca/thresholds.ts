@@ -48,13 +48,23 @@ export interface IncidentThresholds {
   flatlineCriticalPercent: number;
   /** Critical services needed before an incident is CRITICAL rather than HIGH. */
   criticalServicesForCritical: number;
+  /** Consecutive samples with no activity at all before a usually-active service counts as silent (frozen). */
+  silenceSamples: number;
+  /** If at least this share of a target's services go silent / vanish together, it is a monitoring outage, not N faults. */
+  monitoringGapShare: number;
+  /** How much a broken dependency's evidence explains its callers' symptoms (0 = plain "most abnormal"). */
+  explainAwayGamma: number;
+  /** Prior probability that a failure crosses one call edge, for cascade risk. */
+  cascadeEdgeProbability: number;
 }
 
 export const DEFAULT_THRESHOLDS: IncidentThresholds = {
   minHistorySamples: 12,
-  zScoreAnomaly: 2.5,
-  zScoreHigh: 3.0,
-  zScoreCritical: 4.0,
+  // Scores are noise-normalised (a healthy series' extreme sits at 3), so the alarm line is above that. The research
+  // bench calibrated 3.25 at 15 s ticks for 2 false alarms/h; polling here is faster, so the default is a little higher.
+  zScoreAnomaly: 3.5,
+  zScoreHigh: 5.0,
+  zScoreCritical: 8.0,
   minDeltaPercent: 5,
   absoluteHighPercent: 70,
   absoluteCriticalPercent: 85,
@@ -62,6 +72,10 @@ export const DEFAULT_THRESHOLDS: IncidentThresholds = {
   flatlineDeltaPercent: 30,
   flatlineCriticalPercent: 80,
   criticalServicesForCritical: 2,
+  silenceSamples: 3,
+  monitoringGapShare: 0.8,
+  explainAwayGamma: 1.0,
+  cascadeEdgeProbability: 0.5,
 };
 
 /** Bounds that keep an edited value from producing nonsense. */
@@ -77,6 +91,10 @@ const LIMITS: Record<keyof IncidentThresholds, [number, number]> = {
   flatlineDeltaPercent: [1, 100],
   flatlineCriticalPercent: [1, 100],
   criticalServicesForCritical: [1, 1000],
+  silenceSamples: [2, 60],
+  monitoringGapShare: [0.3, 1],
+  explainAwayGamma: [0, 2],
+  cascadeEdgeProbability: [0.05, 1],
 };
 
 /**
@@ -149,7 +167,7 @@ export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
   minHistorySamples:
     'How many past samples a service needs before it is judged at all. Below this it is skipped rather than guessed at, so a service that just started does not alert on its first reading.',
   zScoreAnomaly:
-    'How far from its own recent baseline a metric must move to count as anomalous, in standard deviations. Lower fires more often.',
+    'How far from its own recent baseline a metric must move to count as anomalous, in noise-normalised standard deviations (a healthy series\' normal extreme is about 3). Lower fires more often.',
   zScoreHigh: 'Deviation at or above this is HIGH rather than MEDIUM.',
   zScoreCritical: 'Deviation at or above this is CRITICAL.',
   minDeltaPercent:
@@ -164,4 +182,12 @@ export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
   flatlineCriticalPercent: 'On a flat baseline, a value above this is CRITICAL rather than HIGH.',
   criticalServicesForCritical:
     'How many services must be critical at once before the whole incident is CRITICAL rather than HIGH.',
+  silenceSamples:
+    'A service that is normally busy (CPU or network) and shows no activity at all for this many samples in a row is treated as frozen. This is how a hung service is caught: it sends no errors, it just goes quiet.',
+  monitoringGapShare:
+    'If at least this share of a target\'s services go silent or vanish at the same moment, the mapper reports a monitoring outage (collector or SSH problem) instead of blaming services.',
+  explainAwayGamma:
+    'How strongly a broken dependency explains its callers\' errors and slowness. 1 = fully; 0 = ignore the call graph and rank by how abnormal each service is.',
+  cascadeEdgeProbability:
+    'Assumed chance that a failure spreads across one call edge, used for the "at risk next" list. It ranks who to watch; it is not a calibrated probability.',
 };

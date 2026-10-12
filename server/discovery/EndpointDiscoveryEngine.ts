@@ -250,7 +250,10 @@ class TargetAgent {
         containerId: svc.containerId,
         image: svc.image,
         ports: svc.ports,
-        state: 'running'
+        // The real state from docker inspect. This was hard-coded to 'running', which made a stopped or paused
+        // container on a remote target invisible to incident detection and RCA.
+        state: svc.state ?? 'unknown',
+        containerName: svc.metadata?.containerName ?? null,
       }));
 
       if (this.onTopologyDiscovered) {
@@ -306,7 +309,9 @@ class TargetAgent {
    *     crash-looping container is not restarted forever.
    */
   private async restartCrashedContainers(conn: any): Promise<void> {
-    if (process.env.MAPPER_AUTO_RESTART === 'off') return;
+    // Opt-in (MAPPER_AUTO_RESTART=on). It used to be on by default, which silently undid injected faults (a stopped
+    // container from a chaos experiment) on the next reconnect, i.e. it repaired the failure the RCA is meant to see.
+    if (process.env.MAPPER_AUTO_RESTART !== 'on') return;
 
     const res = await conn.execute(REMOTE_COMMANDS.dockerPsAll()).catch((e: any) => ({
       exitCode: null, error: e?.message, stdout: '',
@@ -584,9 +589,15 @@ class TargetAgent {
     requestMetrics: Map<string, ServiceRequestMetrics> = new Map(),
   ): any {
     const observedAt = new Date().toISOString();
-    const nodes = samples.map(s => {
+    const discoveredById = new Map(this.discoveredServices.map((d: any) => [d.serviceId, d]));
+    const nodes: any[] = samples.map(s => {
+      // Container state comes from docker inspect on every poll. 'paused' is a frozen process: docker stats still
+      // lists it at 0% CPU, it answers nothing, and before this it was reported as healthy.
+      const state = String(s.containerState ?? 'running');
       let status = 'healthy';
-      if ((s.cpuPercent || 0) > 80 || (s.memoryPercent || 0) > 80) status = 'degraded';
+      if (state === 'paused' || state === 'exited' || state === 'dead') status = 'critical';
+      else if (state === 'restarting') status = 'degraded';
+      else if ((s.cpuPercent || 0) > 80 || (s.memoryPercent || 0) > 80) status = 'degraded';
       
       // Need to derive a clean name for GraphStore from serviceId
       const cleanName = s.serviceId.includes(':') ? s.serviceId.split(':')[1] : s.serviceId;
@@ -607,15 +618,29 @@ class TargetAgent {
           }
         : undefined;
 
+      const disc: any = discoveredById.get(s.serviceId);
       return {
         id: s.serviceId,
         name: cleanName,
         project: this.targetId,
         status,
-        metadata: { state: 'running' },
+        metadata: { state, vanished: false, containerName: disc?.metadata?.containerName ?? undefined },
         ...(requestLevel ? { requestMetrics: requestLevel } : {}),
       };
     });
+
+    // A STOPPED container is not listed by `docker stats` at all, so it used to simply stop updating and keep its last
+    // status. If a discovered service is missing while the others still report, it is down (research: container_up = 0
+    // "vanished while the others still report"). Nothing is inferred from an empty sweep: that is a collector problem.
+    if (samples.length > 0) {
+      const seen = new Set(samples.map(s => s.serviceId));
+      for (const d of this.discoveredServices) {
+        if (seen.has(d.serviceId) || String(d.name ?? '').includes('mapper-collector')) continue;
+        const cleanName = d.serviceId.includes(':') ? d.serviceId.split(':')[1] : d.serviceId;
+        nodes.push({ id: d.serviceId, name: cleanName, project: this.targetId, status: 'critical',
+          metadata: { state: 'exited', vanished: true, containerName: d.metadata?.containerName ?? undefined } });
+      }
+    }
 
     const metrics = samples.map(s => ({
       nodeId: s.serviceId,
@@ -625,7 +650,11 @@ class TargetAgent {
         memory: s.memoryBytes || 0,
         memoryPercent: s.memoryPercent || 0,
         networkRx: s.networkRxBytes || 0,
-        networkTx: s.networkTxBytes || 0
+        networkTx: s.networkTxBytes || 0,
+        networkRxRate: s.networkRxBytesPerSecond ?? null,
+        networkTxRate: s.networkTxBytesPerSecond ?? null,
+        restartDelta: s.restartDelta ?? null,
+        pids: s.pids ?? null,
       }
     }));
 

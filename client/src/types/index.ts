@@ -175,6 +175,17 @@ export interface CandidateCause {
   scoreBreakdown: ScoreContribution[];
   earliestAnomalyTimestamp?: string;
   primaryAnomalyMetric?: string;
+  /** Attribution parts on the noise-normalised z scale. */
+  own?: number;
+  symptoms?: number;
+  explained?: number;
+}
+
+export interface AtRiskService {
+  serviceId: string;
+  serviceName: string;
+  risk: number;
+  via: string[];
 }
 
 export interface EvidenceItem {
@@ -223,6 +234,8 @@ export interface Incident {
   evidence: EvidenceItem[];
   explanation: RCAExplanation;
   remediationGuide: string[];
+  atRisk?: AtRiskService[];
+  monitoringGap?: boolean;
 }
 
 export interface DiscoveredService {

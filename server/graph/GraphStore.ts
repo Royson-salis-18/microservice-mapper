@@ -343,7 +343,8 @@ export class GraphStore {
       const nodeId = svc.serviceId;
       const existing = nodesMap.get(nodeId);
       
-      const status = svc.state === 'running' ? 'healthy' : 'unknown';
+      const st = String(svc.state ?? 'unknown');
+      const status = st === 'running' ? 'healthy' : ['exited', 'dead', 'paused'].includes(st) ? 'critical' : st === 'restarting' ? 'degraded' : 'unknown';
       const nodeType = ['gateway', 'service', 'database', 'queue', 'frontend', 'infrastructure', 'external'].includes(svc.type) ? svc.type : 'service';
       
       const nowIso = new Date().toISOString();
@@ -353,6 +354,9 @@ export class GraphStore {
         existing.lastSeen = nowIso;
         existing.metadata = {
           ...existing.metadata,
+          state: st,
+          vanished: false,
+          ...(svc.containerName ? { containerName: svc.containerName } : {}),
           containerId: svc.containerId,
           image: svc.image,
           ports: svc.ports.map((p: any) => p.containerPort.toString())
@@ -366,6 +370,8 @@ export class GraphStore {
           status: status as any,
           lastSeen: nowIso,
           metadata: {
+            state: st,
+            ...(svc.containerName ? { containerName: svc.containerName } : {}),
             containerId: svc.containerId,
             image: svc.image,
             ports: svc.ports.map((p: any) => p.containerPort.toString())
