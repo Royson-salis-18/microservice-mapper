@@ -5,7 +5,6 @@ import type { Node, Edge } from '@xyflow/react';
 import * as THREE from 'three';
 import { Node3D, TYPE_STYLE, type NodeShape } from './Node3D';
 import { Edge3D } from './Edge3D';
-import { typeColor } from '../shared/palette';
 import { LAYOUTS, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
 
 interface Scene3DProps {
@@ -482,7 +481,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Service types</div>
             <div className="mm-legend">
               {presentTypes.map(([type, style]) => (
-                <div key={type}><ShapeGlyph shape={style.shape} color={typeColor(type)} />{style.label}</div>
+                <div key={type}><ShapeGlyph shape={style.shape} color="#b9bdc4" />{style.label}</div>
               ))}
             </div>
           </>
@@ -494,7 +493,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <div><i className="mm-dot" style={{ background: '#6b7079' }} />No data</div>
           <div><i className="mm-dot" style={{ background: 'var(--color-degraded)' }} />Degraded</div>
           <div><i className="mm-dot" style={{ background: 'var(--color-critical)' }} />Critical</div>
-          <div><svg width="16" height="6"><path d="M1 3h14" stroke="#9aa3b0" strokeWidth="2.2" strokeLinecap="round" /></svg>Busy link</div>
+          <div><svg width="16" height="6"><path d="M1 3h14" stroke="#3ecf8e" strokeWidth="2.2" strokeLinecap="round" /></svg>Live link</div>
           <div><svg width="16" height="6"><path d="M1 3h14" stroke="#4a4f57" strokeWidth="1.2" strokeLinecap="round" /></svg>Declared</div>
         </div>
       </div>

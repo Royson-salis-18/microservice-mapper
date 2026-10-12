@@ -24,9 +24,9 @@ export interface EdgeAppearance {
  * failed/degraded status still wins over activity: a broken link matters
  * more than a busy one.
  *
- * Warm colours mean trouble and nothing else. Traffic volume is shown by
- * brightness and thickness on a cool neutral scale, so a merely busy link
- * never looks like a failing one. (It used to run yellow to orange to red with
+ * Colour is the link's state: green carrying traffic normally (brighter and
+ * thicker the busier it is), amber degraded, red failing, grey declared but
+ * never seen. Volume alone never turns a link amber or red. (It used to run yellow to orange to red with
  * load, which made a healthy busy gateway look like an incident.)
  *
  * Thresholds are socket samples per minute, absolute rather than relative to
@@ -51,12 +51,12 @@ export function edgeAppearance(edge: DependencyEdge | undefined): EdgeAppearance
 
   const perMin = edge.activity?.samplesPerMin;
   if (perMin === undefined) {
-    return { heat: 'calm', color: '#7d8590', glow: '#a9b0ba', intensity: 0.7, label: 'observed' };
+    return { heat: 'calm', color: '#2f9e6f', glow: '#3ecf8e', intensity: 0.7, label: 'observed' };
   }
 
   // Calibrated against the live spread across 47 measured links (median 112, p75 256, p90 1774, max 5571).
-  if (perMin > 1200) return { heat: 'saturated', color: '#c9dbff', glow: '#e6eeff', intensity: 0.95, label: `${perMin}/min, saturated` };
-  if (perMin > 250) return { heat: 'heavy', color: '#8ab4ff', glow: '#b8d0ff', intensity: 0.88, label: `${perMin}/min, heavy` };
-  if (perMin > 60) return { heat: 'busy', color: '#9aa3b0', glow: '#c3c9d2', intensity: 0.8, label: `${perMin}/min, busy` };
-  return { heat: 'calm', color: '#7d8590', glow: '#a9b0ba', intensity: 0.7, label: `${perMin}/min` };
+  if (perMin > 1200) return { heat: 'saturated', color: '#7fe8b8', glow: '#c2f5dc', intensity: 0.95, label: `${perMin}/min, saturated` };
+  if (perMin > 250) return { heat: 'heavy', color: '#4fdc9c', glow: '#9cefc6', intensity: 0.88, label: `${perMin}/min, heavy` };
+  if (perMin > 60) return { heat: 'busy', color: '#3ecf8e', glow: '#7fe8b8', intensity: 0.8, label: `${perMin}/min, busy` };
+  return { heat: 'calm', color: '#2f9e6f', glow: '#3ecf8e', intensity: 0.7, label: `${perMin}/min` };
 }

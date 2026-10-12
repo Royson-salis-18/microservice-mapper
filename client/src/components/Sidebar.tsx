@@ -24,38 +24,38 @@ interface SidebarProps {
   onAddProject: () => void;
 }
 
-interface NavItem { id: string; icon: LucideIcon; label: string; hue: string }
+interface NavItem { id: string; icon: LucideIcon; label: string }
 
 // Tab ids are what App.tsx switches on, so they stay as they were; only the labels are for people.
 const GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: 'Map',
     items: [
-      { id: '3D Vision', icon: Box, label: 'Spatial view', hue: '#6f8dff' },
-      { id: 'Architecture', icon: Network, label: 'Architecture', hue: '#3fb8f0' },
-      { id: 'Dependencies', icon: GitMerge, label: 'Dependencies', hue: '#38c793' },
+      { id: '3D Vision', icon: Box, label: 'Spatial view' },
+      { id: 'Architecture', icon: Network, label: 'Architecture' },
+      { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
     ],
   },
   {
     title: 'Observe',
     items: [
-      { id: 'Telemetry', icon: Activity, label: 'Telemetry', hue: '#a6d84a' },
-      { id: 'TRACES', icon: Waypoints, label: 'Traces', hue: '#f27bbd' },
-      { id: 'Analytics', icon: BarChart3, label: 'Analytics', hue: '#b98cff' },
+      { id: 'Telemetry', icon: Activity, label: 'Telemetry' },
+      { id: 'TRACES', icon: Waypoints, label: 'Traces' },
+      { id: 'Analytics', icon: BarChart3, label: 'Analytics' },
     ],
   },
   {
     title: 'Diagnose',
     items: [
-      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents', hue: '#ef5f67' },
+      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
       // Model outputs sit next to the pipeline that produces them, apart from Incidents, which involve no model.
-      { id: 'FINDINGS', icon: Microscope, label: 'Findings', hue: '#e8a33d' },
-      { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline', hue: '#b98cff' },
+      { id: 'FINDINGS', icon: Microscope, label: 'Findings' },
+      { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline' },
     ],
   },
   {
     title: 'Test',
-    items: [{ id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments', hue: '#3fb8f0' }],
+    items: [{ id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' }],
   },
 ];
 
@@ -72,8 +72,6 @@ function BrandMark() {
     </svg>
   );
 }
-
-const rgbOf = (hex: string) => { const n = parseInt(hex.slice(1), 16); return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`; };
 
 const COLLAPSE_KEY = 'mm.sidebar.collapsed';
 
@@ -108,7 +106,6 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
               <div
                 key={item.id}
                 className={`mm-nav${isActive(item.id) ? ' active' : ''}`}
-                style={{ '--nav-hue': item.hue, '--nav-rgb': rgbOf(item.hue) } as React.CSSProperties}
                 onClick={() => onTabChange(item.id)}
                 title={collapsed ? item.label : undefined}
                 role="button"

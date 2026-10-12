@@ -3,7 +3,7 @@ import { Handle, Position } from '@xyflow/react';
 import { Router, Database, Layers, Rows3, Monitor, Box, Cpu, Globe } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ServiceNode } from '../types';
-import { typeColor, tint } from './shared/palette';
+import { tint, STATE_HEX } from './shared/palette';
 
 interface ServiceNodeProps {
   data: ServiceNode;
@@ -21,7 +21,7 @@ const typeIcons: Record<string, LucideIcon> = {
   external: Globe,
 };
 
-const meterColor = (v: number) => (v > 95 ? 'var(--color-critical)' : v > 80 ? 'var(--color-degraded)' : '#9aa3b0');
+const meterColor = (v: number) => (v > 95 ? 'var(--color-critical)' : v > 80 ? 'var(--color-degraded)' : 'var(--color-healthy)');
 
 function Meter({ label, value }: { label: string; value: number }) {
   return (
@@ -57,6 +57,7 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
   const isCritical = data.status === 'critical';
   const isHealthy = data.status === 'healthy';
   const TypeIcon = typeIcons[data.type as string] || Box;
+  const stateHex = STATE_HEX[data.status as string] ?? STATE_HEX.unknown;
 
   const viewMode = ((data as any).viewMode as string) || 'dependency';
 
@@ -89,9 +90,9 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
     <div
       style={{
         width: '180px',
-        background: `linear-gradient(180deg, ${tint(typeColor(data.type as string), hovered ? 0.1 : 0.06)}, transparent 60%), ${hovered && !selected ? 'var(--color-bg-panel-hover)' : 'var(--color-bg-panel)'}`,
+        background: `linear-gradient(180deg, ${tint(stateHex, hovered ? 0.1 : 0.06)}, transparent 60%), ${hovered && !selected ? 'var(--color-bg-panel-hover)' : 'var(--color-bg-panel)'}`,
         border: `1px solid ${borderColor}`,
-        borderTop: `2px solid ${selected ? borderColor : tint(typeColor(data.type as string), 0.7)}`,
+        borderTop: `2px solid ${selected ? borderColor : tint(stateHex, 0.75)}`,
         borderRadius: '10px',
         boxShadow: shadows.join(', '),
         padding: '12px',
@@ -130,8 +131,8 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <span style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, display: 'grid', placeItems: 'center',
-              background: tint(typeColor(data.type as string), 0.14), border: `1px solid ${tint(typeColor(data.type as string), 0.28)}` }}>
-              <TypeIcon size={13} strokeWidth={1.9} style={{ color: typeColor(data.type as string) }} />
+              background: tint(stateHex, 0.14), border: `1px solid ${tint(stateHex, 0.3)}` }}>
+              <TypeIcon size={13} strokeWidth={1.9} style={{ color: stateHex }} />
             </span>
             <span style={{
               fontWeight: 600,
