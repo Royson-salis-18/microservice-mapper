@@ -1,8 +1,19 @@
-import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incident.js';
+import type { Incident, IncidentStatus, IncidentSeverity, RCAExplanation } from '../models/Incident.js';
 import type { GraphStore } from '../graph/GraphStore.js';
 import { AnomalyDetector } from './AnomalyDetector.js';
 import { RCAEngine } from './RCAEngine.js';
 import { loadThresholds } from './thresholds.js';
+
+/**
+ * What to do about an incident: the investigation steps the explanation
+ * derived from the evidence. This used to be a fixed
+ * `docker start docker-compose-<name>-1` for every incident whatever its
+ * cause, so a running service with a memory spike was told to start a
+ * container that was already running, under a name that need not exist.
+ */
+function remediationFor(explanation: RCAExplanation): string[] {
+  return [...explanation.recommendedInvestigation];
+}
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
@@ -73,7 +84,7 @@ export class IncidentManager {
       existing.candidateCauses = rcaResult.candidateCauses;
       existing.evidence = rcaResult.evidence;
       existing.explanation = rcaResult.explanation;
-      existing.remediationGuide = primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : [];
+      existing.remediationGuide = remediationFor(rcaResult.explanation);
       return existing;
     }
 
@@ -98,7 +109,7 @@ export class IncidentManager {
       candidateCauses: rcaResult.candidateCauses,
       evidence: rcaResult.evidence,
       explanation: rcaResult.explanation,
-      remediationGuide: primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : []
+      remediationGuide: remediationFor(rcaResult.explanation)
     };
 
     this.activeIncidents.set(targetId, newIncident);

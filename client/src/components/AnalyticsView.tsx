@@ -1,8 +1,23 @@
 import { shortName } from './shared/serviceVisuals';
 import { useState, useEffect, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
-import type { ServiceNode, DependencyEdge } from '../types';
+import type { ServiceNode, DependencyEdge, Incident, IncidentSeverity } from '../types';
 import { pageRootStyle } from './ProjectSections';
+
+const SEVERITY_RANK: Record<IncidentSeverity, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+
+/**
+ * The incident this page leads with: the most severe one still open.
+ *
+ * It used to take whichever came first in the list, including one already
+ * RESOLVED (the server keeps those so they can be looked up), and present it
+ * as a confirmed, critical root cause whatever its severity or confidence.
+ */
+function leadIncident(incidents: Incident[]): Incident | null {
+  const open = incidents.filter(i => i.status !== 'RESOLVED');
+  if (open.length === 0) return null;
+  return open.reduce((a, b) => (SEVERITY_RANK[b.severity] > SEVERITY_RANK[a.severity] ? b : a));
+}
 
 interface AnalyticsViewProps {
   nodes: Node[];
@@ -13,7 +28,7 @@ interface AnalyticsViewProps {
 }
 
 export function AnalyticsView({ nodes, edges, selectedProject, embedded = false }: AnalyticsViewProps) {
-  const [rcaData, setRcaData] = useState<any>(null);
+  const [incident, setIncident] = useState<Incident | null>(null);
 
   const serviceNodes = useMemo(() => {
     return nodes
@@ -32,30 +47,14 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
     const url = selectedProject !== 'ALL' ? `/api/incidents?targetId=${selectedProject.toLowerCase()}` : '/api/incidents';
     fetch(url)
       .then(res => res.json())
-      .then(incidents => {
-        if (incidents && incidents.length > 0) {
-          const inc = incidents[0];
-          setRcaData({
-            incidentDetected: true,
-            timestamp: inc.startedAt,
-            primaryRootCauses: inc.candidateCauses?.slice(0, 1).map((c: any) => ({
-              nodeId: c.serviceId,
-              name: c.serviceName,
-              status: 'critical',
-              failureReason: inc.explanation?.whatHappened || 'Anomaly detected',
-              evidence: inc.evidence ? inc.evidence.map((ev: any) => ev.description) : []
-            })) || [],
-            blastRadius: {
-              affectedServices: inc.affectedServices ? inc.affectedServices.map((id: string) => shortName(id)) : []
-            },
-            remediationGuide: (inc.remediationGuide && inc.remediationGuide.length > 0) ? inc.remediationGuide.join(' && ') : `docker restart ${inc.rootCauseServiceId}`
-          });
-        } else {
-          setRcaData(null);
-        }
-      })
-      .catch(() => setRcaData(null));
+      .then((incidents: Incident[]) => setIncident(Array.isArray(incidents) ? leadIncident(incidents) : null))
+      .catch(() => setIncident(null));
   }, [nodes, edges, selectedProject]);
+
+  const topCause = incident?.candidateCauses?.[0] ?? null;
+  // HIGH and CRITICAL mean services are down; LOW and MEDIUM are anomalies
+  // and degradation, and are drawn as such rather than as an outage.
+  const alarm = incident && SEVERITY_RANK[incident.severity] >= SEVERITY_RANK.HIGH ? 'var(--color-critical)' : 'var(--color-degraded)';
 
   // Compute Analytics Metrics
   const analytics = useMemo(() => {
@@ -99,62 +98,62 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
 
   return (
     <div style={pageRootStyle(embedded)}>
-      {/* Root Cause Analysis (RCA) Incident Alert Banner */}
-      {rcaData?.incidentDetected && (
+      {/* The most severe open incident: what root-cause analysis ranks
+          first, and how sure it is. Coloured by the incident's own severity. */}
+      {incident && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(255,23,68,0.15) 0%, rgba(20,10,20,0.9) 100%)',
-          border: '1px solid var(--color-critical)',
-          boxShadow: '0 0 20px rgba(255,23,68,0.2)',
+          background: `linear-gradient(135deg, color-mix(in srgb, ${alarm} 15%, transparent) 0%, rgba(20,10,20,0.9) 100%)`,
+          border: `1px solid ${alarm}`,
           borderRadius: '12px',
           padding: '20px',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}>🚨</span>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--color-critical)' }}>
-                  AUTOMATED ROOT CAUSE ANALYSIS (RCA)
-                </h3>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                  Incident Timestamp: {rcaData.timestamp ? new Date(rcaData.timestamp).toLocaleTimeString() : 'NOW'}
-                </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: alarm }}>
+                Root cause analysis: {incident.targetId}
+              </h3>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                Started {new Date(incident.startedAt).toLocaleTimeString()} · {incident.status.toLowerCase()}
               </div>
             </div>
-            <span style={{ background: 'var(--color-critical)', color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
-              {rcaData.primaryRootCauses?.length || 0} PRIMARY ROOT CAUSE(S) IDENTIFIED
+            <span style={{ background: alarm, color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+              {incident.severity} severity · {incident.confidence} confidence
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* Primary Root Cause Card */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(255,23,68,0.3)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--color-critical)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Primary Root Cause</div>
-              {rcaData.primaryRootCauses?.map((rc: any) => (
-                <div key={rc.nodeId} style={{ marginTop: '8px' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{rc.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                    Reason: <span style={{ color: 'var(--color-critical)' }}>{rc.failureReason}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: `1px solid color-mix(in srgb, ${alarm} 30%, transparent)` }}>
+              <div style={{ fontSize: '11px', color: alarm, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Most likely cause</div>
+              {topCause ? (
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>
+                    {topCause.serviceName}{' '}
+                    <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-muted)' }}>score {Math.round(topCause.score * 100)}%</span>
                   </div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>{incident.explanation?.why}</div>
                   <ul style={{ margin: '8px 0 0 0', paddingLeft: '18px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                    {rc.evidence?.map((ev: string, idx: number) => <li key={idx}>{ev}</li>)}
+                    {incident.explanation?.evidenceSummary?.map((ev, idx) => <li key={idx}>{ev}</li>)}
                   </ul>
                 </div>
-              ))}
+              ) : (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  {incident.explanation?.why ?? 'No service could be ranked from the evidence.'}
+                </div>
+              )}
             </div>
 
-            {/* Blast Radius & Remediation Guide */}
             <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(107,128,255,0.2)' }}>
-              <div style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Blast Radius & Remediation</div>
+              <div style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Affected and next steps</div>
               <div style={{ marginTop: '8px', fontSize: '13px' }}>
-                Impacted Services: <span style={{ fontWeight: 600, color: '#fff' }}>{rcaData.blastRadius?.affectedServices?.join(', ') || 'None'}</span>
+                Affected services: <span style={{ fontWeight: 600, color: '#fff' }}>{incident.affectedServices.map(shortName).join(', ') || 'none'}</span>
               </div>
-              <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--color-text-muted)' }}>Recommended Recovery Action:</div>
-              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--color-healthy)', marginTop: '4px', wordBreak: 'break-all' }}>
-                {rcaData.remediationGuide || 'docker start container'}
-              </div>
+              <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--color-text-muted)' }}>Recommended investigation:</div>
+              <ul style={{ margin: '4px 0 0 0', paddingLeft: '18px', fontSize: '12px', color: 'var(--color-text-main)' }}>
+                {(incident.explanation?.recommendedInvestigation ?? []).map((step, idx) => <li key={idx}>{step}</li>)}
+              </ul>
             </div>
           </div>
         </div>
@@ -167,7 +166,7 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
           <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: analytics.healthScore > 80 ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
             {analytics.healthScore} / 100
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Topological Resilience Score</div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Share of services currently healthy</div>
         </div>
 
         <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
