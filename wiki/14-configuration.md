@@ -6,18 +6,15 @@
 
 ```typescript
 export const config = {
-  PORT:                    3001,
-  POLLING_INTERVAL_MS:     5000,
-  METRIC_HISTORY_SIZE:     720,
-  INGEST_TOKEN:            'mapper-secret-token',
-  SOCK_SHOP_BASE_URL:      '',
-  SOCK_SHOP_COMPOSE_PATH:  './sock-shop-docker-compose.yml',
-  VERTIKAL_BASE_URL:       '',
-  VERTIKAL_COMPOSE_PATH:   '../vertikal/docker-compose.yml',
+  PORT:                 3001,
+  POLLING_INTERVAL_MS:  5000,
+  METRIC_HISTORY_SIZE:  720,
+  INGEST_TOKEN:         'mapper-secret-token',
+  PYTHON:               'python3',   // 'python' on Windows
 };
 ```
 
-Override any value with an environment variable:
+Override any value with an environment variable. The server reads only its environment; it does not load a `.env` file by itself (under systemd, use `EnvironmentFile=`).
 
 | Env Var | Default | Effect |
 |---|---|---|
@@ -25,8 +22,7 @@ Override any value with an environment variable:
 | `POLLING_INTERVAL_MS` | `5000` | RCA evaluation + graph broadcast interval |
 | `METRIC_HISTORY_SIZE` | `720` | Ring buffer depth per node (~1 hour at 5s) |
 | `INGEST_TOKEN` | `mapper-secret-token` | Bearer token for `POST /api/ingest` |
-| `SOCK_SHOP_BASE_URL` | `''` | Sock Shop HTTP endpoint for health pings |
-| `VERTIKAL_BASE_URL` | `''` | Vertikal HTTP endpoint for health pings |
+| `PYTHON` | `python3`, or `python` on Windows | Interpreter for the ML collector, scorer and retraining. On Windows `python3` is at most a Microsoft Store stub |
 
 ---
 
@@ -45,7 +41,7 @@ Set on the EC2 instance before starting the collector:
 
 ---
 
-## Target SSH Config — `data/remote_config.json`
+## Target SSH Config — `server/data/remote_config.json`
 
 Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadTargetsFromConfig()` at startup.
 
@@ -154,22 +150,24 @@ normal. It is reported per model in `models/*.meta.json` and in the
 
 ## Data Files — Auto-Created at Runtime
 
+The server's `data/` paths are relative to its working directory, which `npm run server` sets to `server/`, so they live in `server/data/` (git-ignored).
+
 | File | Created when | Description |
 |---|---|---|
-| `data/graph_db.json` | First time graph state is saved | Full graph snapshot |
-| `data/remote_config.json` | First target registered | SSH configs |
-| `data/traces_<targetId>.json` | First TCP events received for a target | 24-hour TCP event log |
-| `data/experiments.json` | First experiment started | Experiment history |
+| `server/data/graph_db.json` | First time graph state is saved | Full graph snapshot |
+| `server/data/remote_config.json` | First target registered | SSH configs |
+| `server/data/traces_<targetId>.json` | First TCP events received for a target | 24-hour TCP event log |
+| `server/data/experiments_db.json` | First experiment started | Experiment history |
 | `ml/data/metrics_raw.csv` | `ml/collector.py` first run | Raw metrics time series |
 | `ml/data/features.csv` | `ml/preprocess.py` first run | Normalized features |
 | `ml/data/normalization_stats.json` | `ml/preprocess.py` | Per-service normalization params |
 | `ml/data/latest_scores.json` | `ml/score.py` first run | Current anomaly scores |
 | `ml/models/<service>.joblib`, `.lof.joblib`, `.ocsvm.joblib`, `.meta.json` | `ml/train.py` | The four detectors per service (z-score lives in the meta), each with its training score statistics |
-| `data/incident_thresholds.json` | Editing thresholds on the Incidents page | Overrides for the rule-based incident detector |
+| `server/data/incident_thresholds.json` | Editing thresholds on the Incidents page | Overrides for the rule-based incident detector |
 
-**To reset graph state completely:** `rm data/graph_db.json` — targets will be re-discovered from `remote_config.json` on next startup.
+**To reset graph state completely:** `rm server/data/graph_db.json` — targets will be re-discovered from `remote_config.json` on next startup.
 
-**To reset everything:** `rm -rf data/ ml/data/ ml/models/`
+**To reset everything:** `rm -rf server/data/ ml/data/ ml/models/`
 
 ---
 

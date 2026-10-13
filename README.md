@@ -22,10 +22,11 @@ SSH into EC2 → Read Docker socket + /proc/net/tcp → Build live dependency gr
 ## What It Does
 
 - **Topology discovery** — reads your Compose file over SSH; discovers declared `depends_on` relationships
-- **Runtime observation** — watches active TCP connections and parses container logs to confirm which services actually talk to each other
-- **Live metrics** — CPU, memory, network I/O from Docker stats API, refreshed every 5 seconds
-- **Root cause analysis** — when services degrade, an evidence-based scoring algorithm identifies the most likely root cause and traces the propagation path
-- **Anomaly detection** — optional Python ML sidecar runs per-service IsolationForest models and feeds scores back into the graph
+- **Runtime observation** — reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)
+- **Live metrics** — CPU (against the container's own allowance), memory, and exact network counters from `docker stats` and `/proc`, refreshed every 5 seconds
+- **Root cause analysis** — when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path
+- **Cascade risk** — per-service health, criticality and risk; what-if failure simulation and blast radius
+- **Anomaly detection** — optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents
 - **Traffic experiments** — built-in load test runner with experiment tracking
 - **Embedded terminal** — SSH terminal into any target directly from the UI
 
@@ -44,11 +45,10 @@ This is not a distributed tracing tool. There are no OpenTelemetry spans or requ
 | 3D View | Three.js + `@react-three/fiber` |
 | Charts | Recharts |
 | Animations | Framer Motion |
-| Backend | Node.js 18+, Express 5, TypeScript |
+| Backend | Node.js, Express 5, TypeScript (run with `tsx`) |
 | WebSocket | `ws` v8 (raw — no Socket.io) |
-| SSH | `ssh2` v1 |
-| Docker API | `dockerode` v4 |
-| ML Pipeline | Python 3, scikit-learn (IsolationForest) |
+| SSH | `ssh2` v1 — Docker is read over SSH (`docker ps/inspect/stats`), nothing is installed on the target |
+| ML Pipeline | Python 3, scikit-learn: Isolation Forest, LOF, one-class SVM, plus a z-score baseline |
 
 ---
 
@@ -56,10 +56,10 @@ This is not a distributed tracing tool. There are no OpenTelemetry spans or requ
 
 ### Prerequisites
 
-- Node.js ≥ 18, npm ≥ 9
+- Node.js ^20.19 or ≥ 22.12 (what Vite 8 requires), npm ≥ 9
 - Docker ≥ 20.10 on target EC2 instances
-- SSH key (`.pem`) with access to your EC2 instance
-- Python 3.8+ (optional — only for the ML anomaly pipeline)
+- SSH key (`.pem`) with access to your EC2 instance. Keep it outside the repository; `*.pem` is git-ignored as a backstop
+- Python 3.9+ (optional — only for the ML anomaly pipeline). The server runs it as `python3`, or `python` on Windows; set `PYTHON` to override
 
 ### Install & Run
 
@@ -89,7 +89,7 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run build` | Production client build |
 | `npm run install:all` | Install server, client, remote-collector, traffic-gen |
 | `npm run traffic-gen` | Run traffic generator |
-| `npm test` | Run the logic test suite (layouts, cycle handling, edge heat bands) |
+| `npm test` | Run the test suite: graph, root cause, risk and cascades, layouts, SSH/Docker parsing, command sanitising |
 
 ---
 
@@ -100,15 +100,19 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 3. Fill in: Target ID, Display Name, EC2 Public IP, SSH Username, SSH Key Path
 4. Click **Connect**
 
-The server SSH connects immediately, reads the Compose file, discovers containers, and starts telemetry collection. Target configuration is saved to `data/remote_config.json` and persists across restarts.
+The server SSH connects immediately, reads the Compose file, discovers containers, and starts telemetry collection. Target configuration is saved to `server/data/remote_config.json` and persists across restarts.
 
 ### Supported Target Systems
 
-| System | Type | Notes |
-|---|---|---|
-| **Sock Shop** (Weave Works) | E-commerce demo | Traefik gateway, RabbitMQ queue |
-| **Vertikal** | Financial trading sim | NGINX gateway, TimescaleDB |
-| Any Docker Compose app | Custom | Works with any stack — type detection is heuristic-based |
+Any Docker Compose application works; service types are inferred heuristically. `traffic-gen` ships load workflows for these:
+
+| System | `traffic-gen` workflow |
+|---|---|
+| **Sock Shop** (Weaveworks) | `sockshop.js` |
+| **DeathStarBench** social network | `deathstar.js` |
+| **OpenTelemetry demo** | `opentelemetry.js` |
+| **Train-Ticket** | `trainticket.js` |
+| **Vertikal** | `vertikal.js` |
 
 ---
 
@@ -118,15 +122,17 @@ The server SSH connects immediately, reads the Compose file, discovers container
 
 The system combines two sources of truth:
 
-| Source | How collected | Edge type |
-|---|---|---|
-| **Declared** | `depends_on` in `docker-compose.yml` read via SSH `cat` | Grey solid line — configured but not confirmed |
-| **Observed (HTTP)** | Container log parsing — regex on access log lines | Cyan animated line — confirmed by actual HTTP traffic |
-| **Observed (TCP)** | `/proc/net/tcp` polling | Drives edge "heat" (TCP observations/minute) |
+| Source | How collected |
+|---|---|
+| **Declared** | `depends_on` in `docker-compose.yml` and service URLs in application config, read over SSH |
+| **Observed** | Each container's socket tables (`/proc/<pid>/net/tcp`), sampled every poll; direction comes from which end holds the listening port |
+| **Request-level** (opt-in) | Access logs or the target's own Prometheus, where configured ([wiki/25](./wiki/25-telemetry-sources.md)) |
 
-An edge can be declared-only, observed-only, or both. This immediately surfaces:
+An edge can be declared-only, observed-only, or both. Sharing a Docker network is *not* treated as evidence of a dependency. This immediately surfaces:
 - Declared deps with no runtime traffic (dead code / misconfiguration)
 - Runtime traffic not in any Compose file (undocumented dependencies)
+
+What each colour, width and pulse on the graph means is in [wiki/33](./wiki/33-visual-language.md).
 
 ### Node ID Format
 
@@ -134,29 +140,30 @@ All nodes use a canonical format: `${targetId}:${serviceName}` — e.g., `sock-s
 
 ### Persistence
 
-State persists to `data/graph_db.json` (debounced 2-second write). Nodes not updated for 15+ minutes are automatically pruned (ghost prevention). Targets go `STALE` after 2 minutes and `OFFLINE` after 5 minutes without telemetry.
+State persists to `server/data/graph_db.json` (debounced 2-second write). Nodes not updated for 15 minutes are pruned (ghost prevention); a link not seen carrying traffic for 10 minutes is dropped, or kept as declared-only if config still claims it. Targets go `STALE` after 2 minutes and `OFFLINE` after 5 minutes without telemetry.
 
 ---
 
 ## Root Cause Analysis
 
-When services fail, the RCA engine scores each failing node on:
+Every service that is failing or shows a metric anomaly is scored on additive factors (`server/rca/RCAEngine.ts`):
 
-| Signal | Weight | Why |
+| Factor | Points | Why |
 |---|---|---|
-| Temporal precedence (earliest anomaly) | +0.30 | Failure propagates downstream; the first anomaly is most likely the origin |
-| Container exited / critical status | +0.35 | Process exits are definitive failure signals |
-| Degraded resource utilization | +0.15 | High CPU/memory is a secondary indicator |
-| Observed runtime dependency | +0.20 | TCP traffic confirms the causal path exists |
-| Downstream failure correlation | +0.15 | More failing downstream services = higher blast radius = stronger root cause signal |
+| Temporal precedence (earliest anomaly) | +0.30 | Failure propagates; the first anomaly is the likeliest origin. A later anomaly scores +0.10 |
+| Container down or crash-looping | +0.35 | Process exits are definitive failure signals |
+| Degraded | +0.15 | High CPU/memory is a secondary indicator |
+| Observed runtime dependency | +0.20 | Traffic confirms the causal path exists (declared only: +0.05) |
+| Explains the other failures | up to +0.25 | Weighted share of the other symptomatic services that depend on it through material paths |
+| Victim penalty | up to −0.25 | Its own dependencies are failing, so it is more likely downstream of the problem |
 
-Score ≥ 0.75 → `HIGH` confidence. RCA runs automatically every 5 seconds when failures are detected.
+Confidence: `HIGH` at ≥ 0.75 with observed traffic, `MEDIUM` at ≥ 0.50, `LOW` at ≥ 0.25. When the top candidate explains none of the others, the problems are reported as independent with `LOW` confidence rather than as one cascade. The recommended next steps follow from the evidence. RCA runs every poll (5 seconds). Details and a worked example: [wiki/08](./wiki/08-rca-engine.md).
 
 ---
 
 ## ML Anomaly Detection (Optional)
 
-A separate Python pipeline trains per-service IsolationForest models on historical metrics:
+A separate Python pipeline trains four detectors per service on its own history (Isolation Forest, LOF, one-class SVM, and a z-score baseline). A sample counts as anomalous when at least half of the usable detectors agree. The collector, scorer and retraining can all be driven from the **ML Pipeline** page, or by hand (`python` instead of `python3` on Windows):
 
 ```bash
 cd ml
@@ -171,21 +178,27 @@ python3 train.py
 
 # Start live scoring
 python3 score.py &
+
+# Check the detector combination
+python3 test_ensemble.py
 ```
 
-The server reads `ml/data/latest_scores.json` on each graph request using a mtime cache. No Python API calls at runtime — just a file read.
+The server reads `ml/data/latest_scores.json` on each graph request using a mtime cache. No Python API calls at runtime — just a file read. Results appear under **Findings**, separate from rule-based incidents ([wiki/17](./wiki/17-findings-vs-incidents.md)).
 
 ---
 
 ## Deployment
 
-### Environment (server/.env)
+### Environment
+
+The server reads its settings from environment variables (`server/config.ts`). It does **not** load a `.env` file by itself: export the variables in the shell, or let systemd read the file (below).
 
 ```env
 PORT=3001
 INGEST_TOKEN=your-strong-secret-here
 POLLING_INTERVAL_MS=5000
-SOCK_SHOP_BASE_URL=http://<your-ec2-ip>:80
+METRIC_HISTORY_SIZE=720
+PYTHON=python3
 ```
 
 ### systemd (production)
@@ -199,8 +212,7 @@ After=network-online.target
 WorkingDirectory=/home/ubuntu/microservice-mapper/server
 ExecStart=/usr/bin/npm run start
 Restart=always
-Environment=PORT=3001
-Environment=INGEST_TOKEN=your-secret
+EnvironmentFile=/home/ubuntu/microservice-mapper/server/.env
 
 [Install]
 WantedBy=multi-user.target
@@ -233,60 +245,47 @@ server {
 
 ```
 microservice-mapper/
-├── server/          # Node.js/Express backend (:3001)
-│   ├── graph/       # GraphStore — central state (most important file)
-│   ├── discovery/   # SSH-based topology discovery
-│   ├── rca/         # Root cause analysis engine
-│   ├── traces/      # TCP connection event storage
-│   ├── telemetry/   # MetricStore ring buffer
-│   ├── traffic/     # Load test execution + experiments
-│   ├── api/         # REST routes + WebSocket manager
-│   └── models/      # TypeScript interfaces
-├── client/          # React 19 + Vite frontend (:5173)
+├── server/              # Node.js/Express backend (:3001)
+│   ├── graph/           # GraphStore (central state), edge weights, risk, cascades, self-check
+│   ├── discovery/       # Discovery loop per target
+│   ├── telemetry-platform/src/  # SSH connection, Docker parsing, metric collection
+│   ├── telemetry-sources/       # Optional higher-tier sources (Prometheus)
+│   ├── rca/             # Anomaly detection, root cause, incidents
+│   ├── traces/          # TCP connection event storage
+│   ├── telemetry/       # MetricStore ring buffer
+│   ├── traffic/         # Load test execution + experiments
+│   ├── api/             # REST routes + WebSocket manager
+│   ├── models/          # TypeScript interfaces
+│   └── data/            # Runtime state (auto-created, git-ignored)
+├── client/              # React 19 + Vite frontend (:5173)
 │   └── src/
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
 │       ├── hooks/       # useGraphData — WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── remote-collector/ # Standalone Node.js collector (deploy to EC2)
-├── ml/              # Python anomaly detection pipeline
-├── traffic-gen/     # HTTP traffic scenario runner
-├── data/            # Runtime state files (auto-created)
-└── wiki/            # Complete technical documentation
+├── ml/                  # Python anomaly detection pipeline
+├── traffic-gen/         # HTTP traffic scenario runner
+├── remote-collector/    # Optional push agent (not the default path)
+├── scripts/             # Ground-truth simulator, wiki builder, exports
+├── tests/               # npm test
+├── wiki/                # Technical documentation (Markdown)
+└── wiki visualizer/     # The same wiki as an illustrated HTML book (generated)
 ```
 
 ---
 
 ## Documentation
 
-Full technical documentation lives in the **[wiki/](./wiki/)** directory:
-
-| Document | Topic |
-|---|---|
-| [01-overview.md](./wiki/01-overview.md) | What the system is and isn't |
-| [02-architecture.md](./wiki/02-architecture.md) | Component map, full data flow |
-| [03-graphstore.md](./wiki/03-graphstore.md) | Central state store internals |
-| [04-id-system.md](./wiki/04-id-system.md) | Canonical IDs and normalization |
-| [05-telemetry-ingestion.md](./wiki/05-telemetry-ingestion.md) | `ingestRemote()` stage by stage |
-| [06-node-edge-lifecycle.md](./wiki/06-node-edge-lifecycle.md) | Pruning, staleness, ghost prevention |
-| [07-remote-collector.md](./wiki/07-remote-collector.md) | Docker socket, log parsing, TCP polling |
-| [08-rca-engine.md](./wiki/08-rca-engine.md) | Scoring algorithm and incident lifecycle |
-| [09-frontend.md](./wiki/09-frontend.md) | React hooks, layouts, edge visuals |
-| [10-websocket.md](./wiki/10-websocket.md) | Broadcast protocol, terminal multiplexer |
-| [11-ml-pipeline.md](./wiki/11-ml-pipeline.md) | IsolationForest pipeline and integration |
-| [12-data-models.md](./wiki/12-data-models.md) | All TypeScript interfaces |
-| [13-api-reference.md](./wiki/13-api-reference.md) | Full REST + WebSocket API |
-| [14-configuration.md](./wiki/14-configuration.md) | All env vars and config files |
-| [15-troubleshooting.md](./wiki/15-troubleshooting.md) | Common issues and known bugs |
+Full technical documentation lives in **[wiki/](./wiki/README.md)**: start at its index, which has reading paths by goal and every page. The same pages are published as an illustrated book with diagrams: open `wiki visualizer/index.html` (rebuild with `python3 scripts/build_wiki_visualizer.py`).
 
 ---
 
 ## Known Limitations
 
 - **Connection sampling, not per-request tracing** — the sweep counts sockets in `ESTABLISHED` and `TIME_WAIT`. `TIME_WAIT` lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record
-- **No per-edge latency or error rate** — `edge.metrics` is `null` in a Docker/SSH deployment. Edge heat is graded on observed connection volume (`activity.samplesPerMin`), which is a concurrency proxy, not HTTP load
+- **No per-edge latency or error rate by default** — `edge.metrics` is `null` in a plain Docker/SSH deployment, and only a configured request-level source (access logs, Prometheus) fills it. Otherwise edge heat is graded on observed connection volume (`activity.samplesPerMin`), which is a concurrency proxy, not HTTP load
 - **HTTP/1.1 log parsing only** — no HTTP/2 or gRPC log parsing
 - **Linux targets only** — `/proc/net/tcp` is Linux-specific
-- **No auto-retraining** — ML models must be manually retrained as data accumulates
+- **No auto-retraining** — ML models must be retrained (from the ML page or by hand) as data accumulates
 - **Single backend instance** — no built-in clustering
 
 ---
