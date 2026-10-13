@@ -33,7 +33,14 @@ export interface EdgeAppearance {
  * the busiest link, so a link's colour doesn't change meaning when an
  * unrelated service gets noisy.
  */
-export function edgeAppearance(edge: DependencyEdge | undefined): EdgeAppearance {
+export interface EdgeContext {
+  /** Health of the service being called; a call into a broken service is a broken call. */
+  targetStatus?: string;
+}
+
+export function edgeAppearance(edge: DependencyEdge | undefined, ctx: EdgeContext = {}): EdgeAppearance {
+  if (ctx.targetStatus === 'critical' && edge?.status !== 'failed') edge = { ...(edge as DependencyEdge), status: 'failed' };
+  else if (ctx.targetStatus === 'degraded' && edge && edge.status !== 'failed') edge = { ...edge, status: 'degraded' };
   const errRate = edge?.metrics?.errorRate ?? 0;
   const latency = edge?.metrics?.latency ?? 0;
 
