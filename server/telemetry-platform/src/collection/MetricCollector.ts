@@ -1,5 +1,5 @@
 import type { Connection } from "../connection/Connection.js";
-import { REMOTE_COMMANDS } from "../connection/RemoteCommand.js";
+import { REMOTE_COMMANDS, NETDEV_MARKER } from "../connection/RemoteCommand.js";
 import { parseDockerStats, parseDockerInspectLite } from "./parsers/dockerStats.js";
 import type { ContainerMetricSample } from "../types/metrics.js";
 import type { Service } from "../types/service.js";
@@ -21,6 +21,41 @@ interface PreviousSample {
   restartCount: number | null;
 }
 
+/** Exact network counters for one container, and the rate since the last
+ *  reading. Rates are null until a second reading exists, never a guess. */
+export interface NetworkReading {
+  rxBytes: number;
+  txBytes: number;
+  rxPerSec: number | null;
+  txPerSec: number | null;
+  /** When this reading was taken (ms since epoch). */
+  at: number;
+}
+
+/**
+ * Sums the byte counters in a /proc/<pid>/net/dev listing across every
+ * interface except loopback. Returns null if no interface line parsed.
+ *
+ *   Inter-|   Receive                            |  Transmit
+ *    face |bytes    packets errs drop fifo frame compressed multicast|bytes ...
+ *     eth0: 527338211 412345  0  0  0  0  0  0  579104422 ...
+ */
+export function parseNetDev(text: string): { rxBytes: number; txBytes: number } | null {
+  let rx = 0, tx = 0, found = false;
+  for (const line of text.split('\n')) {
+    const colon = line.indexOf(':');
+    if (colon < 0) continue;
+    const iface = line.slice(0, colon).trim();
+    if (!iface || iface === 'lo' || iface.includes('|')) continue;
+    const f = line.slice(colon + 1).trim().split(/\s+/).map(Number);
+    if (f.length < 9 || !Number.isFinite(f[0]) || !Number.isFinite(f[8])) continue;
+    rx += f[0];
+    tx += f[8];
+    found = true;
+  }
+  return found ? { rxBytes: rx, txBytes: tx } : null;
+}
+
 /**
  * Collects one round of container-level telemetry. Network/restart rates
  * are only derived once a second, later sample exists for that service —
@@ -30,6 +65,27 @@ interface PreviousSample {
 export class MetricCollector {
   private previous = new Map<string, PreviousSample>();
   private serviceByIp = new Map<string, Service>();
+  /** Latest exact network counters per service, from /proc/<pid>/net/dev. */
+  readonly network = new Map<string, NetworkReading>();
+  /** Container ids already inspected for addresses and CPU limits. */
+  private inspected = new Set<string>();
+  /** CPU limit per service in cores, from docker inspect; null = unlimited. */
+  private cpuLimitCores = new Map<string, number | null>();
+  /** Online CPUs on the host, read once per connection. */
+  private hostCores: number | null = null;
+  private hostCoresRead = false;
+
+  /**
+   * How many cores a service may use: its own limit if it has one, else the
+   * whole host. docker stats reports CPU as a percentage of ONE core (so
+   * 180% is normal on a two-core host), and judging that against a fixed 80%
+   * called a service at a fifth of its capacity "saturated" on a four-core
+   * host while never flagging one pinned at its half-core limit.
+   */
+  cpuAllowance(serviceId: string): number | null {
+    const limit = this.cpuLimitCores.get(serviceId);
+    return limit ?? this.hostCores;
+  }
 
   constructor(
     private readonly targetId: string,
@@ -190,6 +246,26 @@ export class MetricCollector {
     return interactions;
   }
 
+  /** Updates a service's exact counters and the rate since its last reading. */
+  private recordNetwork(serviceId: string, devText: string): void {
+    const parsed = parseNetDev(devText);
+    if (!parsed) return;
+    const now = Date.now();
+    const prev = this.network.get(serviceId);
+    let rxPerSec: number | null = null;
+    let txPerSec: number | null = null;
+    if (prev) {
+      const dt = (now - prev.at) / 1000;
+      // A counter that went backwards means the container restarted: no rate
+      // for this interval rather than a negative or invented one.
+      if (dt > 0 && parsed.rxBytes >= prev.rxBytes && parsed.txBytes >= prev.txBytes) {
+        rxPerSec = (parsed.rxBytes - prev.rxBytes) / dt;
+        txPerSec = (parsed.txBytes - prev.txBytes) / dt;
+      }
+    }
+    this.network.set(serviceId, { ...parsed, rxPerSec, txPerSec, at: now });
+  }
+
   async collectObservedEdges(
     services: Service[],
     warnings: string[] = [],
@@ -197,19 +273,37 @@ export class MetricCollector {
     observedEdges: { source: string; target: string; protocol: 'tcp'; evidenceSources: string[] }[],
     connectionEvents: any[] 
   }> {
-    if (this.serviceByIp.size === 0) {
-      for (const service of services) {
-        if (!service.containerId) continue;
-        const inspectRes = await this.connection.execute(REMOTE_COMMANDS.dockerInspect(service.containerId));
-        if (inspectRes.exitCode !== 0 || inspectRes.error) continue;
-        try {
-          const inspected = JSON.parse(inspectRes.stdout) as Array<{ NetworkSettings?: { Networks?: Record<string, { IPAddress?: string }> } }>;
-          for (const network of Object.values(inspected[0]?.NetworkSettings?.Networks ?? {})) {
-            if (network.IPAddress) this.serviceByIp.set(network.IPAddress, service);
-          }
-        } catch {
-          warnings.push(`Could not parse network address for ${service.serviceId}`);
+    // Every container is inspected once, the first time it is seen. This
+    // used to run only while the address map was empty, i.e. on the first
+    // scan: a container that started later, or was recreated with a new id
+    // and address, was never mapped, and every connection to or from it was
+    // dropped as "unknown peer".
+    if (!this.hostCoresRead) {
+      this.hostCoresRead = true;
+      const nproc = await this.connection.execute({ name: 'host.nproc', command: 'nproc', timeoutMs: 5_000, maxOutputBytes: 64 });
+      const n = parseInt((nproc.stdout ?? '').trim(), 10);
+      this.hostCores = nproc.exitCode === 0 && Number.isInteger(n) && n > 0 ? n : null;
+    }
+    for (const service of services) {
+      if (!service.containerId || this.inspected.has(service.containerId)) continue;
+      const inspectRes = await this.connection.execute(REMOTE_COMMANDS.dockerInspect(service.containerId));
+      if (inspectRes.exitCode !== 0 || inspectRes.error) continue;
+      this.inspected.add(service.containerId);
+      try {
+        const inspected = JSON.parse(inspectRes.stdout) as Array<{
+          NetworkSettings?: { Networks?: Record<string, { IPAddress?: string }> };
+          HostConfig?: { NanoCpus?: number; CpuQuota?: number; CpuPeriod?: number };
+        }>;
+        for (const network of Object.values(inspected[0]?.NetworkSettings?.Networks ?? {})) {
+          if (network.IPAddress) this.serviceByIp.set(network.IPAddress, service);
         }
+        const hc = inspected[0]?.HostConfig ?? {};
+        const limit = (hc.NanoCpus ?? 0) > 0
+          ? hc.NanoCpus! / 1e9
+          : (hc.CpuQuota ?? 0) > 0 && (hc.CpuPeriod ?? 0) > 0 ? hc.CpuQuota! / hc.CpuPeriod! : null;
+        this.cpuLimitCores.set(service.serviceId, limit);
+      } catch {
+        warnings.push(`Could not parse network address for ${service.serviceId}`);
       }
     }
 
@@ -223,6 +317,23 @@ export class MetricCollector {
     // otherwise never show up. We still record which state we actually
     // saw, not a guess.
     const RELEVANT_TCP_STATES: Record<string, string> = { '01': 'ESTABLISHED', '06': 'TIME_WAIT' };
+    const LISTEN_STATE = '0A';
+
+    // Every container is scanned, so each connection is seen twice — once
+    // from each end. Recording `scanned -> peer` both times (which is what
+    // this did before) produced a reverse duplicate for every real link, so
+    // the graph was effectively undirected: A->B and B->A for one dependency.
+    // That put a cycle on every pair, which made "downstream of X" reach
+    // almost the whole graph and is why blast radius and criticality
+    // saturated. It also recorded databases as callers of their own clients.
+    //
+    // Direction is recovered from listening ports. A TCP connection has a
+    // server side (the socket is on its listening port) and a client side (an
+    // ephemeral port), so whichever end owns the listening port is the callee
+    // — the arrow points at it. LISTEN rows are already in the output this
+    // command fetches; they were simply being filtered out and discarded.
+    const rawByService = new Map<string, string>();
+    const listenPortsByService = new Map<string, Set<number>>();
 
     for (const service of services) {
       if (!service.containerId) continue;
@@ -241,52 +352,156 @@ export class MetricCollector {
         );
         continue;
       }
-      for (const line of tcpRes.stdout.split('\n')) {
+      // Socket table first, interface counters after the marker.
+      const markerAt = tcpRes.stdout.indexOf(NETDEV_MARKER);
+      const tcpText = markerAt >= 0 ? tcpRes.stdout.slice(0, markerAt) : tcpRes.stdout;
+      if (markerAt >= 0) this.recordNetwork(service.serviceId, tcpRes.stdout.slice(markerAt + NETDEV_MARKER.length));
+      rawByService.set(service.serviceId, tcpText);
+
+      const listening = new Set<number>();
+      for (const line of tcpText.split('\n')) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length < 4 || parts[3] !== LISTEN_STATE) continue;
+        const port = parseInt(parts[1]?.split(':')[1] ?? '', 16);
+        if (Number.isFinite(port) && port > 0) listening.add(port);
+      }
+      listenPortsByService.set(service.serviceId, listening);
+    }
+
+    for (const service of services) {
+      const stdout = rawByService.get(service.serviceId);
+      if (!stdout) continue;
+      const myListenPorts = listenPortsByService.get(service.serviceId) ?? new Set<number>();
+
+      for (const line of stdout.split('\n')) {
         const parts = line.trim().split(/\s+/);
         const state = RELEVANT_TCP_STATES[parts[3]];
         if (parts.length < 4 || !state) continue;
         const remoteIp = decodeProcNetIp(parts[2]?.split(':')[0] ?? '');
-        const target = this.serviceByIp.get(remoteIp);
-        if (!target || target.serviceId === service.serviceId) continue;
-        const edgeId = `${service.serviceId}->${target.serviceId}`;
-        observedEdges.set(edgeId, {
-          source: service.serviceId,
-          target: target.serviceId,
-          protocol: 'tcp',
-          evidenceSources: ['network-tcp'],
-        });
+        const peer = this.serviceByIp.get(remoteIp);
+        if (!peer || peer.serviceId === service.serviceId) continue;
 
-        // Parse destPort from the remote address hex (e.g. 0A000001:1F90)
-        const remotePortHex = parts[2]?.split(':')[1] ?? '0000';
-        const destPort = parseInt(remotePortHex, 16);
+        const localIp = decodeProcNetIp(parts[1]?.split(':')[0] ?? '');
+        const localPort = parseInt(parts[1]?.split(':')[1] ?? '', 16);
+        const remotePort = parseInt(parts[2]?.split(':')[1] ?? '', 16);
+        const peerListenPorts = listenPortsByService.get(peer.serviceId) ?? new Set<number>();
+
+        const orientation = orientConnection(localPort, remotePort, myListenPorts, peerListenPorts);
+        const callerId = orientation.scannedIsCaller ? service.serviceId : peer.serviceId;
+        const calleeId = orientation.scannedIsCaller ? peer.serviceId : service.serviceId;
+        const how = orientation.evidence;
+
+        const edgeId = `${callerId}->${calleeId}`;
+        const existing = observedEdges.get(edgeId);
+        if (existing) {
+          // Seen from the other end too, or on another connection. Keep the
+          // strongest direction evidence we have for this link.
+          if (how === 'direction:listen-port' && !existing.evidenceSources.includes('direction:listen-port')) {
+            existing.evidenceSources = existing.evidenceSources
+              .filter(s => !s.startsWith('direction:'))
+              .concat('direction:listen-port');
+          }
+        } else {
+          observedEdges.set(edgeId, {
+            source: callerId,
+            target: calleeId,
+            protocol: 'tcp',
+            evidenceSources: ['network-tcp', how],
+          });
+        }
+
+        // The connection's own identity, the same whichever end it was read
+        // from: caller ip:port > callee ip:port. A connection appears in both
+        // ends' socket tables, and a closed one lingers in TIME_WAIT for about
+        // a minute, so counting raw rows counts one connection many times;
+        // counting distinct keys counts it once.
+        const callerEnd = orientation.scannedIsCaller ? `${localIp}:${localPort}` : `${remoteIp}:${remotePort}`;
+        const calleeEnd = orientation.scannedIsCaller ? `${remoteIp}:${remotePort}` : `${localIp}:${localPort}`;
 
         connectionEvents.push({
           timestamp,
           targetId: this.targetId,
-          sourceServiceId: service.serviceId,
-          destServiceId: target.serviceId,
-          destPort,
-          state
+          sourceServiceId: callerId,
+          destServiceId: calleeId,
+          // The port that identifies the service being called, which is the
+          // callee's listening port whichever end we happened to scan from.
+          destPort: calleeId === peer.serviceId ? remotePort : localPort,
+          state,
+          connKey: `${callerEnd}>${calleeEnd}`,
         });
       }
     }
 
-    return { 
-      observedEdges: Array.from(observedEdges.values()), 
-      connectionEvents 
+    return {
+      observedEdges: Array.from(observedEdges.values()),
+      connectionEvents
     };
   }
 }
 
-function decodeProcNetIp(hex: string): string {
-  if (hex.length === 32 && /^[0-9a-fA-F]+$/.test(hex)) {
-    const groups = hex.match(/.{8}/g) ?? [];
-    const bytes = groups.flatMap((group) => [0, 2, 4, 6].map((offset) => parseInt(group.slice(offset, offset + 2), 16)));
+/** Linux default ephemeral range, /proc/sys/net/ipv4/ip_local_port_range. */
+const EPHEMERAL_MIN = 32768;
+const EPHEMERAL_MAX = 60999;
+
+/**
+ * Which end of a TCP connection made the call.
+ *
+ * A connection has a server side, whose socket sits on the port it listens
+ * on, and a client side, which got an ephemeral port from the kernel. The
+ * server is the one being called, so the dependency arrow points at it.
+ *
+ * Observed LISTEN tables are the real evidence and are checked first. The
+ * ephemeral range is a fallback for when a container's listen table could not
+ * be read at all. When neither settles it, the caller is told so rather than
+ * handed a coin flip dressed as a measurement.
+ *
+ * Exported for tests: this is the decision the whole dependency graph's
+ * direction rests on.
+ */
+export function orientConnection(
+  localPort: number,
+  remotePort: number,
+  scannedListenPorts: Set<number>,
+  peerListenPorts: Set<number>,
+): { scannedIsCaller: boolean; evidence: 'direction:listen-port' | 'direction:ephemeral-port' | 'direction:unresolved' } {
+  const scannedIsServer = scannedListenPorts.has(localPort);
+  const peerIsServer = peerListenPorts.has(remotePort);
+
+  if (peerIsServer && !scannedIsServer) return { scannedIsCaller: true, evidence: 'direction:listen-port' };
+  if (scannedIsServer && !peerIsServer) return { scannedIsCaller: false, evidence: 'direction:listen-port' };
+
+  const localEphemeral = localPort >= EPHEMERAL_MIN && localPort <= EPHEMERAL_MAX;
+  const remoteEphemeral = remotePort >= EPHEMERAL_MIN && remotePort <= EPHEMERAL_MAX;
+  if (localEphemeral && !remoteEphemeral) return { scannedIsCaller: true, evidence: 'direction:ephemeral-port' };
+  if (remoteEphemeral && !localEphemeral) return { scannedIsCaller: false, evidence: 'direction:ephemeral-port' };
+
+  return { scannedIsCaller: true, evidence: 'direction:unresolved' };
+}
+
+/**
+ * An address from /proc/net/tcp or tcp6, as dotted IPv4.
+ *
+ * tcp prints one 32-bit word in host (little-endian) byte order:
+ * "0100007F" is 127.0.0.1. tcp6 prints four such words, and a service bound
+ * to an IPv6 socket sees its IPv4 peers as IPv4-mapped addresses,
+ * ::ffff:a.b.c.d, whose IPv4 part is the *last* word ("0000000000000000
+ * FFFF00000100007F"). This used to decode the *first* word, so every mapped
+ * address came out as 0.0.0.0, matched no service, and every connection on an
+ * IPv6 socket was silently dropped. Genuine IPv6 addresses return '' (no
+ * container on these networks has one, so they cannot be a service).
+ */
+export function decodeProcNetIp(hex: string): string {
+  const word = (w: string) => {
+    const bytes = [0, 2, 4, 6].map((offset) => parseInt(w.slice(offset, offset + 2), 16));
     return `${bytes[3]}.${bytes[2]}.${bytes[1]}.${bytes[0]}`;
+  };
+  if (/^[0-9a-fA-F]{32}$/.test(hex)) {
+    const words = hex.toUpperCase().match(/.{8}/g)!;
+    if (words[0] === '00000000' && words[1] === '00000000' && words[2] === 'FFFF0000') return word(words[3]);
+    return '';
   }
   if (!/^[0-9a-fA-F]{8}$/.test(hex)) return '';
-  const bytes = [0, 2, 4, 6].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
-  return `${bytes[3]}.${bytes[2]}.${bytes[1]}.${bytes[0]}`;
+  return word(hex);
 }
 
 interface ParsedHttpLog {

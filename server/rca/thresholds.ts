@@ -30,6 +30,14 @@ export interface IncidentThresholds {
   zScoreHigh: number;
   /** …and CRITICAL at or above this. */
   zScoreCritical: number;
+  /**
+   * A move smaller than this many percentage points is never an anomaly,
+   * however steady the baseline. Without it, an idle service whose memory
+   * sits at 0.4% with a spread of 0.01 turned a 0.1-point wobble into "z = −8,
+   * CRITICAL" — observed live across death-star and vertikal, opening
+   * incidents with nothing wrong in them.
+   */
+  minDeviationPercent: number;
   /** Absolute percent that forces HIGH regardless of z. */
   absoluteHighPercent: number;
   /** Absolute percent that forces CRITICAL regardless of z. */
@@ -53,6 +61,7 @@ export const DEFAULT_THRESHOLDS: IncidentThresholds = {
   zScoreAnomaly: 2.5,
   zScoreHigh: 3.0,
   zScoreCritical: 4.0,
+  minDeviationPercent: 5,
   absoluteHighPercent: 70,
   absoluteCriticalPercent: 85,
   flatlineStdDev: 0.001,
@@ -67,6 +76,7 @@ const LIMITS: Record<keyof IncidentThresholds, [number, number]> = {
   zScoreAnomaly: [0.5, 10],
   zScoreHigh: [0.5, 15],
   zScoreCritical: [0.5, 20],
+  minDeviationPercent: [0, 100],
   absoluteHighPercent: [1, 100],
   absoluteCriticalPercent: [1, 100],
   flatlineStdDev: [0.0000001, 10],
@@ -148,6 +158,8 @@ export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
     'How far from its own recent baseline a metric must move to count as anomalous, in standard deviations. Lower fires more often.',
   zScoreHigh: 'Deviation at or above this is HIGH rather than MEDIUM.',
   zScoreCritical: 'Deviation at or above this is CRITICAL.',
+  minDeviationPercent:
+    'The smallest move, in percentage points, that can count as anomalous at all. A very steady service has a tiny spread, so a trivial wobble (0.4% → 0.5% memory) can be many standard deviations; this keeps that from opening an incident. Set to 0 to judge on z-score alone.',
   absoluteHighPercent:
     'A CPU or memory reading above this is HIGH no matter how calm the baseline is — a service pinned at 75% is worth seeing even if it has been there long enough to look normal.',
   absoluteCriticalPercent: 'A reading above this is CRITICAL regardless of deviation.',

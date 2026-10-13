@@ -1,3 +1,4 @@
+import { isObservabilityService } from '../graph/serviceRoles.js';
 import type {
   DiscoveredService,
   DiscoveredEndpoint,
@@ -137,12 +138,11 @@ export class EndpointRegistry {
     // port, because ports collide — :3000 is Grafana here and a perfectly
     // normal app frontend elsewhere. This only affects which endpoint is
     // OFFERED as the default; any endpoint can still be chosen explicitly.
-    const OBSERVABILITY = /(grafana|jaeger|prometheus|opensearch|kibana|zipkin|otel-?collector|opamp|telemetry-docs|flagd-ui)/i;
     const APP_ENTRY_PORTS = [80, 443, 8080, 8000, 3000];
 
     const rank = (e: DiscoveredEndpoint) => {
       if (e.type !== 'PUBLIC') return 40;
-      if (OBSERVABILITY.test(e.serviceName || '')) return 30; // last, but still listed
+      if (isObservabilityService(e.serviceName || '')) return 30; // last, but still listed
       if (e.port === 80 || e.port === 443) return 0;
       const idx = APP_ENTRY_PORTS.indexOf(e.port);
       return idx >= 0 ? idx : 20;
