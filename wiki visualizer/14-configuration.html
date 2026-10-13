@@ -639,13 +639,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-orange">CONFIG</span>
                 <span class="meta-item"><code>wiki/14-configuration.md</code></span>
-                <span class="meta-item">~5 min read</span>
-                <span class="meta-item">1,071 words</span>
+                <span class="meta-item">~6 min read</span>
+                <span class="meta-item">1,114 words</span>
             </div>
             <nav class="toc">
   <a href="#server-serverconfigts">server/config.ts</a>
   <a href="#remote-collector-environment-variables">Environment Variables</a>
-  <a href="#target-ssh-config-dataremote-configjson">data/remoteconfig.json</a>
+  <a href="#target-ssh-config-serverdataremote-configjson">server/data/remoteconfig.j...</a>
   <a href="#ml-pipeline-mlconfigjson">ml/config.json</a>
   <a href="#the-holdout-is-not-an-accuracy-figure">The holdout is not an accu...</a>
   <a href="#data-files-auto-created-at-runtime">Auto-Created at Runtime</a>
@@ -674,17 +674,14 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                             <span>TYPESCRIPT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">export const config = {
-  PORT:                    3001,
-  POLLING_INTERVAL_MS:     5000,
-  METRIC_HISTORY_SIZE:     720,
-  INGEST_TOKEN:            &#x27;mapper-secret-token&#x27;,
-  SOCK_SHOP_BASE_URL:      &#x27;&#x27;,
-  SOCK_SHOP_COMPOSE_PATH:  &#x27;./sock-shop-docker-compose.yml&#x27;,
-  VERTIKAL_BASE_URL:       &#x27;&#x27;,
-  VERTIKAL_COMPOSE_PATH:   &#x27;../vertikal/docker-compose.yml&#x27;,
+  PORT:                 3001,
+  POLLING_INTERVAL_MS:  5000,
+  METRIC_HISTORY_SIZE:  720,
+  INGEST_TOKEN:         &#x27;mapper-secret-token&#x27;,
+  PYTHON:               &#x27;python3&#x27;,   // &#x27;python&#x27; on Windows
 };</code></pre>
                     </div>
-<p>Override any value with an environment variable:</p>
+<p>Override any value with an environment variable. The server reads only its environment; it does not load a <code>.env</code> file by itself (under systemd, use <code>EnvironmentFile=</code>).</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Env Var</th>
@@ -713,14 +710,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>Bearer token for <code>POST /api/ingest</code></td>
     </tr>
     <tr>
-      <td><code>SOCK_SHOP_BASE_URL</code></td>
-      <td><code>''</code></td>
-      <td>Sock Shop HTTP endpoint for health pings</td>
-    </tr>
-    <tr>
-      <td><code>VERTIKAL_BASE_URL</code></td>
-      <td><code>''</code></td>
-      <td>Vertikal HTTP endpoint for health pings</td>
+      <td><code>PYTHON</code></td>
+      <td><code>python3</code>, or <code>python</code> on Windows</td>
+      <td>Interpreter for the ML collector, scorer and retraining. On Windows <code>python3</code> is at most a Microsoft Store stub</td>
     </tr>
   </tbody>
 </table></div>
@@ -767,7 +759,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <hr class="rule">
-<h2 id="target-ssh-config-dataremote-configjson">Target SSH Config — <code>data/remote_config.json</code></h2>
+<h2 id="target-ssh-config-serverdataremote-configjson">Target SSH Config — <code>server/data/remote_config.json</code></h2>
 <p>Written by the UI (<code>RemoteConfigPanel</code>) or manually. Loaded by <code>GraphStore.loadTargetsFromConfig()</code> at startup.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -899,6 +891,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>The tail is unlabelled, so what comes back is a <strong>firing rate</strong>, not an error rate — "how often does this model fire on data it never saw". Compare it to <code>contamination</code>: much higher suggests drift or a tail that was not actually normal. It is reported per model in <code>models/*.meta.json</code> and in the <code>Holdout flagged</code> column on the ML Pipeline page.</p>
 <hr class="rule">
 <h2 id="data-files-auto-created-at-runtime">Data Files — Auto-Created at Runtime</h2>
+<p>The server's <code>data/</code> paths are relative to its working directory, which <code>npm run server</code> sets to <code>server/</code>, so they live in <code>server/data/</code> (git-ignored).</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>File</th>
@@ -907,22 +900,22 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tr></thead>
   <tbody>
     <tr>
-      <td><code>data/graph_db.json</code></td>
+      <td><code>server/data/graph_db.json</code></td>
       <td>First time graph state is saved</td>
       <td>Full graph snapshot</td>
     </tr>
     <tr>
-      <td><code>data/remote_config.json</code></td>
+      <td><code>server/data/remote_config.json</code></td>
       <td>First target registered</td>
       <td>SSH configs</td>
     </tr>
     <tr>
-      <td><code>data/traces_&lt;targetId&gt;.json</code></td>
+      <td><code>server/data/traces_&lt;targetId&gt;.json</code></td>
       <td>First TCP events received for a target</td>
       <td>24-hour TCP event log</td>
     </tr>
     <tr>
-      <td><code>data/experiments.json</code></td>
+      <td><code>server/data/experiments_db.json</code></td>
       <td>First experiment started</td>
       <td>Experiment history</td>
     </tr>
@@ -952,14 +945,14 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>The four detectors per service (z-score lives in the meta), each with its training score statistics</td>
     </tr>
     <tr>
-      <td><code>data/incident_thresholds.json</code></td>
+      <td><code>server/data/incident_thresholds.json</code></td>
       <td>Editing thresholds on the Incidents page</td>
       <td>Overrides for the rule-based incident detector</td>
     </tr>
   </tbody>
 </table></div>
-<p><strong>To reset graph state completely:</strong> <code>rm data/graph_db.json</code> — targets will be re-discovered from <code>remote_config.json</code> on next startup.</p>
-<p><strong>To reset everything:</strong> <code>rm -rf data/ ml/data/ ml/models/</code></p>
+<p><strong>To reset graph state completely:</strong> <code>rm server/data/graph_db.json</code> — targets will be re-discovered from <code>remote_config.json</code> on next startup.</p>
+<p><strong>To reset everything:</strong> <code>rm -rf server/data/ ml/data/ ml/models/</code></p>
 <hr class="rule">
 <h2 id="frontend-clientviteconfigts">Frontend — <code>client/vite.config.ts</code></h2>
 <p>The Vite dev server proxies API calls to the backend:</p>
