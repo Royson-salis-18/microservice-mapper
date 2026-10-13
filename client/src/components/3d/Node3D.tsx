@@ -1,254 +1,454 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, memo, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Billboard, RoundedBox, Text } from '@react-three/drei';
+import { Billboard, Edges, RoundedBox, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 import type { ServiceNode } from '../../types';
+import { TYPE_VISUAL, cpuShown } from '../shared/serviceVisuals';
+import { doorTexture, glowTexture } from './textures';
 import type { PositionMap } from './Scene3D';
 
 interface Node3DProps {
   node: { id: string; data: ServiceNode };
   live: PositionMap;
+  /** Current load (0..1) per node id, read every frame. Passed as a shared
+   *  map rather than a prop so a change in CPU does not re-render the node —
+   *  it only changes how fast its lights flicker. */
+  loads: Map<string, number>;
   isSelected: boolean;
-  onClick: () => void;
+  onSelect: (id: string) => void;
   showLabel?: boolean;
   /** Something else is selected: fade back so the selection stands out. */
   dimmed?: boolean;
 }
 
-export const STATUS_COLORS: Record<string, string> = {
-  healthy: '#3ecf8e',
-  degraded: '#e8a33d',
-  critical: '#ef5f67',
-  unknown: '#6b7079',
+/** Every unit is modelled at 1:1 and drawn at this scale. */
+export const UNIT_SCALE = 1.2;
+/** World height of the top of a unit: where links attach. */
+export const UNIT_TOP = 4.6 * UNIT_SCALE;
+
+/** Predicted failure at or above this, on a service that is itself healthy,
+ *  gets the at-risk ring: the cascade model expects it to be pulled down. */
+export const AT_RISK = 0.4;
+
+/**
+ * Status lights. Healthy is the scene's own blue rather than green: a hall of
+ * healthy equipment should read as calm and uniform, so that the one unit
+ * that changes colour is the one the eye finds. Warm hues mean trouble and
+ * nothing else.
+ */
+export const STATUS_LIGHT: Record<string, string> = {
+  healthy: '#4d7cff',
+  degraded: '#ffab40',
+  critical: '#ff3d5e',
+  unknown: '#3b4566',
 };
 
 export type NodeShape = 'rack' | 'storage' | 'router' | 'screen' | 'module' | 'pipe';
 
 /**
- * The scene is an architectural model, not a light show: every service is
- * the same matte clay and is told apart by silhouette alone (a database is a
- * stack of disks, a gateway a flat router, a frontend a screen). Colour is
- * kept for one job, which is health. A healthy service is plain clay, and a
- * degraded or failing one is tinted and ringed, so trouble is the only thing
- * on screen that is coloured.
+ * Category is carried by silhouette first (a database is a disk array, a
+ * gateway a router with antennae, a frontend a screen) and by a small tinted
+ * cap second. Every tint is cool, so none of them can be mistaken for an
+ * alert.
  */
-export const TYPE_STYLE: Record<string, { shape: NodeShape; label: string }> = {
-  gateway:        { shape: 'router',  label: 'Gateway' },
-  frontend:       { shape: 'screen',  label: 'Frontend' },
-  database:       { shape: 'storage', label: 'Database' },
-  cache:          { shape: 'module',  label: 'Cache' },
-  queue:          { shape: 'pipe',    label: 'Queue' },
-  service:        { shape: 'rack',    label: 'Service' },
-  infrastructure: { shape: 'rack',    label: 'Infra' },
-  external:       { shape: 'module',  label: 'External' },
+const SHAPE: Record<string, NodeShape> = {
+  gateway: 'router', frontend: 'screen', database: 'storage', cache: 'module',
+  queue: 'pipe', service: 'rack', infrastructure: 'rack', external: 'module',
 };
+/** Colours and labels come from the shared palette, so a database is the
+ *  same mint here, on its 2D card and on the minimap. */
+export const TYPE_STYLE: Record<string, { color: string; shape: NodeShape; label: string }> = Object.fromEntries(
+  Object.entries(TYPE_VISUAL).map(([type, v]) => [type, { color: v.color, shape: SHAPE[type] ?? 'rack', label: v.label }]),
+);
 
-const CLAY = new THREE.Color('#c9ccd2');
-const CLAY_NO_DATA = new THREE.Color('#5f646c');
-const DETAIL = '#24272c';
-const PLINTH = '#17191d';
-const DIM_TO = new THREE.Color('#1b1d21');
-const LOAD_ON = '#f4f6fa';
+const CHASSIS = '#161d3f';
+const CHASSIS_EDGE = '#2e3d8a';
+const SELECT_BLUE = '#3d6bff';
+const ALERT_PINK = '#ff4d6d';
+
+/** Geometry shared by every unit. */
+const PLINTH = new THREE.BoxGeometry(4.4, 0.14, 4.4);
+const PIN = new THREE.ConeGeometry(0.55, 1.3, 16);
+const LED = new THREE.SphereGeometry(0.17, 12, 12);
+/** Light pool on the floor under a unit, and the rack's small parts. */
+const POOL = new THREE.PlaneGeometry(9, 9);
+const LED_CHIP = new THREE.BoxGeometry(0.2, 0.09, 0.04);
+const NEON_EDGE = new THREE.BoxGeometry(0.05, 3.5, 0.05);
+const DOOR = new THREE.PlaneGeometry(1.75, 3.35);
+
 const PLATFORM_Y = 0.14;
-const RING_GEOM = new THREE.RingGeometry(2.78, 2.92, 64);
-const SELECT_GEOM = new THREE.RingGeometry(3.15, 3.24, 64);
 
-// The body colour is the service's health: green, amber, red, or grey for no data.
-// Shape tells you what kind of service it is.
-function bodyColor(status: string, type: string): THREE.Color {
-  if (status === 'unknown') return CLAY_NO_DATA.clone();
-  if (status === 'critical') return new THREE.Color(STATUS_COLORS.critical).lerp(CLAY, 0.12);
-  if (status === 'degraded') return new THREE.Color(STATUS_COLORS.degraded).lerp(CLAY, 0.15);
-  void type;
-  return CLAY.clone().lerp(new THREE.Color(STATUS_COLORS.healthy), 0.72);
-}
-
-/** Grooves on a chassis face; the lower ones light up with load, like a level meter. */
-function Slots({ positions, size, lit }: { positions: [number, number, number][]; size: [number, number, number]; lit: number }) {
+/** A column of activity LEDs down the side of a cabinet door. */
+function LedColumn({ count, x, top, z, color, litRef }: {
+  count: number; x: number; top: number; z: number; color: string;
+  litRef: React.MutableRefObject<THREE.Mesh[]>;
+}) {
   return (
     <>
-      {positions.map((p, i) => (
-        <mesh key={i} position={p}>
-          <boxGeometry args={size} />
-          {i < lit
-            ? <meshStandardMaterial color={LOAD_ON} emissive={LOAD_ON} emissiveIntensity={0.55} roughness={0.4} />
-            : <meshStandardMaterial color={DETAIL} roughness={0.8} />}
+      {Array.from({ length: count }).map((_, i) => (
+        <mesh
+          key={i}
+          geometry={LED_CHIP}
+          position={[x, top - i * 0.32, z]}
+          ref={(el) => { if (el) litRef.current[i] = el; }}
+        >
+          <meshBasicMaterial color={color} toneMapped={false} transparent opacity={1} />
         </mesh>
       ))}
     </>
   );
 }
 
-export function Node3D({ node, live, isSelected, onClick, showLabel = true, dimmed = false }: Node3DProps) {
+function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true, dimmed = false }: Node3DProps) {
   const rootRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
-  const pulseRef = useRef<THREE.Mesh>(null);
+  const ledRef = useRef<THREE.Mesh>(null);
+  const haloRef = useRef<THREE.Sprite>(null);
+  const riskRef = useRef<THREE.Mesh>(null);
+  const alertRef = useRef<THREE.Mesh>(null);
+  const pinRef = useRef<THREE.Mesh>(null);
+  const poolRef = useRef<THREE.Mesh>(null);
+  const bays = useRef<THREE.Mesh[]>([]);
+  const chassisMats = useRef<THREE.MeshStandardMaterial[]>([]);
   const [hovered, setHover] = useState(false);
 
   const data = node.data;
   const status = data.status || 'unknown';
-  const statusColor = STATUS_COLORS[status] || STATUS_COLORS.unknown;
+  const light = STATUS_LIGHT[status] || STATUS_LIGHT.unknown;
   const style = TYPE_STYLE[data.type as string] || TYPE_STYLE.service;
-  const anomalous = Boolean((data as any).analytics?.anomalyPersistent);
-  const troubled = status === 'critical' || status === 'degraded' || anomalous;
-  const ringColor = status === 'critical' ? STATUS_COLORS.critical : status === 'degraded' || anomalous ? STATUS_COLORS.degraded : null;
 
   const metrics = (data.metrics || {}) as any;
-  const cpu = Math.max(0, Math.min(100, metrics.cpu ?? 0));
+  const cpu = Math.max(0, Math.min(100, cpuShown(metrics) ?? 0));
   const mem = Math.max(0, Math.min(100, metrics.memoryPercent ?? 0));
-  const load = Math.max(cpu, mem) / 100;
-  const lit = (n: number) => (status === 'unknown' ? 0 : Math.min(n, Math.round(load * n + (load > 0.02 ? 0.5 : 0))));
-
-  // One material for the whole chassis, so dimming and health are a single colour change.
-  const clay = useMemo(() => new THREE.MeshStandardMaterial({ color: bodyColor(status, data.type as string), roughness: 0.5, metalness: 0.05 }), [status, data.type]);
-  const clayTarget = useMemo(() => bodyColor(status, data.type as string), [status, data.type]);
-  useEffect(() => () => clay.dispose(), [clay]);
+  const analytics = (data as any).analytics ?? {};
+  const anomalous = Boolean(analytics.anomalyPersistent);
+  const predicted: number = typeof analytics.failureProbability === 'number' ? analytics.failureProbability : 0;
+  const atRisk = status === 'healthy' && predicted >= AT_RISK;
+  const riskColor = predicted >= 0.7 ? '#ff3d5e' : '#ffab40';
+  // The alert volume: a translucent block around the unit, pink for a unit
+  // that is down or that the ML ensemble flags, amber for degraded.
+  const alert = status === 'critical' || anomalous ? ALERT_PINK : status === 'degraded' ? '#ffab40' : null;
+  const pinned = status === 'critical' || anomalous;
 
   const shortName = useMemo(() => {
     const s = String((data as any).name || node.id);
-    return s.length > 22 ? `${s.slice(0, 21)}…` : s;
+    return s.length > 20 ? `${s.slice(0, 19)}…` : s;
   }, [data, node.id]);
 
+  // Collected from the chassis meshes so the render loop can light the body
+  // up on selection without a re-render. Reset each render; refs refill it.
+  chassisMats.current = [];
+  const chassisRef = (el: THREE.MeshStandardMaterial | null) => { if (el) chassisMats.current.push(el); };
+  bays.current = [];
+
   useFrame((state, delta) => {
+    const t = state.clock.elapsedTime;
+    const load = loads.get(node.id) ?? 0;
+    const fade = dimmed ? 0.16 : 1;
+
     const pos = live.get(node.id);
     if (rootRef.current && pos) rootRef.current.position.copy(pos);
 
     if (bodyRef.current) {
-      const lift = isSelected ? 0.5 : hovered ? 0.25 : 0;
-      bodyRef.current.position.y = THREE.MathUtils.damp(bodyRef.current.position.y, lift, 9, delta);
+      // Equipment stays on the floor; only selection lifts it.
+      const lift = isSelected ? 0.45 : hovered ? 0.2 : 0;
+      bodyRef.current.position.y = THREE.MathUtils.damp(bodyRef.current.position.y, lift, 8, delta);
     }
 
-    const want = dimmed ? clayTarget.clone().lerp(DIM_TO, 0.78) : clayTarget;
-    clay.color.lerp(want, 1 - Math.exp(-8 * delta));
+    // The body itself glows blue when selected, the way a picked unit lights
+    // up in a facility view; hover is a softer version of the same.
+    const glowTarget = isSelected ? 0.9 : hovered ? 0.45 : 0;
+    for (const mat of chassisMats.current) {
+      mat.emissiveIntensity = THREE.MathUtils.damp(mat.emissiveIntensity, glowTarget, 7, delta);
+      // Transparent only while faded: an always-transparent body goes into
+      // the sorted blending pass with no early depth rejection, which on an
+      // integrated GPU is the difference that matters with 60+ units.
+      mat.transparent = dimmed;
+      mat.opacity = dimmed ? 0.35 : 1;
+    }
 
-    // A failing service sends a slow ripple across the floor: visible from any angle, never flashing.
-    if (pulseRef.current) {
-      const p = (state.clock.elapsedTime * (status === 'critical' ? 0.55 : 0.35)) % 1;
-      pulseRef.current.scale.setScalar(1 + p * 1.6);
-      (pulseRef.current.material as THREE.MeshBasicMaterial).opacity = (dimmed ? 0.15 : 0.55) * (1 - p) ** 2;
+    // Bay lights flicker like activity LEDs, at a rate set by load.
+    for (let i = 0; i < bays.current.length; i++) {
+      const mesh = bays.current[i];
+      if (!mesh) continue;
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      const phase = t * (1.2 + load * 5) + i * 1.7;
+      const active = load > 0.02 ? (Math.sin(phase) + 1) / 2 : 0.3;
+      mat.opacity = (0.3 + active * 0.7) * fade;
+    }
+
+    if (ledRef.current) {
+      const mat = ledRef.current.material as THREE.MeshBasicMaterial;
+      const blink = fade * (status === 'healthy' && !anomalous ? 0.75 + Math.sin(t * 2) * 0.25 : Math.abs(Math.sin(t * 4)));
+      mat.opacity = 0.3 + blink * 0.7;
+    }
+
+    if (haloRef.current) {
+      const mat = haloRef.current.material as THREE.SpriteMaterial;
+      const base = alert ? 0.14 + Math.abs(Math.sin(t * 3)) * 0.08 : 0.03 + load * 0.07;
+      mat.opacity = THREE.MathUtils.damp(mat.opacity, (isSelected ? 0.3 : hovered ? base + 0.08 : base) * fade, 5, delta);
+    }
+
+    if (alertRef.current) {
+      const mat = alertRef.current.material as THREE.MeshBasicMaterial;
+      const pulse = (Math.sin(t * 3.2) + 1) / 2;
+      mat.opacity = (0.07 + pulse * 0.08) * fade;
+    }
+
+    if (poolRef.current) {
+      // The light a unit throws on the floor: bright blue when selected (the
+      // picked cabinet lighting up the aisle), its alert colour when in
+      // trouble, a faint load-dependent blue otherwise.
+      const mat = poolRef.current.material as THREE.MeshBasicMaterial;
+      const target = isSelected ? 0.6
+        : alert ? 0.2 + Math.abs(Math.sin(t * 3)) * 0.1
+        : (hovered ? 0.2 : 0.05 + load * 0.07);
+      mat.opacity = THREE.MathUtils.damp(mat.opacity, target * fade, 6, delta);
+    }
+
+    if (pinRef.current) {
+      pinRef.current.position.y = 7.3 + Math.sin(t * 2.4) * 0.25;
+      pinRef.current.rotation.y = t * 1.5;
+    }
+
+    if (riskRef.current) {
+      // A slow, wide pulse, distinct from the fast alert blink, because this
+      // is a prediction about a healthy service rather than a fault on it.
+      const mat = riskRef.current.material as THREE.MeshBasicMaterial;
+      const pulse = (Math.sin(t * 2.2) + 1) / 2;
+      mat.opacity = (0.35 + pulse * 0.5) * fade;
+      riskRef.current.scale.setScalar(1 + pulse * 0.08);
     }
   });
 
   const highlight = isSelected || hovered;
-  const labelColor = dimmed ? '#4a4f57' : highlight ? '#ffffff' : '#e3e5e8';
-  const subText = status === 'unknown' ? 'no data'
-    : status !== 'healthy' ? `${status} · ${Math.round(cpu)}% cpu`
-    : anomalous ? `unusual · ${Math.round(cpu)}% cpu`
-    : `${Math.round(cpu)}% cpu · ${Math.round(mem)}% mem`;
-  const subColor = dimmed ? '#3a3e45' : troubled ? (ringColor ?? statusColor) : '#80868f';
+  const edgeColor = isSelected ? '#a9bcff' : hovered ? '#7d94ff' : CHASSIS_EDGE;
+  const haloColor = isSelected ? SELECT_BLUE : alert ?? light;
+  const poolColor = isSelected ? SELECT_BLUE : alert ?? '#2f4de0';
+
+  const chassis = (
+    <meshStandardMaterial
+      ref={chassisRef}
+      color={CHASSIS}
+      roughness={0.42}
+      metalness={0.55}
+      emissive={SELECT_BLUE}
+      emissiveIntensity={0}
+      transparent={dimmed}
+    />
+  );
 
   return (
-    <group ref={rootRef}>
-      {/* plinth */}
-      <RoundedBox args={[4.9, PLATFORM_Y, 4.9]} radius={0.05} smoothness={2} position={[0, PLATFORM_Y / 2, 0]}>
-        <meshStandardMaterial color={PLINTH} roughness={0.92} metalness={0} />
-      </RoundedBox>
-
-      {ringColor && (
-        <>
-          <mesh geometry={RING_GEOM} position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <meshBasicMaterial color={ringColor} transparent opacity={dimmed ? 0.25 : 0.95} depthWrite={false} />
-          </mesh>
-          <mesh ref={pulseRef} geometry={RING_GEOM} position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <meshBasicMaterial color={ringColor} transparent opacity={0.4} depthWrite={false} />
-          </mesh>
-        </>
-      )}
-      {isSelected && (
-        <mesh geometry={SELECT_GEOM} position={[0, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.9} depthWrite={false} />
+    <group ref={rootRef} scale={UNIT_SCALE}>
+      {/* Floor plinth, outlined like a footprint on a plan */}
+      <mesh geometry={PLINTH} position={[0, PLATFORM_Y / 2, 0]} raycast={() => null} receiveShadow>
+        <meshStandardMaterial color="#10162f" roughness={0.8} metalness={0.3} />
+        <Edges threshold={18} color={highlight ? '#6d86ff' : '#26336e'} />
+      </mesh>
+      <mesh ref={poolRef} geometry={POOL} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+        <meshBasicMaterial map={glowTexture()} color={poolColor} toneMapped={false} transparent opacity={0.15} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+      {atRisk && (
+        <mesh ref={riskRef} position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+          <ringGeometry args={[2.9, 3.2, 48, 1]} />
+          <meshBasicMaterial color={riskColor} toneMapped={false} transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       )}
 
       <group
         ref={bodyRef}
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = ''; }}
       >
+        <sprite ref={haloRef} position={[0, 2.2, 0]} scale={7.5} raycast={() => null}>
+          <spriteMaterial map={glowTexture()} color={haloColor} transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </sprite>
+
+        {/* ---- SERVICE / INFRA: a server cabinet with drive bays ---- */}
         {style.shape === 'rack' && (
-          <group position={[0, PLATFORM_Y + 1.75, 0]}>
-            <RoundedBox args={[2.2, 3.5, 1.8]} radius={0.14} smoothness={4} material={clay} />
-            <Slots positions={[0, 1, 2, 3, 4].map(i => [0, -1.25 + i * 0.6, 0.905] as [number, number, number])} size={[1.5, 0.12, 0.02]} lit={lit(5)} />
+          <group position={[0, PLATFORM_Y + 1.9, 0]}>
+            <RoundedBox castShadow args={[2.3, 3.8, 1.9]} radius={0.07} smoothness={2}>
+              {chassis}
+              <Edges threshold={18} color={edgeColor} />
+            </RoundedBox>
+            <mesh position={[0, 1.91, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[1.9, 1.5]} />
+              <meshBasicMaterial color={style.color} toneMapped={false} transparent opacity={0.4} />
+            </mesh>
+            {/* Perforated door, set just proud of the front face */}
+            <mesh geometry={DOOR} position={[-0.18, 0, 0.955]}>
+              <meshStandardMaterial map={doorTexture()} color="#ffffff" roughness={0.35} metalness={0.6} emissive={SELECT_BLUE} emissiveIntensity={isSelected ? 0.35 : 0} />
+            </mesh>
+            <LedColumn count={6} x={0.88} top={1.45} z={0.97} color={light} litRef={bays} />
+            {/* Neon strip down the front edge, in the status colour */}
+            <mesh geometry={NEON_EDGE} position={[-1.12, 0, 0.93]}>
+              <meshBasicMaterial color={alert ?? light} toneMapped={false} />
+            </mesh>
           </group>
         )}
 
+        {/* ---- DATABASE: stacked disk array ---- */}
         {style.shape === 'storage' && (
-          <group position={[0, PLATFORM_Y + 0.42, 0]}>
-            {[0, 1, 2].map(i => (
-              <group key={i} position={[0, i * 0.94, 0]}>
-                <mesh material={clay}><cylinderGeometry args={[1.32, 1.32, 0.8, 48]} /></mesh>
-                <mesh position={[0, 0.43, 0]}><cylinderGeometry args={[1.22, 1.22, 0.06, 48]} /><meshStandardMaterial color={DETAIL} roughness={0.8} /></mesh>
+          <group position={[0, PLATFORM_Y + 1.5, 0]}>
+            {[0, 1, 2].map((i) => (
+              <group key={i} position={[0, -1.05 + i * 1.05, 0]}>
+                <mesh castShadow>
+                  <cylinderGeometry args={[1.35, 1.35, 0.82, 32]} />
+                  {chassis}
+                  <Edges threshold={22} color={edgeColor} />
+                </mesh>
+                <mesh position={[0, 0.42, 0]} ref={(el) => { if (el) bays.current[i] = el; }}>
+                  <torusGeometry args={[1.36, 0.045, 8, 40]} />
+                  <meshBasicMaterial color={light} toneMapped={false} transparent opacity={0.85} />
+                </mesh>
               </group>
             ))}
-            <Slots positions={[0, 1, 2].map(i => [0, i * 0.94, 1.325] as [number, number, number])} size={[0.5, 0.1, 0.02]} lit={lit(3)} />
+            <mesh position={[0, 1.48, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[1.0, 32]} />
+              <meshBasicMaterial color={style.color} toneMapped={false} transparent opacity={0.45} />
+            </mesh>
           </group>
         )}
 
+        {/* ---- GATEWAY: flat router with antennae ---- */}
         {style.shape === 'router' && (
-          <group position={[0, PLATFORM_Y + 0.5, 0]}>
-            <RoundedBox args={[3.4, 0.9, 2.4]} radius={0.16} smoothness={4} material={clay} />
-            <Slots positions={[-1.1, -0.55, 0, 0.55, 1.1].map(x => [x, -0.05, 1.205] as [number, number, number])} size={[0.32, 0.14, 0.02]} lit={lit(5)} />
-            {[-1.25, 1.25].map(x => (
-              <group key={x} position={[x, 0.45, -0.85]}>
-                <mesh position={[0, 0.7, 0]} material={clay}><cylinderGeometry args={[0.06, 0.06, 1.4, 12]} /></mesh>
-                <mesh position={[0, 1.42, 0]} material={clay}><sphereGeometry args={[0.12, 16, 16]} /></mesh>
+          <group position={[0, PLATFORM_Y + 0.9, 0]}>
+            <RoundedBox castShadow args={[3.4, 0.85, 2.4]} radius={0.1} smoothness={2}>
+              {chassis}
+              <Edges threshold={18} color={edgeColor} />
+            </RoundedBox>
+            {[-1.1, -0.55, 0, 0.55, 1.1].map((x, i) => (
+              <mesh key={i} position={[x, -0.12, 1.21]} ref={(el) => { if (el) bays.current[i] = el; }}>
+                <boxGeometry args={[0.28, 0.12, 0.05]} />
+                <meshBasicMaterial color={light} toneMapped={false} transparent opacity={0.9} />
+              </mesh>
+            ))}
+            <mesh position={[0, 0.44, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[2.8, 1.8]} />
+              <meshBasicMaterial color={style.color} toneMapped={false} transparent opacity={0.35} />
+            </mesh>
+            {[-1.3, 1.3].map((x, i) => (
+              <group key={i} position={[x, 0.42, -0.8]}>
+                <mesh position={[0, 0.75, 0]}>
+                  <cylinderGeometry args={[0.05, 0.05, 1.5, 8]} />
+                  <meshStandardMaterial color="#2a3563" roughness={0.5} metalness={0.7} />
+                </mesh>
+                <mesh position={[0, 1.55, 0]}>
+                  <sphereGeometry args={[0.12, 12, 12]} />
+                  <meshBasicMaterial color={style.color} toneMapped={false} />
+                </mesh>
               </group>
             ))}
           </group>
         )}
 
+        {/* ---- FRONTEND: a screen on a stand ---- */}
         {style.shape === 'screen' && (
           <group position={[0, PLATFORM_Y, 0]}>
-            <mesh position={[0, 0.1, 0]} material={clay}><cylinderGeometry args={[0.85, 0.95, 0.2, 40]} /></mesh>
-            <mesh position={[0, 0.9, 0.05]} material={clay}><boxGeometry args={[0.28, 1.4, 0.18]} /></mesh>
-            <group position={[0, 2.45, 0]}>
-              <RoundedBox args={[3.4, 2.1, 0.2]} radius={0.08} smoothness={4} material={clay} />
-              <mesh position={[0, 0, 0.105]}>
-                <planeGeometry args={[3.12, 1.82]} />
-                <meshStandardMaterial color="#1d2025" roughness={0.35} metalness={0.1} />
+            <mesh position={[0, 0.3, 0]}>
+              <cylinderGeometry args={[0.7, 0.85, 0.2, 24]} />
+              {chassis}
+            </mesh>
+            <mesh position={[0, 1.1, 0]}>
+              <cylinderGeometry args={[0.14, 0.14, 1.4, 12]} />
+              <meshStandardMaterial color="#2a3563" roughness={0.5} metalness={0.7} />
+            </mesh>
+            <group position={[0, 2.55, 0]}>
+              <RoundedBox castShadow args={[3.4, 2.1, 0.22]} radius={0.07} smoothness={2}>
+                {chassis}
+                <Edges threshold={18} color={edgeColor} />
+              </RoundedBox>
+              <mesh position={[0, 0, 0.13]} ref={(el) => { if (el) bays.current[0] = el; }}>
+                <planeGeometry args={[3.05, 1.75]} />
+                <meshBasicMaterial color={light} toneMapped={false} transparent opacity={0.7} />
               </mesh>
-              <Slots positions={[0, 1, 2, 3].map(i => [-0.95 + i * 0.63, -0.55, 0.11] as [number, number, number])} size={[0.46, 0.06, 0.005]} lit={lit(4)} />
-              <mesh position={[-0.55, 0.45, 0.11]}><planeGeometry args={[1.6, 0.12]} /><meshBasicMaterial color="#3a3e45" /></mesh>
-              <mesh position={[-0.8, 0.2, 0.11]}><planeGeometry args={[1.1, 0.08]} /><meshBasicMaterial color="#2c3036" /></mesh>
             </group>
           </group>
         )}
 
+        {/* ---- QUEUE: a segmented pipe ---- */}
         {style.shape === 'pipe' && (
-          <group position={[0, PLATFORM_Y + 1.05, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <mesh material={clay}><capsuleGeometry args={[0.9, 2.6, 12, 40]} /></mesh>
-            {[-0.9, 0, 0.9].map((y, i) => (
+          <group position={[0, PLATFORM_Y + 1.3, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.95, 0.95, 3.6, 28]} />
+              {chassis}
+              <Edges threshold={22} color={edgeColor} />
+            </mesh>
+            {[-1.1, 0, 1.1].map((y, i) => (
+              <mesh key={i} position={[0, y, 0]} ref={(el) => { if (el) bays.current[i] = el; }}>
+                <torusGeometry args={[0.99, 0.06, 8, 32]} />
+                <meshBasicMaterial color={light} toneMapped={false} transparent opacity={0.85} />
+              </mesh>
+            ))}
+            {[-1.82, 1.82].map((y, i) => (
               <mesh key={i} position={[0, y, 0]}>
-                <torusGeometry args={[0.905, 0.045, 10, 48]} />
-                {i < lit(3)
-                  ? <meshStandardMaterial color={LOAD_ON} emissive={LOAD_ON} emissiveIntensity={0.55} />
-                  : <meshStandardMaterial color={DETAIL} roughness={0.8} />}
+                <cylinderGeometry args={[0.7, 0.7, 0.06, 24]} />
+                <meshBasicMaterial color={style.color} toneMapped={false} transparent opacity={0.5} />
               </mesh>
             ))}
           </group>
         )}
 
+        {/* ---- CACHE / EXTERNAL: a compact vented module ---- */}
         {style.shape === 'module' && (
-          <group position={[0, PLATFORM_Y + 1.05, 0]}>
-            <RoundedBox args={[2.1, 2.1, 2.1]} radius={0.22} smoothness={4} material={clay} />
-            <Slots positions={[-0.5, 0, 0.5].map(y => [0, y, 1.055] as [number, number, number])} size={[1.3, 0.12, 0.02]} lit={lit(3)} />
+          <group position={[0, PLATFORM_Y + 1.1, 0]}>
+            <RoundedBox castShadow args={[2.2, 2.2, 2.2]} radius={0.12} smoothness={2}>
+              {chassis}
+              <Edges threshold={18} color={edgeColor} />
+            </RoundedBox>
+            {[-0.55, 0, 0.55].map((y, i) => (
+              <mesh key={i} position={[0, y, 1.11]} ref={(el) => { if (el) bays.current[i] = el; }}>
+                <boxGeometry args={[1.5, 0.13, 0.05]} />
+                <meshBasicMaterial color={light} toneMapped={false} transparent opacity={0.85} />
+              </mesh>
+            ))}
+            <mesh position={[0, 1.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[1.7, 1.7]} />
+              <meshBasicMaterial color={style.color} toneMapped={false} transparent opacity={0.4} />
+            </mesh>
           </group>
         )}
 
+        {/* Status LED on top of every unit */}
+        <mesh ref={ledRef} geometry={LED} position={[0, 4.45, 0]} raycast={() => null}>
+          <meshBasicMaterial color={alert ?? light} toneMapped={false} transparent opacity={0.9} />
+        </mesh>
+
+        {/* Alert volume: a translucent block around the unit, like a room
+            highlighted on a building plan. */}
+        {alert && (
+          <mesh ref={alertRef} position={[0, 2.35, 0]} raycast={() => null}>
+            <boxGeometry args={[3.9, 4.7, 3.5]} />
+            <meshBasicMaterial color={alert} toneMapped={false} transparent opacity={0.2} depthWrite={false} />
+            <Edges threshold={18} color={alert} lineWidth={1.5} />
+          </mesh>
+        )}
+
+        {/* Location pin over a unit that is down or anomalous */}
+        {pinned && (
+          <mesh ref={pinRef} geometry={PIN} position={[0, 7.3, 0]} rotation={[Math.PI, 0, 0]} raycast={() => null}>
+            <meshBasicMaterial color={ALERT_PINK} toneMapped={false} />
+          </mesh>
+        )}
+
         {showLabel && (
-          // Isolated boundary: troika fetches a font, and a hang must never take the scene down with it.
+          // Isolated boundary: troika fetches a font, and a hang here must
+          // never take the rest of the scene down with it.
           <Suspense fallback={null}>
-            <Billboard position={[0, 5.9, 0]}>
-              <Text fontSize={highlight ? 0.78 : 0.7} color={labelColor} anchorX="center" anchorY="middle" letterSpacing={-0.01}
-                outlineWidth={0.035} outlineColor="#0d0e10" outlineOpacity={0.85}>
+            <Billboard position={[0, pinned ? 9.4 : 6.1, 0]}>
+              <Text fontSize={highlight ? 0.9 : 0.76} color={highlight ? '#ffffff' : '#dfe5ff'} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#070913">
                 {shortName}
               </Text>
-              {(highlight || troubled || status === 'unknown') && <Text position={[0, -0.82, 0]} fontSize={0.48} color={subColor} anchorX="center" anchorY="middle"
-                outlineWidth={0.025} outlineColor="#0d0e10" outlineOpacity={0.85}>
-                {subText}
-              </Text>}
+              <Text position={[0, -0.92, 0]} fontSize={0.52} color="#8d9bc9" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#070913">
+                {`${Math.round(cpu)}% cpu · ${Math.round(mem)}% mem`}
+              </Text>
+              {atRisk && (
+                <Text position={[0, -1.7, 0]} fontSize={0.5} color={riskColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#070913">
+                  {`at risk ${Math.round(predicted * 100)}%${analytics.cascadeVia ? ` via ${String(analytics.cascadeVia).split(':').pop()}` : ''}`}
+                </Text>
+              )}
             </Billboard>
           </Suspense>
         )}
@@ -256,3 +456,35 @@ export function Node3D({ node, live, isSelected, onClick, showLabel = true, dimm
     </group>
   );
 }
+
+/**
+ * Re-render only when something visible changes.
+ *
+ * App rebuilds every node object on every update, and pushes arrive every few
+ * seconds with CPU and memory moving on nearly every service. Default
+ * comparison therefore re-rendered the whole scene on every push; measured on
+ * the live OTel demo, a ~120 ms main-thread stall every ~1.7 s. Load is read
+ * from `loads` each frame, so it never needs a re-render; the label's
+ * CPU/memory text only does when the rounded value it shows changes.
+ */
+function sameNode(a: Node3DProps, b: Node3DProps): boolean {
+  if (a.node.id !== b.node.id || a.isSelected !== b.isSelected || a.showLabel !== b.showLabel || a.dimmed !== b.dimmed) return false;
+  if (a.live !== b.live || a.loads !== b.loads || a.onSelect !== b.onSelect) return false;
+  const da = a.node.data as any;
+  const db = b.node.data as any;
+  if (da.status !== db.status || da.type !== db.type || da.name !== db.name) return false;
+  const aa = da.analytics ?? {};
+  const ab = db.analytics ?? {};
+  if (Boolean(aa.anomalyPersistent) !== Boolean(ab.anomalyPersistent)) return false;
+  const pa = typeof aa.failureProbability === 'number' ? Math.round(aa.failureProbability * 100) : -1;
+  const pb = typeof ab.failureProbability === 'number' ? Math.round(ab.failureProbability * 100) : -1;
+  if (pa !== pb || aa.cascadeVia !== ab.cascadeVia) return false;
+  if (a.showLabel) {
+    const ma = da.metrics ?? {};
+    const mb = db.metrics ?? {};
+    if (Math.round(cpuShown(ma) ?? 0) !== Math.round(cpuShown(mb) ?? 0) || Math.round(ma.memoryPercent ?? 0) !== Math.round(mb.memoryPercent ?? 0)) return false;
+  }
+  return true;
+}
+
+export const Node3D = memo(Node3DInner, sameNode);

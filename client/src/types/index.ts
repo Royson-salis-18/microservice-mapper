@@ -74,6 +74,9 @@ export interface ServiceNode {
     downstreamCount?: number;
     anomalyScore?: number;
     anomalyPersistent?: boolean;
+    /** Dependency contributing most of the inherited risk (cascade model). */
+    cascadeVia?: string | null;
+    cascadeDepth?: number;
   };
 }
 
@@ -112,8 +115,14 @@ export interface DependencyEdge {
     samplesPerMin: number;
     windowSec: number;
     lastSeen: string;
+    baselinePerMin?: number;
+    openConnections?: number;
+    newConnectionsPerMin?: number;
+    connectionSweeps?: number;
   };
   status: 'active' | 'degraded' | 'failed' | 'unknown';
+  /** How strongly the source depends on the target (absent until the server computes it). */
+  weight?: EdgeWeight;
 }
 
 export interface GraphData {
@@ -307,3 +316,14 @@ export interface TargetDiscoverySummary {
   trafficCapableRoutesCount: number;
 }
 
+
+export interface EdgeWeight {
+  value: number;
+  dependency: number;
+  dependencyBasis: 'requests' | 'activity' | 'uniform';
+  kind: 'request' | 'telemetry';
+  volume: number | null;
+  confidence: number;
+  confidenceBasis: string;
+  stress: number | null;
+}
