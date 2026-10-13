@@ -27,10 +27,10 @@ Each compose project becomes its own target, so two benches running at once do n
 
 ## 3. Start something to map
 
-The two test benches are separate repositories, so clone the one you want next to the mapper.
+The two test benches are separate repositories, so clone the one you want next to the mapper. The fault injector and the organic traffic are on the `faultlab` branch of each (`git clone -b faultlab ...`).
 
 ```bash
-git clone https://github.com/Royson-salis-18/bench-1.git      # ShopFlow: an online shop, 13 services
+git clone -b faultlab https://github.com/Royson-salis-18/bench-1.git      # ShopFlow: an online shop, 13 services
 cd bench-1/shopflow
 make bench                                                      # app + always-on organic traffic (+ Grafana on :3000)
 ```
@@ -42,7 +42,7 @@ docker compose -f docker-compose.yml up -d --build
 docker compose -f docker-compose.yml --profile traffic up -d traffic
 ```
 
-LedgerLine (a bank, 12 services) is the same in `bench-2/ledgerline`. Then run `npm run local` in the mapper again (or just leave it running and start the bench: re-run it so a collector
+LedgerLine (a bank, 12 services) is the same: `git clone -b faultlab https://github.com/Royson-salis-18/bench-2.git`, then `cd bench-2/ledgerline`. Then run `npm run local` in the mapper again (or just leave it running and start the bench: re-run it so a collector
 is started for the new project).
 
 ## 4. Break it, at random, without telling the mapper
