@@ -19,7 +19,7 @@ const ci = (w: { p: number; lo: number; hi: number; n: number }) => `${pct(w.p)}
 
 /** Horizontal bars with Wilson whiskers: one measure, classes down the side. */
 function barChart(title: string, rows: { label: string; p: number; lo: number; hi: number; n: number }[], note = '') {
-  const W = 360, L = 92, R = 14, rowH = 26, H = rows.length * rowH + 30, x = (v: number) => L + v * (W - L - R);
+  const W = 380, L = 92, R = 52, rowH = 26, H = rows.length * rowH + 30, x = (v: number) => L + v * (W - L - R);
   const grid = [0, 0.25, 0.5, 0.75, 1].map((g) => `<line x1="${x(g)}" x2="${x(g)}" y1="6" y2="${H - 22}" class="grid"/><text x="${x(g)}" y="${H - 8}" class="tick" text-anchor="middle">${g * 100}%</text>`).join('');
   const bars = rows.map((r, i) => {
     const y = 10 + i * rowH, v = Number.isFinite(r.p) ? r.p : 0;
@@ -27,7 +27,7 @@ function barChart(title: string, rows: { label: string; p: number; lo: number; h
       <text x="${L - 8}" y="${y + 11}" class="lab" text-anchor="end">${esc(r.label)}</text>
       <rect x="${L}" y="${y}" width="${Math.max(0, x(v) - L)}" height="14" rx="3" class="bar"/>
       ${r.n ? `<line x1="${x(r.lo)}" x2="${x(r.hi)}" y1="${y + 7}" y2="${y + 7}" class="whisker"/><line x1="${x(r.lo)}" x2="${x(r.lo)}" y1="${y + 3}" y2="${y + 11}" class="whisker"/><line x1="${x(r.hi)}" x2="${x(r.hi)}" y1="${y + 3}" y2="${y + 11}" class="whisker"/>` : ''}
-      <text x="${Math.min(W - 4, x(r.hi) + 5)}" y="${y + 11}" class="val">${r.n ? pct(v) : '–'}</text></g>`;
+      <text x="${x(1) + 10}" y="${y + 11}" class="val">${r.n ? pct(v) : '–'}</text></g>`;
   }).join('');
   return `<figure><figcaption>${esc(title)}</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${grid}${bars}</svg>${note ? `<p class="note">${esc(note)}</p>` : ''}</figure>`;
 }
@@ -65,7 +65,7 @@ function reliability(c: NonNullable<Score['calibration']>) {
   return `<figure><figcaption>Is "at risk" honest? (reliability of the cascade warnings)</figcaption><svg viewBox="0 0 ${S} ${S}" role="img" aria-label="Reliability diagram">
     <line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" class="ref"/><polyline points="${line}" class="trace"/>${pts}${ticks}
     <text x="${(L + S) / 2}" y="${S - 2}" class="tick" text-anchor="middle">stated risk</text><text transform="translate(9,${S / 2}) rotate(-90)" class="tick" text-anchor="middle">went unhealthy soon after</text></svg>
-    <p class="note">${c.n} warnings. Brier ${num(c.brier, 3)}, ECE ${num(c.ece, 3)}, AUC ${num(c.auc, 2)}. Points above the dashed diagonal mean the warnings were too timid; below, too alarmist.</p></figure>`;
+    <p class="note">${c.n} warnings. Brier ${num(c.brier, 3)}, ECE ${num(c.ece, 3)}, AUC ${num(c.auc, 2)}. Points above the dashed diagonal mean the warnings were too timid; below, too alarmist. Caveat: "went unhealthy" means the mapper's own status flipped (resource-based), so this checks whether pressure spread, not whether requests failed.</p></figure>`;
 }
 
 function timeline(score: Score, serviceOrder: string[], t0: number, t1: number, incidents: { id: string; s: number; e: number; root: string | null }[]) {
@@ -85,11 +85,22 @@ function timeline(score: Score, serviceOrder: string[], t0: number, t1: number, 
 }
 
 function table(faults: FaultResult[], t0: number) {
-  const head = ['fault', 'class', 'faulted service', 'at', 'for', 'concurrent', 'detected', 'delay', 'rank of true root', 'mapper named', 'cascade precision / recall (structural)', 'precision / recall (observed)'];
-  const body = faults.map((f) => `<tr><td>${esc(f.id)}</td><td><i class="sw" style="background:${slot(f.class)}"></i>${esc(f.class)}</td><td>${esc(f.target)}</td><td>${Math.round((f.a - t0) / 60000)} min</td><td>${sec((f.b - f.a) / 1000)}</td><td>${f.concurrent}</td>
+  const head = ['fault', 'class', 'faulted service', 'at', 'for', 'overlapped by', 'felt by users', 'detected', 'delay', 'rank of true root', 'mapper named', 'cascade precision / recall (structural)', 'precision / recall (observed)'];
+  const body = faults.map((f) => `<tr><td>${esc(f.id)}</td><td><i class="sw" style="background:${slot(f.class)}"></i>${esc(f.class)}</td><td>${esc(f.target)}</td><td>${Math.round((f.a - t0) / 60000)} min</td><td>${sec((f.b - f.a) / 1000)}</td><td>${Math.max(0, f.concurrent - 1)} other fault${f.concurrent === 2 ? '' : 's'}</td><td>${f.userImpact ? (f.userImpact.visible ? 'yes' : 'no') : (f.isolated ? 'n/a' : 'not attributable')}</td>
     <td>${f.detected ? 'yes' : 'no'}${f.preexisting ? ' (already open)' : ''}</td><td>${f.delaySec === null ? '–' : sec(f.delaySec)}</td><td>${f.rankSettled ?? '–'}</td><td>${esc(f.predictedRoot ?? '–')}</td>
     <td>${f.structural ? `${pct(f.structural.precision)} / ${pct(f.structural.recall)}` : '–'}</td><td>${f.observed ? `${pct(f.observed.precision)} / ${pct(f.observed.recall)} (${f.observed.impacted} hit)` : '–'}</td></tr>`).join('');
   return `<details><summary>Table view: every fault</summary><div class="tablewrap"><table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></details>`;
+}
+
+/** Detection against what users actually felt, for faults that ran alone (only then can the impact be attributed to the fault). */
+function felt(score: Score): string {
+  const o = score.overall, iso = score.faults.filter((f) => f.isolated).length, total = score.faults.length;
+  const has = score.faults.some((f) => f.userImpact);
+  if (!has) return `<h2>Did it catch what users felt?</h2><div class="grid2"><figure><figcaption>User impact</figcaption><p class="note">${iso ? 'No traffic log was available, so faults cannot be split into felt and unfelt.' : `No fault ran alone in this campaign (${total} faults, every one overlapped by another), so a fault's effect on users cannot be attributed to it. Re-run with --max-concurrent 1 to measure this.`}</p></figure></div>`;
+  return `<h2>Did it catch what users felt?</h2><div class="grid2"><figure><figcaption>Faults that ran alone: ${iso} of ${total}</figcaption><table><thead><tr><th></th><th>faults</th><th>mapper detected</th></tr></thead><tbody>
+<tr><td>users saw errors or slowness</td><td>${o.visible}</td><td>${ci(o.detectedWhenVisible)}</td></tr>
+<tr><td>users saw nothing</td><td>${o.detectedWhenInvisible.n}</td><td>${o.detectedWhenInvisible.n ? ci(o.detectedWhenInvisible) : 'n/a'}</td></tr></tbody></table>
+<p class="note">"Felt" is measured from the traffic generator's own log (error rate at least 1 point above its baseline, or p95 at least 3 times and 50 ms worse), independent of the mapper. A fault that nobody could feel (a throttle on an idle service, a cache that is never missed) is not a failure to detect; the second row shows how often the mapper noticed anyway.</p></figure></div>`;
 }
 
 export function renderReport(score: Score, meta: Meta, incidents: { id: string; s: number; e: number; root: string | null }[], t0: number, t1: number, serviceOrder: string[]): string {
@@ -125,6 +136,7 @@ ${kpi('Median time to notice', sec(o.delaySec.median), `p90 ${sec(o.delaySec.p90
 ${kpi('False alarms', `${num(score.falseAlarm.perHour, 2)}/h`, `${score.falseAlarm.episodes} incident(s), ${num(score.falseAlarm.minutes, 1)} min with no fault`)}
 ${kpi('Cascade F1 (observed)', pct(o.observed.f1), `precision ${pct(o.observed.precision)}, recall ${pct(o.observed.recall)}`)}
 </div>
+${felt(score)}
 <h2>When and where</h2><div class="grid2">${timeline(score, serviceOrder, t0, t1, incidents)}</div>
 <h2>Detection and root-cause accuracy by fault class</h2><div class="grid2">
 ${barChart('Detected', rows('detected'))}${barChart('Root cause Top-1 (of detected)', rows('top1'), 'Settled ranking: the last one before the fault was healed.')}${barChart('Root cause Top-3 (of detected)', rows('top3'))}

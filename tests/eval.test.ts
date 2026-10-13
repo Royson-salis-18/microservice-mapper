@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLedger, score, wilson, auc, norm, type Snapshot, type SnapIncident, type LedgerFault } from '../tools/eval/score.ts';
+import { parseLedger, score, wilson, auc, norm, parseTrafficLog, type Snapshot, type SnapIncident, type LedgerFault, type ImpactSample } from '../tools/eval/score.ts';
 
 const T0 = Date.UTC(2026, 0, 1, 12, 0, 0);
 const at = (s: number) => T0 + s * 1000;
@@ -153,4 +153,47 @@ test('confusion matrix puts missed faults in their own column', () => {
   const row = (name: string) => c.counts[c.truth.indexOf(name)];
   assert.equal(row('db')[c.predicted.indexOf('db')], 1);
   assert.equal(row('cache')[c.predicted.indexOf('(missed)')], 1);
+});
+
+test('traffic log lines are parsed (docker -t prefix, p95 and error rate)', () => {
+  const text = '2026-10-13T15:03:23.456Z 15:03:23 n=23 p50=5ms p95=10ms err5xx/net=0.0%\n2026-10-13T15:03:28.456Z 15:03:28 n=29 p50=7ms p95=480ms err5xx/net=12.5%\nnoise line\n  sessions started=42 in-flight=11';
+  const s = parseTrafficLog(text);
+  assert.equal(s.length, 2);
+  assert.deepEqual([s[0].n, s[0].p95, s[0].err], [23, 10, 0]);
+  assert.deepEqual([s[1].p95, s[1].err], [480, 12.5]);
+  assert.equal(s[1].ts - s[0].ts, 5000);
+});
+
+function trafficFor(errFrom: number, errTo: number, err: number, p95: number): ImpactSample[] {
+  const out: ImpactSample[] = [];
+  for (let s = 0; s <= 400; s += 5) out.push({ ts: at(s), n: 20, p95: s >= errFrom && s <= errTo ? p95 : 10, err: s >= errFrom && s <= errTo ? err : 0 });
+  return out;
+}
+
+test('user impact: an isolated fault that users felt is "visible"; one with no effect is not', () => {
+  const felt = fault('a', 'stop', 'db', 100, 160, ['api']);
+  const quiet = fault('b', 'brownout', 'cache', 250, 310, []);
+  const r = score([felt, quiet], scenario(), { graceSec: 30 }, trafficFor(105, 160, 20, 900)).faults;
+  assert.equal(r[0].isolated, true);
+  assert.equal(r[0].userImpact!.visible, true);
+  assert.ok(r[0].userImpact!.errPctMean > 5);
+  assert.equal(r[1].userImpact!.visible, false);
+  const s = score([felt, quiet], scenario(), { graceSec: 30 }, trafficFor(105, 160, 20, 900)).overall;
+  assert.equal(s.visible, 1);
+});
+
+test('user impact is not attributed when another fault overlaps', () => {
+  const a = fault('a', 'stop', 'db', 100, 200, ['api']);
+  const b = fault('b', 'pause', 'cache', 150, 250, []);
+  const r = score([a, b], scenario(), { graceSec: 30 }, trafficFor(110, 240, 30, 900)).faults;
+  assert.deepEqual([r[0].isolated, r[0].userImpact], [false, null]);
+  assert.deepEqual([r[1].isolated, r[1].userImpact], [false, null]);
+});
+
+test('a slowdown alone (no errors) counts as felt when p95 is 3x worse and at least 50 ms worse', () => {
+  const f = fault('a', 'brownout', 'db', 100, 160, ['api']);
+  const slow = score([f], scenario(), {}, trafficFor(105, 160, 0, 200)).faults[0].userImpact!;
+  const tiny = score([f], scenario(), {}, trafficFor(105, 160, 0, 40)).faults[0].userImpact!;
+  assert.equal(slow.visible, true);
+  assert.equal(tiny.visible, false);          // 4x but only 30 ms worse: not something a person notices
 });
