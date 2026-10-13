@@ -25,8 +25,19 @@ export interface ServiceNode {
     cpu?: number;
     memory?: number;
     memoryPercent?: number;
+    /** Bytes received / sent since the container started (cumulative). */
     networkRx?: number;
     networkTx?: number;
+    /** Bytes per second over the last interval: exact, from the container's
+     *  /proc/<pid>/net/dev counters where readable. Undefined until two
+     *  readings exist. */
+    networkRxRate?: number;
+    networkTxRate?: number;
+    /** Cores the container may use: its CPU limit, else the host's cores. */
+    cpuAllowanceCores?: number;
+    /** CPU as a share of that allowance, 0..100. `cpu` above is docker's
+     *  figure, percent of ONE core, which can exceed 100. */
+    cpuOfAllowance?: number;
     // Tier 1/2 only — nothing outside the container can measure these.
     latency?: number | null;
     requestRate?: number | null;
@@ -47,14 +58,23 @@ export interface ServiceNode {
      *  node. See RiskEngine.ts for the exact formula. */
     riskScore?: number | null;
     /**
-     * Deliberately never set. A real probability needs labelled outcomes —
-     * "a failure happened, N minutes after this precursor pattern" — and
-     * nothing in this system records that. Leaving this null (rather than
-     * inventing a plausible-looking number) is the point, not an oversight.
+     * Predicted probability this service fails, 0..1, from the cascade model
+     * in server/graph/CascadeEngine.ts: its own measured state combined with
+     * risk flowing in from failing dependencies over weighted edges.
+     *
+     * A model estimate, not an observed frequency — nothing has been
+     * calibrated against records of real cascades. The model and its
+     * transmission parameter are served alongside it at
+     * /api/reliability/cascade so that is never hidden.
      */
     failureProbability?: number | null;
-    /** Deliberately never set — same reason as failureProbability. */
+    /** The part of failureProbability arriving through dependencies alone —
+     *  how exposed this service is to something else failing. */
     affectedProbability?: number | null;
+    /** The dependency contributing most of that inherited risk. */
+    cascadeVia?: string | null;
+    /** Hops from where this service's risk originates; 0 = its own state. */
+    cascadeDepth?: number;
     /** Share of this project's live observed traffic that flows through this
      *  node's downstream footprint. Null only when the whole project shows
      *  zero observed activity (nothing to divide by), never when the node's

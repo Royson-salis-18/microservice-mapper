@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import { createServer as createNetServer } from 'net';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
@@ -29,8 +30,37 @@ function clearRuntimeState(): void {
   }
 }
 
+/**
+ * Refuse to start a second server.
+ *
+ * Constructing the GraphStore starts an SSH collector for every target, and
+ * the process-level crash guard below keeps the process alive through an
+ * EADDRINUSE from listen(). So a second `npm run server` while one was
+ * already up used to run on as a headless duplicate: no API, but every host
+ * read twice over SSH (on hosts that were already overloaded) and both
+ * processes writing the same data files. Checking the port first means
+ * nothing is started at all.
+ */
+async function assertPortFree(port: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    const probe = createNetServer();
+    probe.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n[MAPPER] Port ${port} is already in use: another mapper server is probably running (for example from \`npm run dev\`).`);
+        console.error('[MAPPER] Not starting a second one, so targets are not polled twice. Stop the other server first, or set PORT.\n');
+        process.exit(1);
+      }
+      resolve();
+    });
+    probe.once('listening', () => probe.close(() => resolve()));
+    probe.listen(port, '0.0.0.0');
+  });
+}
+
 async function main() {
   // REMOVED: clearRuntimeState(); // STOPPED clearing data on every boot to preserve target configs and telemetry
+
+  await assertPortFree(Number(config.PORT));
 
   const app = express();
   app.use(cors());
@@ -51,6 +81,11 @@ async function main() {
   trafficController.onStoppedCallback = (targetId) => experimentManager.stopExperiment(targetId, 'STOPPED');
   app.use('/api', createRouter(graphStore, wsManager, incidentManager, trafficController, experimentManager, riskEngine));
 
+  // Backstop for a port taken between the check above and here.
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    console.error(`[MAPPER] Server failed to listen on ${config.PORT}: ${err.message}`);
+    process.exit(1);
+  });
   server.listen(Number(config.PORT), '0.0.0.0', () => {
     // Auto-detect local network IP for MAPPER_PUBLIC_URL hint
     let localIp = '127.0.0.1';
@@ -89,19 +124,35 @@ async function main() {
   // poll, and risk runs before the broadcast so /api/graph and graph-update
   // both go out already carrying it. Runs once immediately (not just on the
   // first timer tick) so the first broadcast after boot isn't 5s stale.
+  // What each target's incident last looked like when it was sent. An
+  // incident was broadcast every cycle for every target whether or not
+  // anything had changed — 48 a minute measured live — so it now goes out
+  // only when something a person would notice has changed.
+  const lastIncidentSignature = new Map<string, string>();
+  const incidentSignature = (i: any) => JSON.stringify([
+    i.id, i.status, i.severity, i.rootCauseServiceId, i.confidence,
+    Math.round((i.rootCauseScore ?? 0) * 100),
+    [...(i.affectedServices ?? [])].sort(),
+    (i.explanation?.propagationPath ?? []),
+  ]);
+
   function runPollingCycle() {
     try {
       const targets = graphStore.getGraph().targets;
       for (const target of targets) {
         const incident = incidentManager.evaluateTarget(target.targetId);
         if (incident) {
-          wsManager.broadcast('incident.updated', incident);
+          const sig = incidentSignature(incident);
+          if (lastIncidentSignature.get(target.targetId) !== sig) {
+            lastIncidentSignature.set(target.targetId, sig);
+            wsManager.broadcast('incident.updated', incident);
+          }
         }
       }
 
       riskEngine.recomputeAll(incidentManager.getAllActiveIncidents());
 
-      wsManager.broadcast('graph-update', graphStore.getGraph());
+      graphStore.requestBroadcast();
     } catch (e) {
       console.error('Error during polling cycle:', e);
     }

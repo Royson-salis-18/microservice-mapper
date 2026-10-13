@@ -2,36 +2,32 @@ import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { Incident, ScoreContribution } from '../models/Incident.js';
 import type { GraphStore } from './GraphStore.js';
+import { computeEdgeWeights } from './EdgeWeights.js';
+import { predictCascade, simulateFailure, structuralCriticality, type CascadePrediction, type WhatIfResult } from './CascadeEngine.js';
 
 /**
- * Current reliability exposure per service.
+ * Current reliability exposure per service, recomputed every poll cycle.
  *
  * Everything the rest of the app does is backward-looking: RCAEngine only
  * speaks once a service is already critical or degraded. This scores services
  * that are still fine but structurally exposed — how much of the system's
- * live traffic is sitting behind them.
+ * live traffic is sitting behind them — and, through the cascade model,
+ * which of them are likely to be pulled down next.
  *
- * The rule this file follows, and the reason it is written the way it is:
- * every number here traces back to a signal that was actually collected,
- * through arithmetic a person can redo by hand from the same graph. Hence
- * `healthBreakdown`, which carries the factors that produced the score in the
- * same visible style RCAEngine uses for root-cause scoring.
+ * Each cycle, per project:
+ *   1. edge weights     how strongly each caller depends on each callee
+ *   2. health and risk  current exposure, with a visible factor breakdown
+ *   3. cascade model    predicted failure probability, written to
+ *                       `failureProbability` / `affectedProbability`
  *
- * Two fields on ServiceNode.analytics are deliberately left unset —
- * `failureProbability` and `affectedProbability`. Calibrating a probability
- * needs labelled outcomes ("it failed, N minutes after this pattern"), and
- * nothing in this system records that. A plausible-looking number in those
- * fields would be indistinguishable from a measured one on screen, which is
- * the specific failure this file exists to avoid.
+ * Every number traces back to a collected signal through arithmetic a person
+ * can redo by hand. The cascade probabilities are estimates under a stated
+ * model (see CascadeEngine.ts) rather than observed frequencies, and they
+ * carry the model name and its parameter so that is never hidden.
  *
- * DIRECTION CAVEAT: observed edges come from per-container /proc/net/tcp
- * scans, which record `source = the container that was scanned` and
- * `target = the remote peer` — the scan cannot tell which side opened the
- * connection. So a database can legitimately appear as the source of an edge
- * to its own caller. Traversal here follows source→target because that is the
- * convention RCAEngine's propagation path already uses, and disagreeing with
- * it would put two different answers on screen for one incident. Declared
- * (compose depends_on) edges do not have this problem.
+ * Edge direction is "source calls target": the collector recovers it from
+ * listening ports (orientConnection in MetricCollector.ts), so failure travels
+ * against the arrow — from a callee to the services that call it.
  */
 
 export interface NodeRisk {
@@ -47,12 +43,15 @@ export interface NodeRisk {
 export interface BlastRadiusEntry {
   nodeId: string;
   nodeName: string;
+  /** Hops back up the dependency chain from the failing node. 1 = calls it directly. */
   hopDistance: number;
-  /** Null when no inbound edge carries activity data — unmeasured, not idle. */
-  inboundActivitySamplesPerMin: number | null;
-  /** Share of this node's own inbound activity that arrives via the failing
-   *  node's reachable set. Null when inbound activity is unmeasured. */
-  dependentShareOfInbound: number | null;
+  /** Total activity on this node's own outbound calls. Null when none of them
+   *  carry activity data — unmeasured, not idle. */
+  outboundSamplesPerMin: number | null;
+  /** How much of what this node depends on sits inside the blast radius.
+   *  1 = everything it calls is down; 0.25 = it has other paths still up.
+   *  Null when its outbound traffic is unmeasured. */
+  shareOfItsDependencies: number | null;
 }
 
 export interface BlastRadiusResult {
@@ -72,8 +71,10 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** A link's normal traffic level — the slow baseline, so a link that went
+ *  silent because its callee died still counts for what it usually carries. */
 function activityOf(edge: DependencyEdge): number {
-  return edge.activity?.samplesPerMin ?? 0;
+  return edge.activity?.baselinePerMin ?? edge.activity?.samplesPerMin ?? 0;
 }
 
 /** Edges belong to the project of whichever endpoint we can resolve. Edge ids
@@ -84,19 +85,29 @@ function projectOfEdge(edge: DependencyEdge, projectByNodeId: Map<string, string
 }
 
 /**
- * Every node and edge reachable downstream of `startId`, following observed
- * edges only. The visited set is what keeps a dependency cycle (A→B→C→A)
- * from looping forever or counting the same edge's traffic twice.
+ * Everything that would be hit if `startId` failed, with hop distance.
+ *
+ * An edge means "source calls target", so the caller depends on the callee
+ * and failure travels *against* the arrow: if a database dies, the services
+ * calling it break, then whatever calls those. So this walks in-edges
+ * (target -> source), not out-edges.
+ *
+ * Walking out-edges instead — which is what this did originally — answers
+ * "what does X call", which is close to the opposite question and puts
+ * databases at the far end of a blast radius they should be at the origin of.
+ *
+ * The visited set keeps a genuine dependency cycle from looping forever or
+ * counting one service's traffic twice.
  */
-function reachDownstream(
+function reachDependents(
   startId: string,
   edges: DependencyEdge[],
 ): { nodes: Map<string, number>; edgeIds: Set<string> } {
-  const outBySource = new Map<string, DependencyEdge[]>();
+  const inByTarget = new Map<string, DependencyEdge[]>();
   for (const e of edges) {
-    const list = outBySource.get(e.source);
+    const list = inByTarget.get(e.target);
     if (list) list.push(e);
-    else outBySource.set(e.source, [e]);
+    else inByTarget.set(e.target, [e]);
   }
 
   const nodes = new Map<string, number>();
@@ -109,18 +120,45 @@ function reachDownstream(
     hop += 1;
     const next: string[] = [];
     for (const current of frontier) {
-      for (const edge of outBySource.get(current) ?? []) {
+      for (const edge of inByTarget.get(current) ?? []) {
         edgeIds.add(edge.id);
-        if (seen.has(edge.target)) continue;
-        seen.add(edge.target);
-        nodes.set(edge.target, hop);
-        next.push(edge.target);
+        if (seen.has(edge.source)) continue;
+        seen.add(edge.source);
+        nodes.set(edge.source, hop);
+        next.push(edge.source);
       }
     }
     frontier = next;
   }
 
   return { nodes, edgeIds };
+}
+
+/**
+ * How much of `nodeId`'s own outbound dependency traffic runs into
+ * `failingSet`. 1 means everything it depends on is inside the blast radius;
+ * 0.25 means it has three other paths still standing.
+ *
+ * Null when none of its out-edges carry activity data — unmeasured is not the
+ * same claim as unaffected.
+ */
+function shareOfDependenciesInSet(
+  nodeId: string,
+  failingSet: Set<string>,
+  edges: DependencyEdge[],
+): { share: number | null; outboundSamplesPerMin: number | null } {
+  const out = edges.filter(e => e.source === nodeId);
+  const measured = out.filter(e => e.activity !== undefined);
+  if (measured.length === 0) return { share: null, outboundSamplesPerMin: null };
+
+  const total = measured.reduce((sum, e) => sum + activityOf(e), 0);
+  if (total <= 0) return { share: null, outboundSamplesPerMin: round2(total) };
+
+  const intoFailing = measured
+    .filter(e => failingSet.has(e.target))
+    .reduce((sum, e) => sum + activityOf(e), 0);
+
+  return { share: round2(intoFailing / total), outboundSamplesPerMin: round2(total) };
 }
 
 /**
@@ -157,15 +195,16 @@ function computeHealth(node: ServiceNode, incidents: Incident[]): { score: numbe
     });
   }
 
-  // affectedServices holds service NAMES (RCAEngine builds it from node.name)
-  // while rootCauseServiceId holds a full node id. Matching the wrong one
-  // against the wrong field silently never matches, so both are explicit.
+  // Both fields hold full node ids. affectedServices used to hold bare names
+  // while rootCauseServiceId held an id, and matching one kind against the
+  // other silently never matched; names are still accepted so an incident
+  // recorded before the change keeps counting.
   // RESOLVED incidents are excluded because IncidentManager keeps them in its
   // map forever — it flips status rather than deleting, so an unfiltered read
   // would hold a service down long after it recovered.
   const live = incidents.filter(i => i.status !== 'RESOLVED');
   const isRootCause = live.some(i => i.rootCauseServiceId === node.id);
-  const isAffected = live.some(i => i.affectedServices.includes(node.name));
+  const isAffected = live.some(i => i.affectedServices.includes(node.id) || i.affectedServices.includes(node.name));
   const incidentValue = isRootCause ? 0 : isAffected ? 0.3 : 1;
   parts.push({
     factor: 'incident',
@@ -224,7 +263,13 @@ export function computeProjectRisk(
     const d = degree.get(n.id)!;
     return d.up + d.down;
   }));
-  const totalActivity = observed.reduce((sum, e) => sum + activityOf(e), 0);
+
+  // Criticality comes from the cascade model: the expected share of traffic
+  // disrupted if this service failed alone. Weights are filled in here when
+  // the caller has not already set them, so this stays usable on its own.
+  const weights = computeEdgeWeights(observed);
+  const weighted = observed.map(e => (e.weight ? e : { ...e, weight: weights.get(e.id) }));
+  const criticalityById = structuralCriticality(nodes, weighted, activityOf);
 
   for (const node of nodes) {
     const d = degree.get(node.id)!;
@@ -234,16 +279,7 @@ export function computeProjectRisk(
     // same claim as "this node scored zero". Null keeps those apart, here and
     // everywhere below.
     const centrality = maxDegree > 0 ? round2((d.up + d.down) / maxDegree) : null;
-
-    let criticality: number | null = null;
-    if (totalActivity > 0) {
-      const { edgeIds } = reachDownstream(node.id, observed);
-      let reachableActivity = 0;
-      for (const edge of observed) {
-        if (edgeIds.has(edge.id)) reachableActivity += activityOf(edge);
-      }
-      criticality = round2(reachableActivity / totalActivity);
-    }
+    const criticality = criticalityById.get(node.id) ?? null;
 
     const riskScore = criticality !== null
       ? round2(0.5 * (1 - health.score) + 0.5 * criticality)
@@ -283,33 +319,19 @@ export function computeBlastRadius(
 
   const observed = edges.filter(e => e.observed);
   const nameById = new Map(nodes.map(n => [n.id, n.name]));
-  const { nodes: reached } = reachDownstream(nodeId, observed);
+  const { nodes: reached } = reachDependents(nodeId, observed);
 
-  const reachableSet = new Set<string>([nodeId, ...reached.keys()]);
+  const failingSet = new Set<string>([nodeId, ...reached.keys()]);
 
   const affected: BlastRadiusEntry[] = [];
   for (const [affectedId, hopDistance] of reached) {
-    const inbound = observed.filter(e => e.target === affectedId);
-    const measured = inbound.filter(e => e.activity !== undefined);
-
-    const inboundActivity = measured.length > 0
-      ? round2(measured.reduce((sum, e) => sum + activityOf(e), 0))
-      : null;
-
-    let dependentShare: number | null = null;
-    if (inboundActivity !== null && inboundActivity > 0) {
-      const viaOrigin = measured
-        .filter(e => reachableSet.has(e.source))
-        .reduce((sum, e) => sum + activityOf(e), 0);
-      dependentShare = round2(viaOrigin / inboundActivity);
-    }
-
+    const { share, outboundSamplesPerMin } = shareOfDependenciesInSet(affectedId, failingSet, observed);
     affected.push({
       nodeId: affectedId,
       nodeName: nameById.get(affectedId) ?? affectedId,
       hopDistance,
-      inboundActivitySamplesPerMin: inboundActivity,
-      dependentShareOfInbound: dependentShare,
+      outboundSamplesPerMin,
+      shareOfItsDependencies: share,
     });
   }
 
@@ -327,7 +349,29 @@ export function computeBlastRadius(
 }
 
 export class RiskEngine {
+  /** Latest cascade prediction per project, served by the API. */
+  private predictions = new Map<string, CascadePrediction>();
+
   constructor(private store: GraphStore) {}
+
+  public getPrediction(project: string): CascadePrediction | null {
+    return this.predictions.get(project) ?? null;
+  }
+
+  public getAllPredictions(): CascadePrediction[] {
+    return [...this.predictions.values()];
+  }
+
+  /** What if this one service failed outright, with everything else as measured? */
+  public simulateCascade(nodeId: string): WhatIfResult | null {
+    const { nodes, edges } = this.store.getGraph();
+    const origin = nodes.find(n => n.id === nodeId);
+    if (!origin) return null;
+    const projectNodes = nodes.filter(n => n.project === origin.project);
+    const ids = new Set(projectNodes.map(n => n.id));
+    const projectEdges = edges.filter(e => ids.has(e.source) && ids.has(e.target));
+    return simulateFailure(origin.project, nodeId, projectNodes, projectEdges);
+  }
 
   /**
    * Writes risk onto the nodes the store already holds.
@@ -362,16 +406,46 @@ export class RiskEngine {
       else edgesByProject.set(project, [edge]);
     }
 
+    const liveProjects = new Set<string>();
     for (const [project, projectNodes] of nodesByProject) {
+      liveProjects.add(project);
       const projectEdges = edgesByProject.get(project) ?? [];
       const projectIncidents = incidents.filter(i => i.targetId === project);
-      const risk = computeProjectRisk(projectNodes, projectEdges, projectIncidents);
 
+      // Weights first: the cascade model reads them from the edges.
+      const weights = computeEdgeWeights(projectEdges);
+      for (const edge of projectEdges) {
+        const w = weights.get(edge.id);
+        if (w) edge.weight = w;
+      }
+
+      const risk = computeProjectRisk(projectNodes, projectEdges, projectIncidents);
       for (const node of projectNodes) {
         const r = risk.get(node.id);
         if (!r) continue;
         node.analytics = { ...node.analytics, ...r };
       }
+
+      const prediction = predictCascade(project, projectNodes, projectEdges);
+      this.predictions.set(project, prediction);
+      const byId = new Map(prediction.nodes.map(c => [c.nodeId, c]));
+      for (const node of projectNodes) {
+        const c = byId.get(node.id);
+        if (!c) continue;
+        node.analytics = {
+          ...node.analytics,
+          failureProbability: c.probability,
+          affectedProbability: c.inherited,
+          // An id, like every other service reference: this used to be the
+          // bare name, so anything that looked the service up by it found
+          // nothing. Views show the name part.
+          cascadeVia: c.via?.nodeId ?? null,
+          cascadeDepth: c.depth,
+        };
+      }
+    }
+    for (const project of this.predictions.keys()) {
+      if (!liveProjects.has(project)) this.predictions.delete(project);
     }
   }
 

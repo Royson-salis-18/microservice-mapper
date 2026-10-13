@@ -8,7 +8,9 @@ import path from 'path';
 const SENTINEL = '___CMD_DONE___';
 
 function resolveKeyPath(keyPath: string): string {
-  return keyPath.startsWith('~/') ? path.join(os.homedir(), keyPath.slice(2)) : keyPath;
+  let p = keyPath;
+  if (p.startsWith('~/') || p.startsWith('~\\')) p = path.join(os.homedir(), p.slice(2));
+  return path.resolve(p);
 }
 
 export class WebSocketManager {
@@ -83,7 +85,8 @@ export class WebSocketManager {
 
           if (targetIp && targetKey) {
             spawnCmd = 'ssh';
-            spawnArgs = ['-tt', '-F', '/dev/null', '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
+            const nullArgs = process.platform === 'win32' ? [] : ['-F', '/dev/null'];
+            spawnArgs = ['-tt', ...nullArgs, '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
           }
         }
 

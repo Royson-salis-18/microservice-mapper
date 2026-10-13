@@ -8,12 +8,27 @@ import type { WebSocketManager } from '../api/websocket.js';
 // Import from the new agentless telemetry platform
 import { ConnectionManager } from '../telemetry-platform/src/connection/ConnectionManager.js';
 import { DiscoveryEngine } from '../telemetry-platform/src/discovery/DiscoveryEngine.js';
-import { MetricCollector } from '../telemetry-platform/src/collection/MetricCollector.js';
+import { MetricCollector, type NetworkReading } from '../telemetry-platform/src/collection/MetricCollector.js';
 import { REMOTE_COMMANDS } from '../telemetry-platform/src/connection/RemoteCommand.js';
 import type { TargetConfig } from '../telemetry-platform/src/types/target.js';
 import { PrometheusSource } from '../telemetry-sources/PrometheusSource.js';
 import type { ServiceRequestMetrics, TelemetrySourceConfig } from '../telemetry-sources/TelemetrySource.js';
 import { provenance } from '../models/MetricProvenance.js';
+import { parseDockerPs } from '../telemetry-platform/src/discovery/parsers/dockerPs.js';
+import {
+  statusFromSample,
+  cpuShareOfAllowance,
+  statusFromPsRow,
+  indexPsRowsByServiceId,
+  type ContainerHealth,
+} from '../telemetry-platform/src/collection/containerHealth.js';
+
+/** How long `docker ps -a` output is reused while a service stays down, so a
+ *  persistent outage costs one extra command every 15s, not every poll. */
+const PS_ALL_CACHE_MS = 15_000;
+/** A service whose container no longer exists at all is dropped from tracking
+ *  after this long — matching GraphStore's stale-node pruning window. */
+const REMOVED_SERVICE_GRACE_MS = 900_000;
 
 /**
  * Containers that exist to produce load. These are never auto-restarted:
@@ -56,6 +71,10 @@ class TargetAgent {
   private prometheus: PrometheusSource | null = null;
   private prometheusChecked = false;
   private prometheusUnavailableReason: string | null = null;
+  /** Last `docker ps -a` listing, reused briefly while something is down. */
+  private psAllCache: { at: number; byService: Map<string, any> } | null = null;
+  /** When each service's container was first found missing entirely. */
+  private notFoundSince = new Map<string, number>();
 
   constructor(
     targetId: string,
@@ -77,8 +96,8 @@ class TargetAgent {
   private get sshUser(): string { return this.tConf.sshUsername || 'ubuntu'; }
   private get sshKeyPath(): string {
     let p = this.tConf.sshKeyPath || '';
-    if (p.startsWith('~/')) p = path.join(os.homedir(), p.slice(2));
-    return p;
+    if (p.startsWith('~/') || p.startsWith('~\\')) p = path.join(os.homedir(), p.slice(2));
+    return path.resolve(p);
   }
 
   private log(msg: string) {
@@ -196,7 +215,26 @@ class TargetAgent {
       return this.discoveredServices.length;
     }
 
-    this.discoveredServices = result.services;
+    // `docker ps` lists running containers only, so a service that crashed
+    // since the last scan is simply absent here. Replacing the list outright
+    // (which this did before) made a crashed service vanish from tracking at
+    // the next rescan — the poll stopped checking it, its node stopped being
+    // refreshed, and it was eventually pruned as if it had never existed. A
+    // dead dependency is the most important thing on the graph, not something
+    // to forget. So previously known services carry over; the poll's
+    // missing-container check decides whether each one is crashed, finished,
+    // or genuinely removed, and only the last is eventually let go.
+    const freshIds = new Set(result.services.map((s: any) => s.serviceId));
+    const carriedOver = this.discoveredServices.filter((s: any) => {
+      if (freshIds.has(s.serviceId)) return false;
+      const since = this.notFoundSince.get(s.serviceId);
+      return since === undefined || Date.now() - since < REMOVED_SERVICE_GRACE_MS;
+    });
+    if (carriedOver.length > 0) {
+      this.log(`[Agent:${this.targetId}] Still tracking ${carriedOver.length} service(s) not currently running: ${carriedOver.map((s: any) => s.name).join(', ')}`);
+    }
+    this.discoveredServices = [...result.services, ...carriedOver];
+    for (const id of freshIds) this.notFoundSince.delete(id as string);
     const nowIso = new Date().toISOString();
 
       // Register services in endpoint registry
@@ -493,11 +531,12 @@ class TargetAgent {
         // Tier 0 metrics we already have in hand — the agentless path is the
         // one that has to keep working.
         const requestMetrics = await this.collectRequestMetrics(currentConn);
+        const missing = await this.classifyMissingServices(currentConn, metricsRes.samples);
 
-        if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0 || metricsRes.connectionEvents.length > 0)) {
+        if (this.onTelemetryCollected && (metricsRes.samples.length > 0 || missing.size > 0 || metricsRes.observedEdges.length > 0 || metricsRes.interactions.length > 0 || metricsRes.connectionEvents.length > 0)) {
           const envelope = this.translateMetricsToEnvelope(
             metricsRes.samples, metricsRes.observedEdges, metricsRes.interactions,
-            metricsRes.connectionEvents, requestMetrics,
+            metricsRes.connectionEvents, requestMetrics, missing, collector,
           );
           this.onTelemetryCollected(this.targetId, envelope);
         }
@@ -557,7 +596,11 @@ class TargetAgent {
       }
     }, 180_000);
 
-    this.connectionTimer = setInterval(async () => {
+    // Self-scheduling, like the poll above: the next sweep starts 5s after
+    // this one finishes. As a setInterval it fired every 5s regardless, and a
+    // sweep of 25 services can take longer than that, so sweeps overlapped,
+    // competed for SSH channels and arrived at irregular intervals.
+    const sweep = async () => {
       if (this.dead || !this.onTelemetryCollected) return;
       try {
         const currentConn = await this.connManager!.getConnection();
@@ -569,12 +612,65 @@ class TargetAgent {
       } catch (e: any) {
         this.scheduleRecovery(`Connection scan failed: ${e.message}`);
       }
-      // One `docker exec` per container per tick, so this is the heaviest
-      // recurring cost we impose on the target — at 1s on an 18-container
-      // host that was ~18 process spawns per second against a daemon already
-      // struggling. 5s costs us almost nothing in coverage because TIME_WAIT
-      // lingers ~60s, which is exactly why that state is counted.
-    }, 5000);
+      // One read per container per sweep, so this is the heaviest recurring
+      // cost we impose on the target. A 5s gap costs almost nothing in
+      // coverage because TIME_WAIT lingers ~60s, which is exactly why that
+      // state is counted.
+      if (!this.dead && !this.recovering) this.connectionTimer = setTimeout(sweep, 5000);
+    };
+    this.connectionTimer = setTimeout(sweep, 5000);
+  }
+
+  /**
+   * Services discovery knows about that produced no stats sample this cycle.
+   *
+   * `docker stats` only lists running containers, so a missing sample is the
+   * first sign a container died. The answer comes from `docker ps -a`, which
+   * says whether it crashed, finished cleanly, is crash-looping, or no longer
+   * exists — run only when something is actually missing, and cached briefly
+   * so a lasting outage does not add a command to every poll.
+   *
+   * Skipped when stats returned nothing at all: that means the stats command
+   * failed, and reading "no samples" as "every container died" would mark
+   * the whole system critical on one dropped SSH command.
+   */
+  private async classifyMissingServices(conn: any, samples: any[]): Promise<Map<string, { service: any; health: ContainerHealth }>> {
+    const result = new Map<string, { service: any; health: ContainerHealth }>();
+    if (samples.length === 0) return result;
+
+    const sampledIds = new Set(samples.map((s: any) => s.serviceId));
+    const sampledContainers = samples.map((s: any) => String(s.containerId ?? ''));
+    const missing = this.discoveredServices.filter((svc: any) => {
+      if (!svc.containerId || svc.name?.includes('mapper-collector')) return false;
+      if (sampledIds.has(svc.serviceId)) return false;
+      return !sampledContainers.some(c => c && (c.startsWith(svc.containerId) || svc.containerId.startsWith(c)));
+    });
+    if (missing.length === 0) return result;
+
+    if (!this.psAllCache || Date.now() - this.psAllCache.at > PS_ALL_CACHE_MS) {
+      const res = await conn.execute(REMOTE_COMMANDS.dockerPsAll()).catch((e: any) => ({
+        exitCode: null, error: e?.message, stdout: '',
+      }));
+      if (res.exitCode !== 0 || res.error) {
+        // Could not look. Better to report nothing than to guess a state.
+        return result;
+      }
+      const { entries } = parseDockerPs(res.stdout);
+      this.psAllCache = { at: Date.now(), byService: indexPsRowsByServiceId(this.targetId, entries) };
+    }
+
+    for (const svc of missing) {
+      const row = this.psAllCache.byService.get(svc.serviceId);
+      const health = statusFromPsRow(row);
+      if (!health) continue; // running per ps — a race between two commands, not a failure
+      if (health.state === 'not found') {
+        if (!this.notFoundSince.has(svc.serviceId)) this.notFoundSince.set(svc.serviceId, Date.now());
+      } else {
+        this.notFoundSince.delete(svc.serviceId);
+      }
+      result.set(svc.serviceId, { service: svc, health });
+    }
+    return result;
   }
 
   private translateMetricsToEnvelope(
@@ -583,12 +679,30 @@ class TargetAgent {
     interactions: any[],
     connectionEvents: any[] = [],
     requestMetrics: Map<string, ServiceRequestMetrics> = new Map(),
+    missing: Map<string, { service: any; health: ContainerHealth }> = new Map(),
+    collector?: MetricCollector,
   ): any {
+    const network: Map<string, NetworkReading> = collector?.network ?? new Map();
     const observedAt = new Date().toISOString();
+    // The push-based collector from the old architecture still runs on some
+    // hosts. Discovery already skips it; telemetry did not, so it appeared as
+    // an untyped node raising anomalies of its own about being a collector.
+    samples = samples.filter(s => !String(s.serviceId).includes('mapper-collector'));
     const nodes = samples.map(s => {
-      let status = 'healthy';
-      if ((s.cpuPercent || 0) > 80 || (s.memoryPercent || 0) > 80) status = 'degraded';
-      
+      // Status from the full container picture — state, restarts, and
+      // resources — rather than CPU and memory alone. A crash-restart between
+      // polls used to be measured (restartDelta) and then thrown away here.
+      const health = statusFromSample({
+        cpuPercent: s.cpuPercent ?? null,
+        cpuAllowanceCores: collector?.cpuAllowance(s.serviceId) ?? null,
+        memoryPercent: s.memoryPercent ?? null,
+        restartCount: s.restartCount ?? null,
+        restartDelta: s.restartDelta ?? null,
+        containerState: s.containerState ?? null,
+        containerUptimeSeconds: s.containerUptimeSeconds ?? null,
+      });
+      const status = health.status;
+
       // Need to derive a clean name for GraphStore from serviceId
       const cleanName = s.serviceId.includes(':') ? s.serviceId.split(':')[1] : s.serviceId;
 
@@ -613,22 +727,65 @@ class TargetAgent {
         name: cleanName,
         project: this.targetId,
         status,
-        metadata: { state: 'running' },
+        metadata: {
+          state: health.state,
+          statusReason: health.reason,
+          restartCount: s.restartCount ?? null,
+          uptimeSeconds: s.containerUptimeSeconds ?? null,
+        },
         ...(requestLevel ? { requestMetrics: requestLevel } : {}),
       };
     });
 
-    const metrics = samples.map(s => ({
-      nodeId: s.serviceId,
-      snapshot: {
-        timestamp: s.timestamp,
-        cpu: s.cpuPercent || 0,
-        memory: s.memoryBytes || 0,
-        memoryPercent: s.memoryPercent || 0,
-        networkRx: s.networkRxBytes || 0,
-        networkTx: s.networkTxBytes || 0
-      }
-    }));
+    // Services that were expected but produced no sample: crashed, finished,
+    // crash-looping, or removed. Reported explicitly so the graph shows a
+    // dead dependency as dead instead of as its last healthy reading.
+    for (const { service, health } of missing.values()) {
+      nodes.push({
+        id: service.serviceId,
+        name: service.name,
+        project: this.targetId,
+        status: health.status,
+        metadata: {
+          state: health.state,
+          statusReason: health.reason,
+          ...(health.exitCode !== undefined ? { exitCode: health.exitCode } : {}),
+        },
+      } as any);
+    }
+
+    // A reading that was not taken is null, not 0: "0% CPU" and "CPU
+    // unknown" are different claims, and this used to make the first one
+    // whenever docker stats left a field blank.
+    //
+    // Network: networkRx/networkTx are cumulative bytes (what the ML pipeline
+    // derives its own rates from), exact from /proc/<pid>/net/dev when the
+    // socket scan read it within the last 30s, else docker's rounded figure.
+    // networkRxRate/networkTxRate are bytes per second. The inspection panel
+    // used to show the cumulative total with "/s" after it: 527 MB received
+    // since the container started, presented as 527 MB per second.
+    const NET_FRESH_MS = 30_000;
+    const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    const metrics = samples.map(s => {
+      const net = network.get(s.serviceId);
+      const fresh = net && Date.now() - net.at <= NET_FRESH_MS ? net : null;
+      return {
+        nodeId: s.serviceId,
+        snapshot: {
+          timestamp: s.timestamp,
+          cpu: num(s.cpuPercent),
+          memory: num(s.memoryBytes),
+          memoryPercent: num(s.memoryPercent),
+          networkRx: fresh ? fresh.rxBytes : num(s.networkRxBytes),
+          networkTx: fresh ? fresh.txBytes : num(s.networkTxBytes),
+          networkRxRate: fresh ? fresh.rxPerSec : num(s.networkRxBytesPerSecond),
+          networkTxRate: fresh ? fresh.txPerSec : num(s.networkTxBytesPerSecond),
+          networkSource: fresh ? 'proc-net-dev' : 'docker-stats',
+          cpuAllowanceCores: collector?.cpuAllowance(s.serviceId) ?? null,
+          cpuOfAllowance: cpuShareOfAllowance(num(s.cpuPercent), collector?.cpuAllowance(s.serviceId)),
+        },
+      };
+    });
 
     return {
       schemaVersion: '1.0',
