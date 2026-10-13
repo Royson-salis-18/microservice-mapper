@@ -165,7 +165,7 @@ ${kpi('Faults detected', pct(o.detected.p), `${ci(o.detected)}`)}
 ${kpi('Root cause Top-1', pct(o.top1.p), `of detected. ${ci(o.top1)}`)}
 ${kpi('Root cause Top-3', pct(o.top3.p), `of detected. ${ci(o.top3)}`)}
 ${kpi('Median time to notice', sec(o.delaySec.median), `p90 ${sec(o.delaySec.p90)}`)}
-${kpi('False alarms', `${num(score.falseAlarm.perHour, 2)}/h`, `${score.falseAlarm.episodes} incident(s), ${num(score.falseAlarm.minutes, 1)} min with no fault`)}
+${kpi('False alarms', `${num(score.falseAlarm.perHour, 2)}/h`, `${score.falseAlarm.episodes} incident(s), ${num(score.falseAlarm.minutes, 1)} min with no fault${score.falseAlarm.warmupMinutes ? `; first ${num(score.falseAlarm.warmupMinutes, 0)} min (learning) left out, ${score.falseAlarm.warmupIncidents} incident(s) then` : ''}`)}
 ${kpi('Cascade F1 (observed)', pct(o.observed.f1), `precision ${pct(o.observed.precision)}, recall ${pct(o.observed.recall)}`)}
 </div>
 ${felt(score)}

@@ -409,6 +409,10 @@ async function discoverAndCollect() {
         const container = docker.getContainer(containerInfo.Id);
         const info = await container.inspect();
         startedAt = info.State?.StartedAt; restarts = info.RestartCount;
+        // A running container attached to no network cannot be reached or reach anyone. Docker reports that as a fact.
+        const detached = Object.keys(info.NetworkSettings?.Networks ?? {}).length === 0;
+        const node = nodes.find((n) => n.id === id);
+        if (node && detached) { node.metadata = { ...node.metadata, networkDetached: true }; node.status = 'critical'; }
         if (prev) restartDelta = Math.max(0, (restarts ?? 0) - (prev.restarts ?? 0)) || (prev.startedAt && startedAt && prev.startedAt !== startedAt ? 1 : 0);
         if (prev && dt) {
           const logsBuf = await container.logs({ stdout: true, stderr: true, since: Math.floor(prev.t / 1000), timestamps: false });

@@ -7,7 +7,7 @@
 //   all       score + report, writing both next to the snapshots
 //
 //   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts observe --subject shopflow --target shopflow [--mapper http://localhost:3001] [--interval 5] [--duration 3600]
-//   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts all --subject shopflow [--ledger path] [--observed path] [--grace 60] [--out dir] [--traffic <container>|none]
+//   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts all --subject shopflow [--ledger path] [--observed path] [--grace 60] [--out dir] [--traffic <container>|none] [--warmup <minutes of learning to leave out of the false-alarm count>]
 //
 // The ledger is the injector's private ground truth (default ~/.faultlab/ledger-<subject>.jsonl). The harness reads it only
 // after the fact and never writes to it.
@@ -49,7 +49,7 @@ async function main() {
   const trafficContainer = o.traffic ?? `${subject}-traffic-1`;
   const impact = o.traffic === 'none' ? [] : loadTrafficImpact(trafficContainer, t0);
   if (!impact.length) console.error(`note: no traffic log from container ${trafficContainer}; faults cannot be split into felt and unfelt (use --traffic <container>)`);
-  const result = score(scored, snaps, { graceSec: Number(o.grace ?? 60) }, impact);
+  const result = score(scored, snaps, { graceSec: Number(o.grace ?? 60), warmupSec: Number(o.warmup ?? 0) * 60 }, impact);
   if (cmd === 'score') { console.log(JSON.stringify(result, (_k, v) => (typeof v === 'number' && !Number.isFinite(v) ? null : v), 2)); return; }
 
   // service rows for the timeline: faulted services first (by first fault), then the rest

@@ -45,5 +45,5 @@ await sleep(2);
 obs?.kill('SIGINT');
 say('5/5 score against the injector\'s ledger');
 const out = path.join(root, 'wiki visualizer');
-run('node', [tsx, path.join(root, 'tools/eval/run.ts'), 'all', '--subject', subject, '--traffic', `${subject}-traffic-1`, '--out', dir]);
+run('node', [tsx, path.join(root, 'tools/eval/run.ts'), 'all', '--subject', subject, '--traffic', `${subject}-traffic-1`, '--warmup', String(mins('baseline', 10)), '--out', dir]);
 if (!dry && fs.existsSync(path.join(dir, `eval-${subject}.html`))) { fs.mkdirSync(out, { recursive: true }); fs.copyFileSync(path.join(dir, `eval-${subject}.html`), path.join(out, 'experiment-report.html')); console.log(`\nreport: ${path.join(out, 'experiment-report.html')}`); }

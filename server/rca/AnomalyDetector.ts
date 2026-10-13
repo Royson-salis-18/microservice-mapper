@@ -128,7 +128,7 @@ export class AnomalyDetector {
       // 1. HARD evidence: container state. A stopped or paused container is a fact, not a degree.
       if (node.status === 'critical' || state === 'exited' || state === 'dead' || state === 'paused') {
         anomalies.push(this.record(node.id, targetId, 'container-health', now, 0, 1, 0, null,
-          state === 'paused' ? 'container-paused' : node.metadata?.vanished ? 'container-vanished' : 'container-exited-or-critical',
+          state === 'paused' ? 'container-paused' : node.metadata?.networkDetached ? 'container-network-detached' : node.metadata?.vanished ? 'container-vanished' : 'container-exited-or-critical',
           'CRITICAL', 'container-runtime', 'hard'));
       } else if (state === 'restarting') {
         anomalies.push(this.record(node.id, targetId, 'container-health', now, 0, 1, 0, null, 'container-restarting', 'HIGH', 'container-runtime', 'hard'));
