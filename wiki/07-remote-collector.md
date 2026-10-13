@@ -252,3 +252,8 @@ function determineType(name: string, image: string): string {
 ```
 
 Heuristic-based on container name and image name. Works well for Sock Shop and Vertikal. For custom setups, the type can be overridden in a future target adapter.
+
+
+## Request statistics from service logs
+
+Each cycle the collector also reads every container's log lines since the previous cycle and sends request rate, error rate and latency percentiles (`remote-collector/requestStats.ts`, pure and unit-tested), plus network bytes per second and restart counts. See [40](40-faultlab-panel-and-demo.md) for how each fault class shows up in them. Per-container work runs in parallel, so a cycle takes about 8 seconds instead of one second per container.
