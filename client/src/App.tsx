@@ -12,6 +12,7 @@ import { TelemetryView } from './components/TelemetryView';
 import { DependenciesView } from './components/DependenciesView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { RCAView } from './components/RCAView';
+import { ReliabilityView } from './components/ReliabilityView';
 import { ExperimentHistoryPanel } from './components/ExperimentHistoryPanel';
 import { RemoteConfigPanel } from './components/RemoteConfigPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -359,6 +360,8 @@ export default function App() {
               />
             )}
           </ProjectSections>
+        ) : activeTab === 'RELIABILITY' ? (
+          <ReliabilityView selectedProject={selectedProjectId} nodes={filteredNodes} />
         ) : activeTab === 'EXPERIMENTS' ? (
           <ExperimentHistoryPanel />
         ) : activeTab === 'ML PIPELINE' ? (

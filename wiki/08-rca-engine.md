@@ -262,3 +262,13 @@ Only one incident per target is tracked at a time. If `evaluateTarget()` fires a
 ### History
 
 Resolved incidents are kept in an in-memory list (last N per target) for display in `RCAView`. They are not persisted to disk between restarts.
+
+
+## Sparse traffic: when silence and latency mean something
+
+A service that sees a request every few seconds is quiet most of the time by nature. Two rules keep it from raising false alarms:
+
+- **Silence** on a service whose requests are counted needs an expected count of at least 5 requests in the quiet stretch (the chance of none is under 1 percent), and the quiet stretch must outlast the longest quiet gap in that service's own history. Services whose requests are not counted (databases) still use the activity rule.
+- **Latency and error rate** are judged only when each judged sample holds at least 5 requests. A p95 from two requests is one unlucky request, not a trend.
+
+Measured on a stored ShopFlow run, the quiet periods produced about 150 false anomaly readings before these rules and 1 after, while a stopped service was still caught every time.

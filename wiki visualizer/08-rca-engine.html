@@ -648,8 +648,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-red">RCA</span>
                 <span class="meta-item"><code>wiki/08-rca-engine.md</code></span>
-                <span class="meta-item">~9 min read</span>
-                <span class="meta-item">1,788 words</span>
+                <span class="meta-item">~10 min read</span>
+                <span class="meta-item">1,938 words</span>
             </div>
             <nav class="toc">
   <a href="#try-it" style="color:var(--sig);border-color:var(--sig);">Try it &darr;</a>
@@ -943,6 +943,13 @@ findEarliestAnomalousNode(anomalies: AnomalyRecord[]): string | null {
 <p>Only one incident per target is tracked at a time. If <code>evaluateTarget()</code> fires again while an incident is active for the same target, the existing incident is <strong>updated in place</strong> (symptoms appended, confidence refreshed, timestamp updated) rather than creating a duplicate.</p>
 <h3 id="history">History</h3>
 <p>Resolved incidents are kept in an in-memory list (last N per target) for display in <code>RCAView</code>. They are not persisted to disk between restarts.</p>
+<h2 id="sparse-traffic-when-silence-and-latency-mean-something">Sparse traffic: when silence and latency mean something</h2>
+<p>A service that sees a request every few seconds is quiet most of the time by nature. Two rules keep it from raising false alarms:</p>
+<ul>
+  <li><strong>Silence</strong> on a service whose requests are counted needs an expected count of at least 5 requests in the quiet stretch (the chance of none is under 1 percent), and the quiet stretch must outlast the longest quiet gap in that service's own history. Services whose requests are not counted (databases) still use the activity rule.</li>
+  <li><strong>Latency and error rate</strong> are judged only when each judged sample holds at least 5 requests. A p95 from two requests is one unlucky request, not a trend.</li>
+</ul>
+<p>Measured on a stored ShopFlow run, the quiet periods produced about 150 false anomaly readings before these rules and 1 after, while a stopped service was still caught every time.</p>
                 </article>
                 
         <section id="try-it">

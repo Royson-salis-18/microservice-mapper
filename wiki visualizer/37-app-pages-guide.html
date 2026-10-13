@@ -648,13 +648,14 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-green">APP GUIDE</span>
                 <span class="meta-item"><code>wiki/37-app-pages-guide.md</code></span>
-                <span class="meta-item">~6 min read</span>
-                <span class="meta-item">1,252 words</span>
+                <span class="meta-item">~7 min read</span>
+                <span class="meta-item">1,367 words</span>
             </div>
             <nav class="toc">
   <a href="#the-data-path-once">The data path, once</a>
   <a href="#page-map">Page map</a>
   <a href="#top-bar-and-shared-controls">Top bar and shared controls</a>
+  <a href="#cascade-risk">Cascade risk</a>
   <a href="#spatial-view-the-default-page">Spatial view (the default ...</a>
   <a href="#incidents">Incidents</a>
   <a href="#architecture">Architecture</a>
@@ -663,7 +664,6 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#traces">Traces</a>
   <a href="#analytics">Analytics</a>
   <a href="#research-pages-hidden-by-default">Research pages (hidden by ...</a>
-  <a href="#what-the-mapper-never-does">What the mapper never does</a>
 </nav>
         </header>
 
@@ -709,6 +709,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td><strong>Incidents &amp; cascade</strong></td>
       <td>What is broken, what caused it, what is next?</td>
       <td><code>/api/rca/incidents</code>, <code>/api/rca/risk</code></td>
+    </tr>
+    <tr>
+      <td>Now</td>
+      <td><strong>Cascade risk</strong></td>
+      <td>What is likely to fail next, what is exposed, and what happens if a given service fails?</td>
+      <td><code>/api/reliability/cascade</code>, <code>/api/reliability/whatif/:id</code></td>
     </tr>
     <tr>
       <td>Now</td>
@@ -763,6 +769,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li><strong>Terminal.</strong> A shell into the target for quick checks; it never changes what the mapper learns.</li>
   <li><strong>Status counts.</strong> Healthy, degraded, down, for the selected project only.</li>
 </ul>
+<h2 id="cascade-risk">Cascade risk</h2>
+<p>The prediction page, available even when nothing is wrong. It answers three questions in order: what is likely to fail next (the cascade model's probability for every service and the path it travels), what is exposed right now and why (a risk ranking with each factor), and what if this service failed (a what-if simulation of the blast radius). All numbers are model estimates and are labelled with the model's parameters; they are not observed frequencies. With the system healthy every probability is near zero.</p>
 <h2 id="spatial-view-the-default-page">Spatial view (the default page)</h2>
 <figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">flowchart TB
   S[Services] --&gt; D[Districts&lt;br/&gt;one island per group]
