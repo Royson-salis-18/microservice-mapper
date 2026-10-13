@@ -30,6 +30,10 @@ Run it on one machine: start the mapper (`npm run local`), then `npm run demo --
 | False alarms | Incident time outside every fault window, per hour. |
 | User impact | From the traffic generator's own log, for faults that ran alone. |
 
+## Which faults count as ground truth
+
+A fault only counts as a root cause to find if it changed something. Crash, stop, crash-loop and pause change the container's state, which is a fact. A softer fault (brownout, flap, memory, partition) counts when users felt it, measured from the traffic generator's own log while the fault ran alone. A soft fault that ran alone, with traffic measured, and that users did not feel is labelled **no measurable effect**. It is left out of the confusion matrices and the report lists it separately, together with whether the mapper reported it anyway. When faults overlap, or no traffic log exists, an effect cannot be ruled out, so the fault stays in.
+
 ## Statistics reported
 
 Wilson and bootstrap 95% intervals, 5-fold stratified cross-validation of the accuracy estimate (the rules are fixed, so this shows stability and is not model selection), a one-sided binomial test against picking a candidate at random, skewness and excess kurtosis of the detection delay, and Spearman correlation between fault duration and delay. Resampling is seeded, so the same inputs give the same numbers.

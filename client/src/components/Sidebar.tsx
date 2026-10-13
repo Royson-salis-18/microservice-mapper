@@ -33,7 +33,7 @@ const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
   {
     title: 'Now',
     items: [
-      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
+      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents & cascade' },
       { id: '3D Vision', icon: Box, label: 'Spatial view' },
       { id: 'Architecture', icon: Network, label: 'Architecture' },
     ],

@@ -24,7 +24,7 @@ Every page below reads from the same server. Nothing on a page is computed in th
 
 | Group | Page (sidebar name) | Question it answers | Main endpoints |
 |---|---|---|---|
-| Now | **Incidents** | What is broken, what caused it, what is next? | `/api/rca/incidents`, `/api/rca/risk` |
+| Now | **Incidents & cascade** | What is broken, what caused it, what is next? | `/api/rca/incidents`, `/api/rca/risk` |
 | Now | **Spatial view** | What does my system look like right now? | `/api/graph`, `/api/rca/*`, `/api/live` |
 | Now | **Architecture** | How are my services wired? | `/api/graph` |
 | Investigate | **Telemetry** | What are the raw numbers for one service? | `/api/metrics`, `/api/logs` |
@@ -79,6 +79,7 @@ flowchart LR
 
 | Section | What it tells you |
 |---|---|
+| **Cascade** | A full-width strip under the hero: the source, the services already affected (observed), and the services next in line with a predicted probability and the dependency it travels through. |
 | **Hero** | The most likely root cause, confidence, when it started and how long it has lasted. |
 | **Ranking** | Every candidate with its score. A close second place means the answer is not settled. |
 | **Why this score** | The evidence behind the number: its own anomaly, how much of the trouble it explains downstream, hard signals such as a crash or a stopped container. |
