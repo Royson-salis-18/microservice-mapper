@@ -927,7 +927,9 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
       onClick={(e) => { if (e.target === e.currentTarget) onPaneClick(); }}
     >
       <Canvas
-        shadows
+        // PCF. Plain `shadows` asks for PCFSoftShadowMap, which three r0.186
+        // removed: it fell back to PCF anyway and warned on every mount.
+        shadows="percentage"
         dpr={[1, 1.75]}
         gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
         resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
