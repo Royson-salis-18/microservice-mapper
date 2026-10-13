@@ -18,6 +18,18 @@ export const VICTIM_WEIGHT = 0.25;
  */
 export const MATERIAL_REACH = 0.1;
 
+/** A metric value as evidence shows it: one decimal, which is what docker reports. */
+export const oneDecimal = (v: number): number => Math.round(v * 10) / 10;
+
+/** One sentence for an anomaly: what moved, from where, and by which test. */
+export function describeAnomaly(a: AnomalyRecord): string {
+  const how = a.evidenceSource === 'dynamic-zscore' ? `, z = ${a.zScore}`
+    : a.evidenceSource === 'absolute-threshold' ? ', over the absolute threshold'
+    : a.evidenceSource === 'dynamic-baseline' ? ', off a flat baseline'
+    : '';
+  return `${a.metric} at ${oneDecimal(a.observedValue)} against a baseline of ${oneDecimal(a.baselineMean)} (${a.severity.toLowerCase()}${how})`;
+}
+
 /**
  * Strongest dependency path from every service up to `rootId`, as the product
  * of edge weights along it (1 = rootId itself).
@@ -235,15 +247,22 @@ export class RCAEngine {
         primaryAnomalyMetric: targetAnomalies.find(a => a.nodeId === node.id)?.metric || 'container-state'
       });
 
-      // Populate Real Telemetry Evidence Items
+      // Evidence says what was measured. It used to read "before: unknown,
+      // after: <status> (stopped)" for every candidate, "stopped" being the
+      // fallback when the container state was simply not reported, and it
+      // left out the anomaly that made the service a candidate at all: a
+      // running service with a memory spike was shown as stopped.
+      const anomaly = targetAnomalies.find(a => a.nodeId === node.id && a.metric !== 'container-health');
+      const state = node.metadata?.state ? String(node.metadata.state) : 'state not reported';
+      const statusLine = `Service '${node.name}' is ${node.status.toUpperCase()}${node.metadata?.statusReason ? `: ${node.metadata.statusReason}` : ''} (CPU: ${typeof node.metrics?.cpu === 'number' ? `${node.metrics.cpu}%` : 'not measured'}, MEM: ${typeof node.metrics?.memoryPercent === 'number' ? `${node.metrics.memoryPercent}%` : 'not measured'})`;
       evidenceItems.push({
         id: `ev-${node.id}-${Date.now()}`,
-        metric: node.metrics?.cpu !== undefined ? 'CPU / Memory / State' : 'Container Status',
-        timestamp: new Date().toISOString(),
-        beforeValue: 'unknown',
-        afterValue: `${node.status} (${node.metadata?.state || 'stopped'})`,
-        source: hasObservedEdge ? 'observed-runtime-tcp' : 'container-runtime',
-        description: `Service '${node.name}' is ${node.status.toUpperCase()}${node.metadata?.statusReason ? `: ${node.metadata.statusReason}` : ''} (CPU: ${typeof node.metrics?.cpu === 'number' ? `${node.metrics.cpu}%` : 'not measured'}, MEM: ${typeof node.metrics?.memoryPercent === 'number' ? `${node.metrics.memoryPercent}%` : 'not measured'})`
+        metric: anomaly ? anomaly.metric : 'Container Status',
+        timestamp: anomaly?.timestamp ?? new Date().toISOString(),
+        beforeValue: anomaly ? `baseline ${oneDecimal(anomaly.baselineMean)}` : 'not measured',
+        afterValue: anomaly ? String(oneDecimal(anomaly.observedValue)) : `${node.status} (${state})`,
+        source: anomaly?.evidenceSource ?? 'container-runtime',
+        description: anomaly ? `${describeAnomaly(anomaly)}. ${statusLine}` : statusLine,
       });
     }
 

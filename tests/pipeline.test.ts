@@ -411,6 +411,36 @@ test('rca: a service with a real anomaly but not yet degraded can still be the r
   assert.equal(result.primaryRootCause?.serviceId, 'p:db');
 });
 
+test('rca: evidence names the anomaly, and a running service with no reported state is never called stopped', () => {
+  // Live: promtail, running, flagged for a memory spike, was listed as
+  // "healthy (stopped)" with "before: unknown" and no mention of memory.
+  const nodes = [node('p:api'), node('p:promtail', 'healthy', { metrics: { cpu: 0.2, memoryPercent: 7.84 } })];
+  const anomalies = [{ id: 'a', nodeId: 'p:promtail', targetId: 'p', metric: 'memoryPercent', timestamp: new Date().toISOString(), observedValue: 7.84, baselineMean: 3.02, baselineStdDev: 1.1, zScore: 4.36, severity: 'MEDIUM' as const, evidenceSource: 'dynamic-zscore' }];
+  const result = new RCAEngine().analyzeIncident({ targetId: 'p', nodes, edges: [edge('p:api', 'p:promtail', 10)], anomalies });
+  const ev = result.evidence.find(e => e.id.startsWith('ev-p:promtail'))!;
+  assert.equal(ev.metric, 'memoryPercent');
+  assert.equal(ev.beforeValue, 'baseline 3');
+  assert.equal(ev.afterValue, '7.8');
+  assert.equal(ev.source, 'dynamic-zscore');
+  assert.match(ev.description, /^memoryPercent at 7\.8 against a baseline of 3 \(medium, z = 4\.36\)/);
+  assert.doesNotMatch(`${ev.afterValue} ${ev.description}`, /stopped/);
+});
+
+import { IncidentManager } from '../server/rca/IncidentManager.js';
+
+test('incident: the remediation is the explanation\'s investigation steps, not a stock "docker start"', () => {
+  // Every incident used to get `docker start docker-compose-<name>-1`,
+  // whatever its cause, under a container name that need not exist.
+  const nodes = [node('p:api', 'degraded'), node('p:db', 'critical', { metadata: { state: 'exited (137)' } })];
+  const edges = [edge('p:api', 'p:db', 100)];
+  const graphStore = { getGraph: () => ({ nodes, edges }), metricStore: { getHistory: () => [] } } as any;
+  const incident = new IncidentManager(graphStore).evaluateTarget('p')!;
+  assert.ok(incident, 'a crashed database raises an incident');
+  assert.deepEqual(incident.remediationGuide, incident.explanation.recommendedInvestigation);
+  assert.ok(incident.remediationGuide.length > 0);
+  assert.ok(incident.remediationGuide.every(step => !/docker start/.test(step)));
+});
+
 test('rca: two unrelated services running hot are reported as independent, with LOW confidence', () => {
   // Live: grafana (95% memory) was named root cause of opensearch (84%),
   // with no dependency between them.
