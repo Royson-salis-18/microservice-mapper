@@ -91,14 +91,14 @@ export function RemoteConfigPanel({ onClose, editTargetId, onDiscoveryStart }: R
         bottom: '24px',
         right: '24px', 
         width: '460px', // Wider to fit terminal comfortably
-        background: 'rgba(12, 12, 24, 0.95)',
+        background: 'rgba(18, 20, 28, 0.95)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid var(--color-border)',
         borderRadius: '16px',
         padding: '24px',
         zIndex: 101,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.65), 0 0 24px rgba(224, 64, 251, 0.15)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.65), 0 0 24px rgba(155, 107, 255, 0.15)',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
@@ -179,7 +179,7 @@ export function RemoteConfigPanel({ onClose, editTargetId, onDiscoveryStart }: R
           onClick={handleSave}
           disabled={isLoading}
           style={{
-            background: 'linear-gradient(135deg, rgba(224,64,251,0.25), rgba(0,212,255,0.25))',
+            background: 'linear-gradient(135deg, rgba(155,107,255,0.25), rgba(107,128,255,0.25))',
             border: '1px solid var(--color-accent-magenta)',
             color: '#fff',
             padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',

@@ -21,7 +21,7 @@ export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
         position: 'absolute',
         width: '600px',
         height: '600px',
-        background: 'radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(107,128,255,0.05) 0%, transparent 70%)',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
@@ -38,7 +38,7 @@ export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
           height: '64px',
           borderRadius: '16px',
           background: 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))',
-          boxShadow: '0 0 32px rgba(0,212,255,0.4)',
+          boxShadow: '0 0 32px rgba(107,128,255,0.4)',
           color: '#fff',
           fontSize: '32px',
           marginBottom: '24px'
@@ -67,7 +67,7 @@ export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
         <button 
           onClick={onAddProject}
           style={{
-            background: 'linear-gradient(135deg, rgba(224,64,251,0.8), rgba(0,212,255,0.8))',
+            background: 'linear-gradient(135deg, rgba(155,107,255,0.8), rgba(107,128,255,0.8))',
             border: '1px solid var(--color-accent-magenta)',
             color: '#fff',
             padding: '16px 32px',
@@ -76,17 +76,17 @@ export function WelcomeScreen({ onAddProject }: WelcomeScreenProps) {
             fontSize: '14px',
             letterSpacing: '1px',
             cursor: 'pointer',
-            boxShadow: '0 10px 30px rgba(224,64,251,0.3)',
+            boxShadow: '0 10px 30px rgba(155,107,255,0.3)',
             transition: 'all 0.3s ease',
             textTransform: 'uppercase'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 15px 40px rgba(224,64,251,0.5)';
+            e.currentTarget.style.boxShadow = '0 15px 40px rgba(155,107,255,0.5)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = '0 10px 30px rgba(224,64,251,0.3)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(155,107,255,0.3)';
           }}
         >
           <span>☁️</span> ADD YOUR FIRST AWS PROJECT

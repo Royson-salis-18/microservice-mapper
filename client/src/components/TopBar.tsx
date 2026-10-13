@@ -90,7 +90,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-accent-cyan)';
-                e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 212, 255, 0.1), inset 0 1px 2px rgba(255,255,255,0.05)';
+                e.currentTarget.style.boxShadow = '0 0 10px rgba(107, 128, 255, 0.1), inset 0 1px 2px rgba(255,255,255,0.05)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-border)';
@@ -196,7 +196,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = 'var(--color-accent-magenta)';
-                e.target.style.boxShadow = '0 0 15px rgba(224, 64, 251, 0.15), inset 0 2px 4px rgba(0,0,0,0.2)';
+                e.target.style.boxShadow = '0 0 15px rgba(155, 107, 255, 0.15), inset 0 2px 4px rgba(0,0,0,0.2)';
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = 'var(--color-border)';
@@ -231,7 +231,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: isTrafficPanelOpen ? '0 0 12px rgba(0,212,255,0.4)' : 'none',
+                boxShadow: isTrafficPanelOpen ? '0 0 12px rgba(107,128,255,0.4)' : 'none',
                 transition: 'all var(--transition-fast)'
               }}
             >

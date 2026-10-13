@@ -27,7 +27,7 @@ const GROUPS: { title: string; note: string; keys: string[] }[] = [
   {
     title: 'How far from normal counts',
     note: 'Deviation from each service’s own recent baseline, in standard deviations.',
-    keys: ['zScoreAnomaly', 'zScoreHigh', 'zScoreCritical'],
+    keys: ['zScoreAnomaly', 'zScoreHigh', 'zScoreCritical', 'minDeviationPercent'],
   },
   {
     title: 'Absolute limits',
@@ -50,6 +50,7 @@ const LABELS: Record<string, string> = {
   zScoreAnomaly: 'Anomalous at |z| ≥',
   zScoreHigh: 'HIGH at |z| ≥',
   zScoreCritical: 'CRITICAL at |z| ≥',
+  minDeviationPercent: 'Ignore moves under (pts)',
   absoluteHighPercent: 'HIGH above %',
   absoluteCriticalPercent: 'CRITICAL above %',
   flatlineStdDev: 'Flat below std dev',
@@ -198,7 +199,7 @@ export function IncidentRulesPanel() {
             <button
               type="button" disabled={busy || !dirty} onClick={() => save(false)}
               style={{
-                background: dirty && !busy ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.05)',
+                background: dirty && !busy ? 'rgba(107,128,255,0.18)' : 'rgba(255,255,255,0.05)',
                 border: `1px solid ${dirty && !busy ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
                 color: dirty && !busy ? '#fff' : 'var(--color-text-dim)',
                 borderRadius: '6px', padding: '6px 14px', fontSize: '11px', fontWeight: 700,

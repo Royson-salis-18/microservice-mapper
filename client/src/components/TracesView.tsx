@@ -184,7 +184,7 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
       // fixed pane there and let it scroll internally as it does full-page.
       height: embedded ? '720px' : '100%',
       boxSizing: 'border-box',
-      background: 'radial-gradient(circle at top right, rgba(0,212,255,0.04), transparent 50%)'
+      background: 'radial-gradient(circle at top right, rgba(107,128,255,0.04), transparent 50%)'
     }}>
       {/* Header */}
       <div style={{
@@ -269,9 +269,9 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              background: isCollecting ? 'rgba(255, 37, 63, 0.12)' : 'rgba(0, 212, 255, 0.12)',
+              background: isCollecting ? 'rgba(255, 37, 63, 0.12)' : 'rgba(107, 128, 255, 0.12)',
               color: isCollecting ? 'var(--color-critical)' : 'var(--color-accent-cyan)',
-              border: `1px solid ${isCollecting ? 'rgba(255,37,63,0.3)' : 'rgba(0,212,255,0.3)'}`,
+              border: `1px solid ${isCollecting ? 'rgba(255,37,63,0.3)' : 'rgba(107,128,255,0.3)'}`,
               borderRadius: '8px',
               padding: '6px 16px',
               fontSize: '12px',
@@ -445,8 +445,8 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
                     gap: '8px',
                     padding: '6px 10px',
                     borderRadius: '6px',
-                    background: i === 0 ? 'rgba(0, 212, 255, 0.04)' : 'rgba(255,255,255,0.015)',
-                    border: `1px solid ${i === 0 ? 'rgba(0, 212, 255, 0.08)' : 'rgba(255,255,255,0.03)'}`,
+                    background: i === 0 ? 'rgba(107, 128, 255, 0.04)' : 'rgba(255,255,255,0.015)',
+                    border: `1px solid ${i === 0 ? 'rgba(107, 128, 255, 0.08)' : 'rgba(255,255,255,0.03)'}`,
                     transition: 'all 0.15s',
                     fontSize: '11px',
                   }}>
@@ -604,7 +604,7 @@ function TraceTopologyMap({ graph, maxEventCount }: { graph: TraceGraph; maxEven
             orient="auto"
             markerUnits="strokeWidth"
           >
-            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(0, 212, 255, 0.7)" />
+            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(107, 128, 255, 0.7)" />
           </marker>
           <filter id="trace-node-glow">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -662,7 +662,7 @@ function TraceTopologyMap({ graph, maxEventCount }: { graph: TraceGraph; maxEven
                 y1={startY}
                 x2={endX}
                 y2={endY}
-                stroke={isEdgeHovered ? 'rgba(0, 230, 255, 0.95)' : 'rgba(0, 212, 255, 0.5)'}
+                stroke={isEdgeHovered ? 'rgba(0, 230, 255, 0.95)' : 'rgba(107, 128, 255, 0.5)'}
                 strokeWidth={isEdgeHovered ? thickness + 1 : thickness}
                 strokeOpacity={opacity}
                 markerEnd="url(#trace-arrowhead)"
@@ -717,7 +717,7 @@ function TraceTopologyMap({ graph, maxEventCount }: { graph: TraceGraph; maxEven
                 cx={pos.x}
                 cy={pos.y}
                 r={isHovered ? 18 : 16}
-                fill="rgba(12, 12, 24, 0.9)"
+                fill="rgba(18, 20, 28, 0.9)"
                 stroke={color}
                 strokeWidth={isHovered ? 3 : 2}
                 style={{ transition: 'all 0.2s ease' }}
@@ -755,7 +755,7 @@ function TraceTopologyMap({ graph, maxEventCount }: { graph: TraceGraph; maxEven
           left: Math.min(tooltipPos.x + 14, dimensions.width - 190),
           top: Math.max(tooltipPos.y - 10, 8),
           background: 'rgba(10, 12, 20, 0.96)',
-          border: '1px solid rgba(0, 212, 255, 0.3)',
+          border: '1px solid rgba(107, 128, 255, 0.3)',
           borderRadius: '8px',
           padding: '10px 12px',
           fontSize: '11px',
@@ -788,9 +788,9 @@ function TraceTopologyMap({ graph, maxEventCount }: { graph: TraceGraph; maxEven
         fontFamily: 'monospace',
         pointerEvents: 'none',
       }}>
-        <svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="rgba(0,212,255,0.35)" strokeWidth="1" /></svg>
+        <svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="rgba(107,128,255,0.35)" strokeWidth="1" /></svg>
         <span>low freq</span>
-        <svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="rgba(0,212,255,0.85)" strokeWidth="4" /></svg>
+        <svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="rgba(107,128,255,0.85)" strokeWidth="4" /></svg>
         <span>high freq</span>
       </div>
     </div>

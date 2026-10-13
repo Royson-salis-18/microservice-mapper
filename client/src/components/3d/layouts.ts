@@ -1,4 +1,7 @@
+import { computeSite } from './site';
+
 export type LayoutId =
+  | 'halls'
   | 'grid'
   | 'circle'
   | 'polygon'
@@ -15,6 +18,7 @@ export interface LayoutOption {
 }
 
 export const LAYOUTS: LayoutOption[] = [
+  { id: 'halls', label: 'Islands', hint: 'Each project a district of platforms by role: edge, services, data, messaging, with observability set apart' },
   { id: 'clusters', label: 'Clusters', hint: 'One island per project, laid out side by side' },
   { id: 'grid', label: 'Grid', hint: 'Even rows and columns — easiest to scan a lot of services' },
   { id: 'circle', label: 'Circle', hint: 'Single ring, every service equally spaced' },
@@ -36,6 +40,18 @@ export interface LayoutNode {
 export type Positions = Record<string, [number, number, number]>;
 
 const TIER_ORDER = ['frontend', 'gateway', 'service', 'queue', 'cache', 'database', 'infrastructure'];
+
+/** Layouts that keep each project in its own patch of floor, so a zone can
+ *  be drawn under it without overlapping another project's. */
+export const ZONED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 'clusters']);
+
+/** Layouts where each project's services sit together, so a floating name
+ *  over their centre points at them. In the rest (tiers, radial, sphere,
+ *  helix) projects interleave and every name lands in the same spot. */
+export const LABELLED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['grid', 'circle', 'polygon']);
+
+/** Margin between a hall's outermost services and its walls. */
+export const HALL_PADDING = 6;
 
 function tierOf(type: string): number {
   const i = TIER_ORDER.indexOf(type);
@@ -180,6 +196,11 @@ export function computeLayout(layout: LayoutId, nodes: LayoutNode[]): Positions 
       });
       return positions;
     }
+
+    case 'halls':
+      // Islands: a district per project, a platform per role. The geometry
+      // lives in site.ts, which the scene also uses to draw it.
+      return computeSite(nodes).positions;
 
     case 'clusters':
     default: {

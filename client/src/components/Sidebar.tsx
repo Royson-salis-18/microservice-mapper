@@ -68,9 +68,7 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
     <div style={{
       width: '80px',
       height: '100%',
-      background: 'var(--color-bg-glass)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: 'linear-gradient(180deg, #16181f 0%, #121319 100%)',
       borderRight: '1px solid var(--color-border)',
       display: 'flex',
       flexDirection: 'column',
@@ -90,14 +88,12 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
         width: '40px',
         height: '40px',
         flexShrink: 0,
-        borderRadius: '10px',
-        background: 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))',
-        boxShadow: '0 0 16px rgba(0,212,255,0.4)',
-        color: '#fff',
-        fontSize: '20px',
+        borderRadius: '50%',
+        border: '2.5px solid #dfe4ff',
+        boxShadow: '0 0 18px rgba(107,128,255,0.35), inset 0 0 10px rgba(107,128,255,0.25)',
         marginBottom: '22px'
       }}>
-        ⎈
+        <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'linear-gradient(180deg, #7d8bff, #4452e8)', boxShadow: '0 0 10px #5d6bff' }} />
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
@@ -118,12 +114,8 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
                   aria-current={isActive ? 'page' : undefined}
                   title={showAlert ? `${tab.label} — active incident` : tab.label}
                 >
-                  <span style={{ position: 'relative', display: 'flex' }}>
-                    <Icon
-                      size={22}
-                      strokeWidth={isActive ? 2.5 : 2}
-                      style={{ filter: isActive ? 'drop-shadow(0 0 8px rgba(0,212,255,0.4))' : 'none' }}
-                    />
+                  <span className="sidebar-item-icon">
+                    <Icon size={19} strokeWidth={isActive ? 2.4 : 2} />
                     {/* Anchored to the icon, so it reads as a badge on the
                         thing it refers to rather than floating by the label. */}
                     {showAlert && (
@@ -131,8 +123,8 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
                         aria-hidden="true"
                         style={{
                           position: 'absolute',
-                          top: '-3px',
-                          right: '-5px',
+                          top: '3px',
+                          right: '5px',
                           width: '8px',
                           height: '8px',
                           borderRadius: '50%',
@@ -162,7 +154,7 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
         <span style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: '32px', height: '32px', borderRadius: '50%',
-          background: 'rgba(224,64,251,0.1)', border: '1px solid rgba(224,64,251,0.3)',
+          background: 'rgba(155,107,255,0.1)', border: '1px solid rgba(155,107,255,0.3)',
           fontSize: '18px', fontWeight: 'bold'
         }}>
           +

@@ -30,7 +30,7 @@ export function ExperimentHistoryPanel() {
       left: '30px',
       right: '30px',
       bottom: '30px',
-      background: 'rgba(12, 12, 24, 0.95)',
+      background: 'rgba(18, 20, 28, 0.95)',
       borderRadius: '16px',
       border: '1px solid var(--color-border)',
       padding: '24px',

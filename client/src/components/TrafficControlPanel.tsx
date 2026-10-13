@@ -200,7 +200,6 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
 
   const runningDiag = diagnostics.find((d) => d.targetId === selectedTargetId && d.isRunning);
   const isCurrentRunning = !!runningDiag;
-  const isAnyRunning = diagnostics.some((d) => d.isRunning);
 
   const selectedServiceRoutes = selectedServiceId ? routes.filter(r => r.serviceId === selectedServiceId) : routes;
   const isSelectedServiceCapable = selectedServiceId
@@ -324,6 +323,28 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   };
 
   const anyProjectRunning = (trafficHealth?.projects || []).some(p => p.running);
+  // Projects with traffic running right now. Several can run at once: each
+  // project has its own engine in traffic-gen and its own experiment.
+  const runningIds = new Set([
+    ...(trafficHealth?.projects || []).filter(p => p.running).map(p => p.targetId),
+    ...diagnostics.filter(d => d.isRunning).map(d => d.targetId),
+  ]);
+
+  const handleStopOne = async (targetId: string) => {
+    setIsLoading(true);
+    try {
+      await fetch('/api/traffic/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetId }),
+      });
+      await fetchData();
+    } catch (e) {
+      console.error(`Failed to stop traffic for ${targetId}:`, e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleStopAll = async () => {
     setIsLoading(true);
@@ -397,14 +418,14 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         width: '450px',
         maxHeight: '90vh',
         overflowY: 'auto',
-        background: 'rgba(12, 12, 24, 0.95)',
+        background: 'rgba(18, 20, 28, 0.95)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid var(--color-border)',
         borderRadius: '16px',
         padding: '20px',
         zIndex: 100,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.65), 0 0 24px rgba(0, 212, 255, 0.15)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.65), 0 0 24px rgba(107, 128, 255, 0.15)',
         display: 'flex',
         flexDirection: 'column',
         gap: '14px',
@@ -445,16 +466,45 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         </div>
         {trafficHealth?.reachable && trafficHealth.projects.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+            {trafficHealth.projects.filter(p => p.running).length > 1 && (
+              <div style={{ fontSize: '10px', color: 'var(--color-accent-cyan)' }}>
+                {trafficHealth.projects.filter(p => p.running).length} projects running at once
+              </div>
+            )}
             {trafficHealth.projects.map(p => (
-              <div key={p.projectId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: p.running ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)', fontWeight: p.running ? 700 : 400 }}>
+              <div
+                key={p.projectId}
+                onClick={() => targets.some(t => t.targetId === p.targetId) && setSelectedTargetId(p.targetId)}
+                title={p.running ? 'Select to see its settings; Stop ends just this project' : 'Select to configure and start it'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', cursor: 'pointer',
+                  padding: '3px 6px', margin: '0 -6px', borderRadius: '6px',
+                  background: p.targetId === selectedTargetId ? 'rgba(107,128,255,0.12)' : 'transparent',
+                }}
+              >
+                <span style={{ color: p.running ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)', fontWeight: p.running ? 700 : 400, flex: 'none' }}>
                   {p.running ? '● ' : '○ '}{p.projectId}
                 </span>
-                <span style={{ color: 'var(--color-text-muted)' }}>
+                <span style={{ color: 'var(--color-text-muted)', marginLeft: 'auto', textAlign: 'right' }}>
                   {p.running && p.stats
-                    ? `${p.stats.currentUsers} users, ${p.stats.currentRate.toFixed(1)} req/s, ${(p.stats.errorRate * 100).toFixed(0)}% err`
+                    ? `${p.stats.requestsSuccessful}/${p.stats.requestsAttempted} ok · ${p.stats.currentRate.toFixed(1)} req/s · ${(p.stats.errorRate * 100).toFixed(0)}% err`
                     : 'idle'}
                 </span>
+                {p.running && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleStopOne(p.targetId); }}
+                    disabled={isLoading}
+                    title={`Stop traffic for ${p.projectId} only`}
+                    style={{
+                      flex: 'none', padding: '2px 8px', fontSize: '10px', fontWeight: 700, borderRadius: '5px',
+                      background: 'rgba(255,23,68,0.12)', border: '1px solid rgba(255,23,68,0.45)', color: 'var(--color-critical)',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Stop
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -525,7 +575,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           <button
             onClick={handleProbeEntry}
             disabled={entryBusy}
-            style={{ flex: 1, padding: '5px', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.3)', color: 'var(--color-accent-cyan)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
+            style={{ flex: 1, padding: '5px', background: 'rgba(107,128,255,0.12)', border: '1px solid rgba(107,128,255,0.3)', color: 'var(--color-accent-cyan)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
           >
             {entryBusy ? '...' : 'PROBE'}
           </button>
@@ -554,7 +604,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         <div>
           <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET AWS APP</label>
           <select
-            value={selectedTargetId} disabled={isAnyRunning}
+            value={selectedTargetId}
             onChange={(e) => {
               // Endpoint/service/route ids are namespaced per target, so
               // carrying them across a target switch sends traffic to the
@@ -568,9 +618,11 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
               setSurface(null);
               setStartError(null);
             }}
-            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: isAnyRunning ? 'var(--color-text-dim)' : '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', outline: 'none', cursor: isAnyRunning ? 'not-allowed' : 'pointer' }}
+            // Not locked while traffic runs: pick another project and start
+            // it too. Running ones are marked.
+            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
           >
-            {targets.length > 0 ? targets.map(t => <option key={t.targetId} value={t.targetId}>{t.displayName || t.targetId}</option>) : <><option value="sock-shop">Sock Shop AWS</option><option value="vertikal">Vertikal AWS</option></>}
+            {targets.length > 0 ? targets.map(t => <option key={t.targetId} value={t.targetId}>{runningIds.has(t.targetId) ? '● ' : ''}{t.displayName || t.targetId}{runningIds.has(t.targetId) ? ' (running)' : ''}</option>) : <><option value="sock-shop">Sock Shop AWS</option><option value="vertikal">Vertikal AWS</option></>}
           </select>
         </div>
         <div>
@@ -631,7 +683,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
             <button
               key={n} type="button" onClick={() => setUsers(String(n))}
               style={{
-                background: users === String(n) ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.05)',
+                background: users === String(n) ? 'rgba(107,128,255,0.2)' : 'rgba(255,255,255,0.05)',
                 border: `1px solid ${users === String(n) ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
                 color: users === String(n) ? '#fff' : 'var(--color-text-dim)',
                 borderRadius: '6px', padding: '5px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600,
@@ -689,7 +741,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
                 <button
                   type="button" onClick={handleProbeSurface} disabled={probing}
                   style={{
-                    background: probing ? 'rgba(255,255,255,0.05)' : 'rgba(0,212,255,0.15)',
+                    background: probing ? 'rgba(255,255,255,0.05)' : 'rgba(107,128,255,0.15)',
                     border: '1px solid var(--color-accent-cyan)',
                     color: probing ? 'var(--color-text-dim)' : '#fff',
                     borderRadius: '6px', padding: '6px 12px', fontSize: '10px',
@@ -824,7 +876,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
       {/* No auto-abort notice — these are failure-injection experiments;
           services are supposed to break, so nothing here auto-stops on
           high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
-      <div style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)', padding: '8px', borderRadius: '8px', fontSize: '10px', color: 'var(--color-accent-cyan)' }}>
+      <div style={{ background: 'rgba(107,128,255,0.08)', border: '1px solid rgba(107,128,255,0.25)', padding: '8px', borderRadius: '8px', fontSize: '10px', color: 'var(--color-accent-cyan)' }}>
         <strong>No auto-abort:</strong> experiments run until you stop them, even under heavy CPU/memory/error-rate — that's the point, for RCA and cascading-failure research.
       </div>
 
@@ -834,7 +886,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           disabled={isLoading || isCurrentRunning || !!blockedReason}
           title={blockedReason || 'Start the experiment'}
           style={{
-            background: !isCurrentRunning && !blockedReason ? 'linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,230,118,0.25))' : 'rgba(255,255,255,0.05)',
+            background: !isCurrentRunning && !blockedReason ? 'linear-gradient(135deg, rgba(107,128,255,0.25), rgba(0,230,118,0.25))' : 'rgba(255,255,255,0.05)',
             border: `1px solid ${!isCurrentRunning && !blockedReason ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
             color: !isCurrentRunning && !blockedReason ? '#fff' : 'var(--color-text-dim)',
             padding: '8px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',
@@ -848,7 +900,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           onClick={handleStop}
           disabled={isLoading || !isCurrentRunning}
           style={{
-            background: isCurrentRunning ? 'linear-gradient(135deg, rgba(255,23,68,0.25), rgba(224,64,251,0.25))' : 'rgba(255,255,255,0.05)',
+            background: isCurrentRunning ? 'linear-gradient(135deg, rgba(255,23,68,0.25), rgba(155,107,255,0.25))' : 'rgba(255,255,255,0.05)',
             border: `1px solid ${isCurrentRunning ? 'var(--color-critical)' : 'var(--color-border)'}`,
             color: isCurrentRunning ? '#fff' : 'var(--color-text-dim)',
             padding: '8px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',

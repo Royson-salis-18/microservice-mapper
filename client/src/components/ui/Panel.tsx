@@ -33,7 +33,7 @@ export function InfoTip({ children, label = 'about this' }: { children: ReactNod
         aria-expanded={open}
         title={open ? 'hide' : label}
         style={{
-          background: open ? 'rgba(0,212,255,0.14)' : 'transparent',
+          background: open ? 'rgba(107,128,255,0.14)' : 'transparent',
           border: `1px solid ${open ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
           color: open ? 'var(--color-accent-cyan)' : 'var(--color-text-dim)',
           borderRadius: '999px',
@@ -54,8 +54,8 @@ export function InfoTip({ children, label = 'about this' }: { children: ReactNod
           gridColumn: '1 / -1',
           marginTop: '10px',
           padding: '12px 14px',
-          background: 'rgba(0,212,255,0.04)',
-          border: '1px solid rgba(0,212,255,0.18)',
+          background: 'rgba(107,128,255,0.04)',
+          border: '1px solid rgba(107,128,255,0.18)',
           borderRadius: '8px',
           fontSize: '12px',
           lineHeight: 1.65,
@@ -187,8 +187,8 @@ export function PageHeader({ title, scope, children }: {
           <span style={{
             fontSize: '11px', fontWeight: 650, letterSpacing: '0.04em', textTransform: 'uppercase',
             color: scoped ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-            background: scoped ? 'rgba(0,212,255,0.1)' : 'transparent',
-            border: `1px solid ${scoped ? 'rgba(0,212,255,0.45)' : 'var(--color-border)'}`,
+            background: scoped ? 'rgba(107,128,255,0.1)' : 'transparent',
+            border: `1px solid ${scoped ? 'rgba(107,128,255,0.45)' : 'var(--color-border)'}`,
             borderRadius: '999px', padding: '3px 11px',
           }}>{scoped ? scope : 'all projects'}</span>
         )}

@@ -150,7 +150,7 @@ export function DependenciesView({ nodes: _nodes, edges, selectedProject, embedd
                       borderRadius: '4px',
                       fontSize: '11px',
                       fontWeight: 600,
-                      background: edge.declared ? 'rgba(0, 212, 255, 0.15)' : 'rgba(255,255,255,0.05)',
+                      background: edge.declared ? 'rgba(107, 128, 255, 0.15)' : 'rgba(255,255,255,0.05)',
                       color: edge.declared ? 'var(--color-accent-cyan)' : 'var(--color-text-dim)'
                     }}>
                       {edge.declared ? 'YES' : 'NO'}
