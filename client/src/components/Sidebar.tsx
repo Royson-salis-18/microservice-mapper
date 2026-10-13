@@ -27,35 +27,37 @@ interface SidebarProps {
 interface NavItem { id: string; icon: LucideIcon; label: string }
 
 // Tab ids are what App.tsx switches on, so they stay as they were; only the labels are for people.
-const GROUPS: { title: string; items: NavItem[] }[] = [
+// Ordered the way an on-call engineer works: what is broken, then where to look, then how to test. The ML screens are a
+// research tool, not part of the daily loop, so they sit under "Advanced" and stay hidden until switched on.
+const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
   {
-    title: 'Map',
+    title: 'Now',
     items: [
+      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
       { id: '3D Vision', icon: Box, label: 'Spatial view' },
       { id: 'Architecture', icon: Network, label: 'Architecture' },
-      { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
     ],
   },
   {
-    title: 'Observe',
+    title: 'Investigate',
     items: [
       { id: 'Telemetry', icon: Activity, label: 'Telemetry' },
       { id: 'TRACES', icon: Waypoints, label: 'Traces' },
+      { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
       { id: 'Analytics', icon: BarChart3, label: 'Analytics' },
-    ],
-  },
-  {
-    title: 'Diagnose',
-    items: [
-      { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents' },
-      // Model outputs sit next to the pipeline that produces them, apart from Incidents, which involve no model.
-      { id: 'FINDINGS', icon: Microscope, label: 'Findings' },
-      { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline' },
     ],
   },
   {
     title: 'Test',
     items: [{ id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' }],
+  },
+  {
+    title: 'Advanced',
+    advanced: true,
+    items: [
+      { id: 'FINDINGS', icon: Microscope, label: 'Model findings' },
+      { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline' },
+    ],
   },
 ];
 
@@ -74,6 +76,7 @@ function BrandMark() {
 }
 
 const COLLAPSE_KEY = 'mm.sidebar.collapsed';
+const ADVANCED_KEY = 'mm.sidebar.advanced';
 
 export function Sidebar({ activeTab, onTabChange, status, onAddProject }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -82,6 +85,12 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
   useEffect(() => {
     try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch { /* storage unavailable */ }
   }, [collapsed]);
+  const [advanced, setAdvanced] = useState<boolean>(() => {
+    try { return localStorage.getItem(ADVANCED_KEY) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(ADVANCED_KEY, advanced ? '1' : '0'); } catch { /* storage unavailable */ }
+  }, [advanced]);
 
   const troubled = status ? status.critical + status.degraded : 0;
   const isActive = (id: string) => activeTab === id || (id === 'RCA / INCIDENTS' && activeTab === 'RCA');
@@ -96,7 +105,7 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
         </div>
       </div>
 
-      {GROUPS.map(group => (
+      {GROUPS.filter(g => !g.advanced || advanced || g.items.some(i => i.id === activeTab)).map(group => (
         <div key={group.title}>
           <div className="mm-side-group">{group.title}</div>
           {group.items.map(item => {
@@ -126,6 +135,11 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
           onKeyDown={e => { if (e.key === 'Enter') onAddProject(); }}>
           <Plus size={16} strokeWidth={1.75} />
           <span className="label">Add project</span>
+        </div>
+        <div className="mm-nav" onClick={() => setAdvanced(a => !a)} role="button" tabIndex={0} title={collapsed ? 'Show or hide the ML screens' : undefined}
+          onKeyDown={e => { if (e.key === 'Enter') setAdvanced(a => !a); }}>
+          <Brain size={16} strokeWidth={1.75} />
+          <span className="label">{advanced ? 'Hide ML screens' : 'Show ML screens'}</span>
         </div>
         <div className="mm-nav" onClick={() => setCollapsed(c => !c)} role="button" tabIndex={0} title={collapsed ? 'Expand sidebar' : undefined}
           onKeyDown={e => { if (e.key === 'Enter') setCollapsed(c => !c); }}>
