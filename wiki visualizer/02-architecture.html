@@ -569,6 +569,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
+<option value="37-app-pages-guide.html">How each page works</option>
+<option value="run-local.html">Run it on your machine</option>
 <option value="19-how-it-all-works.html">How it all works</option>
 <option value="29-design-principles.html">The rules it is built on</option>
 <option value="02-architecture.html" selected>The four layers</option>
@@ -595,10 +597,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="22-risk-engine.html">Risk, cascades and blast radius</option>
 <option value="11-ml-pipeline.html">The learning pipeline</option>
 <option value="26-ml-pipeline-deep-dive.html">The pipeline, at code level</option>
+<option value="mapper-algorithms.html">Mapper algorithms</option>
 </optgroup>
 <optgroup label="Driving the system">
 <option value="20-traffic-experiments.html">Generating traffic</option>
 <option value="traffic-gen-readme.html">The load generator</option>
+<option value="fault-injection.html">Fault injection</option>
 </optgroup>
 <optgroup label="Seeing it">
 <option value="09-frontend.html">The frontend</option>
@@ -620,6 +624,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="16-change-log-and-rationale.html">Why things changed</option>
 <option value="07-remote-collector.html">The optional push collector</option>
 <option value="27-project-technical-reference.html">Engineering manual</option>
+<option value="ml-separation-plan.html">ML separation plan</option>
+<option value="ui-redesign-plan.html">UI redesign plan</option>
 <option value="28-mapper-technical-reference.html">Subsystem reference</option>
 <option value="ml-readme.html">ML subsystem readme</option>
 </optgroup>
@@ -632,7 +638,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     
 
         <header class="hd">
-            <div class="bignum" aria-hidden="true">4</div>
+            <div class="bignum" aria-hidden="true">6</div>
             <div class="eye">Understanding the system</div>
             <h1>The four layers</h1>
             <p class="lead">Collection, server processing, intelligence, and the frontend, and what crosses between them.</p>
@@ -661,7 +667,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         
     <div class="chapter-rail">
       <span class="chapter-part">Part I &middot; Understanding the system</span>
-      <span class="chapter-count">Chapter 4 of 40</span>
+      <span class="chapter-count">Chapter 6 of 46</span>
     </div>
     
         <div class="chapter-learn">
@@ -1644,5 +1650,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (done) done.textContent = String(document.querySelectorAll('.chapter-row.visited').length);
 });
 </script>
+    <script type="module">
+      if (document.querySelector('pre.mermaid')) {
+        const m = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        m.default.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral' });
+        await m.default.run({ querySelector: 'pre.mermaid' });
+      }
+    </script>
 </body>
 </html>

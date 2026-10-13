@@ -74,6 +74,18 @@ DOCS_CONFIG = [
         ],
     },
     {
+        "id": 'wiki-37-app-pages', "filename": '37-app-pages-guide.html', "source": 'wiki/37-app-pages-guide.md',
+        "title": 'How each page works', "part": 'I', "category": 'Understanding the system',
+        "badge": 'APP GUIDE', "badge_color": 'green',
+        "desc": 'Every page of the app: what it shows, where the data comes from, how to read it.',
+    },
+    {
+        "id": 'docs-run-local', "filename": 'run-local.html', "source": 'docs/RUN_LOCAL.md',
+        "title": 'Run it on your machine', "part": 'I', "category": 'Understanding the system',
+        "badge": 'SETUP', "badge_color": 'green',
+        "desc": 'Mac, Linux or Windows: start the mapper, a bench, inject faults, score the result.',
+    },
+    {
         "id": 'wiki-19-how-it-all-works', "filename": '19-how-it-all-works.html', "source": 'wiki/19-how-it-all-works.md',
         "title": 'How it all works', "part": 'I', "category": 'Understanding the system',
         "badge": 'THE WHOLE STORY', "badge_color": 'green',
@@ -420,6 +432,30 @@ DOCS_CONFIG = [
         "title": 'Engineering manual', "part": 'VIII', "category": 'Reference',
         "badge": 'OLDER', "badge_color": 'blue',
         "desc": 'Long-form manual from an earlier stage. Where it disagrees, the chapters above win.',
+    },
+    {
+        "id": 'docs-algorithms', "filename": 'mapper-algorithms.html', "source": 'docs/MAPPER_ALGORITHMS.md',
+        "title": 'Mapper algorithms', "part": 'IV', "category": 'Forming a judgement',
+        "badge": 'MATH', "badge_color": 'purple',
+        "desc": 'Detector, root-cause scoring, cascade and graph building, with the formulas.',
+    },
+    {
+        "id": 'docs-fault-injection', "filename": 'fault-injection.html', "source": 'docs/FAULT_INJECTION.md',
+        "title": 'Fault injection', "part": 'V', "category": 'Driving the system',
+        "badge": 'INJECTOR', "badge_color": 'blue',
+        "desc": 'The blind injector and traffic generator: algorithm, pseudocode, flowcharts, options.',
+    },
+    {
+        "id": 'docs-ml-plan', "filename": 'ml-separation-plan.html', "source": 'docs/ML_SEPARATION_PLAN.md',
+        "title": 'ML separation plan', "part": 'VIII', "category": 'Reference',
+        "badge": 'PLAN', "badge_color": 'blue',
+        "desc": 'How the ML code will be split from the operator product.',
+    },
+    {
+        "id": 'docs-ui-plan', "filename": 'ui-redesign-plan.html', "source": 'docs/UI_REDESIGN_PLAN.md',
+        "title": 'UI redesign plan', "part": 'VIII', "category": 'Reference',
+        "badge": 'PLAN', "badge_color": 'blue',
+        "desc": 'Planned premium redesign, stored for later.',
     },
     {
         "id": 'wiki-28-mapper-technical-reference', "filename": '28-mapper-technical-reference.html', "source": 'wiki/28-mapper-technical-reference.md',
@@ -2630,7 +2666,9 @@ def markdown_to_html(md_text, base_filename=""):
                 code_content = "\n".join(code_lines)
                 lang = code_lang.lower()
                 drawn = any(sym in code_content for sym in ("┌", "└", "│", "├", "─", "──►", "▼", "▲", "-->"))
-                if lang == "math":
+                if lang == "mermaid":
+                    output.append(f'<figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">{html.escape(code_content)}</pre></div></figure>')
+                elif lang == "math":
                     output.append(f'<div class="panel" style="margin: 18px 0; font-family: var(--mono);">{html.escape(code_content)}</div>')
                 elif drawn and lang in ("", "text", "txt"):
                     output.append(f'''<figure><div class="fx" style="margin: 18px 0;">
@@ -3234,6 +3272,14 @@ def generate_doc_page(doc_info, doc_index):
     </div>
     <script src="assets/search-index.js"></script>
     <script>{JS_SCRIPTS}</script>
+    <script type="module">
+      if (document.querySelector('pre.mermaid')) {{
+        const m = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        m.default.initialize({{ startOnLoad: false, theme: dark ? 'dark' : 'neutral' }});
+        await m.default.run({{ querySelector: 'pre.mermaid' }});
+      }}
+    </script>
 </body>
 </html>"""
 

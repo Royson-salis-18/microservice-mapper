@@ -1,0 +1,18 @@
+# Documentation index
+
+Open **`wiki visualizer/index.html`** in a browser for the readable version (diagrams, search, reading path). The Markdown sources are listed here.
+
+| I want to… | Read | Where | Audience |
+|---|---|---|---|
+| Understand what each page of the app shows and how to read it | How each page works | `wiki/37-app-pages-guide.md` | Operator |
+| Run everything on my own machine | Run it on your machine | `docs/RUN_LOCAL.md` | Anyone |
+| Know the whole system in one read | How it all works | `wiki/19-how-it-all-works.md` | Anyone |
+| See the formulas (detector, root cause, cascade, graph) | Mapper algorithms | `docs/MAPPER_ALGORITHMS.md` | Engineer |
+| Understand the fault injector and traffic generator | Fault injection | `docs/FAULT_INJECTION.md` | Tester |
+| Look up an API endpoint or data shape | API reference, Data models | `wiki/13-api-reference.md`, `wiki/12-data-models.md` | Engineer |
+| Find a term | Glossary | `wiki/36-glossary.md` | Anyone |
+| Tour the code | Code tour | `wiki/34-code-tour.md` | Engineer |
+| Fix something that broke | Troubleshooting | `wiki/15-troubleshooting.md` | Operator |
+| See what is planned next | UI redesign, ML separation | `docs/UI_REDESIGN_PLAN.md`, `docs/ML_SEPARATION_PLAN.md` | Team |
+
+Rebuild the visual docs after editing any Markdown: `python3 scripts/build_wiki_visualizer.py`.
