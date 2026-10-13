@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Node, Edge } from '@xyflow/react';
-import { Activity, AlertTriangle, BellRing, Bell, Brain, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints } from 'lucide-react';
+import { Activity, AlertTriangle, BellRing, Bell, Brain, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints, ChevronDown, ChevronUp } from 'lucide-react';
 import type { DependencyEdge, ServiceNode } from '../../types';
 import { LAYOUTS, type LayoutId } from './layouts';
 import type { LinkRouting } from './Edge3D';
@@ -150,6 +150,8 @@ export function SceneHud({
   }, [nodes, edges]);
 
   const consistency = useConsistency();
+  const [overviewOpen, setOverviewOpen] = useState<boolean>(() => { try { return localStorage.getItem('mm.overview.open') !== '0'; } catch { return true; } });
+  useEffect(() => { try { localStorage.setItem('mm.overview.open', overviewOpen ? '1' : '0'); } catch { /* storage unavailable */ } }, [overviewOpen]);
 
   const presentTypes = useMemo(() => {
     const seen = new Set(nodes.map((n) => (n.data as unknown as ServiceNode).type as string));
@@ -167,16 +169,29 @@ export function SceneHud({
 
   return (
     <>
-      <div className="scene-panel scene-overview">
-        <div className="scene-overview-title">Live overview</div>
+      <div className={`scene-panel scene-overview${overviewOpen ? '' : ' min'}`}>
+        <div className="scene-overview-head">
+          <div style={{ minWidth: 0 }}>
+            <div className="scene-overview-title">Live overview</div>
+            {!overviewOpen && (
+              <div className="scene-overview-sum">
+                {stats.total} services
+                {stats.critical > 0 && <b className="bad"> · {stats.critical} down</b>}
+                {stats.degraded > 0 && <b className="warn"> · {stats.degraded} degraded</b>}
+                {stats.atRisk > 0 && <b> · {stats.atRisk} at risk</b>}
+                {stats.critical + stats.degraded + stats.atRisk === 0 && <span> · all healthy</span>}
+              </div>
+            )}
+          </div>
+          <button className="scene-collapse" onClick={() => setOverviewOpen((o) => !o)} aria-expanded={overviewOpen} title={overviewOpen ? 'Minimise' : 'Expand'}>
+            {overviewOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+          </button>
+        </div>
+        {overviewOpen && (<>
         <div className="scene-chip-row">
           <div className="scene-chip" title="Services whose containers are down or crash-looping">
             Down
             <span className={`scene-chip-count ${stats.critical > 0 ? 'hot' : ''}`}>{stats.critical}</span>
-          </div>
-          <div className="scene-chip" title="Services the ML ensemble has flagged over several scoring windows">
-            <Brain size={11} style={{ marginRight: -3 }} /> Anomalies
-            <span className={`scene-chip-count ${stats.anomalies > 0 ? 'hot' : ''}`}>{stats.anomalies}</span>
           </div>
           {consistency && (
             <div
@@ -186,7 +201,7 @@ export function SceneHud({
                 : consistency.violations.slice(0, 8).map((v) => `${v.rule}: ${v.subject}: ${v.detail}`).join('\n')}
               style={{ color: consistency.violations.length === 0 ? '#3ecf8e' : '#f58a90' }}
             >
-              {consistency.violations.length === 0 ? '✓ consistent' : `${consistency.violations.length} data issue${consistency.violations.length === 1 ? '' : 's'}`}
+              {consistency.violations.length === 0 ? 'Data checks pass' : `${consistency.violations.length} data issue${consistency.violations.length === 1 ? '' : 's'}`}
             </div>
           )}
         </div>
@@ -197,7 +212,7 @@ export function SceneHud({
               <div key={c.label} className="scene-stat">
                 <div className="scene-stat-head">{c.label}</div>
                 <div className="scene-stat-body">
-                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: c.color === '#3a3e45' ? 'none' : `0 4px 14px ${c.color}55` }}>
+                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: 'none' }}>
                     <Icon size={15} strokeWidth={2.3} />
                   </span>
                   <div style={{ minWidth: 0 }}>
@@ -209,6 +224,7 @@ export function SceneHud({
             );
           })}
         </div>
+        </>)}
       </div>
 
       <div className="scene-toolbar">
