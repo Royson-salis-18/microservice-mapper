@@ -55,8 +55,11 @@ function CurrentFindings({ rows, onSelect }: {
 
   const about = (
     <>
-      A service is flagged when its score passes the p99 threshold taken from its own training
-      distribution — so "high" always means high <em>for that service</em>, never against a shared bar.
+      Each sample is scored by every detector trained for that service — Isolation Forest, LOF,
+      one-class SVM and z-score — against that detector's own training distribution, so "high"
+      always means high <em>for that service</em>, never against a shared bar. A service is
+      flagged when <strong>at least half of its usable detectors</strong> agree; the score shown is
+      the median across them, with ~0.5 at a detector's threshold.
       <br /><br />
       <strong>Persistent</strong> means it has stayed above that line for the configured number of
       consecutive scoring cycles. A single cycle above threshold is very often one noisy sample, which

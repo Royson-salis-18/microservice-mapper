@@ -107,6 +107,10 @@ export function robustScore(baseline: number[], recent: number[], spec: Pick<Met
 }
 
 export class AnomalyDetector {
+  /** When each ongoing anomaly (node + metric) began. Kept until it clears, so the onset is the first sighting,
+   *  not the latest check, and temporal precedence compares real start times. */
+  private onset = new Map<string, string>();
+
   constructor(private metricStore: MetricStore) {}
 
   public detectAnomaliesForTarget(targetId: string, nodes: ServiceNode[]): AnomalyRecord[] {
@@ -149,11 +153,36 @@ export class AnomalyDetector {
         if (tail.length < t.minHistorySamples + 2) continue;          // cold start: not enough history, say nothing
         const baseline = tail.slice(0, -2);                            // never contains the samples being judged
         const recent = tail.slice(-2);
-        const a = this.judge(baseline, recent, spec, node.id, targetId, now, t);
+        const a = this.judge(baseline, recent, spec, node.id, targetId, now, t)
+          ?? this.absolute(recent, baseline, spec, node.id, targetId, now, t);
         if (a) anomalies.push(a);
       }
     }
+
+    // Onset: an anomaly that was already present keeps its first timestamp; one that cleared is forgotten.
+    const seen = new Set<string>();
+    for (const a of anomalies) {
+      const key = `${a.nodeId}|${a.metric}`;
+      seen.add(key);
+      const first = this.onset.get(key);
+      if (first) a.timestamp = first;
+      else this.onset.set(key, a.timestamp);
+    }
+    for (const key of [...this.onset.keys()]) {
+      const nodeId = key.slice(0, key.lastIndexOf('|'));
+      if (!seen.has(key) && nodes.some(n => n.id === nodeId && n.project === targetId)) this.onset.delete(key);
+    }
     return anomalies;
+  }
+
+  /** A resource reading past the absolute limit is an anomaly whatever its history: a service that always runs at
+   *  90% CPU has no headroom, even if 90% is "normal" for it. Both recent samples must be over the limit. */
+  private absolute(recent: number[], baseline: number[], spec: MetricSpec, nodeId: string, targetId: string, now: string, t: IncidentThresholds): AnomalyRecord | null {
+    if (spec.metric !== 'cpu' && spec.metric !== 'memoryPercent') return null;
+    if (!recent.every(v => finite(v) && v > t.absoluteCriticalPercent)) return null;
+    const current = recent[recent.length - 1];
+    return this.record(nodeId, targetId, spec.metric, now, current, Math.round(median(baseline) * 100) / 100, 0, null,
+      'over-absolute-limit', 'CRITICAL', 'absolute-threshold', 'own');
   }
 
   /**

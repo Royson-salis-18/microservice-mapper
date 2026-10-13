@@ -163,15 +163,20 @@ runCycle()
   ├── connect over SSH (ConnectionManager, ssh2)
   ├── restartCrashedContainers()   ← on reconnect only
   ├── refreshDiscovery()           ← docker ps + compose parse
-  └── startPolling()               ← then every 5s, self-scheduling
-        ├── MetricCollector.collectOnce()
-        │     ├── docker stats            → CPU/memory/network
-        │     ├── docker inspect          → container IP map
-        │     ├── /proc/<hostPid>/net/tcp → observed edges + connections
-        │     └── docker logs             → HTTP interactions (Tier 1)
-        ├── collectRequestMetrics()       ← Tier 2, opt-in, wrapped
-        └── onTelemetryCollected(envelope) → GraphStore.ingestRemote()
+  ├── poll loop                    ← 5 s after the previous poll finished
+  │     ├── docker stats            → CPU (vs allowance), memory, status
+  │     ├── docker logs             → HTTP interactions (Tier 1, where a gateway logs)
+  │     ├── collectRequestMetrics() → Tier 2, opt-in, wrapped
+  │     └── onTelemetryCollected(envelope) → GraphStore.ingestRemote()
+  ├── sweep loop                   ← 5 s after the previous sweep finished
+  │     └── per container, ONE exec:
+  │           /proc/<hostPid>/net/tcp + tcp6 → connections, direction, connKey
+  │           /proc/<hostPid>/net/dev        → exact byte counters → bytes/s
+  └── rediscovery                  ← every 180 s (docker ps + inspect, CPU limits)
 ```
+
+What each of those figures means exactly, and how it is kept exact, is in
+[Measuring precisely](./31-measurement-precision.md).
 
 **Self-scheduling, not `setInterval`.** A cycle takes far longer than 5s
 (25 services × one SSH exec each). `setInterval` fired regardless, so cycles
@@ -195,10 +200,12 @@ inside the container.
 declared: boolean        // a config file said so
 observed: boolean        // a live TCP connection was seen
 evidenceSources: string[]// compose, network-tcp, nginx-config, ...
-activity?: {             // socket observations per minute
-  samplesPerMin: number  // NOT requests — deliberately named
-  windowSec: number
+activity?: {             // socket-level, Tier 0
+  samplesPerMin: number         // sightings/min: a relative index, NOT requests
+  openConnections?: number      // distinct open connections (averaged)
+  newConnectionsPerMin?: number // distinct connections opened per minute
 }
+weight?: { value, dependency, confidence, … }   // confidence × caller's share
 metrics: { p95Latency, errorRate, requestRate, provenance } | null
 ```
 
@@ -262,7 +269,10 @@ carries information:
 | `zscore` | statistical | no fitting; the baseline the others must beat |
 
 All score *higher = more anomalous*, each with its own p99 threshold from
-its own training distribution.
+its own training distribution. Live, `score.py` puts all four on one scale
+(0.5 = at that detector's threshold) and **votes**: a sample is anomalous
+when at least half the usable detectors say so, scored by their median. It
+becomes *persistent* after 3 anomalous windows in a row.
 
 **LOF refuses rather than lies.** Fitted naively it produced thresholds of
 `3.37e9`, because with 1568 rows holding 47 distinct values a point's 20
@@ -326,6 +336,7 @@ Anything proportional to total history degrades on its own over time.
 | Telemetry | live per-service metrics + raw traffic feed |
 | Dependencies | edges with their evidence |
 | Analytics | graph-level analysis |
+| **Reliability** | health, risk, cascade prediction, what-if, blast radius |
 | ML Pipeline | the machine: processes, execution, config, progress |
 | **Findings** | what the models concluded |
 | Traces | observed connection events |
@@ -333,6 +344,14 @@ Anything proportional to total history degrades on its own over time.
 | Experiments | traffic run history |
 
 ## Where to read next
+
+- The rules behind every design choice → [29](./29-design-principles.md)
+- Frameworks and why → [30](./30-tech-stack.md)
+- Every measurement, and how it is kept exact → [31](./31-measurement-precision.md)
+- How the numbers are checked → [32](./32-accuracy-and-self-check.md)
+- What the colours, widths and pulses mean → [33](./33-visual-language.md)
+- The code, followed end to end → [34](./34-code-tour.md)
+- Risk and cascade prediction → [22](./22-risk-engine.md)
 
 - Evidence model and edge lifecycle → [06](./06-node-edge-lifecycle.md)
 - RCA scoring → [08](./08-rca-engine.md)

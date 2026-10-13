@@ -4,10 +4,14 @@ import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { resolveKeyPath, keyPathForOpenSSH, localShell } from '../util/platform.js';
 
 const SENTINEL = '___CMD_DONE___';
 
+function resolveKeyPath(keyPath: string): string {
+  let p = keyPath;
+  if (p.startsWith('~/') || p.startsWith('~\\')) p = path.join(os.homedir(), p.slice(2));
+  return path.resolve(p);
+}
 
 export class WebSocketManager {
   private wss: WebSocketServer;
@@ -53,35 +57,37 @@ export class WebSocketManager {
       }
 
       if (!session) {
-        let targetId = data.targetId;
-        let sshUser = 'ubuntu';
-        let targetIp = data.ip;
-        let targetKey = data.key;
+        let spawnCmd = 'bash';
+        let spawnArgs = ['--login'];
+        
+        if (data.targetId) {
+          let sshUser = 'ubuntu';
+          let targetIp = data.ip;
+          let targetKey = data.key;
 
-        try {
-          const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
-          if (fs.existsSync(configPath)) {
-            const remoteConf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            let tVal = (targetId && targetId !== 'ALL') ? remoteConf[targetId] : undefined;
-            if (!tVal) {
-              const preferredKey = remoteConf['open-telemetry'] ? 'open-telemetry' : Object.keys(remoteConf).find(k => remoteConf[k]?.ec2PublicIp && remoteConf[k]?.sshKeyPath);
-              if (preferredKey) tVal = remoteConf[preferredKey];
+          try {
+            const configPath = path.join(process.cwd(), 'data', 'remote_config.json');
+            if (fs.existsSync(configPath)) {
+              const remoteConf = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+              const tVal = remoteConf[data.targetId];
+              if (tVal) {
+                targetIp = tVal.ec2PublicIp || targetIp;
+                targetKey = tVal.sshKeyPath || targetKey;
+                sshUser = tVal.sshUsername || sshUser;
+              }
             }
-            if (tVal) {
-              targetIp = tVal.ec2PublicIp || targetIp;
-              targetKey = tVal.sshKeyPath || targetKey;
-              sshUser = tVal.sshUsername || sshUser;
-            }
+          } catch (e) {
+            // Swallowing this silently meant a malformed remote_config.json
+            // dropped us onto the DEFAULT ssh host/key without a word, so the
+            // terminal connected somewhere the user never asked for.
+            console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
           }
-        } catch (e) {
-          console.error('[WS] Could not read remote_config.json; using default SSH params:', (e as Error)?.message ?? e);
-        }
 
-        let { cmd: spawnCmd, args: spawnArgs } = localShell();
-
-        if (targetIp && targetKey) {
-          spawnCmd = 'ssh';
-          spawnArgs = ['-tt', '-i', keyPathForOpenSSH(resolveKeyPath(targetKey)), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
+          if (targetIp && targetKey) {
+            spawnCmd = 'ssh';
+            const nullArgs = process.platform === 'win32' ? [] : ['-F', '/dev/null'];
+            spawnArgs = ['-tt', ...nullArgs, '-i', resolveKeyPath(targetKey), '-o', 'StrictHostKeyChecking=no', `${sshUser}@${targetIp}`];
+          }
         }
 
         session = spawn(spawnCmd, spawnArgs, {

@@ -82,8 +82,8 @@ export class IncidentManager {
       existing.affectedServices = rcaResult.affectedServices;
       existing.candidateCauses = rcaResult.candidateCauses;
       existing.evidence = rcaResult.evidence;
-      existing.explanation = rcaResult.explanation;
-      existing.remediationGuide = this.remediation(primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap);
+      existing.explanation = this.withRemediation(rcaResult.explanation, primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap);
+      existing.remediationGuide = existing.explanation.recommendedInvestigation;
       existing.atRisk = rcaResult.atRisk;
       existing.monitoringGap = rcaResult.monitoringGap;
       return existing;
@@ -109,12 +109,13 @@ export class IncidentManager {
       affectedServices: rcaResult.affectedServices,
       candidateCauses: rcaResult.candidateCauses,
       evidence: rcaResult.evidence,
-      explanation: rcaResult.explanation,
-      remediationGuide: this.remediation(primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap),
+      explanation: this.withRemediation(rcaResult.explanation, primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap),
+      remediationGuide: [],
       atRisk: rcaResult.atRisk,
       monitoringGap: rcaResult.monitoringGap,
     };
 
+    newIncident.remediationGuide = newIncident.explanation.recommendedInvestigation;
     this.activeIncidents.set(targetId, newIncident);
     return newIncident;
   }
@@ -123,6 +124,13 @@ export class IncidentManager {
    * What to type, based on what is actually wrong. The old guide was always `docker start docker-compose-<name>-1`,
    * a container name that only existed on one host and the wrong command for a paused or running container.
    */
+  /** One list of steps: the concrete command for what is actually wrong first, then the explanation's own checks.
+   *  The incident's remediation guide is exactly this list, so the panel and the report never disagree. */
+  private withRemediation(explanation: any, serviceId: string | undefined, nodes: any[], monitoringGap: boolean) {
+    const steps = [...this.remediation(serviceId, nodes, monitoringGap), ...(explanation.recommendedInvestigation ?? [])];
+    return { ...explanation, recommendedInvestigation: [...new Set(steps)] };
+  }
+
   private remediation(serviceId: string | undefined, nodes: any[], monitoringGap: boolean): string[] {
     if (monitoringGap) return ['Check the SSH session / collector on the host', 'docker ps', 'docker stats --no-stream'];
     const n = nodes.find(x => x.id === serviceId);
@@ -130,7 +138,7 @@ export class IncidentManager {
     const container = n.metadata?.containerName || n.metadata?.containerId?.slice(0, 12) || n.name;
     const state = String(n.metadata?.state ?? '');
     if (state === 'paused') return [`docker unpause ${container}`, `docker logs --tail 100 ${container}`];
-    if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker start ${container}`];
+    if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker restart ${container}`];
     if (state === 'restarting') return [`docker logs --tail 200 ${container}`, `docker inspect --format '{{.State.ExitCode}} {{.State.Error}}' ${container}`];
     return [`docker logs --tail 100 ${container}`, `docker stats --no-stream ${container}`];
   }

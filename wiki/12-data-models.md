@@ -31,27 +31,39 @@ interface ServiceNode {
     [key: string]:  any;      // Extensible for future fields
   };
 
-  // Current metrics (latest values, fast path from ingestRemote)
+  // Current metrics (latest values, fast path from ingestRemote).
+  // A figure that was not measured is null or absent, never 0.
   metrics: {
-    cpu?:            number;        // 0–100 (%) — one decimal place
-    memory?:         number;        // Absolute bytes
-    memoryPercent?:  number;        // 0–100 (%)
-    networkRx?:      number;        // Cumulative bytes received
-    networkTx?:      number;        // Cumulative bytes transmitted
-    latency?:        number | null; // Average ms (from HTTP interactions, not Docker stats)
-    requestRate?:    number | null; // Requests/second (from HTTP interactions)
-    errorRate?:      number | null; // 0.0–1.0 (from HTTP interactions)
+    cpu?:               number | null; // % of ONE core, as docker reports it (200 = two full cores)
+    cpuAllowanceCores?: number | null; // cores it may use: --cpus / CpuQuota÷CpuPeriod, else host nproc
+    cpuOfAllowance?:    number | null; // cpu ÷ allowance, 0–100: what status and the UI use
+    memory?:            number | null; // absolute bytes
+    memoryPercent?:     number | null; // 0–100, of its memory limit
+    networkRx?:         number | null; // CUMULATIVE bytes received (exact /proc counter when fresh)
+    networkTx?:         number | null; // CUMULATIVE bytes sent
+    networkRxRate?:     number | null; // bytes/second received, from /proc/<pid>/net/dev deltas
+    networkTxRate?:     number | null; // bytes/second sent
+    networkSource?:     string;        // which source produced the totals
+    latency?:           number | null; // mean ms (Tier 1/2 request data only)
+    requestRate?:       number | null; // requests/second (Tier 1/2 only)
+    errorRate?:         number | null; // 0.0–1.0 (Tier 1/2 only)
   } | null;
 
-  // Analytics (computed/ML)
+  // Analytics: computed every poll cycle (RiskEngine, CascadeEngine) or read from the ML scorer
   analytics?: {
-    anomalyScore?:       number;        // 0.0–1.0 from IsolationForest (higher = more anomalous)
-    anomalyPersistent?:  boolean;       // Sustained anomaly (N consecutive windows above threshold)
-    healthScore?:        number | null; // Composite health score (GraphAnalytics)
-    criticality?:        number | null; // How critical to the system (centrality-based)
-    centrality?:         number | null; // Graph centrality score
-    upstreamCount?:      number;        // Number of services that depend on this
-    downstreamCount?:    number;        // Number of services this depends on
+    anomalyScore?:        number;        // 0–1 from the 4-detector ML ensemble (~0.5 = at threshold)
+    anomalyPersistent?:   boolean;       // ensemble anomalous for N consecutive windows
+    healthScore?:         number | null; // 0–1, weighted & renormalised (status, anomaly, incident)
+    healthBreakdown?:     ScoreContribution[]; // parts that sum exactly to healthScore
+    riskScore?:           number | null; // current exposure: 0.5×(1−health) + 0.5×criticality. NOT a probability
+    criticality?:         number | null; // share of project traffic disrupted if it failed alone
+    centrality?:          number | null; // observed degree ÷ busiest node's degree
+    failureProbability?:  number | null; // cascade model P(n): noisy-OR, τ = 0.7 (an estimate)
+    affectedProbability?: number | null; // the part of P(n) arriving through dependencies
+    cascadeVia?:          string | null; // ID of the dependency contributing most inherited risk
+    cascadeDepth?:        number;        // hops back to where its risk originates
+    upstreamCount?:       number;        // observed callers
+    downstreamCount?:     number;        // observed callees
   };
 }
 ```
@@ -103,14 +115,30 @@ interface DependencyEdge {
   // HTTP status code breakdown
   statusCodeDistribution?: Record<string, number>;  // {"200": 1247, "404": 3, "500": 12}
 
-  // TCP observation heat
+  // Socket-level activity (Tier 0). Absent if the link was never observed.
   activity?: {
-    samplesPerMin: number;  // TCP connection observations per minute
-    windowSec:     number;  // Age of the measurement window
-    lastSeen:      string;  // When last observed
+    samplesPerMin:         number;  // socket SIGHTINGS per minute: a relative activity index
+    baselinePerMin?:       number;  // slow average of the above (rise τ 60 s, fall τ 600 s)
+    windowSec:             number;  // age of the measurement window
+    lastSeen:              string;
+    openConnections?:      number;  // distinct ESTABLISHED connections, averaged (≥ 2 sweeps)
+    newConnectionsPerMin?: number;  // distinct connections opened per minute
+    connectionSweeps?:     number;  // sweeps behind the two figures above
   };
 
-  // Computed status
+  // How much the caller depends on this callee (RiskEngine, every cycle)
+  weight?: {
+    value:            number;  // confidence × dependency (× 0.1 for telemetry), 0–1
+    dependency:       number;  // caller's share of its traffic going here; sums to 1 per caller and kind
+    dependencyBasis:  'requests' | 'activity' | 'uniform';
+    kind:             'request' | 'telemetry';
+    confidence:       number;  // from evidence: 1.0 listen-port … 0.4 declared-only
+    confidenceBasis:  string;
+    volume:           number | null;  // activity relative to the busiest link
+    stress:           number | null;  // max(errorRate/5%, latency/1 s), capped at 1
+  };
+
+  // Computed status: linkStatus(errorRate, p95 ?? latency): ≥1% or ≥300 ms → degraded, ≥5% or ≥1 s → failed
   status: 'active' | 'degraded' | 'failed' | 'unknown';
 }
 ```
@@ -122,6 +150,9 @@ interface DependencyEdge {
 | `compose-config` | Found in `depends_on` of the Compose file |
 | `http-log` | Observed via container log parsing |
 | `proc-net-tcp` | Observed via `/proc/net/tcp` snapshot |
+| `direction:listen-port` | Direction decided by the callee's LISTEN row (confidence 1.0) |
+| `direction:ephemeral-port` | Direction decided by the ephemeral port range (0.85) |
+| `direction:unresolved` | Direction could not be decided; the scan's orientation was kept (0.5) |
 
 An edge can accumulate multiple sources over time. The `evidenceSources.push()` in `ingestRemote()` deduplicates with `includes()` before appending.
 
@@ -179,7 +210,7 @@ interface MetricSnapshot {
   cpu?:           number;        // 0–100 (%)
   memory?:        number;        // Absolute bytes
   memoryPercent?: number;        // 0–100 (%)
-  networkRx?:     number;        // Cumulative bytes
+  networkRx?:     number;        // Cumulative bytes (exact /proc counter when fresh)
   networkTx?:     number;        // Cumulative bytes
   latency?:       number | null;
   requestRate?:   number | null;
@@ -223,8 +254,10 @@ interface ConnectionEvent {
   targetId:        string;  // Which target reported this
   sourceServiceId: string;  // Canonical node ID
   destServiceId:   string;  // Canonical node ID
-  destPort:        number;  // Destination port
-  state:           string;  // "ESTABLISHED"
+  destPort:        number;  // Destination (callee) port
+  state:           string;  // "ESTABLISHED", "TIME_WAIT", …
+  connKey?:        string;  // "callerIp:port>calleeIp:port": identifies ONE connection,
+                            // so a sweep can count distinct connections instead of rows
 }
 ```
 
@@ -253,15 +286,21 @@ All arrays are optional (can be empty `[]`). The server processes only what's pr
 
 ## `AnomalyRecord`
 
-Used internally by `RCAEngine` and `IncidentManager`:
+A symptom found by the **rule-based** `AnomalyDetector` (not the ML ensemble). Used by `RCAEngine` and stored on the incident:
 
 ```typescript
 interface AnomalyRecord {
-  nodeId:      string;
-  targetId:    string;
-  score:       number;       // 0.0–1.0 from IsolationForest
-  persistent:  boolean;      // Sustained above threshold
-  detectedAt:  string;       // ISO-8601
+  id:              string;
+  nodeId:          string;   // project:name
+  targetId:        string;
+  metric:          string;   // 'container-health', 'cpu', 'memory', …
+  timestamp:       string;   // ONSET: kept from the first cycle it appeared, for as long as it lasts
+  observedValue:   number;
+  baselineMean:    number;
+  baselineStdDev:  number;
+  zScore:          number;
+  severity:        IncidentSeverity;
+  evidenceSource?: string;
 }
 ```
 
@@ -269,23 +308,39 @@ interface AnomalyRecord {
 
 ## `Incident`
 
+One per target, updated in place while open (`server/models/Incident.ts`):
+
 ```typescript
 interface Incident {
-  id:            string;
-  targetId:      string;
-  status:        'NORMAL' | 'INCIDENT' | 'RECOVERING' | 'RESOLVED';
-  startedAt:     string;   // ISO-8601
-  resolvedAt?:   string;   // ISO-8601
-  primaryRootCause?: {
-    nodeId:      string;
-    nodeName:    string;
-    score:       number;
-    confidence:  'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
-  };
-  candidateCauses:    CandidateCause[];
-  affectedServices:   string[];  // Node IDs
-  propagationPath:    PropagationStep[];
+  id:                 string;          // inc-<targetId>-<ms>
+  targetId:           string;
+  startedAt:          string;
+  detectedAt:         string;
+  endedAt:            string | null;   // set when RESOLVED
+  status:             'NORMAL' | 'DEGRADED' | 'INCIDENT' | 'RECOVERING' | 'RESOLVED';
+  severity:           'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
+  rootCauseServiceId: string | null;   // an ID
+  rootCauseEdgeId:    string | null;
+  rootCauseScore:     number;          // 0–1
+  confidence:         'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+
+  symptoms:           string[];
+  anomalies:          AnomalyRecord[];
+  propagation:        PropagationStep[];   // root → callers, with edge, weight, evidence
+  affectedServices:   string[];            // IDs of every symptomatic service
+  candidateCauses:    CandidateCause[];    // each with scoreBreakdown: ScoreContribution[]
   evidence:           EvidenceItem[];
-  explanation:        RCAExplanation;
+  explanation:        RCAExplanation;      // whatHappened, why, propagationPath, alternatives…
+  remediationGuide:   string[];
+}
+
+interface ScoreContribution { factor: string; score: number; reason: string }   // also used by healthBreakdown
+interface CandidateCause {
+  serviceId: string; serviceName: string; score: number; confidence: RCAConfidence;
+  scoreBreakdown: ScoreContribution[]; earliestAnomalyTimestamp?: string; primaryAnomalyMetric?: string;
 }
 ```
+
+Every service reference in an incident is a node **id**. It used to mix names and ids, and code that matched one against the other silently found nothing. The consistency rule `incident-references` now enforces it.
+

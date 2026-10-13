@@ -1,0 +1,111 @@
+{
+  "service_id": "open-telemetry:shipping",
+  "project": "open-telemetry",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 40,
+  "trained_at": "2026-09-30T17:39:45.742969+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -1.6479873021779667e-17,
+  "train_score_mean": -0.23170550701195952,
+  "train_score_max": 0.005198910838665749,
+  "holdout": {
+    "samples": 9,
+    "flag_rate": 0.1111111111111111,
+    "mean_score": -0.14164326188957743,
+    "max_score": 0.007070596307000021,
+    "from": "2026-09-18T15:13:58.590617+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -1.6479873021779667e-17,
+      "train_score_mean": -0.23170550701195952,
+      "train_score_median": -0.3016470594652487,
+      "train_score_max": 0.005198910838665749,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": -0.14164326188957743,
+        "max_score": 0.007070596307000021,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_shipping.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0003728158732462828,
+      "train_score_mean": -0.003972744968880613,
+      "train_score_median": -0.0009085160689534591,
+      "train_score_max": 0.0004922286853681485,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.6666666666666666,
+        "mean_score": 0.018376485653984816,
+        "max_score": 0.06772297000001257,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_shipping.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 3.0050089612442967,
+      "train_score_mean": 1.1293275996244148,
+      "train_score_median": 0.8440992297561942,
+      "train_score_max": 3.208345251901743,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.3333333333333333,
+        "mean_score": 2.092340381073355,
+        "max_score": 4.033462760094582,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_shipping.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.4444444444444444,
+      "jaccard": 0.16666666666666666,
+      "both_flagged": 1,
+      "either_flagged": 6
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 0.7777777777777778,
+      "jaccard": 0.3333333333333333,
+      "both_flagged": 1,
+      "either_flagged": 3
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.6666666666666666,
+      "jaccard": 0.5,
+      "both_flagged": 3,
+      "either_flagged": 6
+    }
+  },
+  "data_quality": {
+    "rows": 40,
+    "unique_rows": 19,
+    "unique_fraction": 0.475,
+    "feature_std": {
+      "z_cpu_percent": 0.8563388691959292,
+      "z_memory_percent": 0.737335594339109,
+      "z_network_rx_rate": 0.8570244211689706,
+      "z_network_tx_rate": 1.0120032156269543
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

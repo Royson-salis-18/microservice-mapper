@@ -1,9 +1,12 @@
-# Keep shell scripts and Docker files with LF endings even on a Windows checkout
-# (CRLF breaks them when they are run on Linux hosts or inside containers).
+# Normalise text to LF in the repository whatever the platform.
+* text=auto
+
+# Shell scripts run on Linux hosts over SSH; a CRLF checkout on Windows
+# breaks them ("bad interpreter: /usr/bin/env bash^M").
 *.sh text eol=lf
-*.bash text eol=lf
-Dockerfile text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.conf text eol=lf
-*.template text eol=lf
+
+# Binary artifacts
+*.joblib binary
+*.jpg binary
+*.png binary
+*.zip binary

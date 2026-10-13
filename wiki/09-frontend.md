@@ -249,17 +249,17 @@ Unhighlighted nodes render at `opacity: 0.2`. This focuses attention on the sele
 
 **File:** `client/src/components/DependencyEdge.tsx`
 
-| `declared` | `observed` | `status` | Visual |
-|---|---|---|---|
-| `true` | `false` | any | Solid grey — declared but no confirmed runtime traffic |
-| `false` | `true` | `active` | Animated cyan "marching ants" |
-| `true` | `true` | `active` | Animated cyan "marching ants" |
-| any | any | `degraded` | Animated yellow |
-| any | any | `failed` | Animated red |
+Colour, thickness and moving light each encode one measurement. The full legend is in [Reading the picture](33-visual-language.md); in short:
 
-The animation is pure CSS — `stroke-dasharray` + `stroke-dashoffset` with a CSS keyframe animation. Speed and color update reactively based on `edge.status`.
+| Channel | Encodes | Rule |
+|---|---|---|
+| colour | trouble first, then volume | `edgeAppearance()`: red at ≥ 5% errors, ≥ 1 s p95, or a down callee; orange at ≥ 1%, ≥ 300 ms, or a degraded callee; else blues by activity band; slate if declared only |
+| thickness | dependency weight | `1.2 + 4.3 × weight` px; telemetry links 1 px |
+| pulses | traffic rate | `0.3 + 1.6·log10(1 + rate)` pulses/s, from req/s where measured, else the activity index ÷ 60 |
+| weight pill | caller's share over this link | shown on hover or when selected |
+| arrowhead | direction: caller → callee | from listening ports |
 
-Edge **thickness/opacity** is driven by `edge.activity?.samplesPerMin`. Higher observation rate → thicker/brighter edge. This is the "heat map" effect.
+The same `edgeAppearance()` and `linkFlow()` drive the 3D scene, so a link never looks different in the two views.
 
 ---
 

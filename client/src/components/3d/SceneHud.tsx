@@ -406,12 +406,12 @@ export function SceneHud({
         <div>
           <div className="scene-legend-title">Link</div>
           {[
-            ['#4f7dff', 'calm'],
-            ['#2f9bff', 'busy'],
-            ['#1fd1ff', 'heavy'],
-            ['#9cf4ff', 'very heavy'],
-            ['#ff9a3c', 'slow / erroring'],
-            ['#ff3d5e', 'failing'],
+            ['#2f9e6f', 'calm'],
+            ['#3ecf8e', 'busy'],
+            ['#4fdc9c', 'heavy'],
+            ['#7fe8b8', 'very heavy'],
+            ['#e8a33d', 'slow / erroring'],
+            ['#ef5f67', 'failing'],
           ].map(([color, label]) => (
             <div key={label} className="scene-legend-row">
               <span className="scene-legend-swatch" style={{ width: 14, height: 3, background: color, boxShadow: `0 0 5px ${color}` }} />

@@ -4,6 +4,61 @@ import type { AnomalyRecord, AtRiskService, CandidateCause, EvidenceItem, Propag
 import { TemporalAnalyzer } from './TemporalAnalyzer.js';
 import { ExplanationEngine } from './ExplanationEngine.js';
 import { DEFAULT_THRESHOLDS, type IncidentThresholds } from './thresholds.js';
+import { computeEdgeWeights } from '../graph/EdgeWeights.js';
+
+// ---- shared helpers (from the bharath-ui engine; kept for its pipeline tests and callers)
+/** Largest contribution of the explanatory-coverage factor. */
+export const EXPLAINS_WEIGHT = 0.25;
+/** Largest deduction for a candidate whose own dependencies are failing. */
+export const VICTIM_WEIGHT = 0.25;
+/**
+ * Dependency-path strength below which a candidate is not said to explain
+ * another failure. Telemetry links are weighted at a tenth, so without this a
+ * dashboard that one proxy forwards to was credited with "explaining" seven
+ * failing services through paths of strength 0.004, and the independent-
+ * failure rule (which asked for coverage of exactly zero) never fired.
+ */
+export const MATERIAL_REACH = 0.1;
+
+/** A metric value as evidence shows it: one decimal, which is what docker reports. */
+export const oneDecimal = (v: number): number => Math.round(v * 10) / 10;
+
+/** One sentence for an anomaly: what moved, from where, and by which test. */
+export function describeAnomaly(a: AnomalyRecord): string {
+  const how = a.evidenceSource === 'dynamic-zscore' ? `, z = ${a.zScore}`
+    : a.evidenceSource === 'absolute-threshold' ? ', over the absolute threshold'
+    : a.evidenceSource === 'dynamic-baseline' ? ', off a flat baseline'
+    : '';
+  return `${a.metric} at ${oneDecimal(a.observedValue)} against a baseline of ${oneDecimal(a.baselineMean)} (${a.severity.toLowerCase()}${how})`;
+}
+
+/**
+ * Strongest dependency path from every service up to `rootId`, as the product
+ * of edge weights along it (1 = rootId itself).
+ *
+ * Edges read "caller -> callee", so a service depends on `rootId` if there is
+ * a chain of calls from it down to `rootId`. The strength of that chain is how
+ * much of a failure at `rootId` would plausibly reach it. Max-product path,
+ * solved by relaxation — graphs here are tens of nodes, so this is trivial.
+ */
+export function dependencyReach(rootId: string, edges: DependencyEdge[], weightOf: (e: DependencyEdge) => number): Map<string, number> {
+  const reach = new Map<string, number>([[rootId, 1]]);
+  for (let pass = 0; pass < edges.length + 1; pass++) {
+    let changed = false;
+    for (const e of edges) {
+      const down = reach.get(e.target);
+      if (down === undefined) continue;
+      const candidate = down * weightOf(e);
+      if (candidate > (reach.get(e.source) ?? 0) + 1e-12) {
+        reach.set(e.source, candidate);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  return reach;
+}
+
 
 export interface RCAParameters {
   targetId: string;
@@ -64,6 +119,12 @@ export class RCAEngine {
       callees.set(e.source, [...(callees.get(e.source) ?? []), e.target]);
       callers.set(e.target, [...(callers.get(e.target) ?? []), e.source]);
     }
+
+    // How strongly each caller depends on each callee (server/graph/EdgeWeights.ts): live weights when the graph
+    // carries them, otherwise computed from the same edges. Telemetry links weigh a tenth.
+    const computed = computeEdgeWeights(targetEdges);
+    const weightOf = (e: DependencyEdge) => e.weight?.value ?? computed.get(e.id)?.value ?? 0.5;
+    const callEdges = targetEdges.filter(e => !(isStore(e.source) && !isStore(e.target)));
 
     // ---- per-service evidence
     const own = new Map<string, number>(), sym = new Map<string, number>(), hard = new Map<string, boolean>();
@@ -132,6 +193,29 @@ export class RCAEngine {
 
     const affected = targetNodes.filter(n => (raw.get(n.id) ?? 0) > 0 || (sym.get(n.id) ?? 0) > 0);
     const ranked = [...affected].sort((a, b) => (raw.get(b.id)! - raw.get(a.id)!) || a.name.localeCompare(b.name));
+    // "Troubled": visibly unwell (status, hard evidence, or evidence past the anomaly threshold). Coverage asks how
+    // many of the OTHER troubled services depend on a candidate through a material path; a candidate that depends on
+    // a more broken service is likely a victim.
+    const troubled = new Set(targetNodes.filter(n => hard.get(n.id) || n.status === 'critical' || n.status === 'degraded'
+      || (raw.get(n.id) ?? 0) >= t.zScoreAnomaly || (sym.get(n.id) ?? 0) >= t.zScoreAnomaly).map(n => n.id));
+    const reachOf = new Map<string, Map<string, number>>();
+    const reach = (id: string) => { if (!reachOf.has(id)) reachOf.set(id, dependencyReach(id, callEdges, weightOf)); return reachOf.get(id)!; };
+    const coverage = new Map<string, string[]>(), dependsOnWorse = new Map<string, string[]>();
+    for (const n of affected) {
+      const r = reach(n.id);
+      coverage.set(n.id, [...troubled].filter(o => o !== n.id && (r.get(o) ?? 0) >= MATERIAL_REACH));
+      dependsOnWorse.set(n.id, [...troubled].filter(o => o !== n.id && (reach(o).get(n.id) ?? 0) >= MATERIAL_REACH
+        && (raw.get(o) ?? 0) >= (raw.get(n.id) ?? 0)));
+    }
+    const others = Math.max(0, troubled.size - 1);
+    for (const n of affected) {
+      const share = others ? (coverage.get(n.id)!.length / others) : 0;
+      // Explaining others breaks ties between comparably abnormal services; it never outweighs hard evidence.
+      // Scaled by gamma like explain-away, so gamma = 0 is still plain "most abnormal".
+      raw.set(n.id, (raw.get(n.id) ?? 0) + share * t.zScoreAnomaly * Math.min(1, t.explainAwayGamma));
+    }
+    ranked.sort((a, b) => (raw.get(b.id)! - raw.get(a.id)!) || a.name.localeCompare(b.name));
+
     const top = ranked[0], second = ranked[1];
     const rawTop = top ? raw.get(top.id)! : 0, rawSecond = second ? raw.get(second.id)! : 0;
     const margin = rawTop > 0 ? 1 - rawSecond / rawTop : 0;
@@ -147,6 +231,13 @@ export class RCAEngine {
       if (p.o > 0) breakdown.push({ factor: 'own_evidence', score: round(p.o), reason: `its own signals are ${round(p.o)}x their normal wobble (${recs.filter(a => kindOf(a) === 'own').map(a => a.metric).join(', ') || 'resource pressure'})` });
       if (p.s > 0) breakdown.push({ factor: 'symptoms', score: round(p.s), reason: `errors / latency / traffic ${round(p.s)}x normal (${recs.filter(a => kindOf(a) === 'symptom').map(a => a.metric).join(', ')})` });
       if (p.x > 0 && p.s > 0) breakdown.push({ factor: 'likely_victim', score: -round(Math.min(p.x, p.s)), reason: `a service it calls is broken and explains ${round(Math.min(p.x, p.s))} of those symptoms` });
+      const covered = coverage.get(n.id) ?? [], worse = dependsOnWorse.get(n.id) ?? [];
+      const nameOf = (id: string) => targetNodes.find(x => x.id === id)?.name ?? id;
+      if (covered.length && others) {
+        const sc = round(EXPLAINS_WEIGHT * covered.length / others);
+        if (sc >= 0.01) breakdown.push({ factor: 'explains_failures', score: sc, reason: `${covered.length} of the ${others} other affected services depend on it (${covered.map(nameOf).join(', ')})` });
+      }
+      if (worse.length) breakdown.push({ factor: 'dependency_failing', score: -round(VICTIM_WEIGHT), reason: `it depends on ${worse.map(nameOf).join(', ')}, which ${worse.length > 1 ? 'are' : 'is'} failing at least as badly` });
       if (p.blind) breakdown.push({ factor: 'blind_spot', score: round(r), reason: 'no telemetry from it, while the services calling it show errors nothing else explains' });
       const isTop = n.id === top.id;
       let confidence: RCAConfidence = 'LOW';
@@ -155,6 +246,7 @@ export class RCAEngine {
         const observed = targetEdges.some(e => (e.source === n.id || e.target === n.id) && e.observed);
         if ((hard.get(n.id) && hardCount === 1) || (margin >= 0.5 && observed)) confidence = 'HIGH';
         else if (margin >= 0.2) confidence = 'MEDIUM';
+        if (others > 0 && covered.length === 0) confidence = 'LOW';     // explains none of the others: independent problems
       } else if (r < 0.5 * rawTop) confidence = 'UNKNOWN';
       candidates.push({
         serviceId: n.id, serviceName: n.name, score: round(to01(r)), confidence, scoreBreakdown: breakdown,
@@ -167,12 +259,12 @@ export class RCAEngine {
         id: `ev-${n.id}-${Date.now()}`,
         metric: strongest?.metric ?? 'container-state',
         timestamp: strongest?.timestamp ?? new Date().toISOString(),
-        beforeValue: strongest ? `${strongest.baselineMean}` : 'running',
-        afterValue: strongest ? `${strongest.observedValue}` : `${n.status} (${state(n) || 'unknown'})`,
+        beforeValue: strongest ? `baseline ${oneDecimal(strongest.baselineMean)}` : 'running',
+        afterValue: strongest ? `${oneDecimal(strongest.observedValue)}` : (state(n) ? `${n.status} (${state(n)})` : n.status),
         source: strongest?.evidenceSource ?? 'container-runtime',
         description: strongest
-          ? `'${n.name}': ${strongest.metric} at ${strongest.observedValue} vs usual ${strongest.baselineMean}${strongest.zScore !== null ? ` (z ${strongest.zScore})` : ''} — ${strongest.reason}`
-          : `'${n.name}': ${n.status} (${state(n) || 'no state'})`,
+          ? `${describeAnomaly(strongest)}${strongest.reason ? ` — ${strongest.reason}` : ''}`
+          : `'${n.name}': ${n.status}${state(n) ? ` (${state(n)})` : ''}`,
       });
     }
 
@@ -191,10 +283,12 @@ export class RCAEngine {
         for (const curr of frontier) {
           for (const callerId of callers.get(curr) ?? []) {
             if (visited.has(callerId)) continue;
-            visited.add(callerId);
             const caller = targetNodes.find(x => x.id === callerId);
             const e = targetEdges.find(x => x.source === callerId && x.target === curr);
-            if (!caller || !e) continue;
+            // A real chain only: the caller is itself affected and leans on this callee materially. Healthy callers
+            // are not "propagated to"; they are the at-risk list below.
+            if (!caller || !e || !troubled.has(callerId) || weightOf(e) < MATERIAL_REACH) continue;
+            visited.add(callerId);
             propagationPath.push(caller.name);
             next.push(caller.id);
             propagationSteps.push({
@@ -222,17 +316,22 @@ export class RCAEngine {
     }
     atRisk.sort((a, b) => b.risk - a.risk);
 
-    const affectedServices = affected.map(n => n.name);
+    const affectedServices = affected.map(n => n.id);
     const explanation = this.explanationEngine.generateExplanation({
       targetId, incidentStartedAt: timeline[0]?.timestamp ?? new Date().toISOString(), primaryRootCause,
-      alternativeCandidates: candidates, affectedServices, propagationPath, evidence: evidenceItems, confidence: overallConfidence,
+      alternativeCandidates: candidates, affectedServices: affected.map(n => n.name), propagationPath, evidence: evidenceItems, confidence: overallConfidence,
     });
     if (primaryRootCause) {
       const p = parts.get(primaryRootCause.serviceId)!;
-      explanation.why = hard.get(primaryRootCause.serviceId)
-        ? `${primaryRootCause.serviceName} is ${state(targetNodes.find(n => n.id === primaryRootCause.serviceId)!) || 'down'}: hard evidence. Its callers' errors are explained by it.`
-        : p.blind ? `${primaryRootCause.serviceName} sends no telemetry while the services calling it fail with nothing else to explain it.`
-          : `${primaryRootCause.serviceName} has the strongest evidence that is not explained by anything it depends on (own ${round(p.o)}, unexplained symptoms ${round(Math.max(0, p.s - p.x))}).`;
+      const rc = primaryRootCause.serviceName, covered = coverage.get(primaryRootCause.serviceId) ?? [];
+      const base = hard.get(primaryRootCause.serviceId)
+        ? `${rc} is ${state(targetNodes.find(n => n.id === primaryRootCause.serviceId)!) || 'down'}: hard evidence.`
+        : p.blind ? `${rc} sends no telemetry while the services calling it fail with nothing else to explain it.`
+          : `${rc} has the strongest evidence that is not explained by anything it depends on (own ${round(p.o)}, unexplained symptoms ${round(Math.max(0, p.s - p.x))}).`;
+      explanation.why = others === 0 ? base
+        : covered.length === 0
+          ? `${base} None of the ${others} other affected service${others > 1 ? 's' : ''} depend${others > 1 ? '' : 's'} on ${rc}, so these look like independent problems; treat the ranking with care.`
+          : `${base} ${covered.length} of the ${others} other affected services depend on it.`;
       if (atRisk.length) explanation.recommendedInvestigation = [...explanation.recommendedInvestigation, `Watch next: ${atRisk.slice(0, 3).map(a => `${a.serviceName} (${Math.round(a.risk * 100)}%)`).join(', ')}`];
     }
 

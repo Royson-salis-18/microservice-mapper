@@ -2,7 +2,10 @@
 
 **File:** `remote-collector/index.ts`
 
-The remote collector is a standalone Node.js process deployed on each EC2 instance. It runs alongside the target application and requires access to `/var/run/docker.sock`.
+> [!IMPORTANT]
+> **This is the optional push path, not the default.** The mapper's normal collection runs from the server over SSH and installs nothing on the target: `EndpointDiscoveryEngine` and `MetricCollector` run `docker stats`, read `/proc/<pid>/net/tcp`, `tcp6` and `net/dev` remotely, and decide connection direction from listening ports. That path is described in [Measuring precisely](31-measurement-precision.md) and [Reaching the target](21-connection-layer.md). The server never deploys this collector. It exists for hosts where you *choose* to run an agent, and it feeds the same `POST /api/ingest` that the ground-truth simulator uses.
+
+The remote collector is a standalone Node.js process that can be deployed on an EC2 instance. It runs alongside the target application and requires access to `/var/run/docker.sock`.
 
 ---
 
@@ -51,7 +54,7 @@ for (const iface of Object.values(stats.networks || {})) {
 }
 ```
 
-**Note:** `networkRx`/`networkTx` are **cumulative** counters, not rates. The ML pipeline's `preprocess.py` converts them to rates (Δ bytes/second) during feature engineering.
+**Note:** `networkRx`/`networkTx` are **cumulative** counters, not rates. The ML pipeline's `preprocess.py` converts them to rates (Δ bytes/second) during feature engineering. On the default SSH path the server also publishes `networkRxRate`/`networkTxRate` (bytes/s from exact `/proc/<pid>/net/dev` counters). See [Measuring precisely](31-measurement-precision.md).
 
 ### Container Events (Real-time State Changes)
 

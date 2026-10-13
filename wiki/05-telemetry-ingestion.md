@@ -247,7 +247,7 @@ for (const [edgeId, edge] of edgesMap.entries()) {
 
 **Stale bad status reset:** If an edge was `degraded` or `failed` but has received no HTTP interactions in the current aggregation window, the status resets to `active` (for observed edges) or `unknown`. This prevents one-time spikes from permanently marking an edge as failed.
 
-**Edge-only evidence policy:** Edge status is computed only from data measured on that specific edge — not from the health of either endpoint node. See [06-edge-status.md](./06-edge-status.md) for the reasoning.
+**Edge-only evidence policy:** Edge status is computed only from data measured on that specific edge — not from the health of either endpoint node. See [06-node-edge-lifecycle.md](./06-node-edge-lifecycle.md) for the reasoning.
 
 ## Stage 8: Finalize
 

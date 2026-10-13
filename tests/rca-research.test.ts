@@ -158,5 +158,6 @@ test('rca: a datastore is never "at risk" via the reverse view of a TCP connecti
   const res = new RCAEngine().analyzeIncident({ targetId: 'p', nodes, edges, anomalies: [] });
   assert.equal(res.primaryRootCause?.serviceId, 'cart');
   assert.deepEqual(res.atRisk.map(a => a.serviceId), ['api']);
-  assert.deepEqual(res.explanation.propagationPath, ['cart', 'api']);
+  // api is healthy, so it is at risk rather than on the propagation path (which follows affected services only).
+  assert.deepEqual(res.explanation.propagationPath, ['cart']);
 });

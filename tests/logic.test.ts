@@ -11,7 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { computeLayout2D, LAYOUTS_2D, type Layout2DId } from '../client/src/components/layouts2d.ts';
-import { computeLayout, LAYOUTS, type LayoutId, type LayoutNode } from '../client/src/components/3d/layouts.ts';
+import { computeLayout, LAYOUTS, HALL_PADDING, type LayoutId, type LayoutNode } from '../client/src/components/3d/layouts.ts';
 import { edgeAppearance } from '../client/src/components/shared/edgeHeat.ts';
 import type { DependencyEdge } from '../client/src/types/index.ts';
 
@@ -156,6 +156,39 @@ test('3D clusters: projects occupy separate regions', () => {
   assert.ok(gap > 20, `project islands overlap (centres ${gap.toFixed(1)} apart)`);
 });
 
+test('3D halls: no two services share a spot, and halls never overlap', () => {
+  const nodes = [...make3DNodes(14, 'alpha'), ...make3DNodes(5, 'beta'), ...make3DNodes(9, 'gamma'), ...make3DNodes(1, 'delta')];
+  const pos = computeLayout('halls', nodes);
+  const spots = new Set(Object.values(pos).map((p) => `${p[0].toFixed(3)},${p[2].toFixed(3)}`));
+  assert.equal(spots.size, nodes.length, 'two services were placed on the same spot');
+
+  // Each hall's footprint, including its padding, must be clear of every other.
+  const halls = ['alpha', 'beta', 'gamma', 'delta'].map((project) => {
+    const pts = nodes.filter((n) => n.project === project).map((n) => pos[n.id]);
+    return {
+      project,
+      minX: Math.min(...pts.map((p) => p[0])) - HALL_PADDING, maxX: Math.max(...pts.map((p) => p[0])) + HALL_PADDING,
+      minZ: Math.min(...pts.map((p) => p[2])) - HALL_PADDING, maxZ: Math.max(...pts.map((p) => p[2])) + HALL_PADDING,
+    };
+  });
+  for (let i = 0; i < halls.length; i++) {
+    for (let j = i + 1; j < halls.length; j++) {
+      const a = halls[i], b = halls[j];
+      const overlap = a.minX < b.maxX && b.minX < a.maxX && a.minZ < b.maxZ && b.minZ < a.maxZ;
+      assert.ok(!overlap, `halls ${a.project} and ${b.project} overlap`);
+    }
+  }
+});
+
+test('3D halls: entry points stand in front of data stores', () => {
+  // The camera looks from +z, so "in front" is larger z.
+  const nodes = make3DNodes(14, 'shop');
+  const pos = computeLayout('halls', nodes);
+  const z = (type: string) => nodes.filter((n) => n.type === type).map((n) => pos[n.id][2]);
+  assert.ok(Math.min(...z('frontend')) > Math.max(...z('database')), 'a database stands in front of a frontend');
+  assert.ok(Math.min(...z('gateway')) > Math.max(...z('database')), 'a database stands in front of a gateway');
+});
+
 test('3D: single node and empty input do not produce NaN', () => {
   for (const { id } of LAYOUTS) {
     assert.deepEqual(computeLayout(id as LayoutId, []), {}, `${id}: empty`);
@@ -178,7 +211,14 @@ function edge(partial: Partial<DependencyEdge>): DependencyEdge {
 test('heat: unobserved links are inert grey, never a traffic colour', () => {
   const a = edgeAppearance(edge({ observed: false, declared: true }));
   assert.equal(a.heat, 'idle');
-  assert.match(a.color, /^#4a4f57$/i);
+  // Whatever the palette, "declared but never seen" must not share a colour
+  // with any band that means traffic was measured.
+  const traffic = [5, 100, 500, 5000].map((samplesPerMin) =>
+    edgeAppearance(edge({ observed: true, activity: { samplesPerMin, windowSec: 60, lastSeen: new Date().toISOString() } })).color.toLowerCase());
+  assert.ok(!traffic.includes(a.color.toLowerCase()), `idle colour ${a.color} is also a traffic colour`);
+  // And it is the dimmest of them, so it recedes.
+  assert.ok(a.intensity < Math.min(...[5, 100, 500, 5000].map((samplesPerMin) =>
+    edgeAppearance(edge({ observed: true, activity: { samplesPerMin, windowSec: 60, lastSeen: new Date().toISOString() } })).intensity)));
 });
 
 test('heat: observed but unmeasured is calm, not a fabricated zero', () => {
@@ -213,25 +253,51 @@ test('heat: failure and degradation outrank traffic volume', () => {
   assert.equal(edgeAppearance(edge({ observed: true, status: 'failed' })).heat, 'failed');
 });
 
-test('heat: traffic volume never uses a warm (trouble) colour', () => {
-  const warm = new Set(['#ef5f67', '#e8a33d']);
-  for (const samplesPerMin of [5, 100, 600, 5000]) {
-    const a = edgeAppearance(edge({ observed: true, activity: { samplesPerMin, windowSec: 60, lastSeen: new Date().toISOString() } }));
-    assert.ok(!warm.has(a.color.toLowerCase()), `${samplesPerMin}/min painted ${a.color}`);
-  }
-  assert.equal(edgeAppearance(edge({ observed: true, status: 'failed' })).color, '#ef5f67');
+test('heat: latency turns a link orange at 300 ms and red at a second', () => {
+  const at = (latency: number) => edgeAppearance(edge({ observed: true, metrics: { latency } })).heat;
+  assert.equal(at(120), 'calm');
+  assert.equal(at(299), 'calm');
+  assert.equal(at(300), 'degraded');
+  assert.equal(at(999), 'degraded');
+  assert.equal(at(1000), 'failed');
+  // p95 is preferred over the mean when both exist: a fast average can hide
+  // a slow tail.
+  assert.equal(edgeAppearance(edge({ observed: true, metrics: { latency: 80, p95Latency: 1400 } })).heat, 'failed');
 });
 
-test('heat: intensity is an opacity in (0, 1)', () => {
-  const all = [
-    edgeAppearance(edge({ observed: false })),
-    edgeAppearance(edge({ observed: true })),
-    edgeAppearance(edge({ observed: true, status: 'failed' })),
-  ];
-  for (const a of all) {
-    assert.ok(a.intensity < 1, `intensity ${a.intensity} is opaque`);
-    assert.ok(a.intensity > 0, 'intensity must be visible');
-  }
+test('heat: errors turn a link orange at 1% and red at 5%', () => {
+  const at = (errorRate: number) => edgeAppearance(edge({ observed: true, metrics: { errorRate } })).heat;
+  assert.equal(at(0), 'calm');
+  assert.equal(at(0.009), 'calm');
+  assert.equal(at(0.01), 'degraded');
+  assert.equal(at(0.05), 'failed');
+  const red = edgeAppearance(edge({ observed: true, metrics: { errorRate: 0.2 } }));
+  assert.match(red.reason ?? '', /20\.0% of requests failing/);
+});
+
+test('heat: calling a down service is failing, unless request data says otherwise', () => {
+  const busy = { samplesPerMin: 400, windowSec: 60, lastSeen: new Date().toISOString() };
+  // No request data: the callee's state is the best evidence there is.
+  assert.equal(edgeAppearance(edge({ observed: true, activity: busy }), { targetStatus: 'critical' }).heat, 'failed');
+  assert.equal(edgeAppearance(edge({ observed: true, activity: busy }), { targetStatus: 'degraded' }).heat, 'degraded');
+  // Measured clean traffic wins over the callee's flag.
+  assert.equal(edgeAppearance(edge({ observed: true, activity: busy, metrics: { errorRate: 0, latency: 40 } }), { targetStatus: 'critical' }).heat, 'heavy');
+  // A declared link that never carried anything stays inert.
+  assert.equal(edgeAppearance(edge({ observed: false }), { targetStatus: 'critical' }).heat, 'idle');
+});
+
+test('heat: links are clearly lit, never-seen links recede, and trouble is the brightest', () => {
+  // Links were capped at 0.8 to stay clear of glare; with bloom off that read
+  // as dull wires. Now: everything observed is clearly lit, a link declared
+  // but never seen stays faint, and a failing link is as bright as any.
+  const declared = edgeAppearance(edge({ observed: false }));
+  const observed = edgeAppearance(edge({ observed: true }));
+  const failing = edgeAppearance(edge({ observed: true, status: 'failed' }));
+  const busiest = edgeAppearance(edge({ observed: true, activity: { samplesPerMin: 5000, windowSec: 60, lastSeen: '' } } as any));
+  for (const a of [declared, observed, failing, busiest]) assert.ok(a.intensity > 0 && a.intensity <= 1, `intensity ${a.intensity} out of range`);
+  assert.ok(observed.intensity >= 0.8, `an observed link should be clearly lit, got ${observed.intensity}`);
+  assert.ok(declared.intensity < observed.intensity, 'a declared-only link should recede behind observed ones');
+  assert.ok(failing.intensity >= busiest.intensity, 'a failing link must be at least as bright as the busiest healthy one');
 });
 
 test('heat: undefined edge does not throw', () => {
@@ -649,4 +715,155 @@ test('fieldAt: reads one column without splitting the line', () => {
   assert.equal(fieldAt('a,b,c,d', 3), 'd', 'last column has no trailing comma');
   assert.equal(fieldAt('a,b,c,d', 9), '', 'past the end is empty, not a throw');
   assert.equal(fieldAt('a,b,c,d', -1), '');
+});
+
+// --- structural sharing -------------------------------------------------------
+
+import { shareById } from '../client/src/hooks/shareById.ts';
+
+type Item = { id: string; data: { status: string } };
+
+test('shareById: a changed item survives the updater running twice (React StrictMode)', () => {
+  const keys = new WeakMap<object, string>();
+  const first = shareById<Item>([], ['a', 'b'], new Map([['a', 'healthy'], ['b', 'healthy']]), keys,
+    (id) => ({ id, data: { status: 'healthy' } }));
+
+  const incoming = new Map([['a', { status: 'critical' }], ['b', { status: 'healthy' }]]);
+  const keyById = new Map([['a', 'critical'], ['b', 'healthy']]);
+  const build = (id: string, _i: number, prev?: Item) => ({ ...(prev ?? { id }), id, data: incoming.get(id)! });
+
+  // StrictMode calls the updater twice with the same previous state and keeps
+  // one result. Both must carry the change; the second used to return the
+  // previous state, and a service that went down stayed drawn healthy.
+  const run1 = shareById(first, ['a', 'b'], keyById, keys, build);
+  const run2 = shareById(first, ['a', 'b'], keyById, keys, build);
+  for (const run of [run1, run2]) {
+    assert.notEqual(run, first, 'update was dropped');
+    assert.equal(run.find((x) => x.id === 'a')!.data.status, 'critical');
+    assert.equal(run.find((x) => x.id === 'b'), first.find((x) => x.id === 'b'), 'unchanged item was rebuilt');
+  }
+});
+
+test('shareById: nothing changed returns the previous array itself', () => {
+  const keys = new WeakMap<object, string>();
+  const keyById = new Map([['a', 'k1']]);
+  const first = shareById<Item>([], ['a'], keyById, keys, (id) => ({ id, data: { status: 'healthy' } }));
+  const again = shareById<Item>(first, ['a'], keyById, keys, (id) => ({ id, data: { status: 'healthy' } }));
+  assert.equal(again, first);
+});
+
+// --- 3D building ----------------------------------------------------------------
+
+import { computeSite, islandRoleOf } from '../client/src/components/3d/site.ts';
+
+test('3D islands: every service stands inside its own island, on top of it', () => {
+  const nodes = [
+    ...make3DNodes(14, 'shop'),
+    { id: 'shop:grafana', project: 'shop', type: 'service', degree: 1 },
+    { id: 'shop:otel-collector', project: 'shop', type: 'infrastructure', degree: 9 },
+    ...make3DNodes(5, 'bank'),
+  ];
+  const site = computeSite(nodes);
+  for (const n of nodes) {
+    const [x, y, z] = site.positions[n.id];
+    const island = site.islands.find((i) => i.project === n.project && i.role === islandRoleOf(n));
+    assert.ok(island, `${n.id}: no ${islandRoleOf(n)} island`);
+    assert.ok(x > island!.x0 && x < island!.x1 && z > island!.z0 && z < island!.z1, `${n.id} is outside its island`);
+    assert.equal(y, island!.top, `${n.id} is not standing on its island`);
+  }
+  // Monitoring tools are grouped on their own island, whatever their type.
+  assert.equal(islandRoleOf({ id: 'shop:grafana', project: 'shop', type: 'service', degree: 1 }), 'observability');
+  assert.equal(islandRoleOf({ id: 'shop:otel-collector', project: 'shop', type: 'infrastructure', degree: 9 }), 'observability');
+});
+
+test('3D islands: islands, districts and scenery never overlap, and tracks join real islands', () => {
+  const nodes = [...make3DNodes(20, 'a'), ...make3DNodes(7, 'b'), ...make3DNodes(3, 'c'), ...make3DNodes(1, 'd')];
+  const site = computeSite(nodes);
+  const overlap = (p: { x0: number; x1: number; z0: number; z1: number }, q: typeof p) =>
+    p.x0 < q.x1 && q.x0 < p.x1 && p.z0 < q.z1 && q.z0 < p.z1;
+  for (let i = 0; i < site.islands.length; i++)
+    for (let j = i + 1; j < site.islands.length; j++)
+      assert.ok(!overlap(site.islands[i], site.islands[j]), `islands ${site.islands[i].project}/${site.islands[i].role} and ${site.islands[j].project}/${site.islands[j].role} overlap`);
+  for (let i = 0; i < site.rooms.length; i++)
+    for (let j = i + 1; j < site.rooms.length; j++)
+      assert.ok(!overlap(site.rooms[i], site.rooms[j]), `rooms ${site.rooms[i].project} and ${site.rooms[j].project} overlap`);
+  const b = site.building!;
+  for (const r of site.rooms) assert.ok(r.x0 > b.x0 && r.x1 < b.x1 && r.z0 > b.z0 && r.z1 < b.z1, `district ${r.project} leaves the framed area`);
+  // Scenery pads never sit on a district, so they cannot be mistaken for one.
+  for (const p of site.pads)
+    for (const r of site.rooms) assert.ok(!overlap(p, r), `a scenery pad overlaps district ${r.project}`);
+  // Neighbouring rooms are told apart by colour.
+  assert.equal(new Set(site.rooms.map((r) => r.hue)).size, site.rooms.length);
+});
+
+test('3D islands: tracks only join sections that call each other', () => {
+  const nodes = [
+    { id: 'p:web', project: 'p', type: 'frontend', degree: 1 },
+    { id: 'p:api', project: 'p', type: 'service', degree: 2 },
+    { id: 'p:db', project: 'p', type: 'database', degree: 1 },
+    { id: 'p:grafana', project: 'p', type: 'service', degree: 0 },
+  ];
+  const site = computeSite(nodes, [['p:web', 'p:api'], ['p:api', 'p:db'], ['p:api', 'p:api']]);
+  const pairs = site.tracks.map((t) => [t.from, t.to].sort().join('-')).sort();
+  assert.deepEqual(pairs, ['data-services', 'edge-services']);
+});
+
+test('3D islands: empty input is an empty site', () => {
+  const site = computeSite([]);
+  assert.deepEqual(site.positions, {});
+  assert.equal(site.building, null);
+});
+
+// --- link flow ------------------------------------------------------------------
+
+import { formatFlow, linkFlow, pulsesFor, svgPulses } from '../client/src/components/shared/linkFlow.ts';
+
+test('flow: pulses rise with the rate, monotonically and within bounds', () => {
+  const rates = [0, 0.1, 1, 2, 10, 30, 100, 500, 5000];
+  const pulses = rates.map(pulsesFor);
+  for (let i = 1; i < pulses.length; i++) assert.ok(pulses[i] >= pulses[i - 1], `pulses fell between ${rates[i - 1]} and ${rates[i]}/s`);
+  assert.ok(pulses[0] >= 0.25 && pulses[pulses.length - 1] <= 5);
+  // A busy link visibly out-pulses a quiet one.
+  assert.ok(pulsesFor(100) > pulsesFor(1) * 2.5);
+});
+
+test('flow: measured requests win over socket activity, and labels say which they are', () => {
+  const base = { id: 'a->b', source: 'a', target: 'b', type: 'dependency', declared: true, observed: true, evidenceSources: [], status: 'active' } as const;
+  const activity = { samplesPerMin: 600, windowSec: 60, lastSeen: new Date().toISOString(), openConnections: 2, newConnectionsPerMin: 8 };
+  const bySockets = linkFlow({ ...base, metrics: null, activity } as any)!;
+  assert.equal(bySockets.basis, 'activity');
+  assert.equal(bySockets.requestsPerSecond, null);
+  // Shown as distinct connections, never as a per-second rate of anything.
+  assert.equal(formatFlow({ ...base, metrics: null, activity } as any), '2 open · 8 new/min');
+  assert.doesNotMatch(formatFlow({ ...base, metrics: null, activity } as any), /\/s/);
+  const byRequests = linkFlow({ ...base, metrics: { requestRate: 42 }, activity } as any)!;
+  assert.equal(byRequests.basis, 'requests');
+  assert.equal(byRequests.requestsPerSecond, 42);
+  assert.equal(formatFlow({ ...base, metrics: { requestRate: 42 }, activity } as any), '42.0 req/s');
+  assert.equal(linkFlow({ ...base, metrics: null } as any), null);
+});
+
+test('flow: svg timing delivers exactly the pulse rate', () => {
+  for (const [pulses, length] of [[0.4, 300], [2.7, 180], [5, 900], [1, 40]] as const) {
+    const { count, dur } = svgPulses(pulses, length);
+    assert.ok(Math.abs(count / dur - pulses) < 1e-9, `${pulses}/s over ${length}px gave ${count / dur}/s`);
+    assert.ok(count >= 1 && count <= 8);
+  }
+});
+
+// --- one definition of a troubled link --------------------------------------
+
+import { LINK_THRESHOLDS } from '../client/src/components/shared/edgeHeat.ts';
+import { LINK_THRESHOLDS as SERVER_LINK_THRESHOLDS, linkStatus } from '../server/graph/linkThresholds.ts';
+
+test('links: the server\'s status and the client\'s colours use the same thresholds', () => {
+  assert.deepEqual({ ...SERVER_LINK_THRESHOLDS }, { ...LINK_THRESHOLDS });
+  // And agree case by case: status failed <=> colour red, degraded <=> orange.
+  const cases: [number | null, number | null][] = [[0, 50], [0.009, 299], [0.01, 50], [0, 300], [0.049, 999], [0.05, 10], [0, 1000], [null, null]];
+  for (const [errorRate, latency] of cases) {
+    const heat = edgeAppearance(edge({ observed: true, metrics: { errorRate, latency } as any })).heat;
+    const status = linkStatus(errorRate, latency);
+    const expected = status === 'failed' ? 'failed' : status === 'degraded' ? 'degraded' : heat;
+    assert.equal(heat, expected, `errors ${errorRate}, latency ${latency}: status ${status} but colour ${heat}`);
+  }
 });

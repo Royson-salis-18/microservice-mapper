@@ -296,15 +296,27 @@ def main():
                     "to": holdout_rows["timestamp"].iloc[-1].isoformat(),
                 }
 
+            # The z-score detector holds no fitted state (it is max|z| over
+            # already-normalised features), and score.py computes it
+            # directly. Pickling it wrote one identical, never-loaded file per
+            # service, which could not even be unpickled outside this script.
             suffix = "" if algo == "iforest" else f".{algo}"
-            joblib.dump(model, os.path.join(MODELS_DIR, f"{safe_name}{suffix}.joblib"))
+            artifact = None if algo == "zscore" else f"{safe_name}{suffix}.joblib"
+            if artifact:
+                joblib.dump(model, os.path.join(MODELS_DIR, artifact))
 
             per_algo[algo] = {
                 "threshold_p99": threshold_99,
                 "train_score_mean": float(np.mean(raw_scores)),
+                # The live scorer centres on this rather than the mean. Score
+                # distributions here are heavily skewed — a one-class SVM had
+                # its mean pulled *past* its own 99th percentile by a handful
+                # of extreme training scores — and the median is the typical
+                # sample regardless.
+                "train_score_median": float(np.median(raw_scores)),
                 "train_score_max": float(np.max(raw_scores)),
                 "holdout": holdout_eval,
-                "artifact": f"{safe_name}{suffix}.joblib",
+                "artifact": artifact,
             }
 
         # How often do the detectors agree on the same holdout rows? Two

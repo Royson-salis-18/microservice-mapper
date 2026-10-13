@@ -1,34 +1,67 @@
 import type { ConnectionEvent } from "./types.js";
 import fs from "fs/promises";
-import fsSync from "fs";
+import { readFileSync } from "fs";
 import path from "path";
 
 /**
  * Stores raw TCP connection events per target. These are SSH-sampled
  * snapshots of /proc/net/tcp, NOT distributed trace spans.
- * 
- * Events are kept for 24 hours and stored as JSON on disk. This store
+ *
+ * Events are kept for 24 hours and persisted as JSON on disk. This store
  * is intended to be instantiated once per target and shared across the
  * TraceRouter and GraphStore.
+ *
+ * The 24-hour window lives in memory and is written out on a debounce.
+ * saveEvents() used to read the whole file, parse it, append, re-filter,
+ * pretty-print and rewrite it on every call — about twice every 5 seconds per
+ * target, on files up to ~1.8 MB, all synchronous JSON work on the event
+ * loop. Two concurrent calls (the metric poll and the connection scan both
+ * save) also raced: each read the same old file, and whichever wrote last
+ * silently dropped the other's events.
  */
 export class TraceStore {
   private readonly filePath: string;
   /** In-memory buffer for recent events (used for WebSocket streaming) */
   private recentEvents: ConnectionEvent[] = [];
   private readonly maxRecentEvents = 500;
+  /** Everything inside the retention window, oldest first. */
+  private events: ConnectionEvent[] | null = null;
+  private writeTimer: NodeJS.Timeout | null = null;
+  private writing: Promise<void> = Promise.resolve();
+
+  private static readonly RETENTION_MS = 24 * 60 * 60 * 1000;
+  /** Hard cap so a very chatty target cannot grow memory without bound. */
+  private static readonly MAX_EVENTS = 100_000;
+  private static readonly WRITE_DEBOUNCE_MS = 10_000;
 
   constructor(targetId: string) {
     // Store in the project's data/ directory (same level as graph_db.json)
     this.filePath = path.join(process.cwd(), "data", `traces_${targetId}.json`);
-    try {
-      if (fsSync.existsSync(this.filePath)) {
-        const raw = fsSync.readFileSync(this.filePath, "utf-8");
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.recentEvents = parsed.slice(-this.maxRecentEvents);
-        }
+  }
+
+  /** Loaded once, synchronously, on first use — after that memory is the truth. */
+  private all(): ConnectionEvent[] {
+    if (this.events === null) {
+      try {
+        const parsed = JSON.parse(readFileSync(this.filePath, "utf-8"));
+        this.events = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        this.events = [];
       }
-    } catch {}
+      this.prune();
+    }
+    return this.events;
+  }
+
+  /** Events arrive in time order, so expiry only ever trims the front. */
+  private prune(): void {
+    if (!this.events) return;
+    const cutoff = new Date(Date.now() - TraceStore.RETENTION_MS).toISOString();
+    let drop = 0;
+    while (drop < this.events.length && this.events[drop].timestamp < cutoff) drop++;
+    const over = this.events.length - drop - TraceStore.MAX_EVENTS;
+    if (over > 0) drop += over;
+    if (drop > 0) this.events.splice(0, drop);
   }
 
   async saveEvents(events: ConnectionEvent[]): Promise<void> {
@@ -40,54 +73,70 @@ export class TraceStore {
       this.recentEvents = this.recentEvents.slice(-this.maxRecentEvents);
     }
 
-    // Persist to disk
-    const existing = await this.loadEvents();
-    const updated = [...existing, ...events];
-    // Keep only last 24 hours to prevent file growth
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const filtered = updated.filter(e => e.timestamp >= oneDayAgo);
-
-    const dir = path.dirname(this.filePath);
-    try {
-      await fs.mkdir(dir, { recursive: true });
-    } catch {
-      // Ignorable: recursive mkdir succeeds if the directory exists, and any
-      // real failure (permissions, full disk) surfaces on the write below
-      // with a clearer message than it would here.
+    const all = this.all();
+    const lastBefore = all.length > 0 ? all[all.length - 1].timestamp : '';
+    all.push(...events);
+    // The metric poll and the connection scan save independently, so a batch
+    // can land slightly older than the one before it. Pruning and the `since`
+    // search both rely on time order, so restore it when that happens.
+    if (events.some(e => e.timestamp < lastBefore)) {
+      all.sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
     }
-    await fs.writeFile(this.filePath, JSON.stringify(filtered, null, 2));
+    this.prune();
+    this.scheduleWrite();
+  }
+
+  private scheduleWrite(): void {
+    if (this.writeTimer) return;
+    this.writeTimer = setTimeout(() => {
+      this.writeTimer = null;
+      void this.flush();
+    }, TraceStore.WRITE_DEBOUNCE_MS);
+  }
+
+  /** Serialised: a write never overlaps the previous one. */
+  flush(): Promise<void> {
+    this.writing = this.writing.then(async () => {
+      if (!this.events) return;
+      try {
+        await fs.mkdir(path.dirname(this.filePath), { recursive: true });
+        // Compact, not pretty-printed: this file is for the machine, and the
+        // indentation alone was a large share of its size and write time.
+        const tmp = `${this.filePath}.tmp`;
+        await fs.writeFile(tmp, JSON.stringify(this.events));
+        await fs.rename(tmp, this.filePath);
+      } catch (e) {
+        console.error(`[TRACES] Failed to persist ${this.filePath}:`, e);
+      }
+    });
+    return this.writing;
   }
 
   async loadEvents(since?: string): Promise<ConnectionEvent[]> {
-    try {
-      const data = await fs.readFile(this.filePath, "utf-8");
-      const events: ConnectionEvent[] = JSON.parse(data);
-      if (since) {
-        return events.filter(e => e.timestamp >= since);
-      }
-      return events;
-    } catch (e) {
-      return [];
+    const events = this.all();
+    if (!since) return events.slice();
+    // Binary search for the first event at or after `since`.
+    let lo = 0;
+    let hi = events.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (events[mid].timestamp < since) lo = mid + 1;
+      else hi = mid;
     }
+    return events.slice(lo);
   }
 
   getRecentEvents(limit: number = 100): ConnectionEvent[] {
-    if (this.recentEvents.length === 0) {
-      try {
-        if (fsSync.existsSync(this.filePath)) {
-          const raw = fsSync.readFileSync(this.filePath, "utf-8");
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            this.recentEvents = parsed.slice(-this.maxRecentEvents);
-          }
-        }
-      } catch {}
-    }
     return this.recentEvents.slice(-limit);
   }
 
   async clear(): Promise<void> {
     this.recentEvents = [];
+    this.events = [];
+    if (this.writeTimer) {
+      clearTimeout(this.writeTimer);
+      this.writeTimer = null;
+    }
     try {
       await fs.unlink(this.filePath);
     } catch {

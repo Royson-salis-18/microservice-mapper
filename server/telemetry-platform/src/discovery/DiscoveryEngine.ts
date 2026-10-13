@@ -50,10 +50,11 @@ export class DiscoveryEngine {
 
     const services = await this.discoverServices(warnings);
     console.log(`[DISCOVERY] target=${this.targetId} services=${services.length}`);
-    const networkDependencies: Dependency[] = []; // disabled to prevent false-positive mesh from shared network
+    // Shared Docker network membership is deliberately not used as evidence:
+    // it drew every service on a network as depending on every other.
     const composeDependencies = await this.discoverComposeDependencies(services, warnings);
     const appConfigDependencies = await this.discoverApplicationConfigDependencies(services, warnings);
-    const dependencies = mergeDependencies(networkDependencies, [...composeDependencies, ...appConfigDependencies]);
+    const dependencies = mergeDependencies([], [...composeDependencies, ...appConfigDependencies]);
     for (const dep of dependencies) {
       console.log(`[EDGE] ${dep.sourceServiceId} -> ${dep.targetServiceId} type=${dep.declared ? "declared" : "candidate"} evidence=${dep.evidenceSources.join(",")}`);
     }
@@ -168,48 +169,6 @@ export class DiscoveryEngine {
     }
 
     return services;
-  }
-
-  /**
-   * Candidate edges from shared network membership. NEVER declared,
-   * NEVER observed — network membership alone is not proof of anything
-   * beyond "these two containers could reach each other" (spec section 9).
-   */
-  private buildNetworkCandidateDependencies(services: Service[]): Dependency[] {
-    const nowIso = new Date().toISOString();
-    const byNetwork = new Map<string, Service[]>();
-    for (const service of services) {
-      for (const network of service.networks) {
-        const list = byNetwork.get(network) ?? [];
-        list.push(service);
-        byNetwork.set(network, list);
-      }
-    }
-
-    const seen = new Set<string>();
-    const dependencies: Dependency[] = [];
-    for (const [network, members] of byNetwork) {
-      for (const source of members) {
-        for (const target of members) {
-          if (source.serviceId === target.serviceId) continue;
-          const key = `${source.serviceId}->${target.serviceId}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          dependencies.push({
-            targetId: this.targetId,
-            sourceServiceId: source.serviceId,
-            targetServiceId: target.serviceId,
-            declared: false,
-            observed: false,
-            evidenceSources: ["docker-network"],
-            firstSeen: nowIso,
-            lastSeen: nowIso,
-            metadata: { sharedNetwork: network },
-          });
-        }
-      }
-    }
-    return dependencies;
   }
 
   /**

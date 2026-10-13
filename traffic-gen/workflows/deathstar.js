@@ -16,10 +16,13 @@
  * Verified by curl against the running stack (both on-host and through the
  * forward): the two read paths below return 200.
  *
- * composePost is deliberately NOT in the default weights. It returns 500
- * on this deployment because the social graph has no seeded users — the
- * endpoint exists (a GET returns 400 "bad request", not 404), it just has
- * nothing to compose against. Seed the dataset first, then give it weight.
+ * composePost sends form fields, not JSON. nginx-thrift reads the post with
+ * ngx.req.get_post_args, so a JSON body came back 400 "Incomplete
+ * arguments" — which is why it was once switched off (the note blaming an
+ * unseeded social graph was wrong; with form fields it returns 200
+ * "Successfully upload post", verified 2026-10-01). Composing is what drives
+ * most of the graph: text, user-mention, url-shorten, unique-id, media,
+ * post-storage and the timelines' write path.
  */
 
 // Verified 200. Spreading user_id across a few values exercises more of
@@ -39,13 +42,13 @@ const composePost = {
       id: 'compose',
       method: 'POST',
       path: '/wrk2-api/post/compose',
-      body: {
+      form: {
         username: 'username_1',
-        user_id: 1,
-        text: 'traffic-gen synthetic post',
+        user_id: '1',
+        text: 'traffic-gen synthetic post @username_2 http://example.com/traffic-gen',
         media_ids: [],
         media_types: [],
-        post_type: 0,
+        post_type: '0',
       },
       thinkTimeMs: [2000, 6000],
     },
@@ -53,11 +56,11 @@ const composePost = {
 };
 
 const workflows = { browseTimelines, composePost };
-// composePost at 0 until the dataset is seeded — see the header note. It
-// stays registered so it can be switched on without a code change.
+// Mostly reads, as on a real social network, with enough posting to keep
+// the write path (and the services only it touches) in the graph.
 const defaultWorkflowWeights = [
-  { key: 'browseTimelines', weight: 100 },
-  { key: 'composePost', weight: 0 },
+  { key: 'browseTimelines', weight: 75 },
+  { key: 'composePost', weight: 25 },
 ];
 const profiles = {
   BASELINE: { users: 2, spawnRatePerSec: 1, defaultThinkTimeMs: [1500, 4000] },

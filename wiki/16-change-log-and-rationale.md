@@ -309,7 +309,7 @@ that let project ids like `vertikal-prod` slip through.
 
 ### 5.2 Entry points can be pinned
 
-See [14-configuration](14-configuration.md#target-ssh-config--dataremote_configjson).
+See [14-configuration](14-configuration.md#target-ssh-config-dataremote-configjson).
 Short version: discovery reports what a container *publishes*, which is not
 what is *reachable*. One box resolved to Jaeger's OTLP `:4318` instead of the
 app; another published `:8080` that was closed in the security group.
@@ -540,7 +540,47 @@ now annotated as deliberate rather than looking like oversights.
 
 ---
 
-## 10. Standing rules these changes follow
+## 10. Accuracy audit (October 2026)
+
+A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (`scripts/simulate-target.ts`) against an isolated server, and a new self-check (`server/graph/consistency.ts`, `GET /api/diagnostics/consistency`). Full write-up: [Keeping the numbers honest](32-accuracy-and-self-check.md) and [Measuring precisely](31-measurement-precision.md).
+
+### 10.1 Dependency shares summed to 183%
+Unmeasured edges were given `1/N` *on top of* a full split of the measured traffic. Now unmeasured edges get `1/N` each and the measured ones share the remainder, so every caller sums to exactly 1 per kind. Enforced by the `reliance-sums-to-one` rule.
+
+### 10.2 RCA credited explanations through negligible paths
+Telemetry links are weighted at a tenth, so a dashboard was "explaining" seven failures through paths of strength 0.004, and the independent-failure rule (which needed coverage of exactly 0) never fired. Paths now count only at ≥ `MATERIAL_REACH` (0.1). Factors worth under 0.01 are no longer listed ("+0.00 explains 7 of 8" said two contradictory things at once), and the explanation states the count in words.
+
+### 10.3 Ids everywhere
+`incident.affectedServices` held names while `rootCauseServiceId` held an id, and `analytics.cascadeVia` held a name. Every service reference is now a `project:name` id, and views display the short name. Enforced by `incident-references` and `cascade-via-is-dependency`.
+
+### 10.4 Network figures
+`docker stats` rounds NET I/O to three significant figures, and a cumulative total was being shown as a rate. Exact counters now come from `/proc/<pid>/net/dev`, read in the same `exec` as the socket tables, with real bytes/s in `networkRxRate`/`networkTxRate`. Enforced by `rate-not-total`.
+
+### 10.5 CPU as a share of the allowance
+Docker's CPU figure is a percentage of one core, so 150% is normal on a 2-core limit. Each container's limit (`NanoCpus`, else `CpuQuota/CpuPeriod`, else host `nproc`) is now read when a container is first seen; previously only when the cache was empty. Status and the anomaly rule use `cpuOfAllowance`.
+
+### 10.6 Connections counted once
+Socket rows per minute say more about sweep frequency than about traffic. Each socket event now carries a connection key, and the store counts distinct open connections and distinct new ones (remembering keys past `TIME_WAIT`). Against the simulator: open connections exact on 9 of 9 links; new connections per minute within 1.4% on average.
+
+### 10.7 IPv4-mapped addresses in tcp6
+Dual-stack servers list IPv4 clients in `/proc/net/tcp6` as `::ffff:a.b.c.d`. They were decoded as IPv6, matched no container, and the link vanished. `decodeProcNetIp()` now recognises them.
+
+### 10.8 One set of link thresholds
+Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in `server/graph/linkThresholds.ts` and the client's `edgeHeat.ts`, and a test asserts they match.
+
+### 10.9 Smaller ones
+The anomaly baseline no longer treats missing samples as 0 (`|| 0`). Metrics are built with `num()` so missing means `null`. Evidence text says "not measured" instead of "0%". The connection sweep waits for itself like the poll loop.
+
+## 11. Visual redesign
+
+- **Palette:** dark navy to black with indigo. Warm colours only for trouble; volume is a cool blue ramp. Bright bloom was tried and rejected as glare, so it is now opt-in and off by default.
+- **Links:** colour by severity (red ≥ 5% errors, ≥ 1 s, or a down callee; orange ≥ 1%, ≥ 300 ms, or a degraded callee), thickness by dependency weight, and **pulses whose rate follows the link's traffic** (`pulsesFor = 0.3 + 1.6·log10(1+rate)`), exact in both 2D and 3D.
+- **2D cards** are flat and matte (gloss competed with the status colours); meters show `—` when unmeasured.
+- **3D islands:** a district per project and a raised platform per role (edge, services, data, messaging, infrastructure, observability), tracks only between sections that call each other, and scenery around them. A "server room" and a "building" layout were built and dropped. The right-angle cable option now applies in every layout.
+- **Inspector:** CPU against its allowance, network per second, de-duplicated ports, incident role, what-if.
+- **Reference:** [Reading the picture](33-visual-language.md).
+
+## 12. Standing rules these changes follow
 
 - **Never fabricate a measurement.** Absent data is absent — no defaulting to
   zero, no deriving an edge metric from a node metric, no inferring a
@@ -549,5 +589,7 @@ now annotated as deliberate rather than looking like oversights.
   `connectionsPerMin`. "SSH-sampled", not "distributed tracing". A firing
   rate, not accuracy.
 - **Warm colours mean trouble**, and nothing else.
+- **One definition per idea.** Thresholds, ids and link appearance are defined once and shared, with a test where client and server must agree.
+- **Every invariant seen broken becomes a rule** in `consistency.ts`.
 - **Prefer honest empty states.** "Not enough history yet" beats a flat line
   through invented points.
