@@ -603,6 +603,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="20-traffic-experiments.html">Generating traffic</option>
 <option value="traffic-gen-readme.html">The load generator</option>
 <option value="38-experiment-report.html">Experiment report</option>
+<option value="39-ssh-tools.html">Reaching a host over SSH</option>
+<option value="40-faultlab-panel-and-demo.html">Fault panel and staged demo</option>
 <option value="fault-injection.html">Fault injection</option>
 </optgroup>
 <optgroup label="Seeing it">
@@ -647,7 +649,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-orange">OPTIONAL</span>
                 <span class="meta-item"><code>wiki/07-remote-collector.md</code></span>
                 <span class="meta-item">~6 min read</span>
-                <span class="meta-item">1,206 words</span>
+                <span class="meta-item">1,276 words</span>
             </div>
             <nav class="toc">
   <a href="#deployment-context">Deployment Context</a>
@@ -668,7 +670,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         
     <div class="chapter-rail">
       <span class="chapter-part">Part VIII &middot; Reference</span>
-      <span class="chapter-count">Chapter 39 of 47</span>
+      <span class="chapter-count">Chapter 39 of 49</span>
     </div>
     
     
@@ -922,6 +924,8 @@ if (ip) ipToNameMap.set(ip, derivedServiceName);</code></pre>
 }</code></pre>
                     </div>
 <p>Heuristic-based on container name and image name. Works well for Sock Shop and Vertikal. For custom setups, the type can be overridden in a future target adapter.</p>
+<h2 id="request-statistics-from-service-logs">Request statistics from service logs</h2>
+<p>Each cycle the collector also reads every container's log lines since the previous cycle and sends request rate, error rate and latency percentiles (<code>remote-collector/requestStats.ts</code>, pure and unit-tested), plus network bytes per second and restart counts. See <a href="40-faultlab-panel-and-demo.html">40</a> for how each fault class shows up in them. Per-container work runs in parallel, so a cycle takes about 8 seconds instead of one second per container.</p>
                 </article>
                 
             </div>

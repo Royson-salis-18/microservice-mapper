@@ -446,6 +446,18 @@ DOCS_CONFIG = [
         "desc": 'The test protocol, every metric and statistic, and the latest scored run with charts.',
     },
     {
+        "id": 'wiki-39-ssh-tools', "filename": '39-ssh-tools.html', "source": 'wiki/39-ssh-tools.md',
+        "title": 'Reaching a host over SSH', "part": 'V', "category": 'Driving the system',
+        "badge": 'SSH', "badge_color": 'blue',
+        "desc": 'Scripts to check and set up a host, and the algorithm the mapper uses to connect.',
+    },
+    {
+        "id": 'wiki-40-panel-demo', "filename": '40-faultlab-panel-and-demo.html', "source": 'wiki/40-faultlab-panel-and-demo.md',
+        "title": 'Fault panel and staged demo', "part": 'V', "category": 'Driving the system',
+        "badge": 'DEMO', "badge_color": 'blue',
+        "desc": 'The control page for faults and traffic, the five-stage demo, and what each fault looks like to the mapper.',
+    },
+    {
         "id": 'docs-fault-injection', "filename": 'fault-injection.html', "source": 'docs/FAULT_INJECTION.md',
         "title": 'Fault injection', "part": 'V', "category": 'Driving the system',
         "badge": 'INJECTOR', "badge_color": 'blue',

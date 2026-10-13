@@ -37,6 +37,10 @@ The same pages are published as an illustrated book with diagrams and interactiv
 | 31 | [31-measurement-precision.md](31-measurement-precision.md) | **Exact network counters, CPU vs allowance, distinct connections, IPv4-mapped decoding, direction, thresholds** |
 | 25 | [25-telemetry-sources.md](25-telemetry-sources.md) | The source abstraction; Prometheus (Tier 2, opt-in) |
 | 18 | [18-telemetry-tiers-plan.md](18-telemetry-tiers-plan.md) | Tier 0 / 1 / 2: what is always, sometimes, rarely available |
+| 37 | [37-app-pages-guide.md](37-app-pages-guide.md) | How each page of the app works |
+| 38 | [38-experiment-report.md](38-experiment-report.md) | Test protocol, metrics, statistics, latest results |
+| 39 | [39-ssh-tools.md](39-ssh-tools.md) | Reaching a host over SSH; scripts and the discovery algorithm |
+| 40 | [40-faultlab-panel-and-demo.md](40-faultlab-panel-and-demo.md) | Fault and traffic panel, staged demo, what each fault looks like |
 | 07 | [07-remote-collector.md](07-remote-collector.md) | The *optional* push agent (not the default path) |
 | **Building the graph** | | |
 | 03 | [03-graphstore.md](03-graphstore.md) | The in-memory model: ingest, activity, baselines, connections, broadcasts |
