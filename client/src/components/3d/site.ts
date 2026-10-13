@@ -83,7 +83,8 @@ export interface Site {
 }
 
 /** Each district's own hue, cool and muted, for its ground tint and name. */
-const DISTRICT_HUES = ['#8ab4ff', '#a9b0ba', '#8ab4ff', '#a9b0ba', '#8ab4ff', '#a9b0ba'];
+// Six distinct, muted, cool tints (project identity). Deliberately none of them is green, amber or red, which mean health.
+const DISTRICT_HUES = ['#8ab4ff', '#b4a5ff', '#7dc4c4', '#a9b0ba', '#8fa3c7', '#d3c1ff'];
 
 /**
  * Where each role's island sits, in cells, and how high it stands. The
