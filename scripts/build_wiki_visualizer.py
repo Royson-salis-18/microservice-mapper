@@ -440,6 +440,12 @@ DOCS_CONFIG = [
         "desc": 'Detector, root-cause scoring, cascade and graph building, with the formulas.',
     },
     {
+        "id": 'wiki-38-experiment-report', "filename": '38-experiment-report.html', "source": 'wiki/38-experiment-report.md',
+        "title": 'Experiment report', "part": 'V', "category": 'Driving the system',
+        "badge": 'RESULTS', "badge_color": 'green',
+        "desc": 'The test protocol, every metric and statistic, and the latest scored run with charts.',
+    },
+    {
         "id": 'docs-fault-injection', "filename": 'fault-injection.html', "source": 'docs/FAULT_INJECTION.md',
         "title": 'Fault injection', "part": 'V', "category": 'Driving the system',
         "badge": 'INJECTOR', "badge_color": 'blue',
