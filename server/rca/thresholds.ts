@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 
 /**
  * The rules that decide what counts as an incident.
@@ -116,45 +114,18 @@ function toNumber(value: unknown): number | null {
   return null;
 }
 
-function configPath(): string {
-  return path.resolve(process.cwd(), 'data', 'incident_thresholds.json');
-}
-
 /**
- * Read the overrides, clamped. Anything missing or out of range falls back
- * to the default rather than failing: a malformed file should not stop
- * incident detection, which is the one thing that has to keep working.
+ * Apply overrides to a base set, clamped to each limit. Anything missing, non-numeric or out of range is ignored (base stands):
+ * a malformed override must not stop incident detection. Pure; reading and writing the overrides file is thresholdsStore.ts.
  */
-export function loadThresholds(): IncidentThresholds {
-  const merged: IncidentThresholds = { ...DEFAULT_THRESHOLDS };
-  try {
-    const raw = fs.readFileSync(configPath(), 'utf8');
-    const parsed = JSON.parse(raw);
-    for (const key of Object.keys(DEFAULT_THRESHOLDS) as (keyof IncidentThresholds)[]) {
-      const value = toNumber(parsed?.[key]);
-      if (value === null) continue;
-      const [lo, hi] = LIMITS[key];
-      merged[key] = Math.min(Math.max(value, lo), hi);
-    }
-  } catch {
-    // No file yet, or unreadable — defaults stand.
-  }
-  return merged;
-}
-
-export function saveThresholds(patch: Partial<Record<keyof IncidentThresholds, unknown>>): IncidentThresholds {
-  const current = loadThresholds();
-  const next: IncidentThresholds = { ...current };
+export function mergeThresholds(base: IncidentThresholds, patch: Partial<Record<keyof IncidentThresholds, unknown>> | null | undefined): IncidentThresholds {
+  const next: IncidentThresholds = { ...base };
   for (const key of Object.keys(DEFAULT_THRESHOLDS) as (keyof IncidentThresholds)[]) {
-    if (!(key in patch)) continue;
-    const value = toNumber(patch[key]);
+    const value = toNumber(patch?.[key]);
     if (value === null) continue;
     const [lo, hi] = LIMITS[key];
     next[key] = Math.min(Math.max(value, lo), hi);
   }
-  const file = configPath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(next, null, 2));
   return next;
 }
 

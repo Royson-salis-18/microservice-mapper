@@ -2,7 +2,7 @@ import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incid
 import type { GraphStore } from '../graph/GraphStore.js';
 import { AnomalyDetector } from './AnomalyDetector.js';
 import { RCAEngine } from './RCAEngine.js';
-import { loadThresholds } from './thresholds.js';
+import { loadThresholds } from './thresholdsStore.js';
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
@@ -10,7 +10,7 @@ export class IncidentManager {
   private rcaEngine: RCAEngine;
 
   constructor(private graphStore: GraphStore) {
-    this.anomalyDetector = new AnomalyDetector(graphStore.metricStore);
+    this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
     this.rcaEngine = new RCAEngine();
   }
 

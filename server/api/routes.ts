@@ -13,7 +13,8 @@ import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import type { RiskEngine } from '../graph/RiskEngine.js';
-import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
+import { thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
+import { loadThresholds, saveThresholds } from '../rca/thresholdsStore.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 import { config } from '../config.js';
 
