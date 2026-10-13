@@ -173,3 +173,8 @@ Seeded sock-shop test account used for authenticated flows:
 ```typescript
 const DEFAULT_AUTH = { username: 'user', password: 'password' };
 ```
+
+## Request bodies: JSON or form fields
+
+A workflow step can send `body` (JSON, `application/json`) or `form` (`application/x-www-form-urlencoded`; arrays and objects are JSON-encoded per field). Use whichever the target's front end actually reads. DeathStarBench's nginx-thrift reads form fields only: a JSON compose came back 400 "Incomplete arguments", which is why compose-post was once switched off. With `form` it returns 200, and composing (25% of death-star's runs) is what brings text, user-mention, url-shorten, unique-id, media and the timelines' write path into the graph: 26 observed links instead of 5.
+

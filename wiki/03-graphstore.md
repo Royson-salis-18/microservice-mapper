@@ -254,3 +254,29 @@ Carrying half the count forward means the rate smoothly decays rather than reset
 - A recently-added edge with no history yet
 
 Showing `samplesPerMin: 0` would imply we measured it and confirmed it's quiet. We didn't. Omitting the field is more honest.
+
+---
+
+## What `applyEdgeActivity()` adds on top
+
+The snippet above is the core. The full function also publishes:
+
+| Field | How | Why |
+|---|---|---|
+| `baselinePerMin` | exponential average of `samplesPerMin`; rises with τ = 60 s, falls with τ = 600 s; fed only once the window is ≥ 20 s | Dependency weights use it, so a link that went quiet *because its callee died* keeps counting for what it normally carries |
+| `openConnections` | distinct `ESTABLISHED` connection keys per sweep, averaged over 120 s | an exact count, unlike sightings |
+| `newConnectionsPerMin` | distinct keys never seen before (memory 150 s, longer than `TIME_WAIT`) per minute | counts each connection once, however many sweeps saw it linger |
+| `connectionSweeps` | sweeps behind the two above (published from 2) | |
+
+The connection keys are recorded per sweep by `recordConnectionSweep()`. See [Measuring precisely](31-measurement-precision.md).
+
+## Edge weights and status
+
+Two more things are written onto edges each cycle, outside the store:
+
+- **`edge.weight`**, by `RiskEngine.recomputeAll()` through `computeEdgeWeights()`: confidence × the caller's share of traffic, with shares summing to exactly 1 per caller and kind. See [Risk, cascades and blast radius](22-risk-engine.md).
+- **`edge.status`** from `linkStatus(errorRate, p95 ?? latency)` (`server/graph/linkThresholds.ts`): `degraded` at ≥ 1% errors or ≥ 300 ms, `failed` at ≥ 5% or ≥ 1 s. Without request data, the link stays `active`, and its colour comes from activity and the callee's status.
+
+## Broadcasts are coalesced
+
+`requestBroadcast()` sends at most one `graph-update` every 3 s, however many targets report in between. Several targets ingesting every few seconds used to fan out a full graph frame per ingest.

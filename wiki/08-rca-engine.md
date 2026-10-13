@@ -1,207 +1,206 @@
 # RCA Engine — Root Cause Analysis
 
-**Files:** `server/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
+**Files:** `server/rca/IncidentManager.ts` (lifecycle), `AnomalyDetector.ts` (what counts as a symptom), `RCAEngine.ts` (scoring and propagation), `TemporalAnalyzer.ts` (who went first), `ExplanationEngine.ts` (the words), `thresholds.ts` (the editable rules).
 
 ---
 
-## What It Does
+## What it does
 
-When services degrade or fail, the RCA engine tries to identify the root cause — the original node that triggered a cascade — by scoring each failing node on multiple evidence factors.
+When something on a target is wrong, RCA answers three questions:
 
-This is **evidence-based scoring**, not ML inference. It's deterministic and explainable. The score tells you "this node is most likely the root cause because it had the earliest anomaly AND it's connected to all the failing downstream services."
+1. **Which service is most likely the origin?** Every symptomatic service is scored on named evidence factors, and the highest score is the root-cause candidate.
+2. **How sure is that?** The score and the shape of the evidence give a confidence: HIGH, MEDIUM, LOW or UNKNOWN.
+3. **How did it spread?** A walk from the origin to the services that depend on it.
 
----
-
-## Trigger Conditions
-
-`IncidentManager.evaluateTarget(targetId)` is called every 5 seconds (server polling interval). It triggers `RCAEngine.analyzeIncident()` if:
-- Any node has `status === 'critical'` or `status === 'degraded'`
-- OR the ML pipeline has recorded any anomaly for nodes in this target
-
-If neither condition is met, the result is `{ incidentDetected: false }`.
+It is **deterministic, rule-based scoring**, not machine learning. There are no labelled incidents to train a model on, and an operator has to be able to see why a service was blamed. Every factor arrives with its points and a sentence of reasoning.
 
 ---
 
-## Scoring Algorithm
+## The cycle
 
-For each failing node, a score from 0.0 to ~1.1 is built additively:
+Every 5 s (`server/index.ts`, `runPollingCycle`), for each target:
 
-### Factor 1: Temporal Precedence (+0.30)
-
-The node whose anomaly was detected earliest gets +0.30. All others get +0.10 if they have an anomaly at all.
-
-```typescript
-const earliestNodeId = this.temporalAnalyzer.findEarliestAnomalousNode(targetAnomalies);
-
-if (node.id === earliestNodeId) {
-  score += 0.30;  // Most likely root cause
-} else if (targetAnomalies.some(a => a.nodeId === node.id)) {
-  score += 0.10;  // Anomalous but not first
-}
+```
+IncidentManager.evaluateTarget(targetId)
+  ├─ AnomalyDetector.detectAnomaliesForTarget()   → symptoms, each with an onset time
+  ├─ RCAEngine.analyzeIncident()                   → candidates, confidence, propagation
+  └─ open / update / resolve the target's incident
+then RiskEngine.recomputeAll(incidents)            → health and risk see this cycle's incident
+then graph-update broadcast
 ```
 
-**Rationale:** Failure propagates downstream. The node that went anomalous first most likely caused the others. This is the strongest single signal for root cause identification.
+An `incident.updated` frame is sent only when something a person would notice has changed: status, severity, root cause, confidence, score (to the percent), affected set or propagation path. It used to go out every cycle for every target, about 48 frames a minute.
 
-### Factor 2: Health Status (+0.35 or +0.15)
+---
 
-```typescript
-if (node.status === 'critical' || node.metadata?.state === 'exited') {
-  score += 0.35;  // Container process exited — strong signal
-} else if (node.status === 'degraded') {
-  score += 0.15;  // Resource pressure — weaker signal
-}
+## What counts as a symptom
+
+`AnomalyDetector` is **rule-based** and deliberately separate from the ML pipeline (see [Two opinions, kept apart](17-findings-vs-incidents.md)). An incident must be able to fire on a service that started five minutes ago, on a target with no trained models, while the scorer is stopped.
+
+A service is symptomatic if:
+
+- its container is **critical**, or its state is `exited`, `dead` or `restarting`; or
+- its status is **degraded** (for example CPU above 80% of its allowance); or
+- a metric deviates from that service's own recent history by the rules in `thresholds.ts`.
+
+Default thresholds, all editable from the Incidents page (`data/incident_thresholds.json`, re-read every cycle, clamped to sane bounds):
+
+| Threshold | Default | Meaning |
+|---|---|---|
+| `minHistorySamples` | 3 | samples needed before a z-score means anything |
+| `zScoreAnomaly` / `High` / `Critical` | 2.5 / 3.0 / 4.0 | \|z\| bands |
+| `minDeviationPercent` | 5 | a move smaller than 5 points is never an anomaly, however steady the baseline |
+| `absoluteHighPercent` / `CriticalPercent` | 70 / 85 | absolute levels that force HIGH or CRITICAL regardless of z |
+| `flatlineStdDev` | 0.001 | below this spread the baseline is "flat", and z is not used |
+| `flatlineDeltaPercent` / `CriticalPercent` | 30 / 80 | on a flat baseline, a 30-point move is the anomaly |
+| `criticalServicesForCritical` | 2 | more critical services than this makes the incident CRITICAL rather than HIGH |
+
+Two details keep this honest:
+
+- **Onsets are remembered.** Each anomaly keeps the time it *first* appeared for as long as it lasts. Before that fix, every anomaly was stamped with the current cycle's time, and the +0.30 "went first" credit went to whichever service was discovered first.
+- **The CPU rule uses `cpuOfAllowance`.** 150% of one core on a 2-core container is 75% of its allowance, not an emergency.
+
+---
+
+## Who is a candidate
+
+Candidates are all symptomatic services: failing (critical or degraded) **or** carrying a measured anomaly. Including anomaly-only services matters. An incident raised purely on anomalies used to have nobody to blame and reported "root cause: none".
+
+---
+
+## Scoring a candidate
+
+Each candidate's score is a sum of named factors, rounded and clamped to 0–1.
+
+| # | Factor | Points | When |
+|---|---|---|---|
+| 1 | `temporal_precedence` | **+0.30** | its anomaly began in the earliest cycle (ties are reported as ties) |
+| | `anomaly_presence` | +0.10 | it has an anomaly, but not the earliest |
+| 2 | `critical_status` | **+0.35** | container down, exited, dead or crash-looping |
+| | `degraded_status` | +0.15 | degraded |
+| 3 | `observed_dependency` | +0.20 | it has at least one edge seen carrying traffic |
+| | `declared_dependency` | +0.05 | only config-declared edges |
+| 4 | `explains_failures` | **up to +0.25** | the other symptomatic services depend on it |
+| 5 | `dependency_failing` | **down to −0.25** | its own dependencies are failing, so it is likely a victim |
+
+Each pair (1, 2, 3) is exclusive: a candidate gets one line or the other.
+
+### Factor 4: how much it explains
+
+A root cause is the failure the others follow from. For every *other* symptomatic service, the engine takes the strength of that service's strongest dependency path down to the candidate:
+
+```
+reach(s → c) = max over call chains from s to c of  Π edge weights
 ```
 
-**Rationale:** A container that has actually exited is much more likely to be a root cause than one that's merely running slowly. `state === 'exited'` (from Docker container state) is a definitive indicator of failure.
+(`dependencyReach()`: a max-product path solved by relaxation, which is trivial at tens of nodes.) An edge's weight is confidence × reliance (see [The graph store](03-graphstore.md)), so a direct, sole dependency gives 1.0, and long or weak chains give less.
 
-### Factor 3: Dependency Evidence (+0.20 or +0.05)
+Only **material** paths count: `reach ≥ MATERIAL_REACH = 0.1`.
 
-```typescript
-const connectedEdges = edges.filter(e => e.source === node.id || e.target === node.id);
-const hasObservedEdge = connectedEdges.some(e => e.observed);
-
-if (hasObservedEdge) {
-  score += 0.20;  // Runtime TCP/HTTP traffic confirms the dependency path
-} else if (connectedEdges.some(e => e.declared)) {
-  score += 0.05;  // Only Compose-declared — weak circumstantial evidence
-}
+```
+coverage = Σ material reach over the other symptomatic services / their count
+points   = 0.25 × coverage
 ```
 
-**Rationale:** If we can see actual traffic (observed edge), the causal path is confirmed. A declared-only edge just means "they were supposed to talk" — not that they actually did.
+The materiality cut-off exists because telemetry links are weighted at a tenth. Without it, a dashboard that one proxy forwards to was credited with "explaining" seven failing services through paths of strength 0.004.
 
-### Factor 4: Downstream Blast Radius (+0.15)
+The factor is listed only when it is worth at least 0.01. Its reason states the count, for example `+0.18 explains 3 of 4 other affected service(s): they depend on it (weighted coverage 72%)`.
 
-```typescript
-const downstreamFailing = edges
-  .filter(e => e.source === node.id)
-  .filter(e => {
-    const target = nodes.find(n => n.id === e.target);
-    return target && (target.status === 'critical' || target.status === 'degraded');
-  });
+### Factor 5: the victim penalty
 
-if (downstreamFailing.length > 0) {
-  score += 0.15;  // More downstream failures = higher root cause probability
-}
+If a service's own callees are failing, it is more likely downstream of the problem than its origin:
+
+```
+victimShare = min(1, Σ weight of its edges to failing callees)
+points      = −0.25 × victimShare
 ```
 
-**Rationale:** A true root cause will have cascading downstream failures. A node that's failing in isolation is less likely to be the origin of a cascade.
+The reason names the failing dependencies: `−0.20 depends on failing orders-db (weighted share 80%) — likely a victim, not the cause`.
 
-### Confidence Mapping
+### Confidence
 
 | Score | Confidence |
 |---|---|
-| ≥ 0.75 | `HIGH` |
-| ≥ 0.50 | `MEDIUM` |
-| > 0.00 | `LOW` |
-| 0.00 | `UNKNOWN` |
+| ≥ 0.75 **and** an observed edge | HIGH |
+| ≥ 0.50 | MEDIUM |
+| ≥ 0.25 | LOW |
+| below 0.25 | UNKNOWN |
+
+A high score built only on declared dependencies can never be HIGH.
+
+### Independent failures
+
+If several services are symptomatic and the top candidate explains **none** of them (no material path), there is no single-cause story. Two services each running hot on their own are two problems, not one problem with a root. The ranking stays, but the confidence is forced to **LOW**, and the explanation says the problems look independent. This rule never fired before the materiality cut-off existed. Live, it had named Grafana at 95% memory as the cause of OpenSearch at 84% memory, with no dependency between them.
 
 ---
 
-## Propagation Path — BFS
+## Worked example (real engine output)
 
-```typescript
-private buildPropagationPath(rootCause: ServiceNode, nodes: ServiceNode[], edges: DependencyEdge[]): PropagationStep[] {
-  const visited = new Set([rootCause.id]);
-  const queue = [rootCause.id];
-  const steps: PropagationStep[] = [];
+The fixture below was run through `RCAEngine.analyzeIncident()` itself, and the numbers are what it returned.
 
-  while (queue.length > 0) {
-    const currentId = queue.shift()!;
-    // Only traverse observed edges — declared-only paths are not confirmed
-    const outgoing = edges.filter(e => e.source === currentId && e.observed);
-    for (const edge of outgoing) {
-      const target = nodes.find(n => n.id === edge.target);
-      if (!target || visited.has(target.id)) continue;
-      visited.add(target.id);
-      steps.push({ sourceId: currentId, targetId: target.id, edgeId: edge.id, ... });
-      if (target.status === 'critical' || target.status === 'degraded') {
-        queue.push(target.id);  // Continue traversal from failing nodes
-      }
-    }
-  }
-  return steps;
-}
-```
+`orders-db` exits. Ten seconds later `orders` shows an anomaly and degrades, and ten seconds after that, `frontend`. Observed traffic, with direction from listening ports (confidence 1.0):
 
-**Only observed edges in propagation:** Traversing declared-only edges would follow theoretical architecture paths. We only follow paths where we've actually seen traffic — those are the real propagation routes.
+| Edge | Activity | Caller's share → weight |
+|---|---|---|
+| `frontend → orders` | 120/min | 0.60 |
+| `frontend → catalogue` | 80/min | 0.40 |
+| `orders → orders-db` | 300/min | 0.75 |
+| `orders → payment` | 100/min | 0.25 |
 
----
+Reach to `orders-db`: from `orders` 0.75, from `frontend` 0.60 × 0.75 = 0.45. Coverage = (0.75 + 0.45) / 2 = 60%.
 
-## Supporting Components
+| Candidate | Factors | Score | Confidence |
+|---|---|---|---|
+| **`orders-db`** | +0.30 earliest · +0.35 down · +0.20 observed · +0.15 explains 2 of 2 (coverage 60%) | **1.00** | **HIGH** |
+| `orders` | +0.10 anomaly · +0.15 degraded · +0.20 observed · +0.08 explains 1 of 2 (30%) · **−0.19** depends on failing orders-db (75%) | 0.34 | LOW |
+| `frontend` | +0.10 anomaly · +0.15 degraded · +0.20 observed · **−0.15** depends on failing orders (60%) | 0.30 | LOW |
 
-### `TemporalAnalyzer`
+Propagation path: `orders-db → orders → frontend`. Affected: `sim-shop:frontend`, `sim-shop:orders`, `sim-shop:orders-db` (ids). The explanation reads:
 
-Builds a timeline from `AnomalyRecord[]` objects:
+> 'orders-db' is down or crash-looping, its problem began first, all 2 other affected services depend on it (score 100%).
 
-```typescript
-buildTimeline(anomalies: AnomalyRecord[]): AnomalyRecord[] {
-  return [...anomalies].sort((a, b) =>
-    new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime()
-  );
-}
-
-findEarliestAnomalousNode(anomalies: AnomalyRecord[]): string | null {
-  const sorted = this.buildTimeline(anomalies);
-  return sorted[0]?.nodeId ?? null;
-}
-```
-
-### `ExplanationEngine`
-
-Generates a structured natural-language explanation from RCA results:
-
-```typescript
-generateExplanation(params: ExplanationParams): RCAExplanation {
-  return {
-    whatHappened: `${params.affectedServices.length} services are experiencing issues`,
-    whenStarted: params.incidentStartedAt,
-    likelyRootCause: params.primaryRootCause?.name ?? 'Unknown',
-    why: this.buildWhyNarrative(params),
-    propagationPath: params.propagationPath.map(s => `${s.sourceId} → ${s.targetId}`),
-    affectedServices: params.affectedServices.map(s => s.name),
-    confidence: params.confidence,
-    alternativeCandidates: params.alternativeCandidates.map(c => ({
-      name: c.node.name, score: c.score, confidence: c.confidence
-    })),
-    evidenceSummary: params.evidence.map(e => e.description),
-    recommendedInvestigation: this.buildRecommendations(params),
-  };
-}
-```
-
-### `AnomalyDetector`
-
-Reads `ml/data/latest_scores.json` and converts them to `AnomalyRecord[]`:
-
-```typescript
-getAnomalies(targetId: string, nodes: ServiceNode[]): AnomalyRecord[] {
-  const scores = readScoresFromDisk();
-  return nodes
-    .filter(n => n.project === targetId && scores[n.id]?.anomaly_score > threshold)
-    .map(n => ({
-      nodeId: n.id,
-      targetId,
-      score: scores[n.id].anomaly_score,
-      persistent: scores[n.id].persistent,
-      detectedAt: new Date().toISOString(),
-    }));
-}
-```
+The victim penalty is what keeps `orders` from looking like the origin, even though it is in the middle of everything.
 
 ---
 
-## `IncidentManager` — Lifecycle
+## Propagation: how it spread
 
-```
-NORMAL → INCIDENT → RECOVERING → RESOLVED
-           ↑                         ↓
-           └────── re-opened ─────── ┘ (if failure re-detected during RECOVERING)
-```
+Failure travels **against** the arrow. A failing database breaks the services calling it, then whatever calls those. From the root cause, the engine walks to its *callers*, strongest edge first, ignoring edges below 0.05:
 
-### Deduplication
+- A caller **joins** the path if it is symptomatic, or if it depends on the failing service heavily (edge weight ≥ 0.5) and is therefore a plausible pass-through even before it shows a symptom.
+- The walk continues only from services that joined.
 
-Only one incident per target is tracked at a time. If `evaluateTarget()` fires again while an incident is active for the same target, the existing incident is **updated in place** (symptoms appended, confidence refreshed, timestamp updated) rather than creating a duplicate.
+Each step records the edge, its evidence source (`network-tcp` or `compose-declarative`), the caller's status, the weight, and a confidence (HIGH ≥ 0.5, MEDIUM > 0.15, otherwise LOW).
 
-### History
+This replaced a walk that followed every edge of any strength to everything reachable, which reported one service's memory pressure as having spread across a 20-service system.
 
-Resolved incidents are kept in an in-memory list (last N per target) for display in `RCAView`. They are not persisted to disk between restarts.
+---
+
+## The incident record
+
+`IncidentManager` keeps one incident per target:
+
+| Field | Value |
+|---|---|
+| `status` | `INCIDENT` if anything is critical, `DEGRADED` if only degraded, `RESOLVED` when RCA finds nothing |
+| `severity` | `CRITICAL` (more than 2 critical services), `HIGH` (1–2), `MEDIUM` (degraded only), `LOW` (anomaly only) |
+| `rootCauseServiceId`, `rootCauseScore`, `confidence` | from the top candidate |
+| `affectedServices` | **ids** of every symptomatic service (once names, which silently failed to match ids everywhere else) |
+| `candidateCauses` | every candidate with its `scoreBreakdown` |
+| `propagation` | the steps above |
+| `explanation` | from `ExplanationEngine` |
+
+While an incident is open it is updated in place, never duplicated. When RCA finds nothing it is marked `RESOLVED` with `endedAt`. Resolved incidents stay in memory, which is why `RiskEngine` filters them out explicitly.
+
+---
+
+## The explanation
+
+`ExplanationEngine` turns the result into plain sentences: what happened, when it started, the likely root cause, why (the factor reasons), the propagation path, and alternatives with their scores. The "why" states the explaining count in words:
+
+- "the other affected service depends on it" (exactly one other)
+- "all 3 other affected services depend on it"
+- "2 of the 4 other affected services depend on it"
+- or, for independent failures, that the services do not appear to depend on each other.
+
+Evidence lines say "not measured" for a figure that was not measured, never "0%".

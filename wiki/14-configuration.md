@@ -126,7 +126,7 @@ keys only apply on the next **Retrain**.
 | `collect_interval_sec` | `10` | live | How often `collector.py` polls `/api/graph` |
 | `min_samples_per_service` | `10` | retrain | Below this, a service is skipped when building features |
 | `min_training_samples` | `30` | retrain | Below this, a service gets no model |
-| `contamination` | `0.01` | retrain | Expected anomaly fraction. Must be `< 0.5` — an IsolationForest requirement |
+| `contamination` | `0.01` | retrain | Expected anomaly fraction, used by all four detectors (`nu` for the one-class SVM). Must be `< 0.5` |
 | `score_interval_sec` | `10` | live | How often `score.py` re-scores |
 | `persistence_windows` | `3` | live | Consecutive above-threshold windows before flagging a real anomaly |
 | `n_estimators` | `200` | retrain | Trees per forest |
@@ -164,7 +164,8 @@ normal. It is reported per model in `models/*.meta.json` and in the
 | `ml/data/features.csv` | `ml/preprocess.py` first run | Normalized features |
 | `ml/data/normalization_stats.json` | `ml/preprocess.py` | Per-service normalization params |
 | `ml/data/latest_scores.json` | `ml/score.py` first run | Current anomaly scores |
-| `ml/models/*.joblib` | `ml/train.py` | Serialized IsolationForest per service |
+| `ml/models/<service>.joblib`, `.lof.joblib`, `.ocsvm.joblib`, `.meta.json` | `ml/train.py` | The four detectors per service (z-score lives in the meta), each with its training score statistics |
+| `data/incident_thresholds.json` | Editing thresholds on the Incidents page | Overrides for the rule-based incident detector |
 
 **To reset graph state completely:** `rm data/graph_db.json` — targets will be re-discovered from `remote_config.json` on next startup.
 
