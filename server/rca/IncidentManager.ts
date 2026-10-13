@@ -139,6 +139,7 @@ export class IncidentManager {
     if (!n) return [];
     const container = n.metadata?.containerName || n.metadata?.containerId?.slice(0, 12) || n.name;
     const state = String(n.metadata?.state ?? '');
+    if (n.metadata?.networkDetached) return [`docker inspect --format '{{json .NetworkSettings.Networks}}' ${container}`, `docker network connect <project>_default ${container}`];
     if (state === 'paused') return [`docker unpause ${container}`, `docker logs --tail 100 ${container}`];
     if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker restart ${container}`];
     if (state === 'restarting') return [`docker logs --tail 200 ${container}`, `docker inspect --format '{{.State.ExitCode}} {{.State.Error}}' ${container}`];

@@ -109,7 +109,7 @@ export interface FaultResult {
 export interface Score {
   options: { graceSec: number; atRiskHorizonSec: number };
   faults: FaultResult[]; excluded: { id: string; reason: string }[];
-  overall: any; byClass: Record<string, any>; falseAlarm: { episodes: number; minutes: number; perHour: number; spanHours: number };
+  overall: any; byClass: Record<string, any>; falseAlarm: { episodes: number; minutes: number; perHour: number; spanHours: number; warmupMinutes?: number; warmupIncidents?: number };
   calibration: { n: number; brier: number; ece: number; auc: number; bins: { lo: number; hi: number; n: number; meanRisk: number; rate: number }[] } | null;
   confusion: { truth: string[]; predicted: string[]; counts: number[][] };
   noEffect: { n: number; detected: number; items: { id: string; class: string; target: string; detected: boolean }[] };
@@ -124,7 +124,7 @@ const prf = (pred: Set<string>, truth: Set<string>) => {
   return { precision, recall, f1: f1(precision, recall) };
 };
 
-export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceSec?: number; atRiskHorizonSec?: number } = {}, impact: ImpactSample[] = []): Score {
+export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceSec?: number; atRiskHorizonSec?: number; warmupSec?: number } = {}, impact: ImpactSample[] = []): Score {
   const graceSec = opts.graceSec ?? 60, horizon = opts.atRiskHorizonSec ?? 120;
   const excluded: { id: string; reason: string }[] = [];
   const faults = faultsIn.filter((f) => { if (f.failed) { excluded.push({ id: f.id, reason: `injection failed: ${f.failed.slice(0, 80)}` }); return false; } return true; });
@@ -226,8 +226,12 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
 
   // ---- false alarms: incident time outside every detection window
   const windows = faults.map((f) => [f.a, f.b + grace] as const);
+  // The learning period (the baseline stage) is reported apart: an incident there says the baseline was not ready, not that the mapper cried wolf.
+  const warmupEnd = (snaps[0]?.ts ?? 0) + (opts.warmupSec ?? 0) * 1000;
+  const warmupIds = new Set<string>();
+  for (const s of snaps) if (s.ts < warmupEnd) for (const i of s.incidents) warmupIds.add(i.id);
   const ep = new Map<string, { s: number; e: number }>();
-  for (const s of snaps) for (const i of s.incidents) { const cur = ep.get(i.id); const st = Math.max(i.startedAt, snaps[0]?.ts ?? i.startedAt); ep.set(i.id, { s: cur ? Math.min(cur.s, st) : st, e: Math.max(cur?.e ?? 0, i.endedAt ?? s.ts) }); }
+  for (const s of snaps.filter((x) => x.ts >= warmupEnd)) for (const i of s.incidents) { const cur = ep.get(i.id); const st = Math.max(i.startedAt, snaps[0]?.ts ?? i.startedAt); ep.set(i.id, { s: cur ? Math.min(cur.s, st) : st, e: Math.max(cur?.e ?? 0, i.endedAt ?? s.ts) }); }
   let faMs = 0, faEp = 0;
   for (const { s, e } of ep.values()) {
     const covered = windows.some(([a, b]) => s < b && e > a);
@@ -237,8 +241,8 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
       faMs += overshoot;
     }
   }
-  const spanH = snaps.length > 1 ? (snaps.at(-1)!.ts - snaps[0].ts) / 3.6e6 : 0;
-  const falseAlarm = { episodes: faEp, minutes: faMs / 60000, perHour: spanH ? faMs / 60000 / 60 / spanH * 60 : 0, spanHours: spanH };
+  const spanH = snaps.length > 1 ? Math.max(0, (snaps.at(-1)!.ts - Math.max(warmupEnd, snaps[0].ts)) / 3.6e6) : 0;
+  const falseAlarm = { episodes: faEp, minutes: faMs / 60000, perHour: spanH ? faMs / 60000 / 60 / spanH * 60 : 0, spanHours: spanH, warmupMinutes: (opts.warmupSec ?? 0) / 60, warmupIncidents: warmupIds.size };
   falseAlarm.perHour = spanH ? faEp / spanH : 0;
 
   // ---- calibration of the at-risk list: did the service actually go non-healthy within the horizon?

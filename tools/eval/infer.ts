@@ -18,6 +18,7 @@ export function inferFamily(evidence: string[]): string | null {
   if (!evidence.length) return null;
   const has = (s: string) => evidence.some((e) => e === s || e.startsWith(`${s}:`));
   if (has('container-health:container-paused')) return 'frozen';
+  if (has('container-health:container-network-detached')) return 'isolated';
   if (has('container-health') || has('restarts')) return 'down';
   if (has('memoryPercent')) return 'memory';
   if (has('silence')) return has('requestRate') || has('networkRxRate') ? 'isolated' : 'frozen';

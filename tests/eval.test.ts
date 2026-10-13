@@ -209,6 +209,7 @@ test('fault kind is read from the evidence the mapper holds on its named root', 
   assert.equal(inferFamily(['latency:robust-zscore-persistent', 'errorRate:robust-zscore-persistent']), 'slow');
   assert.equal(inferFamily(['memoryPercent:over-absolute-limit']), 'memory');
   assert.equal(inferFamily(['requestRate:robust-zscore-persistent', 'networkRxRate:robust-zscore-persistent']), 'isolated');
+  assert.equal(inferFamily(['container-health:container-network-detached']), 'isolated');
   assert.equal(inferFamily([]), null);
   assert.equal(FAMILY_OF.partition, 'isolated');
 });
