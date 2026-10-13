@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Docker from 'dockerode';
+import { parseRequestLines, summarize, type RequestStats } from './requestStats.js';
 import axios from 'axios';
 
 // Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
@@ -51,6 +52,9 @@ interface DependencyEdge {
 
 interface MetricSnapshot {
   timestamp: string;
+  requestCount?: number; requestRate?: number; errorCount?: number; errorRate?: number | null;
+  latency?: number | null; p50Latency?: number | null; p95Latency?: number | null; p99Latency?: number | null;
+  networkRxRate?: number; networkTxRate?: number; restartDelta?: number;
   cpu?: number;
   memory?: number;
   memoryPercent?: number;
@@ -167,6 +171,9 @@ function demuxDockerLogs(buffer: Buffer): string[] {
   }
   return lines;
 }
+
+/** What the previous cycle saw of each container: cumulative counters (for rates), start time (for restarts), log cursor. */
+const prevSample = new Map<string, { t: number; rx?: number; tx?: number; startedAt?: string; restarts?: number }>();
 
 let lastLogCheckTime = Math.floor((Date.now() - 10000) / 1000);
 
@@ -319,6 +326,12 @@ async function discoverAndCollect() {
   // Map containerInfo.Id -> friendlyName for /proc/net/tcp parsing
   const containerIdToName = new Map<string, string>();
 
+  // docker stats (non-streaming) waits about a second per container; ask for all of them at once.
+  const statsById = new Map<string, any>();
+  await Promise.all(containers.filter((c) => c.State === 'running').map(async (c) => {
+    try { statsById.set(c.Id, await docker.getContainer(c.Id).stats({ stream: false })); } catch (e: any) { console.error('stats failed', c.Names?.[0], e.message); }
+  }));
+
   for (const containerInfo of containers) {
     const image = containerInfo.Image;
     const isRunning = containerInfo.State === 'running';
@@ -345,8 +358,8 @@ async function discoverAndCollect() {
     
     if (isRunning) {
       try {
-        const container = docker.getContainer(containerInfo.Id);
-        const stats = await container.stats({ stream: false });
+        const stats = statsById.get(containerInfo.Id);
+        if (!stats) throw new Error('no stats');
         cpu = calculateCpuPercent(stats);
         if (stats.memory_stats?.usage !== undefined) {
           memory = stats.memory_stats.usage;
@@ -386,11 +399,30 @@ async function discoverAndCollect() {
     });
     
     if (isRunning) {
+      const nowMs = Date.now();
+      const prev = prevSample.get(containerInfo.Id);
+      const dt = prev ? Math.max(1, (nowMs - prev.t) / 1000) : 0;
+      const rate = (cur?: number, old?: number) => (cur !== undefined && old !== undefined && dt && cur >= old ? Math.round((cur - old) / dt) : undefined);
+      let restartDelta = 0, startedAt: string | undefined, restarts: number | undefined;
+      let req: RequestStats | undefined;
+      try {
+        const container = docker.getContainer(containerInfo.Id);
+        const info = await container.inspect();
+        startedAt = info.State?.StartedAt; restarts = info.RestartCount;
+        if (prev) restartDelta = Math.max(0, (restarts ?? 0) - (prev.restarts ?? 0)) || (prev.startedAt && startedAt && prev.startedAt !== startedAt ? 1 : 0);
+        if (prev && dt) {
+          const logsBuf = await container.logs({ stdout: true, stderr: true, since: Math.floor(prev.t / 1000), timestamps: false });
+          req = summarize(parseRequestLines(demuxDockerLogs(logsBuf)), dt);
+        }
+      } catch (e: any) { console.error('request stats failed', friendlyName, e.message); }
+      prevSample.set(containerInfo.Id, { t: nowMs, rx: networkRx, tx: networkTx, startedAt, restarts });
       metrics.push({
         nodeId: id,
         snapshot: {
           timestamp: new Date().toISOString(),
-          cpu, memory, memoryPercent, networkRx, networkTx
+          cpu, memory, memoryPercent, networkRx, networkTx,
+          networkRxRate: rate(networkRx, prev?.rx), networkTxRate: rate(networkTx, prev?.tx), restartDelta,
+          ...(req ?? {}),
         }
       });
     }
@@ -404,8 +436,8 @@ async function discoverAndCollect() {
   const connectionEvents: ConnectionEvent[] = [];
   const now = new Date().toISOString();
 
-  for (const containerInfo of containers) {
-    if (containerInfo.State !== 'running') continue;
+  await Promise.all(containers.map(async (containerInfo) => {
+    if (containerInfo.State !== 'running') return;
     const friendlyName = containerIdToName.get(containerInfo.Id) || deriveServiceName(containerInfo);
 
     try {
@@ -447,7 +479,7 @@ async function discoverAndCollect() {
         }
       }
     } catch (e) {}
-  }
+  }));
 
   for (const pair of observedPairs) {
     const [src, tgt] = pair.split('->');

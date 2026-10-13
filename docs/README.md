@@ -13,6 +13,7 @@ Open **`wiki visualizer/index.html`** in a browser for the readable version (dia
 | Find a term | Glossary | `wiki/36-glossary.md` | Anyone |
 | Tour the code | Code tour | `wiki/34-code-tour.md` | Engineer |
 | Fix something that broke | Troubleshooting | `wiki/15-troubleshooting.md` | Operator |
+| Reach an EC2 host, check it, set up a bench, open the fault panel | SSH tools (scripts and the discovery algorithm) | `ssh-tools/README.md` | Operator |
 | See what is planned next | UI redesign, ML separation | `docs/UI_REDESIGN_PLAN.md`, `docs/ML_SEPARATION_PLAN.md` | Team |
 
 Rebuild the visual docs after editing any Markdown: `python3 scripts/build_wiki_visualizer.py`.
