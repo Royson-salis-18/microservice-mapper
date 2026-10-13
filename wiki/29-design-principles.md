@@ -12,7 +12,7 @@ Most of the code in this repository follows from a short list of rules. When the
 
 **What it costs.** Without instrumentation there is no per-request data by default. You can see that `orders` holds sockets to `orders-db`, but not how many requests went over them or how long each took. That gap is why the [three tiers of evidence](18-telemetry-tiers-plan.md) exist, and why most of the precision work is about squeezing honest numbers out of socket tables.
 
-**Where.** `server/telemetry-platform/src/connection/RemoteCommand.ts` (every command that is ever run), `server/connection/` (SSH).
+**Where.** `server/telemetry-platform/src/connection/RemoteCommand.ts` (every command that is ever run), `server/telemetry-platform/src/connection/` (SSH).
 
 ---
 

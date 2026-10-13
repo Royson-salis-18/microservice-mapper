@@ -730,7 +730,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>The rule.</strong> The mapper watches a running system from outside, over a single SSH connection. It runs read-only commands (<code>docker ps</code>, <code>docker inspect</code>, <code>docker stats</code>, <code>cat /proc/&lt;pid&gt;/net/tcp</code>) and nothing else. No agent, no sidecar, no library added to the services, no changed config.</p>
 <p><strong>Why.</strong> It lets you point the tool at a system you do not own, or one you cannot redeploy, and know you have not changed what you are measuring. It also limits what can go wrong to "a read failed".</p>
 <p><strong>What it costs.</strong> Without instrumentation there is no per-request data by default. You can see that <code>orders</code> holds sockets to <code>orders-db</code>, but not how many requests went over them or how long each took. That gap is why the <a href="18-telemetry-tiers-plan.html">three tiers of evidence</a> exist, and why most of the precision work is about squeezing honest numbers out of socket tables.</p>
-<p><strong>Where.</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code> (every command that is ever run), <code>server/connection/</code> (SSH).</p>
+<p><strong>Where.</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code> (every command that is ever run), <code>server/telemetry-platform/src/connection/</code> (SSH).</p>
 <hr class="rule">
 <h2 id="2-observed-beats-declared"><span class="id">2</span> Observed beats declared</h2>
 <p><strong>The rule.</strong> A <code>depends_on</code> line in a compose file is only a claim. A socket that is open between two containers is a fact. Both are kept, but they are never treated as equal.</p>
