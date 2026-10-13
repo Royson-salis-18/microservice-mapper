@@ -23,7 +23,7 @@ your machine                                               the target (EC2 / any
 | **TypeScript** run with **tsx** | TS 5.7, tsx 4 | All server code; `npm start` runs `tsx index.ts` with no build step | Types catch id and unit mistakes at compile time; tsx removes the compile loop in development |
 | **Express** | 5.1 | The REST API in `server/api/routes.ts` (graph, incidents, reliability, ML control, traffic) | Small, well understood, and version 5 handles errors thrown by async handlers |
 | **ws** | 8 | `server/api/websocket.ts`: pushes `graph-update`, `incident.updated`, `trace-*`, `TERMINAL_LOG` | A plain WebSocket server. Socket.IO's fallbacks and rooms are not needed |
-| **ssh2** | 1.17 | `server/connection/SSHConnection.ts`: one connection per target, many `exec` channels | Pure JavaScript SSH client with key auth. No `ssh` binary or shell quoting games |
+| **ssh2** | 1.17 | `server/telemetry-platform/src/connection/SSHConnection.ts`: one connection per target, many `exec` channels | Pure JavaScript SSH client with key auth. No `ssh` binary or shell quoting games |
 | **yaml**, **js-yaml** | 2.7 / 4 | Parsing compose files during discovery, to recover declared dependencies | Compose files are YAML; the two exist for historical reasons |
 | **node:test** | built in | The test suite in `tests/*.test.ts` (`npm test`) | No framework to install or configure; runs under tsx like the server |
 

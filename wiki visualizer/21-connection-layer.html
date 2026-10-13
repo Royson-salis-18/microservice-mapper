@@ -645,12 +645,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <nav class="toc">
   <a href="#overview">Overview</a>
   <a href="#architecture">Architecture</a>
-  <a href="#connection-interface-serverconnectionconnectionts">Connection Interface (serv...</a>
-  <a href="#sshconnection-serverconnectionsshconnectionts">SSHConnection (server/conn...</a>
+  <a href="#connection-interface-servertelemetry-platformsrcconnectionconnectionts">Connection Interface (serv...</a>
+  <a href="#sshconnection-servertelemetry-platformsrcconnectionsshconnectionts">SSHConnection (server/tele...</a>
   <a href="#key-behaviors">Key Behaviors</a>
   <a href="#timeout-handling">Timeout Handling</a>
-  <a href="#remotecommandt-serverconnectionremotecommandts">RemoteCommand&lt;T&gt; (server/c...</a>
-  <a href="#connectionmanager-serverconnectionconnectionmanagerts">ConnectionManager (server/...</a>
+  <a href="#remotecommandt-servertelemetry-platformsrcconnectionremotecommandts">RemoteCommand&lt;T&gt; (server/t...</a>
+  <a href="#connectionmanager-servertelemetry-platformsrcconnectionconnectionmanagerts">ConnectionManager (server/...</a>
   <a href="#retry-strategy">Retry Strategy</a>
   <a href="#ssh-in-the-websocket-terminal">SSH in the WebSocket Termi...</a>
   <a href="#ssh-channel-exhaustion">SSH Channel Exhaustion</a>
@@ -676,7 +676,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="doc-main">
                 <article class="doc-body">
                     <h2 id="overview">Overview</h2>
-<p>The connection layer (<code>server/connection/</code>) provides a structured abstraction for executing remote commands on target hosts via SSH. It separates connection lifecycle management from command execution, enabling the system to collect telemetry from EC2 instances without installing any agent.</p>
+<p>The connection layer (<code>server/telemetry-platform/src/connection/</code>) provides a structured abstraction for executing remote commands on target hosts via SSH. It separates connection lifecycle management from command execution, enabling the system to collect telemetry from EC2 instances without installing any agent.</p>
 <h2 id="architecture">Architecture</h2>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">┌─────────────────────┐
@@ -695,7 +695,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 │   RemoteCommand&lt;T&gt;  │  ← Typed command + parser
 └─────────────────────┘</pre>
                     </div></figure>
-<h2 id="connection-interface-serverconnectionconnectionts">Connection Interface (server/connection/Connection.ts)</h2>
+<h2 id="connection-interface-servertelemetry-platformsrcconnectionconnectionts">Connection Interface (server/telemetry-platform/src/connection/Connection.ts)</h2>
 <p>The minimal contract every connection type must satisfy:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -710,7 +710,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 }</code></pre>
                     </div>
 <p><strong>Design note</strong>: Only SSH is implemented. The <code>FakeConnection</code> exists for testing.</p>
-<h2 id="sshconnection-serverconnectionsshconnectionts">SSHConnection (server/connection/SSHConnection.ts)</h2>
+<h2 id="sshconnection-servertelemetry-platformsrcconnectionsshconnectionts">SSHConnection (server/telemetry-platform/src/connection/SSHConnection.ts)</h2>
 <p>The only production <code>Connection</code> implementation. Uses the <code>ssh2</code> library.</p>
 <h3 id="key-behaviors">Key Behaviors</h3>
 <ol>
@@ -735,7 +735,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 }, cmd.timeoutMs);</code></pre>
                     </div>
 <p>A timed-out command returns a result with <code>exitCode: null</code> and an error string, rather than throwing. This keeps the collection loop running even when one command hangs.</p>
-<h2 id="remotecommandt-serverconnectionremotecommandts">RemoteCommand&lt;T&gt; (server/connection/RemoteCommand.ts)</h2>
+<h2 id="remotecommandt-servertelemetry-platformsrcconnectionremotecommandts">RemoteCommand&lt;T&gt; (server/telemetry-platform/src/connection/RemoteCommand.ts)</h2>
 <p>A typed command descriptor:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -762,7 +762,7 @@ export interface RemoteCommandResult&lt;T&gt; {
 }</code></pre>
                     </div>
 <p>The <code>parser</code> field allows commands to return typed results (e.g., parsing <code>docker stats --format json</code> into structured data).</p>
-<h2 id="connectionmanager-serverconnectionconnectionmanagerts">ConnectionManager (server/connection/ConnectionManager.ts)</h2>
+<h2 id="connectionmanager-servertelemetry-platformsrcconnectionconnectionmanagerts">ConnectionManager (server/telemetry-platform/src/connection/ConnectionManager.ts)</h2>
 <p>Manages the connection lifecycle with retry logic:</p>
 <h3 id="retry-strategy">Retry Strategy</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">

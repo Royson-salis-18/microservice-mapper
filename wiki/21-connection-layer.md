@@ -2,7 +2,7 @@
 
 ## Overview
 
-The connection layer (`server/connection/`) provides a structured abstraction for executing remote commands on target hosts via SSH. It separates connection lifecycle management from command execution, enabling the system to collect telemetry from EC2 instances without installing any agent.
+The connection layer (`server/telemetry-platform/src/connection/`) provides a structured abstraction for executing remote commands on target hosts via SSH. It separates connection lifecycle management from command execution, enabling the system to collect telemetry from EC2 instances without installing any agent.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ The connection layer (`server/connection/`) provides a structured abstraction fo
 └─────────────────────┘
 ```
 
-## Connection Interface (server/connection/Connection.ts)
+## Connection Interface (server/telemetry-platform/src/connection/Connection.ts)
 
 The minimal contract every connection type must satisfy:
 
@@ -40,7 +40,7 @@ export interface Connection {
 
 **Design note**: Only SSH is implemented. The `FakeConnection` exists for testing.
 
-## SSHConnection (server/connection/SSHConnection.ts)
+## SSHConnection (server/telemetry-platform/src/connection/SSHConnection.ts)
 
 The only production `Connection` implementation. Uses the `ssh2` library.
 
@@ -67,7 +67,7 @@ const timer = setTimeout(() => {
 
 A timed-out command returns a result with `exitCode: null` and an error string, rather than throwing. This keeps the collection loop running even when one command hangs.
 
-## RemoteCommand<T> (server/connection/RemoteCommand.ts)
+## RemoteCommand<T> (server/telemetry-platform/src/connection/RemoteCommand.ts)
 
 A typed command descriptor:
 
@@ -95,7 +95,7 @@ export interface RemoteCommandResult<T> {
 
 The `parser` field allows commands to return typed results (e.g., parsing `docker stats --format json` into structured data).
 
-## ConnectionManager (server/connection/ConnectionManager.ts)
+## ConnectionManager (server/telemetry-platform/src/connection/ConnectionManager.ts)
 
 Manages the connection lifecycle with retry logic:
 
