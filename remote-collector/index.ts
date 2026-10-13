@@ -10,6 +10,9 @@ const TARGET_ID = process.env.TARGET_ID || 'sock-shop-aws';
 const ENVIRONMENT = process.env.ENVIRONMENT || 'aws';
 const REGION = process.env.REGION || 'ap-south-1';
 const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000', 10);
+// Optional: watch one compose project only (several benches can share a host; each gets its own collector and target).
+const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT || '';
+const inProject = (c: { Labels?: Record<string, string> }) => !COMPOSE_PROJECT || (c.Labels?.['com.docker.compose.project'] === COMPOSE_PROJECT);
 
 const docker = new Docker();
 
@@ -160,7 +163,7 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
   lastLogCheckTime = Math.floor(Date.now() / 1000);
 
   try {
-    const containers = await docker.listContainers({ all: false });
+    const containers = (await docker.listContainers({ all: false })).filter(inProject);
     for (const cInfo of containers) {
       const containerName = cInfo.Names[0].replace(/^\//, '');
       const cleanName = containerName.replace(/^docker-compose-/, '').replace(/-\d+$/, '');
@@ -293,7 +296,7 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
 }
 
 async function discoverAndCollect() {
-  const containers = await docker.listContainers({ all: true });
+  const containers = (await docker.listContainers({ all: true })).filter(inProject);
   
   const nodes: ServiceNode[] = [];
   const metrics: { nodeId: string; snapshot: MetricSnapshot }[] = [];

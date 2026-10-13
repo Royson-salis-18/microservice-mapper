@@ -2,7 +2,7 @@ import type { MetricStore } from '../telemetry/MetricStore.js';
 import type { AnomalyRecord, IncidentSeverity } from '../models/Incident.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
-import { loadThresholds, type IncidentThresholds } from './thresholds.js';
+import { DEFAULT_THRESHOLDS, type IncidentThresholds } from './thresholds.js';
 
 /**
  * Per-service anomaly rules, ported from the rca-lab research method (new-repo/core/score.py), where each piece was
@@ -111,13 +111,15 @@ export class AnomalyDetector {
    *  not the latest check, and temporal precedence compares real start times. */
   private onset = new Map<string, string>();
 
-  constructor(private metricStore: MetricStore) {}
+  /** `getThresholds` is read once per detection pass, so an edit made in the UI applies on the next cycle. The shell
+   *  (IncidentManager) passes one that reads the overrides file; here it defaults to the pure defaults. */
+  constructor(private metricStore: MetricStore, private getThresholds: () => IncidentThresholds = () => DEFAULT_THRESHOLDS) {}
 
   public detectAnomaliesForTarget(targetId: string, nodes: ServiceNode[]): AnomalyRecord[] {
     const anomalies: AnomalyRecord[] = [];
     const now = new Date().toISOString();
     // Read per pass, so an edit in the UI takes effect on the next detection cycle without a restart.
-    const t = loadThresholds();
+    const t = this.getThresholds();
 
     for (const node of nodes) {
       if (node.project !== targetId) continue;
