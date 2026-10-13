@@ -1,0 +1,141 @@
+{
+  "service_id": "death-star:home-timeline-service",
+  "project": "death-star",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 1608,
+  "trained_at": "2026-09-30T17:48:04.245056+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -0.0,
+  "train_score_mean": -0.36723852928168393,
+  "train_score_max": 0.08690518311268991,
+  "holdout": {
+    "samples": 402,
+    "flag_rate": 0.12437810945273632,
+    "mean_score": -0.34003920876064675,
+    "max_score": 0.08196351776642208,
+    "from": "2026-09-17T00:54:53.284426+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -0.0,
+      "train_score_mean": -0.36723852928168393,
+      "train_score_median": -0.39698262920252164,
+      "train_score_max": 0.08690518311268991,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": -0.34003920876064675,
+        "max_score": 0.08196351776642208,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-service.joblib"
+    },
+    "lof": {
+      "threshold_p99": 1.0134593003815893,
+      "train_score_mean": 0.9802034094987687,
+      "train_score_median": 0.9781241153904787,
+      "train_score_max": 1.1944602359071628,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 1.0194655159334947,
+        "max_score": 10.52980878860388,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-service.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00024352291720730612,
+      "train_score_mean": -0.0427773535796928,
+      "train_score_median": -0.04591912546579202,
+      "train_score_max": 0.4941438774310427,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 0.01863362879452683,
+        "max_score": 1.5022884652799986,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-service.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 3.976472511568732,
+      "train_score_mean": 0.3894809235536881,
+      "train_score_median": 0.1738991147231245,
+      "train_score_max": 7.647973020651651,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 0.964693844044422,
+        "max_score": 44.82186966202995,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-service.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    }
+  },
+  "data_quality": {
+    "rows": 1608,
+    "unique_rows": 32,
+    "unique_fraction": 0.01990049751243781,
+    "feature_std": {
+      "z_cpu_percent": 0.8870309318316908,
+      "z_memory_percent": 0.4419782103964863,
+      "z_network_rx_rate": 0.033473930409935036,
+      "z_network_tx_rate": 6.938893903907228e-18
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

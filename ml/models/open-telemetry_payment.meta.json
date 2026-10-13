@@ -1,0 +1,141 @@
+{
+  "service_id": "open-telemetry:payment",
+  "project": "open-telemetry",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 40,
+  "trained_at": "2026-09-30T17:39:44.403157+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -5.898059818321144e-17,
+  "train_score_mean": -0.2873583865454901,
+  "train_score_max": 0.01980849626631931,
+  "holdout": {
+    "samples": 9,
+    "flag_rate": 0.0,
+    "mean_score": -0.26422826110938324,
+    "max_score": -0.09550115260971215,
+    "from": "2026-09-18T15:13:58.590617+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -5.898059818321144e-17,
+      "train_score_mean": -0.2873583865454901,
+      "train_score_median": -0.3097152492263533,
+      "train_score_max": 0.01980849626631931,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.26422826110938324,
+        "max_score": -0.09550115260971215,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_payment.joblib"
+    },
+    "lof": {
+      "threshold_p99": 0.9896219617894978,
+      "train_score_mean": 0.9896219617894975,
+      "train_score_median": 0.9896219617894976,
+      "train_score_max": 0.9896219617894978,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.4444444444444444,
+        "mean_score": 0.9914965382107089,
+        "max_score": 1.0064931495803997,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_payment.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0003248468634740449,
+      "train_score_mean": -0.0012915120940475773,
+      "train_score_median": -0.0016219980433007375,
+      "train_score_max": 0.00034354689199395105,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": 0.004553117967458203,
+        "max_score": 0.06430342351994207,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_payment.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.209730468802033,
+      "train_score_mean": 1.2752122505877241,
+      "train_score_median": 0.6759117604215935,
+      "train_score_max": 4.369822159089484,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": 1.3764150854916535,
+        "max_score": 5.0819899420798125,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_payment.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 0.5555555555555556,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 4
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.8888888888888888,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 1
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 0.8888888888888888,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 1
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 0.6666666666666666,
+      "jaccard": 0.25,
+      "both_flagged": 1,
+      "either_flagged": 4
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 0.6666666666666666,
+      "jaccard": 0.25,
+      "both_flagged": 1,
+      "either_flagged": 4
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 1,
+      "either_flagged": 1
+    }
+  },
+  "data_quality": {
+    "rows": 40,
+    "unique_rows": 20,
+    "unique_fraction": 0.5,
+    "feature_std": {
+      "z_cpu_percent": 1.0524251137674099,
+      "z_memory_percent": 1.0857698002312215,
+      "z_network_rx_rate": 0.7278905446230478,
+      "z_network_tx_rate": 1.001975021866109
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

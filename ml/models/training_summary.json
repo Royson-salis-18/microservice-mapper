@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-18T15:15:05.945026+00:00",
-  "min_training_samples": 50,
+  "generated_at": "2026-09-30T17:48:08.183677+00:00",
+  "min_training_samples": 30,
   "contamination": 0.01,
-  "n_estimators": 100,
+  "n_estimators": 200,
   "max_samples_fraction": 1.0,
   "holdout_fraction": 0.2,
   "feature_columns": [
@@ -15,7 +15,7 @@
     "since": null,
     "until": null
   },
-  "project": "sock-shop",
+  "project": "death-star",
   "algorithms": [
     "iforest",
     "lof",
@@ -23,466 +23,6 @@
     "zscore"
   ],
   "trained": {
-    "death-star:post-storage-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.3910313872989022e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.32841404005428254,
-        "max_score": -0.3284140400542826,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 149,
-        "unique_fraction": 0.09502551020408163,
-        "feature_std": {
-          "z_cpu_percent": 1.1068133114688328,
-          "z_memory_percent": 1.1178912275938835,
-          "z_network_rx_rate": 1.1096208414173805,
-          "z_network_tx_rate": 1.1113077772485551
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.3910313872989022e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.6794219588821613,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 6.519227458674911e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.8196217286218355,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:post-storage-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -3.8467493079785697e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3816448836544062,
-        "max_score": -0.3816448836544062,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 152,
-        "unique_fraction": 0.09693877551020408,
-        "feature_std": {
-          "z_cpu_percent": 1.1169677467418444,
-          "z_memory_percent": 1.1178912275938835,
-          "z_network_rx_rate": 1.111552807681167,
-          "z_network_tx_rate": 1.109620837583989
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -3.8467493079785697e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8598658376556194,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00027158948903122153,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.780827911372536,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:social-graph-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.207801220148852e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3962980217365842,
-        "max_score": -0.3962980217365842,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 47,
-        "unique_fraction": 0.029974489795918366,
-        "feature_std": {
-          "z_cpu_percent": 1.1107313785965,
-          "z_memory_percent": 1.1173669549540761,
-          "z_network_rx_rate": 1.1176765038530663,
-          "z_network_tx_rate": 1.117389113812135
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.207801220148852e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8428613182483613,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 3.849183349685826e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 12.238995561023708,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:social-graph-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": 0.0,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4304760133135882,
-        "max_score": -0.4304760133135883,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 32,
-        "unique_fraction": 0.02040816326530612,
-        "feature_std": {
-          "z_cpu_percent": 1.1159713799819122,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1174784482894105,
-          "z_network_tx_rate": 1.117962646887923
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": 0.0,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.009236171338719,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 3.5648000531991214e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.581034750875494,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:url-shorten-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -2.5825695748604716e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.36405559546460087,
-        "max_score": -0.364055595464601,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 156,
-        "unique_fraction": 0.09948979591836735,
-        "feature_std": {
-          "z_cpu_percent": 1.1080143510131415,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.109562188939082,
-          "z_network_tx_rate": 1.1112971168498986
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -2.5825695748604716e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 3.1511499944664525,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 9.600655697503963e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 6.090616067015823,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:url-shorten-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.5894403848637495e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3831813941609386,
-        "max_score": -0.3831813941609386,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 159,
-        "unique_fraction": 0.10140306122448979,
-        "feature_std": {
-          "z_cpu_percent": 1.1122586794867033,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1115463830564671,
-          "z_network_tx_rate": 1.1093896473552725
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.5894403848637495e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 2.644105682535423,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00018123465307809711,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 8.250013924856624,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -5.260548940899668e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4248967861767484,
-        "max_score": -0.4248967861767485,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 41,
-        "unique_fraction": 0.02614795918367347,
-        "feature_std": {
-          "z_cpu_percent": 1.1173125866083407,
-          "z_memory_percent": 1.1176765038522671,
-          "z_network_rx_rate": 1.1178912275951935,
-          "z_network_tx_rate": 1.1172265146645441
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -5.260548940899668e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.0458973423375666,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": -3.7839605236835735e-05,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 6.401002666982822,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -1.352000109089424e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.4037817728303506,
-        "max_score": -0.4037817728303507,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 37,
-        "unique_fraction": 0.023596938775510203,
-        "feature_std": {
-          "z_cpu_percent": 1.116828899312879,
-          "z_memory_percent": 1.1176047735614814,
-          "z_network_rx_rate": 1.1178912276067028,
-          "z_network_tx_rate": 1.1178912275951935
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -1.352000109089424e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.0802857616136552,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00039748412060647276,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 4.714480267420381,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-timeline-mongodb": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -5.199833619240479e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3734603702255882,
-        "max_score": -0.37346037022558815,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 150,
-        "unique_fraction": 0.09566326530612244,
-        "feature_std": {
-          "z_cpu_percent": 1.1112069362169072,
-          "z_memory_percent": 1.1178197307412046,
-          "z_network_rx_rate": 1.1099380753645878,
-          "z_network_tx_rate": 1.111571918156207
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -5.199833619240479e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 2.0010613397711685,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00023781711440759245,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.985863490182609,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
-    "death-star:user-timeline-service": {
-      "samples": 1568,
-      "project": "death-star",
-      "threshold_p99": -2.516433242338856e-16,
-      "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3890024775072322,
-        "max_score": -0.3890024775072322,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
-      },
-      "data_quality": {
-        "rows": 1568,
-        "unique_rows": 153,
-        "unique_fraction": 0.0975765306122449,
-        "feature_std": {
-          "z_cpu_percent": 1.1169664642661437,
-          "z_memory_percent": 1.1177481562030402,
-          "z_network_rx_rate": 1.1115903084869592,
-          "z_network_tx_rate": 1.109741531640687
-        }
-      },
-      "algorithms": {
-        "iforest": {
-          "threshold_p99": -2.516433242338856e-16,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "lof": {
-          "threshold_p99": 1.8041788094297917,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "ocsvm": {
-          "threshold_p99": 0.00023885424056910255,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        },
-        "zscore": {
-          "threshold_p99": 5.952892036806984,
-          "holdout_flag_rate": 0.0,
-          "error": null
-        }
-      }
-    },
     "sock-shop:carts": {
       "samples": 1606,
       "project": "sock-shop",
@@ -1080,6 +620,1800 @@
           "error": null
         }
       }
+    },
+    "open-telemetry:ad": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.551115123125783e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.21583628269592467,
+        "max_score": -0.007613457726332484,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 19,
+        "unique_fraction": 0.475,
+        "feature_std": {
+          "z_cpu_percent": 1.0305634033723492,
+          "z_memory_percent": 1.0579770003880873,
+          "z_network_rx_rate": 0.9000081468712154,
+          "z_network_tx_rate": 0.978267349158692
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.551115123125783e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00027053421845176103,
+          "holdout_flag_rate": 0.5555555555555556,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.1657078253466935,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:astronomy-db": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -6.938893903907228e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2844250888520834,
+        "max_score": -0.12557806306730412,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 19,
+        "unique_fraction": 0.475,
+        "feature_std": {
+          "z_cpu_percent": 0.7645208914494369,
+          "z_memory_percent": 0.6325671953725389,
+          "z_network_rx_rate": 1.0751579347508071,
+          "z_network_tx_rate": 1.1028454849562768
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -6.938893903907228e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003694602190764224,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.270123285821017,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:cart": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.551115123125783e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": -0.27598150669767013,
+        "max_score": 0.011173963056613556,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 16,
+        "unique_fraction": 0.4,
+        "feature_std": {
+          "z_cpu_percent": 1.087367948428646,
+          "z_memory_percent": 1.0813985642370487,
+          "z_network_rx_rate": 0.9327685350879837,
+          "z_network_tx_rate": 0.9664401666921292
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.551115123125783e-17,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 16 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00030585664372920207,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.663724768234903,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:checkout": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.898059818321144e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.1836973564703834,
+        "max_score": -0.03687537257656848,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 18,
+        "unique_fraction": 0.45,
+        "feature_std": {
+          "z_cpu_percent": 1.0368090560395233,
+          "z_memory_percent": 1.0950676895704818,
+          "z_network_rx_rate": 0.9179583805467723,
+          "z_network_tx_rate": 1.0306535897896698
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.898059818321144e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 18 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003688089694576883,
+          "holdout_flag_rate": 0.3333333333333333,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.725604161719447,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:currency": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -2.7755575615628914e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2627721757098468,
+        "max_score": -0.052833660288573614,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 17,
+        "unique_fraction": 0.425,
+        "feature_std": {
+          "z_cpu_percent": 1.0827288235002472,
+          "z_memory_percent": 1.090562974186201,
+          "z_network_rx_rate": 0.8723013815240676,
+          "z_network_tx_rate": 0.961957397982065
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -2.7755575615628914e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 17 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003546850451581901,
+          "holdout_flag_rate": 0.2222222222222222,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.658138995035561,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:email": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -6.245004513516506e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.27034620889378347,
+        "max_score": -0.039488117039428006,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 1.0709471058717481,
+          "z_memory_percent": 1.0628690646681502,
+          "z_network_rx_rate": 0.8797410844273104,
+          "z_network_tx_rate": 0.9450400623809967
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -6.245004513516506e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.002877279406375,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00042773725878900935,
+          "holdout_flag_rate": 0.6666666666666666,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.7807548760859078,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:flagd": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -6.765421556309548e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": -0.1533546390348851,
+        "max_score": 0.02138067007527289,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 0.8928266866076368,
+          "z_memory_percent": 0.9312713810370936,
+          "z_network_rx_rate": 0.9752003659934622,
+          "z_network_tx_rate": 0.9663508191181364
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -6.765421556309548e-17,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9969435634161019,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00037158289810424583,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.8881443774481306,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:frontend": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": 1.1275702593849246e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.14728643196906155,
+        "max_score": -0.010082087964071729,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 14,
+        "unique_fraction": 0.35,
+        "feature_std": {
+          "z_cpu_percent": 0.8981857335700445,
+          "z_memory_percent": 0.8076190001810365,
+          "z_network_rx_rate": 0.9619968070727478,
+          "z_network_tx_rate": 1.1014859402652704
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 1.1275702593849246e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 14 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00021625948243943205,
+          "holdout_flag_rate": 0.6666666666666666,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.847705138100296,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:frontend-proxy": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -4.85722573273506e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.19871136825989455,
+        "max_score": -0.12588699609872633,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 14,
+        "unique_fraction": 0.35,
+        "feature_std": {
+          "z_cpu_percent": 1.0640281941935505,
+          "z_memory_percent": 0.9651851296951315,
+          "z_network_rx_rate": 1.0956733089860589,
+          "z_network_tx_rate": 0.9910866393421395
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -4.85722573273506e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 14 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00048322027015192115,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.3542088826511436,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:grafana": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -1.734723475976807e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.1751134339455601,
+        "max_score": -0.00011590664893934566,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 0.9496210424093585,
+          "z_memory_percent": 0.8314848310061517,
+          "z_network_rx_rate": 0.9871669357405904,
+          "z_network_tx_rate": 1.0118851148251358
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.734723475976807e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9907658268100067,
+          "holdout_flag_rate": 0.5555555555555556,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003680256546526028,
+          "holdout_flag_rate": 0.6666666666666666,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.9585539548929902,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:image-provider": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": 3.2959746043559335e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.24805365348632236,
+        "max_score": -0.12376984947792125,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 14,
+        "unique_fraction": 0.35,
+        "feature_std": {
+          "z_cpu_percent": 1.0900104698354456,
+          "z_memory_percent": 0.9298593921710062,
+          "z_network_rx_rate": 1.0119657090588847,
+          "z_network_tx_rate": 1.1014859402635662
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 3.2959746043559335e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 14 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0005690625991301851,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.847695969985231,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:jaeger": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -2.7755575615628914e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.16912506369053273,
+        "max_score": -0.024028960367329377,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 17,
+        "unique_fraction": 0.425,
+        "feature_std": {
+          "z_cpu_percent": 1.0067236007444162,
+          "z_memory_percent": 0.9214192325222289,
+          "z_network_rx_rate": 1.0231672418194024,
+          "z_network_tx_rate": 1.0191072289538916
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -2.7755575615628914e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 17 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002689735021973358,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.7842756106640976,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:load-generator": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -2.2985086056692694e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.27836167452566934,
+        "max_score": -0.1604261919167057,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 18,
+        "unique_fraction": 0.45,
+        "feature_std": {
+          "z_cpu_percent": 1.0693163571467326,
+          "z_memory_percent": 1.085739792586577,
+          "z_network_rx_rate": 1.0966416864233592,
+          "z_network_tx_rate": 1.066231207297858
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -2.2985086056692694e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 18 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003119751609018673,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.438516476104781,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:opamp-server": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -1.0408340855860843e-16,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.18451195254927708,
+        "max_score": -0.01957282724870313,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 0.8895718590114452,
+          "z_memory_percent": 0.4667806894572506,
+          "z_network_rx_rate": 1.0229048694458123,
+          "z_network_tx_rate": 1.0300273881128938
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.0408340855860843e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9878413177275983,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0004292592738035367,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.9214771964009394,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:opensearch": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -4.597017211338539e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2626854807884882,
+        "max_score": -0.08759556654097955,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 19,
+        "unique_fraction": 0.475,
+        "feature_std": {
+          "z_cpu_percent": 0.9954736280056641,
+          "z_memory_percent": 1.0691704391080026,
+          "z_network_rx_rate": 0.9619876248859976,
+          "z_network_tx_rate": 1.0270997198663614
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -4.597017211338539e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0004971022415301424,
+          "holdout_flag_rate": 0.2222222222222222,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.296575161210093,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:otel-collector": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -9.71445146547012e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2004572944401079,
+        "max_score": -0.03293652833914684,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 0.7398018250779786,
+          "z_memory_percent": 1.056279292580326,
+          "z_network_rx_rate": 0.978678360535318,
+          "z_network_tx_rate": 1.0241230046229763
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -9.71445146547012e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9854171361678533,
+          "holdout_flag_rate": 0.5555555555555556,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00023344103338151842,
+          "holdout_flag_rate": 0.7777777777777778,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.249882059768553,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:payment": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.898059818321144e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.26422826110938324,
+        "max_score": -0.09550115260971215,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 1.0524251137674099,
+          "z_memory_percent": 1.0857698002312215,
+          "z_network_rx_rate": 0.7278905446230478,
+          "z_network_tx_rate": 1.001975021866109
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.898059818321144e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9896219617894978,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003248468634740449,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.209730468802033,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:product-catalog": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.898059818321144e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.19190219434884026,
+        "max_score": -0.11052021242231536,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 13,
+        "unique_fraction": 0.325,
+        "feature_std": {
+          "z_cpu_percent": 1.0962056908258009,
+          "z_memory_percent": 0.8327035171973535,
+          "z_network_rx_rate": 1.1042000781108472,
+          "z_network_tx_rate": 1.1042000781108465
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.898059818321144e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 13 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002308299749830406,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.92820323027551,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:prometheus": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -9.71445146547012e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": -0.1974933409070845,
+        "max_score": 0.002479203376563377,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 1.0937450824531094,
+          "z_memory_percent": 0.6745223959654426,
+          "z_network_rx_rate": 0.9327567670156962,
+          "z_network_tx_rate": 0.9822462846864347
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -9.71445146547012e-17,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.98403232966772,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00020410043968972682,
+          "holdout_flag_rate": 0.8888888888888888,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.8980246879562075,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:quote": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.551115123125783e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.20332759866656214,
+        "max_score": -0.05693347463714993,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 17,
+        "unique_fraction": 0.425,
+        "feature_std": {
+          "z_cpu_percent": 1.003253092839829,
+          "z_memory_percent": 0.9946176936973231,
+          "z_network_rx_rate": 0.733301359632032,
+          "z_network_tx_rate": 1.0426903214457723
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.551115123125783e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 17 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00027082838038669835,
+          "holdout_flag_rate": 0.6666666666666666,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.7515039455291563,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:recommendation": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -8.673617379884035e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2219434499296411,
+        "max_score": -0.08973708344291753,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 19,
+        "unique_fraction": 0.475,
+        "feature_std": {
+          "z_cpu_percent": 1.0437968760215786,
+          "z_memory_percent": 1.0456300061717003,
+          "z_network_rx_rate": 1.0230957181869398,
+          "z_network_tx_rate": 1.0871604645410071
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -8.673617379884035e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002921193931297795,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.549139593420689,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:shipping": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -1.6479873021779667e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.1111111111111111,
+        "mean_score": -0.14164326188957743,
+        "max_score": 0.007070596307000021,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 19,
+        "unique_fraction": 0.475,
+        "feature_std": {
+          "z_cpu_percent": 0.8563388691959292,
+          "z_memory_percent": 0.737335594339109,
+          "z_network_rx_rate": 0.8570244211689706,
+          "z_network_tx_rate": 1.0120032156269543
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -1.6479873021779667e-17,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": null,
+          "holdout_flag_rate": null,
+          "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003728158732462828,
+          "holdout_flag_rate": 0.6666666666666666,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.0050089612442967,
+          "holdout_flag_rate": 0.3333333333333333,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:telemetry-docs": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": -5.377642775528102e-17,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.19464357334313942,
+        "max_score": -0.022199776884745948,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 1.0795731672429176,
+          "z_memory_percent": 0.9830584953613841,
+          "z_network_rx_rate": 0.9786722958546497,
+          "z_network_tx_rate": 0.9476077751392162
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -5.377642775528102e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9901638252870764,
+          "holdout_flag_rate": 0.1111111111111111,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002618726145100487,
+          "holdout_flag_rate": 0.4444444444444444,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.907920005329158,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "open-telemetry:valkey-cart": {
+      "samples": 40,
+      "project": "open-telemetry",
+      "threshold_p99": 4.336808689942018e-18,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2600725890563753,
+        "max_score": -0.07767728262757445,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 40,
+        "unique_rows": 20,
+        "unique_fraction": 0.5,
+        "feature_std": {
+          "z_cpu_percent": 1.0107753826010657,
+          "z_memory_percent": 1.0625441600244026,
+          "z_network_rx_rate": 0.9619736559988479,
+          "z_network_tx_rate": 1.029895113127844
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 4.336808689942018e-18,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 0.9889562164694539,
+          "holdout_flag_rate": 0.8888888888888888,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00048099466129746763,
+          "holdout_flag_rate": 0.2222222222222222,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.392336451398821,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:home-timeline-redis": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0472636815920398,
+        "mean_score": -0.318928254443581,
+        "max_score": 0.04020654170811322,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 39,
+        "unique_fraction": 0.024253731343283583,
+        "feature_std": {
+          "z_cpu_percent": 1.1098633729677012,
+          "z_memory_percent": 0.1620233386401357,
+          "z_network_rx_rate": 0.039136470669227444,
+          "z_network_tx_rate": 0.0
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.0472636815920398,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.1665031781466741,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002644355549570321,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.977209000748669,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:home-timeline-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": -0.34003920876064675,
+        "max_score": 0.08196351776642208,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 32,
+        "unique_fraction": 0.01990049751243781,
+        "feature_std": {
+          "z_cpu_percent": 0.8870309318316908,
+          "z_memory_percent": 0.4419782103964863,
+          "z_network_rx_rate": 0.033473930409935036,
+          "z_network_tx_rate": 6.938893903907228e-18
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0134593003815893,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00024352291720730612,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.976472511568732,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:nginx-thrift": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 1.3515257706389616e-17,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.28239262756697464,
+        "max_score": -0.017938229139198736,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 37,
+        "unique_fraction": 0.023009950248756218,
+        "feature_std": {
+          "z_cpu_percent": 1.1105922800166055,
+          "z_memory_percent": 0.1962074332665536,
+          "z_network_rx_rate": 6.938893903907228e-18,
+          "z_network_tx_rate": 6.938893903907228e-18
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 1.3515257706389616e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0710973143186235,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00032678600552671355,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.47829114944015,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:post-storage-memcached": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 7.258055918432649e-17,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.2974617050980718,
+        "max_score": -0.17655812292702244,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 29,
+        "unique_fraction": 0.018034825870646767,
+        "feature_std": {
+          "z_cpu_percent": 1.1108431923654913,
+          "z_memory_percent": 0.2693238481420196,
+          "z_network_rx_rate": 0.19073002649235674,
+          "z_network_tx_rate": 6.938893903907228e-18
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 7.258055918432649e-17,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.121096872147333,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": -0.00013225110187820022,
+          "holdout_flag_rate": 1.0,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.872583815164173,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:post-storage-mongodb": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 2.0806517316354634e-17,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.05223880597014925,
+        "mean_score": -0.2906519632465251,
+        "max_score": 0.10002034174221897,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 149,
+        "unique_fraction": 0.09266169154228855,
+        "feature_std": {
+          "z_cpu_percent": 0.9252292769717644,
+          "z_memory_percent": 0.025140946443931812,
+          "z_network_rx_rate": 0.7526422388918798,
+          "z_network_tx_rate": 0.9525040495127467
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 2.0806517316354634e-17,
+          "holdout_flag_rate": 0.05223880597014925,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.5845654997296783,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0002778359153252641,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.002575424976824,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:post-storage-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 6.627185779317646e-18,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.004975124378109453,
+        "mean_score": -0.3406025864256402,
+        "max_score": 0.08034539874377544,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 152,
+        "unique_fraction": 0.0945273631840796,
+        "feature_std": {
+          "z_cpu_percent": 0.907099612497444,
+          "z_memory_percent": 1.1178947826248766,
+          "z_network_rx_rate": 0.0818569224858129,
+          "z_network_tx_rate": 0.6714915090703037
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 6.627185779317646e-18,
+          "holdout_flag_rate": 0.004975124378109453,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 7.057015078908111,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00042818807690681027,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.8427658295787537,
+          "holdout_flag_rate": 0.004975124378109453,
+          "error": null
+        }
+      }
+    },
+    "death-star:social-graph-mongodb": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.3704060656881187,
+        "max_score": -0.10674770857636517,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 47,
+        "unique_fraction": 0.029228855721393034,
+        "feature_std": {
+          "z_cpu_percent": 1.1107928697938796,
+          "z_memory_percent": 0.27799146156887905,
+          "z_network_rx_rate": 1.1050830096491773,
+          "z_network_tx_rate": 1.1056762954248704
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.2525035138427412,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 9.373494756661502e-05,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 9.183077715120902,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:social-graph-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.3885386868814077,
+        "max_score": -0.08830269149905001,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 32,
+        "unique_fraction": 0.01990049751243781,
+        "feature_std": {
+          "z_cpu_percent": 0.8839427638114774,
+          "z_memory_percent": 1.117615484528326,
+          "z_network_rx_rate": 1.1006366891115034,
+          "z_network_tx_rate": 1.1174643212106536
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0061496062120123,
+          "holdout_flag_rate": 0.07960199004975124,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00016467401314468333,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 4.522180131141717,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:url-shorten-mongodb": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 1.9022327116258175e-16,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0472636815920398,
+        "mean_score": -0.3213712245834882,
+        "max_score": 0.08208523611221918,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 156,
+        "unique_fraction": 0.09701492537313433,
+        "feature_std": {
+          "z_cpu_percent": 0.9010131182457283,
+          "z_memory_percent": 1.117615484528326,
+          "z_network_rx_rate": 0.7835625556011686,
+          "z_network_tx_rate": 0.9515526122469296
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 1.9022327116258175e-16,
+          "holdout_flag_rate": 0.0472636815920398,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 4.440760640501605,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0001466639665174967,
+          "holdout_flag_rate": 0.05721393034825871,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.016722996394163,
+          "holdout_flag_rate": 0.02736318407960199,
+          "error": null
+        }
+      }
+    },
+    "death-star:url-shorten-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 5.715100701714215e-17,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.022388059701492536,
+        "mean_score": -0.348834773001921,
+        "max_score": 0.05302078291259227,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 159,
+        "unique_fraction": 0.09888059701492537,
+        "feature_std": {
+          "z_cpu_percent": 1.0889769047861708,
+          "z_memory_percent": 1.117615484528326,
+          "z_network_rx_rate": 0.9344741738751807,
+          "z_network_tx_rate": 0.7968526923639853
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 5.715100701714215e-17,
+          "holdout_flag_rate": 0.022388059701492536,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 2.169199576561408,
+          "holdout_flag_rate": 0.004975124378109453,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00017342677782932215,
+          "holdout_flag_rate": 0.0472636815920398,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 7.813225549418402,
+          "holdout_flag_rate": 0.02736318407960199,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-mongodb": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 6.012985248604608e-16,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.38093924247477995,
+        "max_score": -0.058679902338129364,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 41,
+        "unique_fraction": 0.025497512437810944,
+        "feature_std": {
+          "z_cpu_percent": 0.9265439922756159,
+          "z_memory_percent": 0.012324977469461975,
+          "z_network_rx_rate": 1.1176723493880496,
+          "z_network_tx_rate": 1.115284462038059
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 6.012985248604608e-16,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.1410828682886796,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00023549922192001027,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 6.3276003545254955,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.37340959035530613,
+        "max_score": -0.11321554784029408,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 37,
+        "unique_fraction": 0.023009950248756218,
+        "feature_std": {
+          "z_cpu_percent": 0.9089236451838262,
+          "z_memory_percent": 0.3684615843056834,
+          "z_network_rx_rate": 1.1173409405339156,
+          "z_network_tx_rate": 1.11767236482585
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0456437794574076,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.0003304838226583229,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.97779218312826,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-timeline-mongodb": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 4.0223900599212215e-17,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.007462686567164179,
+        "mean_score": -0.3603157767360035,
+        "max_score": 0.05861397481817643,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 150,
+        "unique_fraction": 0.09328358208955224,
+        "feature_std": {
+          "z_cpu_percent": 1.1112037598145217,
+          "z_memory_percent": 1.1178250690080447,
+          "z_network_rx_rate": 0.7937799980427097,
+          "z_network_tx_rate": 0.518794112961535
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 4.0223900599212215e-17,
+          "holdout_flag_rate": 0.007462686567164179,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 2.9605558718710108,
+          "holdout_flag_rate": 0.9502487562189055,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 4.830219002414703e-05,
+          "holdout_flag_rate": 0.029850746268656716,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.948327190853868,
+          "holdout_flag_rate": 0.029850746268656716,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-timeline-redis": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": -0.0,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0,
+        "mean_score": -0.3214950403370655,
+        "max_score": -0.0029314031952024644,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 33,
+        "unique_fraction": 0.020522388059701493,
+        "feature_std": {
+          "z_cpu_percent": 0.8843354652291738,
+          "z_memory_percent": 0.30053896092383825,
+          "z_network_rx_rate": 0.6522014286185516,
+          "z_network_tx_rate": 6.938893903907228e-18
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": -0.0,
+          "holdout_flag_rate": 0.0,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.0808338026158304,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00020316030467348867,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 3.864601398828128,
+          "holdout_flag_rate": 0.12437810945273632,
+          "error": null
+        }
+      }
+    },
+    "death-star:user-timeline-service": {
+      "samples": 1608,
+      "project": "death-star",
+      "threshold_p99": 1.7271340607694086e-16,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0024875621890547263,
+        "mean_score": -0.35148751326719135,
+        "max_score": 0.07365991228194668,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "data_quality": {
+        "rows": 1608,
+        "unique_rows": 153,
+        "unique_fraction": 0.09514925373134328,
+        "feature_std": {
+          "z_cpu_percent": 0.8940695377796308,
+          "z_memory_percent": 1.117755281531617,
+          "z_network_rx_rate": 1.0792580867661083,
+          "z_network_tx_rate": 0.9629661644205388
+        }
+      },
+      "algorithms": {
+        "iforest": {
+          "threshold_p99": 1.7271340607694086e-16,
+          "holdout_flag_rate": 0.0024875621890547263,
+          "error": null
+        },
+        "lof": {
+          "threshold_p99": 1.9054580031120993,
+          "holdout_flag_rate": 0.0024875621890547263,
+          "error": null
+        },
+        "ocsvm": {
+          "threshold_p99": 0.00019591900655309945,
+          "holdout_flag_rate": 0.0024875621890547263,
+          "error": null
+        },
+        "zscore": {
+          "threshold_p99": 5.580850192815045,
+          "holdout_flag_rate": 0.0024875621890547263,
+          "error": null
+        }
+      }
     }
   },
   "skipped": {
@@ -1185,13 +2519,19 @@
     "train-ticket:unknown-fdb4653e096a": {
       "samples": 0
     },
+    "sock-shop:catalogue": {
+      "samples": 0
+    },
+    "sock-shop:otel-collector": {
+      "samples": 46
+    },
+    "sock-shop:payment": {
+      "samples": 0
+    },
+    "open-telemetry:flagd-ui": {
+      "samples": 0
+    },
     "death-star:compose-post-service": {
-      "samples": 0
-    },
-    "death-star:home-timeline-redis": {
-      "samples": 0
-    },
-    "death-star:home-timeline-service": {
       "samples": 0
     },
     "death-star:jaeger-agent": {
@@ -1207,12 +2547,6 @@
       "samples": 0
     },
     "death-star:media-service": {
-      "samples": 0
-    },
-    "death-star:nginx-thrift": {
-      "samples": 0
-    },
-    "death-star:post-storage-memcached": {
       "samples": 0
     },
     "death-star:social-graph-redis": {
@@ -1232,22 +2566,11 @@
     },
     "death-star:user-mention-service": {
       "samples": 0
-    },
-    "death-star:user-timeline-redis": {
-      "samples": 0
-    },
-    "sock-shop:catalogue": {
-      "samples": 0
-    },
-    "sock-shop:otel-collector": {
-      "samples": 46
-    },
-    "sock-shop:payment": {
-      "samples": 0
     }
   },
   "last_trained_per_project": {
     "sock-shop": "2026-09-18T15:15:05.945026+00:00",
-    "death-star": "2026-09-18T15:03:23.984761+00:00"
+    "death-star": "2026-09-30T17:48:08.183677+00:00",
+    "open-telemetry": "2026-09-30T17:39:46.304570+00:00"
   }
 }
