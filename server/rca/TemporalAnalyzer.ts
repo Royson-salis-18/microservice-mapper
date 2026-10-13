@@ -38,4 +38,16 @@ export class TemporalAnalyzer {
     const earliest = timeline.find(p => p.isEarliest);
     return earliest ? earliest.nodeId : null;
   }
+
+  /**
+   * Every node whose anomaly began in the earliest window.
+   *
+   * Onsets are measured at poll-cycle resolution, so two problems that began
+   * in the same cycle cannot be ordered. Returning one of them — which is
+   * what findEarliestAnomalousNode does — would hand the precedence credit to
+   * whichever happened to sort first. A tie is reported as a tie.
+   */
+  public findEarliestAnomalousNodes(anomalies: AnomalyRecord[]): Set<string> {
+    return new Set(this.buildTimeline(anomalies).filter(p => p.isEarliest).map(p => p.nodeId));
+  }
 }

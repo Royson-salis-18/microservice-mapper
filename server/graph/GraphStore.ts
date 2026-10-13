@@ -1,7 +1,6 @@
+import { linkStatus } from './linkThresholds.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
-import type { BaseCollector } from '../collectors/BaseCollector.js';
-import type { DockerCollector } from '../collectors/DockerCollector.js';
 import type { Target, TelemetryEnvelope } from '../models/index.js';
 import { MetricStore } from '../telemetry/MetricStore.js';
 import { config } from '../config.js';
@@ -12,6 +11,29 @@ import fs from 'fs';
 import path from 'path';
 
 import type { WebSocketManager } from '../api/websocket.js';
+
+/**
+ * Longest an ML score is treated as describing the present. score.py writes
+ * every score_interval_sec (10 s by default), so a score older than this
+ * means the scorer has stopped and its last verdict is history, not state.
+ *
+ * Scores used to be applied whatever their age: after a restart with the
+ * scorer off, verdicts written the previous day, by models since retrained,
+ * put six services at "anomaly 100%", raised their cascade risk to 0.8–0.9
+ * and painted them red before anything had been measured.
+ */
+export const ANOMALY_SCORE_MAX_AGE_MS = 120_000;
+
+/** The score for one service if it is recent enough to stand for now, else null. */
+export function freshAnomalyScore(
+  entry: { anomaly_score?: unknown; persistent?: unknown; scored_at?: unknown } | undefined,
+  now: number,
+): { score: number; persistent: boolean } | null {
+  if (!entry || typeof entry.anomaly_score !== 'number' || !Number.isFinite(entry.anomaly_score)) return null;
+  const at = typeof entry.scored_at === 'string' ? Date.parse(entry.scored_at) : NaN;
+  if (!Number.isFinite(at) || now - at > ANOMALY_SCORE_MAX_AGE_MS || at - now > ANOMALY_SCORE_MAX_AGE_MS) return null;
+  return { score: entry.anomaly_score, persistent: entry.persistent === true };
+}
 
 export class GraphStore {
   // Target Isolation: Maps targetId -> map of ids to models
@@ -28,6 +50,22 @@ export class GraphStore {
   private wsManager?: WebSocketManager;
   /** Rolling connection-event counts per edge id, for the activity rate. */
   private edgeActivity = new Map<string, { count: number; windowStart: number }>();
+  /**
+   * Distinct connections per edge, from the connection key the collector
+   * puts on every socket it reads (caller ip:port > callee ip:port). Raw
+   * socket rows count one connection many times (once from each end, and
+   * every sweep for the ~60s a closed one lingers in TIME_WAIT); these count
+   * each connection once.
+   */
+  private edgeConns = new Map<string, {
+    /** connKey -> last time seen, ms. */
+    seen: Map<string, number>;
+    /** One entry per sweep that covered this edge's target. */
+    sweeps: { at: number; open: number; fresh: number }[];
+  }>();
+  /** Targets whose first sweep has been taken: until then every connection
+   *  already open would wrongly count as "new". */
+  private connPrimed = new Set<string>();
 
   constructor(wsManager?: WebSocketManager) {
     this.wsManager = wsManager;
@@ -62,12 +100,11 @@ export class GraphStore {
     setInterval(() => {
       this.checkTargetStaleness();
       this.pruneStaleNodes();
+      this.pruneStaleEdges();
       this.pingTargetEndpoints();
       this.updateTargetDiscoverySummaries();
       // Broadcast current graph state so UI stays in sync with status changes
-      if (this.wsManager) {
-        this.wsManager.broadcast('graph-update', this.getGraph());
-      }
+      this.requestBroadcast();
     }, 10000);
   }
 
@@ -256,6 +293,24 @@ export class GraphStore {
   // OFFLINE, even though it typically recovers on its own — so give it
   // extra room to reconnect and reconfirm before treating nodes as gone.
   private static readonly STALE_NODE_MS = 900_000;
+  /** Request metrics older than this with nothing newer are dropped. */
+  private static readonly REQUEST_METRICS_TTL_MS = 60_000;
+  /**
+   * An observed edge that the target has stopped reporting for this long,
+   * while it keeps reporting others, is treated as no longer in use.
+   */
+  private static readonly STALE_EDGE_MS = 600_000;
+  /** Per target: when it last reported any observed edge at all. */
+  private lastEdgeReportAt = new Map<string, number>();
+  /** Coalescing state for graph-update broadcasts — see requestBroadcast(). */
+  private broadcastTimer: NodeJS.Timeout | null = null;
+  private lastBroadcastAt = 0;
+  private static readonly BROADCAST_MIN_INTERVAL_MS = 3_000;
+  /** Slow reference level of each edge's traffic — see applyEdgeActivity. */
+  private edgeBaselines = new Map<string, { value: number; at: number }>();
+  private static readonly BASELINE_RISE_MS = 60_000;
+  private static readonly BASELINE_FALL_MS = 600_000;
+  private static readonly BASELINE_MIN_WINDOW_MS = 20_000;
 
   private pruneStaleNodes() {
     const now = Date.now();
@@ -280,11 +335,88 @@ export class GraphStore {
             // cleaned up, so every pruned edge leaked an entry that grew
             // for the lifetime of the process.
             this.edgeActivity.delete(edgeId);
+            this.edgeConns.delete(edgeId);
+            this.edgeBaselines.delete(edgeId);
           }
         }
       }
       console.log(`[GRAPH] target=${targetId} pruned ${removedIds.size} stale node(s): ${[...removedIds].join(', ')}`);
       this.scheduleSave();
+    }
+  }
+
+  /**
+   * Let go of observed edges that have stopped being observed.
+   *
+   * Nothing used to do this: once an edge was seen it stayed `observed`
+   * forever, unless one of its nodes was pruned. So a dependency a service
+   * stopped using was drawn as live indefinitely, and — the reason this
+   * matters now — the reverse-duplicate edges recorded before direction was
+   * recovered from listening ports (one real link stored as A->B *and* B->A)
+   * would have sat in the graph permanently, keeping every false cycle alive.
+   *
+   * Expiry is measured against the target's own most recent edge report, not
+   * wall-clock time. If the target has gone quiet — an SSH outage, which on
+   * these hosts is common and usually recovers — nothing expires, because
+   * silence there says nothing about any particular link. Only an edge the
+   * target *keeps not reporting while reporting others* is let go.
+   */
+  /**
+   * Ask for the current graph to be pushed to every browser, at most once per
+   * BROADCAST_MIN_INTERVAL_MS.
+   *
+   * Five places broadcast the full graph, one of them after every telemetry
+   * envelope from every target. Measured live: 66 full-graph pushes a minute
+   * (~130 KB each, 8.5 MB/min), and the client rebuilds on each — roughly one
+   * 120 ms main-thread stall every 1.7 seconds. Collection runs on a 5-second
+   * cycle, so nothing is gained by pushing faster than this; a burst of
+   * requests collapses into one broadcast carrying the newest state.
+   */
+  public requestBroadcast(): void {
+    if (!this.wsManager || this.broadcastTimer) return;
+    const wait = Math.max(0, this.lastBroadcastAt + GraphStore.BROADCAST_MIN_INTERVAL_MS - Date.now());
+    this.broadcastTimer = setTimeout(() => {
+      this.broadcastTimer = null;
+      this.lastBroadcastAt = Date.now();
+      this.wsManager?.broadcast('graph-update', this.getGraph());
+    }, wait);
+  }
+
+  private pruneStaleEdges() {
+    for (const [targetId, edgesMap] of this.edgesByTarget.entries()) {
+      const reportAt = this.lastEdgeReportAt.get(targetId);
+      if (reportAt === undefined) continue;
+
+      let changed = 0;
+      for (const [edgeId, edge] of edgesMap.entries()) {
+        if (!edge.observed) continue;
+        if (!edge.lastSeen) {
+          // Loaded from before lastSeen was tracked: give it a full window.
+          edge.lastSeen = new Date(reportAt).toISOString();
+          continue;
+        }
+        if (reportAt - new Date(edge.lastSeen).getTime() <= GraphStore.STALE_EDGE_MS) continue;
+
+        if (edge.declared) {
+          // Still claimed by config, just no longer seen carrying traffic.
+          edge.observed = false;
+          edge.evidenceSources = edge.evidenceSources.filter(
+            s => s !== 'network-tcp' && s !== 'http-log' && !s.startsWith('direction:'),
+          );
+          delete edge.activity;
+          edge.status = 'unknown';
+        } else {
+          edgesMap.delete(edgeId);
+        }
+        this.edgeActivity.delete(edgeId);
+        this.edgeConns.delete(edgeId);
+        this.edgeBaselines.delete(edgeId);
+        changed++;
+      }
+      if (changed > 0) {
+        console.log(`[GRAPH] target=${targetId} expired ${changed} edge(s) no longer observed`);
+        this.scheduleSave();
+      }
     }
   }
 
@@ -349,7 +481,10 @@ export class GraphStore {
       
       const nowIso = new Date().toISOString();
       if (existing) {
-        existing.status = status as any;
+        // Status is left to telemetry, which runs every 5s and sees restarts,
+        // container state and resource pressure. Discovery runs every 3
+        // minutes and only knows "it is running", so letting it write status
+        // reset a degraded or crash-looping node to healthy on every rescan.
         existing.type = nodeType as any;
         existing.lastSeen = nowIso;
         existing.metadata = {
@@ -410,9 +545,7 @@ export class GraphStore {
     console.log(`[GRAPH] target=${targetId} services=${nodesMap.size} edges=${edgesMap.size}`);
 
     this.scheduleSave();
-    if (this.wsManager) {
-      this.wsManager.broadcast('graph-update', this.getGraph());
-    }
+    this.requestBroadcast();
   }
 
 
@@ -450,16 +583,70 @@ export class GraphStore {
     }
 
     const scores = this.readAnomalyScores();
+    const now = Date.now();
     for (const node of allNodes) {
-      const s = scores[node.id];
-      if (s) {
-        node.analytics = { ...node.analytics, anomalyScore: s.anomaly_score, anomalyPersistent: s.persistent };
+      const fresh = freshAnomalyScore(scores[node.id], now);
+      if (fresh) {
+        node.analytics = { ...node.analytics, anomalyScore: fresh.score, anomalyPersistent: fresh.persistent };
+      } else if (node.analytics && ('anomalyScore' in node.analytics || 'anomalyPersistent' in node.analytics)) {
+        // No current opinion: drop the old one rather than let it stand.
+        const { anomalyScore: _score, anomalyPersistent: _persistent, ...rest } = node.analytics;
+        node.analytics = rest;
       }
     }
 
     this.applyEdgeActivity(allEdges);
 
     return { nodes: allNodes, edges: allEdges, targets: Array.from(this.targets.values()) };
+  }
+
+  /** How long a connection key is remembered after it was last seen. Longer
+   *  than TIME_WAIT (~60s), so a closing connection is not counted twice. */
+  private static readonly CONN_MEMORY_MS = 150_000;
+  /** Sweeps averaged into an edge's connection figures. */
+  private static readonly CONN_WINDOW_MS = 120_000;
+
+  /**
+   * One socket sweep of a target: every event in it carries the same
+   * timestamp. For each edge, counts distinct ESTABLISHED connections (open
+   * now) and distinct keys never seen before (opened since the last sweep).
+   * Edges of this target that had no sockets this sweep record a zero, so
+   * the average reflects the time a link sat idle.
+   */
+  private recordConnectionSweep(targetId: string, events: any[], normalizeId: (id: string) => string): void {
+    const keyed = events.filter((e) => typeof e.connKey === 'string');
+    if (keyed.length === 0) return;
+    const now = Date.now();
+    const primed = this.connPrimed.has(targetId);
+    const perEdge = new Map<string, { open: Set<string>; all: Set<string> }>();
+    for (const ev of keyed) {
+      const src = normalizeId(ev.sourceServiceId);
+      const dst = normalizeId(ev.destServiceId);
+      if (!src || !dst || src === dst) continue;
+      const id = `${src}->${dst}`;
+      const entry = perEdge.get(id) ?? { open: new Set<string>(), all: new Set<string>() };
+      entry.all.add(ev.connKey);
+      if (ev.state === 'ESTABLISHED') entry.open.add(ev.connKey);
+      perEdge.set(id, entry);
+    }
+    const prefix = `${targetId}:`;
+    const ids = new Set<string>([...perEdge.keys(), ...[...this.edgeConns.keys()].filter((id) => id.startsWith(prefix))]);
+    for (const id of ids) {
+      const track = this.edgeConns.get(id) ?? { seen: new Map<string, number>(), sweeps: [] };
+      const sweep = perEdge.get(id);
+      let fresh = 0;
+      if (sweep) {
+        for (const key of sweep.all) {
+          if (!track.seen.has(key) && primed) fresh++;
+          track.seen.set(key, now);
+        }
+      }
+      track.sweeps.push({ at: now, open: sweep?.open.size ?? 0, fresh });
+      for (const [key, at] of track.seen) if (now - at > GraphStore.CONN_MEMORY_MS) track.seen.delete(key);
+      while (track.sweeps.length > 0 && now - track.sweeps[0].at > GraphStore.CONN_WINDOW_MS) track.sweeps.shift();
+      this.edgeConns.set(id, track);
+    }
+    this.connPrimed.add(targetId);
   }
 
   /**
@@ -480,10 +667,49 @@ export class GraphStore {
 
       const elapsedMs = Math.max(1000, now - bucket.windowStart);
       const perMin = (bucket.count / elapsedMs) * 60_000;
+
+      // Asymmetric exponential average, time-based so it is correct however
+      // often getGraph() happens to be called: quick to rise, slow to fall.
+      //
+      // Only fed once the rate window is long enough to mean something. A
+      // window of a second or two turns three events into "180/min"; the fast
+      // rise would absorb that artefact and the slow decay would then hold it
+      // for ten minutes — observed as a 171/min baseline on a 90/min link.
+      const prev = this.edgeBaselines.get(edge.id);
+      let baseline: number | undefined = prev?.value;
+      if (elapsedMs >= GraphStore.BASELINE_MIN_WINDOW_MS) {
+        if (prev) {
+          const dt = Math.max(0, now - prev.at);
+          const tau = perMin >= prev.value ? GraphStore.BASELINE_RISE_MS : GraphStore.BASELINE_FALL_MS;
+          baseline = prev.value + (perMin - prev.value) * (1 - Math.exp(-dt / tau));
+        } else {
+          baseline = perMin;
+        }
+        this.edgeBaselines.set(edge.id, { value: baseline, at: now });
+      }
+
+      // Distinct-connection figures, once at least two sweeps exist: open
+      // connections averaged over the window, and connections opened per
+      // minute (each counted once, however many sweeps saw it linger).
+      const conns = this.edgeConns.get(edge.id);
+      let connFields = {};
+      if (conns && conns.sweeps.length >= 2) {
+        const span = Math.max(30_000, conns.sweeps[conns.sweeps.length - 1].at - conns.sweeps[0].at);
+        const avgOpen = conns.sweeps.reduce((sum, w) => sum + w.open, 0) / conns.sweeps.length;
+        const opened = conns.sweeps.slice(1).reduce((sum, w) => sum + w.fresh, 0);
+        connFields = {
+          openConnections: Math.round(avgOpen * 10) / 10,
+          newConnectionsPerMin: Math.round((opened / span) * 60_000 * 10) / 10,
+          connectionSweeps: conns.sweeps.length,
+        };
+      }
+
       edge.activity = {
         samplesPerMin: Math.round(perMin * 10) / 10,
         windowSec: Math.round(elapsedMs / 1000),
         lastSeen: new Date().toISOString(),
+        ...(baseline !== undefined ? { baselinePerMin: Math.round(baseline * 10) / 10 } : {}),
+        ...connFields,
       };
 
       if (elapsedMs > WINDOW_RESET_MS) {
@@ -552,6 +778,18 @@ export class GraphStore {
           if (node.metadata) existing.metadata = { ...existing.metadata, ...node.metadata };
           if (req) {
             existing.metrics = { ...(existing.metrics ?? {}), ...req } as any;
+          } else if (existing.metrics?.provenance) {
+            // No request metrics this cycle. Keep the last ones briefly — an
+            // optional source can miss a cycle — but not indefinitely, or a
+            // source that went away leaves a latency figure on screen that
+            // nothing is measuring any more.
+            const age = Date.now() - new Date(existing.metrics.provenance.observedAt).getTime();
+            if (!(age < GraphStore.REQUEST_METRICS_TTL_MS)) {
+              const { latency, requestRate, errorRate, provenance, ...rest } = existing.metrics as any;
+              void latency; void requestRate; void errorRate; void provenance;
+              for (const k of ['latencyP50', 'latencyP95', 'latencyP99']) delete rest[k];
+              existing.metrics = rest;
+            }
           }
         } else {
           node.lastSeen = nowIso;
@@ -562,6 +800,7 @@ export class GraphStore {
     }
     
     if (events.edges) {
+      if (events.edges.some((e: DependencyEdge) => e.observed)) this.lastEdgeReportAt.set(targetId, Date.now());
       for (const edge of events.edges) {
         edge.source = normalizeId(edge.source);
         edge.target = normalizeId(edge.target);
@@ -599,21 +838,35 @@ export class GraphStore {
         this.metricStore.push(normNodeId, m.snapshot);
         const node = nodesMap.get(normNodeId);
         if (node) {
+          // Merge the Tier 0 resource fields over whatever is already there.
+          // This used to assign a fresh object with latency/requestRate/
+          // errorRate hardcoded to null — and since nodes are processed above
+          // this loop, it wiped the Tier 1/2 request metrics (and their
+          // provenance) that had been merged in from the same envelope a
+          // moment earlier. Request-level data never survived a cycle.
+          // Missing readings stay missing (undefined) rather than becoming 0,
+          // so the UI shows "—" instead of a confident "0%".
+          const r1 = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10) / 10 : undefined);
+          const raw = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+          const snap = m.snapshot as any;
           node.metrics = {
-            cpu: m.snapshot.cpu !== undefined ? Math.round(m.snapshot.cpu * 10) / 10 : 0,
-            memory: m.snapshot.memory || 0,
-            memoryPercent: m.snapshot.memoryPercent !== undefined ? Math.round(m.snapshot.memoryPercent * 10) / 10 : 0,
-            networkRx: m.snapshot.networkRx || 0,
-            networkTx: m.snapshot.networkTx || 0,
-            latency: null,
-            requestRate: null,
-            errorRate: null,
+            ...(node.metrics ?? {}),
+            cpu: r1(snap.cpu),
+            memory: raw(snap.memory),
+            memoryPercent: r1(snap.memoryPercent),
+            networkRx: raw(snap.networkRx),
+            networkTx: raw(snap.networkTx),
+            networkRxRate: raw(snap.networkRxRate),
+            networkTxRate: raw(snap.networkTxRate),
+            cpuAllowanceCores: raw(snap.cpuAllowanceCores),
+            cpuOfAllowance: r1(snap.cpuOfAllowance),
           };
         }
       }
     }
     
     if (events.interactions) {
+      if (events.interactions.length > 0) this.lastEdgeReportAt.set(targetId, Date.now());
       for (const e of events.interactions) {
         e.source = normalizeId(e.source);
         e.target = normalizeId(e.target);
@@ -702,6 +955,7 @@ export class GraphStore {
         bucket.count += 1;
         this.edgeActivity.set(key, bucket);
       }
+      this.recordConnectionSweep(targetId, events.connectionEvents, normalizeId);
     }
     
     // Edge status/color comes only from evidence measured on that edge
@@ -716,13 +970,10 @@ export class GraphStore {
           edge.evidenceSources.push('http-log');
         }
         edge.metrics = edgeMetrics;
-        if (edgeMetrics.errorRate > 0.05) {
-          edge.status = 'failed';
-        } else if (edgeMetrics.latency !== null && edgeMetrics.latency > 500) {
-          edge.status = 'degraded';
-        } else {
-          edge.status = 'active';
-        }
+        // Same thresholds as the edge colours (see linkThresholds.ts). This
+        // used >5% / >500ms while the colours used 1%/300ms and 5%/1s, so a
+        // link could be drawn orange while its own status said "active".
+        edge.status = linkStatus(edgeMetrics.errorRate, (edgeMetrics as any).p95Latency ?? edgeMetrics.latency);
       } else if (edge.status === 'degraded' || edge.status === 'failed') {
         // no current edge-level evidence to justify this — don't leave a
         // stale bad status sitting there forever
@@ -732,9 +983,7 @@ export class GraphStore {
 
     this.updateTargetDiscoverySummaries();
     this.scheduleSave();
-    if (this.wsManager) {
-      this.wsManager.broadcast('graph-update', this.getGraph());
-    }
+    this.requestBroadcast();
   }
 
   /** Get or create a TraceStore for a target. Used by TraceRouter and ingestRemote. */

@@ -57,17 +57,19 @@
 The client renders graph state it receives over WebSocket. It does no polling — all data arrives pushed from the server. The main views are:
 
 - **Default / 2D Graph** — ReactFlow canvas with custom node + edge components
-- **3D Vision** — Three.js scene with orbit controls, one sphere per service
+- **3D Vision** — react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses
 - **Telemetry** — Sortable metrics table
 - **TRACES** — Live TCP connection stream + aggregated call graph
 - **RCA / INCIDENTS** — Root cause analysis results and incident timeline
 - **ML PIPELINE** — Anomaly detection status, model info
 - **EXPERIMENTS** — Traffic experiment history
 - **Analytics** — Graph-level stats (centrality, health scores)
+- **Reliability** — health, risk, cascade prediction, what-if and blast radius
+- **Findings** — ML ensemble anomalies, kept apart from incidents
 
 ### Layer 2 — Backend Server (`/server`)
 
-**Tech:** Node.js 18+, Express 5, TypeScript 5.7, `ws` v8, `ssh2` v1, `dockerode` v4
+**Tech:** Node.js 18+, Express 5, TypeScript 5.7 (run with tsx), `ws` v8, `ssh2` v1. See [Frameworks and why](30-tech-stack.md)
 
 **Entry point:** `server/index.ts`
 
@@ -82,11 +84,11 @@ The server is the brain. It owns all state and is the only component that writes
 
 **Tech:** Node.js, `dockerode`, `axios`
 
-A standalone process deployed on each EC2 instance. Reads the Docker socket and `/proc/net/tcp`, packages the data into `TelemetryEnvelope` payloads, and POSTs them to the backend. No persistent state. Stateless and restartable at any time.
+**Optional; not the default path.** By default the server collects over SSH itself (`EndpointDiscoveryEngine` → `MetricCollector`) and installs nothing on the target. This standalone process is for hosts where you choose to run an agent: it reads the Docker socket and `/proc/net/tcp`, packages `TelemetryEnvelope` payloads, and POSTs them to `/api/ingest`, the same entry point the ground-truth simulator uses. It is stateless and restartable at any time.
 
 ### Layer 4 — ML Pipeline (`/ml`)
 
-**Tech:** Python 3, scikit-learn (IsolationForest), pandas
+**Tech:** Python 3, scikit-learn (Isolation Forest, LOF, one-class SVM) + a z-score detector, combined by majority vote; pandas
 
 A completely separate process. Reads from `/api/graph`, writes `ml/data/latest_scores.json`. The server reads this file; it never calls Python. Optional — the system works without it.
 

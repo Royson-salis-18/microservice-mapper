@@ -7,127 +7,131 @@
     "z_network_rx_rate",
     "z_network_tx_rate"
   ],
-  "trained_on_samples": 1568,
-  "trained_at": "2026-09-18T15:03:23.375692+00:00",
+  "trained_on_samples": 1608,
+  "trained_at": "2026-09-30T17:48:07.522717+00:00",
   "contamination": 0.01,
   "n_estimators": 200,
   "max_samples": "auto",
-  "threshold_p99": -5.199833619240479e-16,
-  "train_score_mean": -0.3397668623168395,
-  "train_score_max": 0.060654020948905374,
+  "threshold_p99": 4.0223900599212215e-17,
+  "train_score_mean": -0.3446807552967264,
+  "train_score_max": 0.06237173586979794,
   "holdout": {
-    "samples": 392,
-    "flag_rate": 0.0,
-    "mean_score": -0.3734603702255882,
-    "max_score": -0.37346037022558815,
-    "from": "2026-09-17T00:48:13.108749+00:00",
-    "to": "2026-09-17T01:53:54.859981+00:00"
+    "samples": 402,
+    "flag_rate": 0.007462686567164179,
+    "mean_score": -0.3603157767360035,
+    "max_score": 0.05861397481817643,
+    "from": "2026-09-17T00:54:53.284426+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
   },
   "algorithms": {
     "iforest": {
-      "threshold_p99": -5.199833619240479e-16,
-      "train_score_mean": -0.3397668623168395,
-      "train_score_max": 0.060654020948905374,
+      "threshold_p99": 4.0223900599212215e-17,
+      "train_score_mean": -0.3446807552967264,
+      "train_score_median": -0.3779130175302954,
+      "train_score_max": 0.06237173586979794,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.3734603702255882,
-        "max_score": -0.37346037022558815,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 402,
+        "flag_rate": 0.007462686567164179,
+        "mean_score": -0.3603157767360035,
+        "max_score": 0.05861397481817643,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
       },
       "artifact": "death-star_user-timeline-mongodb.joblib"
     },
     "lof": {
-      "threshold_p99": 2.0010613397711685,
-      "train_score_mean": 1.2269842200993013,
-      "train_score_max": 9.459369064717745,
+      "threshold_p99": 2.9605558718710108,
+      "train_score_mean": 2.82006226045834,
+      "train_score_median": 2.9605558718710108,
+      "train_score_max": 17.91390442393232,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": 1.2180950996296132,
-        "max_score": 1.2180950996296134,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 402,
+        "flag_rate": 0.9502487562189055,
+        "mean_score": 2.9944198749493767,
+        "max_score": 12.449598605081704,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
       },
       "artifact": "death-star_user-timeline-mongodb.lof.joblib"
     },
     "ocsvm": {
-      "threshold_p99": 0.00023781711440759245,
-      "train_score_mean": -0.011962433470548518,
-      "train_score_max": 0.00048147450991731233,
+      "threshold_p99": 4.830219002414703e-05,
+      "train_score_mean": -0.013568181952806952,
+      "train_score_median": -0.011831961419574877,
+      "train_score_max": 0.00048298182144213,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": -0.011641426217614437,
-        "max_score": -0.011641426217614437,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 402,
+        "flag_rate": 0.029850746268656716,
+        "mean_score": 0.017699532507354822,
+        "max_score": 0.9751822822705649,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
       },
       "artifact": "death-star_user-timeline-mongodb.ocsvm.joblib"
     },
     "zscore": {
-      "threshold_p99": 5.985863490182609,
-      "train_score_mean": 0.7042986711539848,
-      "train_score_max": 25.54081700598732,
+      "threshold_p99": 5.948327190853868,
+      "train_score_mean": 0.602289813114842,
+      "train_score_median": 0.2224523625587271,
+      "train_score_max": 25.865034312755142,
       "holdout": {
-        "samples": 392,
-        "flag_rate": 0.0,
-        "mean_score": 0.24024966251600569,
-        "max_score": 0.2402496625160057,
-        "from": "2026-09-17T00:48:13.108749+00:00",
-        "to": "2026-09-17T01:53:54.859981+00:00"
+        "samples": 402,
+        "flag_rate": 0.029850746268656716,
+        "mean_score": 0.5924339374721739,
+        "max_score": 28.02527402808789,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
       },
       "artifact": "death-star_user-timeline-mongodb.zscore.joblib"
     }
   },
   "agreement": {
     "iforest|lof": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "same_verdict_rate": 0.0472636815920398,
+      "jaccard": 0.0026041666666666665,
+      "both_flagged": 1,
+      "either_flagged": 384
     },
     "iforest|ocsvm": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "same_verdict_rate": 0.9776119402985075,
+      "jaccard": 0.25,
+      "both_flagged": 3,
+      "either_flagged": 12
     },
     "iforest|zscore": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "same_verdict_rate": 0.9776119402985075,
+      "jaccard": 0.25,
+      "both_flagged": 3,
+      "either_flagged": 12
     },
     "lof|ocsvm": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "same_verdict_rate": 0.029850746268656716,
+      "jaccard": 0.00510204081632653,
+      "both_flagged": 2,
+      "either_flagged": 392
     },
     "lof|zscore": {
-      "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "same_verdict_rate": 0.029850746268656716,
+      "jaccard": 0.00510204081632653,
+      "both_flagged": 2,
+      "either_flagged": 392
     },
     "ocsvm|zscore": {
       "same_verdict_rate": 1.0,
-      "jaccard": null,
-      "both_flagged": 0,
-      "either_flagged": 0
+      "jaccard": 1.0,
+      "both_flagged": 12,
+      "either_flagged": 12
     }
   },
   "data_quality": {
-    "rows": 1568,
+    "rows": 1608,
     "unique_rows": 150,
-    "unique_fraction": 0.09566326530612244,
+    "unique_fraction": 0.09328358208955224,
     "feature_std": {
-      "z_cpu_percent": 1.1112069362169072,
-      "z_memory_percent": 1.1178197307412046,
-      "z_network_rx_rate": 1.1099380753645878,
-      "z_network_tx_rate": 1.111571918156207
+      "z_cpu_percent": 1.1112037598145217,
+      "z_memory_percent": 1.1178250690080447,
+      "z_network_rx_rate": 0.7937799980427097,
+      "z_network_tx_rate": 0.518794112961535
     }
   },
   "training_window": {

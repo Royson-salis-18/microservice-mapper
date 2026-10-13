@@ -1,0 +1,111 @@
+{
+  "service_id": "open-telemetry:astronomy-db",
+  "project": "open-telemetry",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 40,
+  "trained_at": "2026-09-30T17:39:40.332332+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -6.938893903907228e-17,
+  "train_score_mean": -0.2993133736872144,
+  "train_score_max": 0.0471853069974536,
+  "holdout": {
+    "samples": 9,
+    "flag_rate": 0.0,
+    "mean_score": -0.2844250888520834,
+    "max_score": -0.12557806306730412,
+    "from": "2026-09-18T15:13:58.590617+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -6.938893903907228e-17,
+      "train_score_mean": -0.2993133736872144,
+      "train_score_median": -0.3053028440190691,
+      "train_score_max": 0.0471853069974536,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2844250888520834,
+        "max_score": -0.12557806306730412,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_astronomy-db.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 19 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0003694602190764224,
+      "train_score_mean": -0.003246600335215255,
+      "train_score_median": -0.00018457118841129494,
+      "train_score_max": 0.0005076876259341445,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 1.0,
+        "mean_score": 0.05660684079361262,
+        "max_score": 0.08225436208193515,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_astronomy-db.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 6.270123285821017,
+      "train_score_mean": 1.074429593437063,
+      "train_score_median": 0.6756560074070904,
+      "train_score_max": 6.879927040192816,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": 2.042845936841105,
+        "max_score": 2.7553917313953,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_astronomy-db.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.0,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 9
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.0,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 9
+    }
+  },
+  "data_quality": {
+    "rows": 40,
+    "unique_rows": 19,
+    "unique_fraction": 0.475,
+    "feature_std": {
+      "z_cpu_percent": 0.7645208914494369,
+      "z_memory_percent": 0.6325671953725389,
+      "z_network_rx_rate": 1.0751579347508071,
+      "z_network_tx_rate": 1.1028454849562768
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

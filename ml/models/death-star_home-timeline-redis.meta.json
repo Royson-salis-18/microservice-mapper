@@ -1,0 +1,141 @@
+{
+  "service_id": "death-star:home-timeline-redis",
+  "project": "death-star",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 1608,
+  "trained_at": "2026-09-30T17:48:03.931317+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -0.0,
+  "train_score_mean": -0.33413746390236576,
+  "train_score_max": 0.059600165758637136,
+  "holdout": {
+    "samples": 402,
+    "flag_rate": 0.0472636815920398,
+    "mean_score": -0.318928254443581,
+    "max_score": 0.04020654170811322,
+    "from": "2026-09-17T00:54:53.284426+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -0.0,
+      "train_score_mean": -0.33413746390236576,
+      "train_score_median": -0.3644310635544663,
+      "train_score_max": 0.059600165758637136,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.0472636815920398,
+        "mean_score": -0.318928254443581,
+        "max_score": 0.04020654170811322,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-redis.joblib"
+    },
+    "lof": {
+      "threshold_p99": 1.1665031781466741,
+      "train_score_mean": 1.1313059242961894,
+      "train_score_median": 1.142469323207732,
+      "train_score_max": 1.4811454366116694,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 1.3593557829593437,
+        "max_score": 16.267810248414882,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-redis.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0002644355549570321,
+      "train_score_mean": -0.030271263670458813,
+      "train_score_median": -0.03407939976206986,
+      "train_score_max": 0.9564721198686332,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 0.25336815487139497,
+        "max_score": 2.2769989395475028,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-redis.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 5.977209000748669,
+      "train_score_mean": 0.5004104468807798,
+      "train_score_median": 0.2346380815232444,
+      "train_score_max": 9.44150833509262,
+      "holdout": {
+        "samples": 402,
+        "flag_rate": 0.12437810945273632,
+        "mean_score": 1.167711874571311,
+        "max_score": 44.79026737763208,
+        "from": "2026-09-17T00:54:53.284426+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "death-star_home-timeline-redis.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 0.9228855721393034,
+      "jaccard": 0.38,
+      "both_flagged": 19,
+      "either_flagged": 50
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.9228855721393034,
+      "jaccard": 0.38,
+      "both_flagged": 19,
+      "either_flagged": 50
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 0.9228855721393034,
+      "jaccard": 0.38,
+      "both_flagged": 19,
+      "either_flagged": 50
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": 1.0,
+      "both_flagged": 50,
+      "either_flagged": 50
+    }
+  },
+  "data_quality": {
+    "rows": 1608,
+    "unique_rows": 39,
+    "unique_fraction": 0.024253731343283583,
+    "feature_std": {
+      "z_cpu_percent": 1.1098633729677012,
+      "z_memory_percent": 0.1620233386401357,
+      "z_network_rx_rate": 0.039136470669227444,
+      "z_network_tx_rate": 0.0
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

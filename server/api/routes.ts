@@ -1,8 +1,8 @@
+import { checkConsistency } from '../graph/consistency.js';
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { spawn, execFileSync } from 'child_process';
-import { pythonCmd, IS_WINDOWS } from '../util/platform.js';
 import { GraphStore } from '../graph/GraphStore.js';
 import { GraphAnalytics } from '../graph/GraphAnalytics.js';
 import type { TelemetryEnvelope } from '../models/index.js';
@@ -12,8 +12,10 @@ import type { WebSocketManager } from './websocket.js';
 import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
+import type { RiskEngine } from '../graph/RiskEngine.js';
 import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
+import { config } from '../config.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -42,7 +44,7 @@ function coerceLoad(raw: { users?: unknown; maxConcurrency?: unknown; durationSe
   return out;
 }
 
-export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManager, incidentManager?: IncidentManager, trafficController?: TrafficController, experimentManager?: ExperimentManager) {
+export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManager, incidentManager?: IncidentManager, trafficController?: TrafficController, experimentManager?: ExperimentManager, riskEngine?: RiskEngine) {
   const router = Router();
   const analytics = new GraphAnalytics(graphStore);
 
@@ -131,6 +133,35 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(analytics.getAnalytics());
   });
 
+  // Read-only: a BFS over already-observed traffic, nothing touches the
+  // target. Ranked risk scores need no endpoint of their own — every node
+  // already carries analytics.riskScore via /api/graph.
+  router.get('/reliability/blast-radius/:nodeId', (req, res) => {
+    if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
+    const result = riskEngine.simulateBlastRadius(req.params.nodeId);
+    if (!result) return res.status(404).json({ error: 'Node not found' });
+    res.json(result);
+  });
+
+  // Cascade prediction from current state, recomputed every poll cycle.
+  // Without ?targetId= it returns every project.
+  router.get('/reliability/cascade', (req, res) => {
+    if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
+    const targetId = typeof req.query.targetId === 'string' ? req.query.targetId : undefined;
+    if (!targetId) return res.json(riskEngine.getAllPredictions());
+    const prediction = riskEngine.getPrediction(targetId);
+    if (!prediction) return res.status(404).json({ error: 'No prediction for this target yet' });
+    res.json(prediction);
+  });
+
+  // "What if this failed?" — read-only simulation over the cascade model.
+  router.get('/reliability/whatif/:nodeId', (req, res) => {
+    if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
+    const result = riskEngine.simulateCascade(req.params.nodeId);
+    if (!result) return res.status(404).json({ error: 'Node not found' });
+    res.json(result);
+  });
+
 
   router.get('/diagnostics', (_req, res) => {
     const targets = Array.from(graphStore.targets.values());
@@ -144,6 +175,19 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       };
     });
     res.json(diagnostics);
+  });
+
+  /**
+   * Does everything the mapper is publishing agree with itself? Runs the
+   * invariants in graph/consistency.ts over the live graph and incidents:
+   * shares that sum to 100%, weights that equal their stated formula,
+   * incidents that refer to real services by id, rates that are rates. An
+   * empty `violations` list is the claim; anything in it is a bug, named.
+   */
+  router.get('/diagnostics/consistency', (_req, res) => {
+    const { nodes, edges } = graphStore.getGraph();
+    const incidents = incidentManager ? incidentManager.getAllActiveIncidents() : [];
+    res.json(checkConsistency(nodes, edges, incidents));
   });
 
   router.get('/targets', (_req, res) => {
@@ -341,7 +385,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
 
   router.post('/ingest', (req, res) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.INGEST_TOKEN || 'mapper-secret-token'}`) {
+    if (!authHeader || authHeader !== `Bearer ${config.INGEST_TOKEN}`) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
@@ -361,9 +405,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       }
       
       graphStore.ingestRemote(payload, clientIp);
-      if (wsManager) {
-        wsManager.broadcast('graph-update', graphStore.getGraph());
-      }
+      graphStore.requestBroadcast();
       console.log(`[TELEMETRY] targetId=${payload.targetId} nodes=${payload.events?.nodes?.length || 0} metrics=${payload.events?.metrics?.length || 0} edges=${payload.events?.edges?.length || 0} interactions=${payload.events?.interactions?.length || 0} clientIp=${clientIp}`);
       res.json({ success: true, message: 'Telemetry ingested' });
     } catch (e) {
@@ -519,10 +561,13 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       ...coerceLoad({ users, maxConcurrency, durationSec, endpointPaths }),
     };
     if (targetId === 'all') {
-      const stats = await Promise.all([
-        trafficController.startTarget('sock-shop', opts),
-        trafficController.startTarget('vertikal', opts),
-      ]);
+      // Every registered target that is currently reachable. This was a
+      // hard-coded pair (sock-shop, vertikal), so "all" silently skipped
+      // every target added since, and still tried ones that were offline.
+      const live = Array.from(graphStore.targets.values())
+        .filter((t) => t.status !== 'OFFLINE')
+        .map((t) => t.targetId);
+      const stats = await Promise.all(live.map((id) => trafficController.startTarget(id, opts)));
       return res.json(stats);
     } else {
       const stats = await trafficController.startTarget(targetId, opts);
@@ -685,13 +730,16 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   const managedMlProcs = new Map<MlProcName, { child: ReturnType<typeof spawn>; startedAt: string }>();
 
   const findExternalPid = (script: string): number | null => {
+    // pgrep does not exist on Windows, and the alternatives (PowerShell,
+    // wmic) take most of a second to start, which would block every status
+    // poll. There, only processes this server started are reported.
+    if (process.platform === 'win32') return null;
     try {
       // Anchored: an unanchored match also hits shell wrappers whose command
       // line merely contains "python3 <script>", and killing the wrapper
       // would leave the actual interpreter running.
-      // pgrep does not exist on Windows; there we only know about processes we started.
-      if (IS_WINDOWS) return null;
-      const pattern = `^python[0-9.]* ${script.replace('.', '\\.')}$`;
+      const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = `^${escape(config.PYTHON)} ${escape(script)}$`;
       const out = execFileSync('pgrep', ['-f', pattern], { encoding: 'utf8' }).trim();
       const pid = out.split('\n').map((l) => parseInt(l, 10)).find((n) => Number.isFinite(n));
       return pid ?? null;
@@ -736,7 +784,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     fs.mkdirSync(mlLogsDir, { recursive: true });
     const logPath = path.join(mlLogsDir, `${name}.log`);
     const logFd = fs.openSync(logPath, 'a');
-    const child = spawn(pythonCmd(), [ML_PROC_SCRIPTS[name]], {
+    const child = spawn(config.PYTHON, [ML_PROC_SCRIPTS[name]], {
       cwd: mlDir,
       stdio: ['ignore', logFd, logFd],
     });
@@ -747,7 +795,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       releaseFd();
       managedMlProcs.delete(name);
     });
-    // spawn emits 'error' when the binary is missing (no python3 on PATH).
+    // spawn emits 'error' when the binary is missing (no Python on PATH).
     // Unhandled, that event throws; worse, the process stayed registered as
     // running when it never started, and the log fd was never released.
     child.on('error', (err) => {
@@ -857,7 +905,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       child.stderr?.on('data', appendLog);
       child.on('close', (code) => resolve(code ?? 1));
       child.on('error', (err) => {
-        // spawn itself can fail (python3 missing from PATH). Without this the
+        // spawn itself can fail (Python missing from PATH). Without this the
         // promise never settles and the retrain is stuck "running" forever.
         appendLog(`Failed to start ${cmd}: ${err.message}`);
         resolve(1);
@@ -877,7 +925,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       // not project-scoped and is the slow step, so a caller tuning
       // hyperparameters against unchanged data can skip it.
       if (!skipPreprocess) {
-        const preCode = await runStep(pythonCmd(), ['preprocess.py']);
+        const preCode = await runStep(config.PYTHON, ['preprocess.py']);
         if (preCode !== 0) {
           retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: preCode };
           return;
@@ -902,8 +950,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       numericArg('--min-samples', minSamples, trainArgs);
       numericArg('--holdout-fraction', holdoutFraction, trainArgs);
 
-      appendLog(`[retrain] ${pythonCmd()} ${trainArgs.join(' ')}`);
-      const trainCode = await runStep(pythonCmd(), trainArgs);
+      appendLog(`[retrain] ${config.PYTHON} ${trainArgs.join(' ')}`);
+      const trainCode = await runStep(config.PYTHON, trainArgs);
       retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: trainCode };
     })();
 
