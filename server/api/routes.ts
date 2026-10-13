@@ -15,6 +15,7 @@ import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import type { RiskEngine } from '../graph/RiskEngine.js';
 import { loadThresholds, saveThresholds, thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
+import { config } from '../config.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -384,7 +385,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
 
   router.post('/ingest', (req, res) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.INGEST_TOKEN || 'mapper-secret-token'}`) {
+    if (!authHeader || authHeader !== `Bearer ${config.INGEST_TOKEN}`) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
@@ -729,11 +730,16 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   const managedMlProcs = new Map<MlProcName, { child: ReturnType<typeof spawn>; startedAt: string }>();
 
   const findExternalPid = (script: string): number | null => {
+    // pgrep does not exist on Windows, and the alternatives (PowerShell,
+    // wmic) take most of a second to start, which would block every status
+    // poll. There, only processes this server started are reported.
+    if (process.platform === 'win32') return null;
     try {
       // Anchored: an unanchored match also hits shell wrappers whose command
       // line merely contains "python3 <script>", and killing the wrapper
       // would leave the actual interpreter running.
-      const pattern = `^python3 ${script.replace('.', '\\.')}$`;
+      const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = `^${escape(config.PYTHON)} ${escape(script)}$`;
       const out = execFileSync('pgrep', ['-f', pattern], { encoding: 'utf8' }).trim();
       const pid = out.split('\n').map((l) => parseInt(l, 10)).find((n) => Number.isFinite(n));
       return pid ?? null;
@@ -778,7 +784,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     fs.mkdirSync(mlLogsDir, { recursive: true });
     const logPath = path.join(mlLogsDir, `${name}.log`);
     const logFd = fs.openSync(logPath, 'a');
-    const child = spawn('python3', [ML_PROC_SCRIPTS[name]], {
+    const child = spawn(config.PYTHON, [ML_PROC_SCRIPTS[name]], {
       cwd: mlDir,
       stdio: ['ignore', logFd, logFd],
     });
@@ -789,7 +795,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       releaseFd();
       managedMlProcs.delete(name);
     });
-    // spawn emits 'error' when the binary is missing (no python3 on PATH).
+    // spawn emits 'error' when the binary is missing (no Python on PATH).
     // Unhandled, that event throws; worse, the process stayed registered as
     // running when it never started, and the log fd was never released.
     child.on('error', (err) => {
@@ -899,7 +905,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       child.stderr?.on('data', appendLog);
       child.on('close', (code) => resolve(code ?? 1));
       child.on('error', (err) => {
-        // spawn itself can fail (python3 missing from PATH). Without this the
+        // spawn itself can fail (Python missing from PATH). Without this the
         // promise never settles and the retrain is stuck "running" forever.
         appendLog(`Failed to start ${cmd}: ${err.message}`);
         resolve(1);
@@ -919,7 +925,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       // not project-scoped and is the slow step, so a caller tuning
       // hyperparameters against unchanged data can skip it.
       if (!skipPreprocess) {
-        const preCode = await runStep('python3', ['preprocess.py']);
+        const preCode = await runStep(config.PYTHON, ['preprocess.py']);
         if (preCode !== 0) {
           retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: preCode };
           return;
@@ -944,8 +950,8 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
       numericArg('--min-samples', minSamples, trainArgs);
       numericArg('--holdout-fraction', holdoutFraction, trainArgs);
 
-      appendLog(`[retrain] python3 ${trainArgs.join(' ')}`);
-      const trainCode = await runStep('python3', trainArgs);
+      appendLog(`[retrain] ${config.PYTHON} ${trainArgs.join(' ')}`);
+      const trainCode = await runStep(config.PYTHON, trainArgs);
       retrainState = { ...retrainState, running: false, finishedAt: new Date().toISOString(), exitCode: trainCode };
     })();
 
