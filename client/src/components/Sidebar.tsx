@@ -10,6 +10,7 @@ import {
   Waypoints,
   Brain,
   Microscope,
+  ShieldAlert,
   Plus,
   PanelLeftClose,
   PanelLeftOpen,
@@ -34,6 +35,7 @@ const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
     title: 'Now',
     items: [
       { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents & cascade' },
+      { id: 'RELIABILITY', icon: ShieldAlert, label: 'Cascade risk' },
       { id: '3D Vision', icon: Box, label: 'Spatial view' },
       { id: 'Architecture', icon: Network, label: 'Architecture' },
     ],

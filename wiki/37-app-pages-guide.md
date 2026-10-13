@@ -25,6 +25,7 @@ Every page below reads from the same server. Nothing on a page is computed in th
 | Group | Page (sidebar name) | Question it answers | Main endpoints |
 |---|---|---|---|
 | Now | **Incidents & cascade** | What is broken, what caused it, what is next? | `/api/rca/incidents`, `/api/rca/risk` |
+| Now | **Cascade risk** | What is likely to fail next, what is exposed, and what happens if a given service fails? | `/api/reliability/cascade`, `/api/reliability/whatif/:id` |
 | Now | **Spatial view** | What does my system look like right now? | `/api/graph`, `/api/rca/*`, `/api/live` |
 | Now | **Architecture** | How are my services wired? | `/api/graph` |
 | Investigate | **Telemetry** | What are the raw numbers for one service? | `/api/metrics`, `/api/logs` |
@@ -42,6 +43,10 @@ The sidebar can be collapsed, and the Research group appears only when you press
 - **Traffic panel.** Shows whether the project's traffic generator is running and lets you start or stop it (benches only).
 - **Terminal.** A shell into the target for quick checks; it never changes what the mapper learns.
 - **Status counts.** Healthy, degraded, down, for the selected project only.
+
+## Cascade risk
+
+The prediction page, available even when nothing is wrong. It answers three questions in order: what is likely to fail next (the cascade model's probability for every service and the path it travels), what is exposed right now and why (a risk ranking with each factor), and what if this service failed (a what-if simulation of the blast radius). All numbers are model estimates and are labelled with the model's parameters; they are not observed frequencies. With the system healthy every probability is near zero.
 
 ## Spatial view (the default page)
 

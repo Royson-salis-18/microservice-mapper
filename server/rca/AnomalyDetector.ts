@@ -38,13 +38,17 @@ interface MetricSpec {
   floor: number;              // smallest spread allowed (transformed scale)
   kind: EvidenceKind;
   minDelta?: number;          // percent metrics: also require this many points of absolute movement
+  minRequests?: number;       // ratios and percentiles of requests mean nothing from a handful: require this many requests in each judged sample
 }
+
+/** A p95 or an error share computed from fewer requests than this is one unlucky request, not a trend. */
+const MIN_REQUESTS = 5;
 
 const SPECS: MetricSpec[] = [
   { metric: 'cpu', pick: h => h.cpu, current: n => n.metrics?.cpu, direction: 1, scale: 'log', unit: 0.5, floor: 0.15, kind: 'own', minDelta: 0 },
   { metric: 'memoryPercent', pick: h => h.memoryPercent, current: n => n.metrics?.memoryPercent, direction: 1, scale: 'log', unit: 1, floor: 0.15, kind: 'own', minDelta: 0 },
-  { metric: 'latency', pick: h => h.p95Latency ?? h.latency, current: n => n.metrics?.latency, direction: 1, scale: 'log', unit: 1, floor: 0.15, kind: 'symptom' },
-  { metric: 'errorRate', pick: h => h.errorRate, current: n => n.metrics?.errorRate, direction: 1, scale: 'lin', unit: 0, floor: 0.02, kind: 'symptom' },
+  { metric: 'latency', pick: h => h.p95Latency ?? h.latency, current: n => n.metrics?.latency, direction: 1, scale: 'log', unit: 1, floor: 0.15, kind: 'symptom', minRequests: MIN_REQUESTS },
+  { metric: 'errorRate', pick: h => h.errorRate, current: n => n.metrics?.errorRate, direction: 1, scale: 'lin', unit: 0, floor: 0.02, kind: 'symptom', minRequests: MIN_REQUESTS },
   { metric: 'requestRate', pick: h => h.requestRate, current: n => n.metrics?.requestRate, direction: -1, scale: 'log', unit: 0.1, floor: 0.15, kind: 'symptom' },
   { metric: 'networkRxRate', pick: h => h.networkRxRate, current: () => undefined, direction: 1, scale: 'log', unit: 2000, floor: 0.15, kind: 'symptom' },
   { metric: 'networkTxRate', pick: h => h.networkTxRate, current: () => undefined, direction: 1, scale: 'log', unit: 2000, floor: 0.15, kind: 'symptom' },
@@ -149,6 +153,7 @@ export class AnomalyDetector {
 
       // 4. Every metric against the service's own recent past.
       for (const spec of SPECS) {
+        if (spec.minRequests && history.slice(-2).some(h => finite(h.requestCount) && h.requestCount! < spec.minRequests!)) continue;
         const series = history.map(spec.pick).filter(finite);
         const cur = spec.current(node);
         const tail = finite(cur) ? [...series.slice(0, -1), cur] : series;
@@ -193,6 +198,26 @@ export class AnomalyDetector {
    */
   private silence(node: ServiceNode, history: MetricSnapshot[], t: IncidentThresholds, now: string, targetId: string): AnomalyRecord | null {
     const k = t.silenceSamples;
+    // A service whose requests are counted: judge silence as a Poisson event. With an average of lambda requests per second, a quiet
+    // stretch of W seconds is surprising only if lambda * W is large (P(none) = exp(-lambda*W)); on a service that sees one request
+    // every ten seconds, three quiet samples are ordinary. Needs expected >= 5 (a 0.7% chance of none) before silence means anything.
+    const counted = history.filter(h => finite(h.requestRate));
+    if (counted.length >= t.minHistorySamples + k) {
+      const recent = history.slice(-k);
+      if (!recent.every(h => finite(h.requestRate) && h.requestRate === 0)) return null;
+      const stamps = history.map(h => Date.parse(h.timestamp)).filter(finite);
+      const spacing = stamps.length > 1 ? (stamps[stamps.length - 1] - stamps[0]) / 1000 / (stamps.length - 1) : 5;
+      const lambda = median(counted.slice(0, -k).map(h => h.requestRate as number));
+      const expected = lambda * spacing * k;
+      if (expected < 5) return null;                                  // too quiet a service to call silence
+      // Traffic comes in bursts, so also compare with this service's own history: silence must outlast its longest quiet gap so far.
+      let nowRun = 0; for (let i = history.length - 1; i >= 0 && finite(history[i].requestRate) && history[i].requestRate === 0; i--) nowRun++;
+      let longest = 0, run = 0;
+      for (const h of history.slice(0, history.length - nowRun)) { run = finite(h.requestRate) && h.requestRate === 0 ? run + 1 : 0; longest = Math.max(longest, run); }
+      if (nowRun < 2 * longest) return null;
+      return this.record(node.id, targetId, 'silence', now, 0, Math.round(lambda * 100) / 100, 0, Math.round(expected * 100) / 100,
+        'service-went-silent', expected >= 20 ? 'CRITICAL' : 'HIGH', 'activity', 'own');
+    }
     const act = history.map(h => {
       const net = (h.networkRxRate ?? 0) + (h.networkTxRate ?? 0);
       if (!finite(h.cpu) && !finite(h.networkRxRate)) return null;   // no reading at all: unknown, not silent
