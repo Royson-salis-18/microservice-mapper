@@ -39,10 +39,10 @@ interface SceneHudProps {
 
 /** How each kind of alert is shown in the bell's list, in the order listed. */
 const ALERT_GROUPS: { kind: CalloutKind; label: string; color: string; icon: typeof Server; why: string }[] = [
-  { kind: 'critical', label: 'Down', color: '#ff3d5e', icon: ServerCrash, why: 'container exited, dead or crash-looping' },
-  { kind: 'degraded', label: 'Degraded', color: '#f59e0b', icon: AlertTriangle, why: 'over 80% of its CPU allowance or memory, paused, or just restarted' },
-  { kind: 'anomaly', label: 'ML-flagged', color: '#ec4899', icon: Brain, why: 'the ML ensemble has called it anomalous for several scoring windows in a row' },
-  { kind: 'risk', label: 'At risk', color: '#a78bfa', icon: Radar, why: `healthy, but the cascade model puts its failure risk at ${Math.round(AT_RISK * 100)}% or more` },
+  { kind: 'critical', label: 'Down', color: '#ef5f67', icon: ServerCrash, why: 'container exited, dead or crash-looping' },
+  { kind: 'degraded', label: 'Degraded', color: '#e8a33d', icon: AlertTriangle, why: 'over 80% of its CPU allowance or memory, paused, or just restarted' },
+  { kind: 'anomaly', label: 'ML-flagged', color: '#8ab4ff', icon: Brain, why: 'the ML ensemble has called it anomalous for several scoring windows in a row' },
+  { kind: 'risk', label: 'At risk', color: '#8ab4ff', icon: Radar, why: `healthy, but the cascade model puts its failure risk at ${Math.round(AT_RISK * 100)}% or more` },
 ];
 
 const projectOf = (id: string) => (id.includes(':') ? id.slice(0, id.indexOf(':')) : '');
@@ -157,12 +157,12 @@ export function SceneHud({
   }, [nodes]);
 
   const cards: { label: string; value: string | number; sub: string; icon: typeof Server; color: string }[] = [
-    { label: 'Services', value: stats.total, sub: `${stats.healthy} healthy`, icon: Server, color: '#4d6bff' },
-    { label: 'Down', value: stats.critical, sub: 'critical right now', icon: ServerCrash, color: stats.critical > 0 ? '#ff3d5e' : '#3b4262' },
-    { label: 'Degraded', value: stats.degraded, sub: 'slow or restarting', icon: AlertTriangle, color: stats.degraded > 0 ? '#f59e0b' : '#3b4262' },
-    { label: 'At risk', value: stats.atRisk, sub: `cascade ≥ ${Math.round(AT_RISK * 100)}%`, icon: Radar, color: stats.atRisk > 0 ? '#8b5cf6' : '#3b4262' },
-    { label: 'Live links', value: stats.observed, sub: `of ${stats.links} shown`, icon: Link2, color: '#10b981' },
-    { label: 'Link activity', value: formatRate(stats.perMin), sub: 'relative activity index', icon: Activity, color: '#0ea5e9' },
+    { label: 'Services', value: stats.total, sub: `${stats.healthy} healthy`, icon: Server, color: '#8ab4ff' },
+    { label: 'Down', value: stats.critical, sub: 'critical right now', icon: ServerCrash, color: stats.critical > 0 ? '#ef5f67' : '#3a3e45' },
+    { label: 'Degraded', value: stats.degraded, sub: 'slow or restarting', icon: AlertTriangle, color: stats.degraded > 0 ? '#e8a33d' : '#3a3e45' },
+    { label: 'At risk', value: stats.atRisk, sub: `cascade ≥ ${Math.round(AT_RISK * 100)}%`, icon: Radar, color: stats.atRisk > 0 ? '#8ab4ff' : '#3a3e45' },
+    { label: 'Live links', value: stats.observed, sub: `of ${stats.links} shown`, icon: Link2, color: '#3ecf8e' },
+    { label: 'Link activity', value: formatRate(stats.perMin), sub: 'relative activity index', icon: Activity, color: '#8ab4ff' },
   ];
 
   return (
@@ -184,7 +184,7 @@ export function SceneHud({
               title={consistency.violations.length === 0
                 ? `All ${consistency.rulesChecked} consistency checks pass: shares sum to 100%, weights match their formula, incidents refer to real services, rates are rates.`
                 : consistency.violations.slice(0, 8).map((v) => `${v.rule}: ${v.subject}: ${v.detail}`).join('\n')}
-              style={{ color: consistency.violations.length === 0 ? '#25e3a3' : '#ff8aa0' }}
+              style={{ color: consistency.violations.length === 0 ? '#3ecf8e' : '#f58a90' }}
             >
               {consistency.violations.length === 0 ? '✓ consistent' : `${consistency.violations.length} data issue${consistency.violations.length === 1 ? '' : 's'}`}
             </div>
@@ -197,7 +197,7 @@ export function SceneHud({
               <div key={c.label} className="scene-stat">
                 <div className="scene-stat-head">{c.label}</div>
                 <div className="scene-stat-body">
-                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: c.color === '#3b4262' ? 'none' : `0 4px 14px ${c.color}55` }}>
+                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: c.color === '#3a3e45' ? 'none' : `0 4px 14px ${c.color}55` }}>
                     <Icon size={15} strokeWidth={2.3} />
                   </span>
                   <div style={{ minWidth: 0 }}>
@@ -359,7 +359,7 @@ export function SceneHud({
               {z.id}
               <span
                 className="scene-focus-dot"
-                style={{ background: z.critical > 0 ? '#ff3d5e' : z.alerts > 0 ? '#ffab40' : '#2ed3a0' }}
+                style={{ background: z.critical > 0 ? '#ef5f67' : z.alerts > 0 ? '#e8a33d' : '#3ecf8e' }}
               />
             </button>
           ))}
@@ -399,7 +399,7 @@ export function SceneHud({
             </div>
           ))}
           <div className="scene-legend-row">
-            <span className="scene-legend-swatch" style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid #ffab40' }} />
+            <span className="scene-legend-swatch" style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid #e8a33d' }} />
             at risk (ring)
           </div>
         </div>

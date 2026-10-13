@@ -253,12 +253,21 @@ export default function App() {
 
 
 
+  // /api/status counts every target on the host; when one project is selected, count that project's services only.
+  const scopedStatus = useMemo(() => {
+    if (!status || selectedProjectId === 'ALL') return status;
+    const mine = nodes.filter((n) => (n.data as unknown as ServiceNode).project === selectedProjectId);
+    const count = (k: string) => mine.filter((n) => (n.data as unknown as ServiceNode).status === k).length;
+    const critical = count('critical'), degraded = count('degraded'), healthy = count('healthy'), unknown = count('unknown');
+    return { ...status, healthy, degraded, critical, unknown, status: (critical ? 'critical' : degraded ? 'degraded' : healthy ? 'healthy' : 'unknown') as typeof status.status };
+  }, [status, nodes, selectedProjectId]);
+
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'row', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <Sidebar 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
-        status={status}
+        status={scopedStatus}
         onAddProject={() => {
           setEditingProjectId(null);
           setIsAwsPanelOpen(true);
@@ -266,7 +275,7 @@ export default function App() {
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <TopBar 
-          status={status}
+          status={scopedStatus}
           targets={targets}
           isConnected={isConnected}
           lastUpdate={lastUpdate}

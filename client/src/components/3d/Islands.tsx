@@ -22,7 +22,7 @@ const PLANE = new THREE.PlaneGeometry(1, 1);
 const ROD = new THREE.CylinderGeometry(0.5, 0.5, 1, 12);
 /** A shallow bowl, scaled into a satellite dish. */
 const DISH = new THREE.SphereGeometry(0.5, 20, 8, 0, Math.PI * 2, 0, Math.PI / 3.2);
-const ALERT = { critical: '#ff4d6d', degraded: '#ffab40' } as const;
+const ALERT = { critical: '#ef5f67', degraded: '#e8a33d' } as const;
 
 export type IslandAlert = 'critical' | 'degraded' | null;
 
@@ -79,7 +79,7 @@ function TopPlate({ isl }: { isl: Island }) {
   useEffect(() => () => map.dispose(), [map]);
   return (
     <mesh position={[(isl.x0 + isl.x1) / 2, isl.top + 0.012, (isl.z0 + isl.z1) / 2]} rotation={[-Math.PI / 2, 0, 0]} scale={[w, d, 1]} geometry={PLANE} raycast={() => null} receiveShadow>
-      <meshStandardMaterial map={map} color="#c9d2ff" roughness={0.45} metalness={0.5} />
+      <meshStandardMaterial map={map} color="#dedee0" roughness={0.45} metalness={0.5} />
     </mesh>
   );
 }
@@ -106,12 +106,12 @@ function Props({ isl }: { isl: Island }) {
             { x: cx + 4.2, y: top + 2.2, z: isl.z0 + 0.7, w: 0.25, h: 4.4, d: 0.25 },
             { x: cx, y: top + 4.55, z: isl.z0 + 0.7, w: 11, h: 0.18, d: 0.3 },
           ]} castShadow>
-            <meshStandardMaterial color="#1a2150" roughness={0.4} metalness={0.6} />
+            <meshStandardMaterial color="#2e2e30" roughness={0.4} metalness={0.6} />
           </Boxes>
           {screens.map((s, i) => (
             <group key={i}>
               <mesh position={[s.x, s.y, s.z - 0.06]} scale={[3.3, 2.1, 0.12]} geometry={UNIT_BOX} castShadow raycast={() => null}>
-                <meshStandardMaterial color="#0e1334" roughness={0.4} metalness={0.5} />
+                <meshStandardMaterial color="#1c1c1e" roughness={0.4} metalness={0.5} />
               </mesh>
               <mesh position={[s.x, s.y, s.z + 0.01]} scale={[3.1, 1.9, 1]} geometry={PLANE} raycast={() => null}>
                 <meshBasicMaterial map={screenTexture()} toneMapped={false} transparent opacity={0.92} />
@@ -131,10 +131,10 @@ function Props({ isl }: { isl: Island }) {
       return (
         <group>
           <mesh position={[x, top + 3.6, z]} scale={[0.22, 7.2, 0.22]} geometry={ROD} castShadow raycast={() => null}>
-            <meshStandardMaterial color="#2a3468" roughness={0.4} metalness={0.7} />
+            <meshStandardMaterial color="#2a2d33" roughness={0.4} metalness={0.7} />
           </mesh>
           <Boxes boxes={[{ x, y: top + 5.6, z, w: 1.8, h: 0.08, d: 0.08 }, { x, y: top + 6.5, z, w: 0.08, h: 0.08, d: 1.4 }]}>
-            <meshStandardMaterial color="#2a3468" roughness={0.4} metalness={0.7} />
+            <meshStandardMaterial color="#2a2d33" roughness={0.4} metalness={0.7} />
           </Boxes>
           <mesh ref={blink} position={[x, top + 7.35, z]} scale={0.34} geometry={ROD} raycast={() => null}>
             <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.8} />
@@ -148,7 +148,7 @@ function Props({ isl }: { isl: Island }) {
       return (
         <group>
           <mesh position={[x, top + 1.1, z]} scale={[3, 2.2, 2]} geometry={UNIT_BOX} castShadow receiveShadow raycast={() => null}>
-            <meshStandardMaterial color="#182052" roughness={0.45} metalness={0.5} />
+            <meshStandardMaterial color="#2e2e30" roughness={0.45} metalness={0.5} />
           </mesh>
           <mesh position={[x, top + 2.22, z]} rotation={[-Math.PI / 2, 0, 0]} scale={[2.7, 1.7, 1]} geometry={PLANE} raycast={() => null}>
             <meshStandardMaterial map={grilleTexture()} roughness={0.6} metalness={0.3} />
@@ -163,7 +163,7 @@ function Props({ isl }: { isl: Island }) {
         <group>
           {[0.55, 1.25].map((h, i) => (
             <mesh key={i} position={[cx, top + h, isl.z0 + 0.8]} rotation={[0, 0, Math.PI / 2]} scale={[0.36, w, 0.36]} geometry={ROD} castShadow raycast={() => null}>
-              <meshStandardMaterial color={i ? '#2b3a7a' : '#3a2f7a'} roughness={0.3} metalness={0.75} />
+              <meshStandardMaterial color={i ? '#4a4a4c' : '#4c4c4e'} roughness={0.3} metalness={0.75} />
             </mesh>
           ))}
         </group>
@@ -177,7 +177,7 @@ function Props({ isl }: { isl: Island }) {
           { x, y: top + 0.9, z, w: 2.4, h: 1.8, d: 1.8 },
           ...[-0.8, -0.4, 0, 0.4, 0.8].map((dx) => ({ x: x + dx, y: top + 0.9, z: z + 1.0, w: 0.08, h: 1.5, d: 0.3 })),
         ]} castShadow>
-          <meshStandardMaterial color="#1c2350" roughness={0.45} metalness={0.55} />
+          <meshStandardMaterial color="#303032" roughness={0.45} metalness={0.55} />
         </Boxes>
       );
     }
@@ -211,7 +211,7 @@ function IslandPlatform({ isl, alert }: { isl: Island; alert: IslandAlert }) {
       </Decal>
 
       <mesh position={[cx, isl.top / 2, cz]} scale={[w, isl.top, d]} geometry={UNIT_BOX} castShadow receiveShadow raycast={() => null}>
-        <meshStandardMaterial color="#11173f" roughness={0.45} metalness={0.55} />
+        <meshStandardMaterial color="#222224" roughness={0.45} metalness={0.55} />
       </mesh>
       <TopPlate isl={isl} />
 
@@ -238,7 +238,7 @@ function IslandPlatform({ isl, alert }: { isl: Island; alert: IslandAlert }) {
           anchorY="bottom"
           letterSpacing={0.12}
         >
-          {style.label.toUpperCase()}
+          {style.label}
         </Text>
       </Suspense>
     </group>
@@ -257,14 +257,14 @@ function TrackLine({ track }: { track: Track }) {
     <group>
       <group position={[(ax + bx) / 2, 0, (az + bz) / 2]} rotation={[0, -angle, 0]}>
         <mesh position={[0, 0.05, 0]} scale={[len, 0.1, width + 1.2]} geometry={UNIT_BOX} receiveShadow raycast={() => null}>
-          <meshStandardMaterial color="#10163d" roughness={0.5} metalness={0.5} />
+          <meshStandardMaterial color="#212123" roughness={0.5} metalness={0.5} />
         </mesh>
         <mesh position={[0, 0.105, 0]} scale={[len, 0.01, width * 0.35]} geometry={UNIT_BOX} raycast={() => null}>
-          <meshBasicMaterial color="#3d7bff" toneMapped={false} transparent opacity={0.55} />
+          <meshBasicMaterial color="#8ab4ff" toneMapped={false} transparent opacity={0.55} />
         </mesh>
       </group>
       <Boxes boxes={[{ x: ax, y: 0.6, z: az, w: 0.28, h: 1.2, d: 0.28 }, { x: bx, y: 0.6, z: bz, w: 0.28, h: 1.2, d: 0.28 }]}>
-        <meshBasicMaterial color="#5b8cff" toneMapped={false} transparent opacity={0.6} />
+        <meshBasicMaterial color="#8ab4ff" toneMapped={false} transparent opacity={0.6} />
       </Boxes>
     </group>
   );
@@ -317,26 +317,26 @@ function Pads({ pads }: { pads: Pad[] }) {
   return (
     <group>
       <Boxes boxes={parts.bodies} castShadow receiveShadow>
-        <meshStandardMaterial color="#141b45" roughness={0.5} metalness={0.45} />
+        <meshStandardMaterial color="#272729" roughness={0.5} metalness={0.45} />
       </Boxes>
       <Boxes boxes={parts.edges}>
-        <meshBasicMaterial color="#3a52c8" toneMapped={false} transparent opacity={0.45} />
+        <meshBasicMaterial color="#8ab4ff" toneMapped={false} transparent opacity={0.45} />
       </Boxes>
       {/* Panel arrays catch the key light like glass */}
       <Boxes boxes={parts.panels} castShadow>
-        <meshStandardMaterial color="#1d2a6e" roughness={0.18} metalness={0.85} />
+        <meshStandardMaterial color="#3c3c3e" roughness={0.18} metalness={0.85} />
       </Boxes>
       <Boxes boxes={parts.crates} castShadow receiveShadow>
-        <meshStandardMaterial color="#161d49" roughness={0.6} metalness={0.35} />
+        <meshStandardMaterial color="#29292b" roughness={0.6} metalness={0.35} />
       </Boxes>
       <Boxes boxes={parts.lattice} castShadow>
-        <meshStandardMaterial color="#2a3468" roughness={0.4} metalness={0.7} />
+        <meshStandardMaterial color="#2a2d33" roughness={0.4} metalness={0.7} />
       </Boxes>
       <Boxes boxes={parts.beacons}>
-        <meshBasicMaterial color="#ff4d6d" toneMapped={false} transparent opacity={0.8} />
+        <meshBasicMaterial color="#ef5f67" toneMapped={false} transparent opacity={0.8} />
       </Boxes>
       <Boxes boxes={parts.dishes} geometry={DISH}>
-        <meshStandardMaterial color="#2e3a78" roughness={0.3} metalness={0.7} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#4b4b4d" roughness={0.3} metalness={0.7} side={THREE.DoubleSide} />
       </Boxes>
       {pads.filter((p) => p.lit).map((p, i) => (
         <Decal key={i} x={(p.x0 + p.x1) / 2} y={0.03} z={(p.z0 + p.z1) / 2} w={(p.x1 - p.x0) * 2.4} d={(p.z1 - p.z0) * 2.4}>
@@ -372,13 +372,13 @@ function Roads({ roads }: { roads: Road[] }) {
   return (
     <group>
       <Boxes boxes={parts.paving} receiveShadow>
-        <meshStandardMaterial color="#080c22" roughness={0.85} metalness={0.2} />
+        <meshStandardMaterial color="#121214" roughness={0.85} metalness={0.2} />
       </Boxes>
       <Boxes boxes={parts.kerbs}>
-        <meshBasicMaterial color="#27368f" toneMapped={false} transparent opacity={0.55} />
+        <meshBasicMaterial color="#8ab4ff" toneMapped={false} transparent opacity={0.55} />
       </Boxes>
       <Boxes boxes={parts.dashes}>
-        <meshBasicMaterial color="#5a6fc4" toneMapped={false} transparent opacity={0.4} />
+        <meshBasicMaterial color="#8ab4ff" toneMapped={false} transparent opacity={0.4} />
       </Boxes>
     </group>
   );
@@ -404,14 +404,14 @@ function LightPosts({ tracks }: { tracks: Track[] }) {
   return (
     <group>
       <Boxes boxes={poles}>
-        <meshStandardMaterial color="#26306a" roughness={0.4} metalness={0.7} />
+        <meshStandardMaterial color="#404042" roughness={0.4} metalness={0.7} />
       </Boxes>
       <Boxes boxes={lamps}>
-        <meshBasicMaterial color="#9db1ff" toneMapped={false} transparent opacity={0.85} />
+        <meshBasicMaterial color="#c4c4c6" toneMapped={false} transparent opacity={0.85} />
       </Boxes>
       {posts.map((p, i) => (
         <Decal key={i} x={p.x} y={0.04} z={p.z} w={4.5} d={4.5}>
-          <meshBasicMaterial map={glowTexture()} color="#6f8dff" transparent opacity={0.14} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+          <meshBasicMaterial map={glowTexture()} color="#8ab4ff" transparent opacity={0.14} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
         </Decal>
       ))}
     </group>
@@ -453,7 +453,7 @@ function Motes({ bounds }: { bounds: { x0: number; x1: number; z0: number; z1: n
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial map={glowTexture()} color="#7f9bff" size={1.5} sizeAttenuation transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      <pointsMaterial map={glowTexture()} color="#b3b3b5" size={1.5} sizeAttenuation transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </points>
   );
 }
@@ -473,10 +473,10 @@ function District({ room, summary, focused }: { room: Room; summary?: ZoneSummar
       </Decal>
       <Suspense fallback={null}>
         <group position={[room.x0 + 1, 0.05, room.z1 - 0.5]}>
-          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.6} color={focused ? '#dfe5ff' : room.hue} fillOpacity={0.85} anchorX="left" anchorY="bottom" letterSpacing={0.08}>
-            {room.project.toUpperCase()}
+          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.6} color={focused ? '#e6e8ec' : room.hue} fillOpacity={0.85} anchorX="left" anchorY="bottom" letterSpacing={0.08}>
+            {room.project}
           </Text>
-          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 1.7]} fontSize={1.05} color="#56629a" anchorX="left" anchorY="bottom">
+          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 1.7]} fontSize={1.05} color="#8ab4ff" anchorX="left" anchorY="bottom">
             {`${summary?.services ?? 0} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
           </Text>
         </group>
@@ -501,12 +501,12 @@ function IslandCard({ isl, info }: { isl: Island; info: IslandCardInfo }) {
   // Everything the services on this island are showing, so the card never
   // says "all healthy" over a unit drawn as flagged or at risk.
   const parts = [
-    info.critical ? { text: `${info.critical} down`, color: '#ff4d6d' } : null,
-    info.degraded ? { text: `${info.degraded} degraded`, color: '#ffab40' } : null,
-    info.flagged ? { text: `${info.flagged} ML-flagged`, color: '#ec4899' } : null,
-    info.atRisk ? { text: `${info.atRisk} at risk`, color: '#a78bfa' } : null,
+    info.critical ? { text: `${info.critical} down`, color: '#ef5f67' } : null,
+    info.degraded ? { text: `${info.degraded} degraded`, color: '#e8a33d' } : null,
+    info.flagged ? { text: `${info.flagged} ML-flagged`, color: '#8ab4ff' } : null,
+    info.atRisk ? { text: `${info.atRisk} at risk`, color: '#8ab4ff' } : null,
   ].filter((x): x is { text: string; color: string } => x !== null);
-  const status = parts.length ? parts : [{ text: 'all healthy', color: '#25e3a3' }];
+  const status = parts.length ? parts : [{ text: 'all healthy', color: '#3ecf8e' }];
   return (
     // Beside the island's front-left corner, clear of the tags hung over
     // its services.

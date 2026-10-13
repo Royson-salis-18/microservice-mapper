@@ -34,7 +34,7 @@ const MAX_CALLOUTS = 8;
 const AZIMUTH = Math.PI / 4;
 const FOV = 30;
 
-const FOG_COLOR = '#070914';
+const FOG_COLOR = '#0c0c0e';
 
 /**
  * Eases every node toward the position its layout wants, writing into a
@@ -385,7 +385,7 @@ function CityBlocks({ target, clearance = 26 }: { target: Positions; clearance?:
       p.set(b.x, b.h / 2 - 0.2, b.z);
       s.set(b.w, b.h, b.d);
       mesh.setMatrixAt(i, m.compose(p, q, s));
-      mesh.setColorAt(i, c.set('#10173b').multiplyScalar(b.shade));
+      mesh.setColorAt(i, c.set('#212123').multiplyScalar(b.shade));
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -400,7 +400,7 @@ function CityBlocks({ target, clearance = 26 }: { target: Positions; clearance?:
       </instancedMesh>
       {roofLights.length > 0 && (
         <instancedMesh key={`l${roofLights.length}`} ref={lightsRef} args={[BLOCK_GEOMETRY, undefined, roofLights.length]} raycast={() => null}>
-          <meshBasicMaterial color="#3d5cff" toneMapped={false} />
+          <meshBasicMaterial color="#8ab4ff" toneMapped={false} />
         </instancedMesh>
       )}
     </>
@@ -466,17 +466,17 @@ function Zone({ project, ids, live, focused, summary }: {
     label.current?.position.set(minX + 0.4, y + 0.02, maxZ + 1.6);
   });
 
-  const outline = focused ? '#7d94ff' : '#3350d6';
-  const neonColor = summary?.critical ? '#ff4d6d' : focused ? '#7d94ff' : '#3d5cff';
+  const outline = focused ? '#8ab4ff' : '#5b8def';
+  const neonColor = summary?.critical ? '#ef5f67' : focused ? '#8ab4ff' : '#8ab4ff';
   return (
     <group>
       <mesh ref={slab} geometry={BLOCK_GEOMETRY} raycast={() => null}>
-        <meshStandardMaterial color="#0d1333" roughness={0.55} metalness={0.45} />
+        <meshStandardMaterial color="#1c1c1e" roughness={0.55} metalness={0.45} />
         <Edges color={outline} />
       </mesh>
       {[0, 1, 2, 3].map((i) => (
         <mesh key={i} ref={(el) => { walls.current[i] = el; }} geometry={BLOCK_GEOMETRY} raycast={() => null}>
-          <meshStandardMaterial color="#141c4a" roughness={0.35} metalness={0.5} transparent opacity={0.88} />
+          <meshStandardMaterial color="#29292b" roughness={0.35} metalness={0.5} transparent opacity={0.88} />
           <Edges color={outline} />
         </mesh>
       ))}
@@ -487,10 +487,10 @@ function Zone({ project, ids, live, focused, summary }: {
       ))}
       <group ref={label}>
         <Suspense fallback={null}>
-          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#b8c5ff' : '#8093f0'} anchorX="left" anchorY="top" letterSpacing={0.06}>
-            {project.toUpperCase()}
+          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#cfd3da' : '#8ab4ff'} anchorX="left" anchorY="top" letterSpacing={0.06}>
+            {project}
           </Text>
-          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5a6699" anchorX="left" anchorY="top">
+          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5d636c" anchorX="left" anchorY="top">
             {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
           </Text>
         </Suspense>
@@ -514,7 +514,7 @@ function SelectionLight({ live, selectedId }: { live: PositionMap; selectedId: s
     if (p) light.position.set(p.x, p.y + 4.5, p.z + 1.5);
     light.intensity = THREE.MathUtils.damp(light.intensity, p ? 120 : 0, 6, delta);
   });
-  return <pointLight ref={ref} color="#3d6bff" intensity={0} distance={34} decay={2} />;
+  return <pointLight ref={ref} color="#8ab4ff" intensity={0} distance={34} decay={2} />;
 }
 
 /**
@@ -549,7 +549,7 @@ function KeyLight({ site }: { site: Site | null }) {
       ref={ref}
       position={[-60, 110, 50]}
       intensity={site ? 2.6 : 1.5}
-      color="#c7d2ff"
+      color="#e6e8ec"
       castShadow={Boolean(fit)}
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
@@ -569,7 +569,7 @@ function Ground({ y, tiled }: { y: number; tiled: boolean }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} raycast={() => null} receiveShadow>
       <planeGeometry args={[4000, 4000]} />
-      <meshStandardMaterial map={map} color={tiled ? '#8b95c8' : '#0a0f26'} roughness={0.9} metalness={0.15} />
+      <meshStandardMaterial map={map} color={tiled ? '#8d939c' : '#151517'} roughness={0.9} metalness={0.15} />
     </mesh>
   );
 }
@@ -590,7 +590,7 @@ function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread:
   return (
     <mesh position={[bounds.cx, y, bounds.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[bounds.w, bounds.d, 1]} raycast={() => null}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={glowTexture()} color="#2b3fd0" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      <meshBasicMaterial map={glowTexture()} color="#8ab4ff" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </mesh>
   );
 }
@@ -629,10 +629,10 @@ function ProjectLabels({ nodes, live }: { nodes: LayoutNode[]; live: PositionMap
       {projects.map(({ project, ids }) => (
         <group key={project} ref={(el) => { groupRefs.current[project] = el; }}>
           <Billboard>
-            <Text fontSize={2.2} color="#9aabff" anchorX="center" outlineWidth={0.09} outlineColor="#070913">
-              {project.toUpperCase()}
+            <Text fontSize={2.2} color="#cfd3da" anchorX="center" outlineWidth={0.09} outlineColor="#0d0e10">
+              {project}
             </Text>
-            <Text position={[0, -2.3, 0]} fontSize={1.1} color="#5a6699" anchorX="center">
+            <Text position={[0, -2.3, 0]} fontSize={1.1} color="#5d636c" anchorX="center">
               {`${ids.length} services`}
             </Text>
           </Billboard>
@@ -962,11 +962,11 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
 
           {/* Cool, low light: tops and the faces toward the camera catch a
               soft blue, sides fall away into navy. */}
-          <ambientLight intensity={site ? 0.12 : 0.35} color="#9fb0ff" />
-          <hemisphereLight args={[site ? '#3a4684' : '#4a5dff', '#05060b', site ? 0.3 : 0.55]} />
+          <ambientLight intensity={site ? 0.12 : 0.35} color="#cfd3da" />
+          <hemisphereLight args={[site ? '#3a3e45' : '#8ab4ff', '#05060b', site ? 0.3 : 0.55]} />
           <KeyLight site={site} />
-          <directionalLight position={[80, 40, -40]} intensity={0.9} color="#3d5cff" />
-          <directionalLight position={[40, 25, 90]} intensity={0.35} color="#8fa2ff" />
+          <directionalLight position={[80, 40, -40]} intensity={0.9} color="#8ab4ff" />
+          <directionalLight position={[40, 25, 90]} intensity={0.35} color="#8ab4ff" />
 
           {/* In the building arrangement the floor is a slab lifted above the
               ground grid; otherwise the grid is the floor. */}
@@ -976,10 +976,10 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             args={[10, 10]}
             cellSize={5}
             cellThickness={0.5}
-            cellColor={site ? '#141d4c' : '#111a40'}
+            cellColor={site ? '#2a2a2c' : '#242426'}
             sectionSize={30}
             sectionThickness={0.9}
-            sectionColor={site ? '#24327e' : '#1a2763'}
+            sectionColor={site ? '#474749' : '#373739'}
             fadeDistance={520}
             fadeStrength={2}
             infiniteGrid

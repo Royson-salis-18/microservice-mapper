@@ -18,12 +18,12 @@ import type { LayoutNode, Positions } from './layouts';
 export type IslandRole = 'edge' | 'messaging' | 'services' | 'data' | 'infra' | 'observability';
 
 export const ISLAND_STYLE: Record<IslandRole, { label: string; color: string }> = {
-  edge:          { label: 'Edge',           color: '#38bdf8' },
-  messaging:     { label: 'Messaging',      color: '#c084fc' },
-  services:      { label: 'Services',       color: '#6b8cff' },
-  data:          { label: 'Data',           color: '#2ed3a0' },
-  infra:         { label: 'Infrastructure', color: '#94a3b8' },
-  observability: { label: 'Observability',  color: '#2dd4bf' },
+  edge:          { label: 'Edge',           color: '#a9b0ba' },
+  messaging:     { label: 'Messaging',      color: '#8ab4ff' },
+  services:      { label: 'Services',       color: '#8ab4ff' },
+  data:          { label: 'Data',           color: '#3ecf8e' },
+  infra:         { label: 'Infrastructure', color: '#a9b0ba' },
+  observability: { label: 'Observability',  color: '#a9b0ba' },
 };
 
 /**
@@ -83,7 +83,7 @@ export interface Site {
 }
 
 /** Each district's own hue, cool and muted, for its ground tint and name. */
-const DISTRICT_HUES = ['#6b8cff', '#2dd4bf', '#a78bfa', '#38bdf8', '#818cf8', '#5eead4'];
+const DISTRICT_HUES = ['#8ab4ff', '#a9b0ba', '#8ab4ff', '#a9b0ba', '#8ab4ff', '#a9b0ba'];
 
 /**
  * Where each role's island sits, in cells, and how high it stands. The
