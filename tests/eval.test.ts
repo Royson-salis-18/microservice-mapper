@@ -197,3 +197,28 @@ test('a slowdown alone (no errors) counts as felt when p95 is 3x worse and at le
   assert.equal(slow.visible, true);
   assert.equal(tiny.visible, false);          // 4x but only 30 ms worse: not something a person notices
 });
+
+import { inferFamily, FAMILY_OF } from '../tools/eval/infer.ts';
+import { bootstrapCI, kFold, spearman, binomUpper, moments, kappa } from '../tools/eval/stats.ts';
+
+test('fault kind is read from the evidence the mapper holds on its named root', () => {
+  assert.equal(inferFamily(['container-health:container-exited-or-critical']), 'down');
+  assert.equal(inferFamily(['restarts:container-restarted']), 'down');
+  assert.equal(inferFamily(['container-health:container-paused', 'silence:service-went-silent']), 'frozen');
+  assert.equal(inferFamily(['silence:service-went-silent']), 'frozen');
+  assert.equal(inferFamily(['latency:robust-zscore-persistent', 'errorRate:robust-zscore-persistent']), 'slow');
+  assert.equal(inferFamily(['memoryPercent:over-absolute-limit']), 'memory');
+  assert.equal(inferFamily(['requestRate:robust-zscore-persistent', 'networkRxRate:robust-zscore-persistent']), 'isolated');
+  assert.equal(inferFamily([]), null);
+  assert.equal(FAMILY_OF.partition, 'isolated');
+});
+
+test('stats helpers: seeded, and right on known values', () => {
+  assert.deepEqual(bootstrapCI([1, 0, 1, 1, 0, 1, 1, 1], 500, 3), bootstrapCI([1, 0, 1, 1, 0, 1, 1, 1], 500, 3));
+  assert.ok(Math.abs(spearman([1, 2, 3, 4, 5], [2, 4, 6, 8, 10]) - 1) < 1e-9);
+  assert.ok(Math.abs(binomUpper(5, 5, 0.5) - 1 / 32) < 1e-9);
+  assert.ok(Math.abs(moments([1, 2, 3, 4, 5]).skew) < 1e-9);
+  assert.equal(kappa([[5, 0], [0, 5]]), 1);
+  const f = kFold([1, 1, 0, 1, 0, 1, 1, 0, 1, 1], ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b'], 5, 1);
+  assert.equal(f.folds.reduce((s, x) => s + x.n, 0), 10);
+});

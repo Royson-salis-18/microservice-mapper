@@ -16,7 +16,8 @@
     "doctor": "node scripts/doctor.mjs",
     "start": "npm run dev",
     "eval": "node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts",
-    "local": "node scripts/local.mjs"
+    "local": "node scripts/local.mjs",
+    "demo": "node scripts/demo.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

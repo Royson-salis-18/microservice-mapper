@@ -24,6 +24,8 @@ export async function snapshot(mapper: string, target: string): Promise<Snapshot
         affected: (i.affectedServices ?? []).map(norm),
         atRisk: (i.atRisk ?? []).map((r: any) => ({ id: norm(r.serviceId), risk: r.risk })),
         monitoringGap: !!i.monitoringGap,
+        // what the mapper actually measured on the service it blames: "metric:reason" tokens (used to say what kind of fault it looks like)
+        rootEvidence: [...new Set((i.anomalies ?? []).filter((a: any) => norm(a.nodeId) === norm(i.rootCauseServiceId)).map((a: any) => `${a.metric}:${a.reason}`))],
       }))
       .filter((i: any) => i.endedAt === null);
     return { ts: Date.now(), incidents, status };

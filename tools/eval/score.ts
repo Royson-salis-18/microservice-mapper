@@ -14,6 +14,9 @@
 //   false alarm       incident time outside every detection window
 
 
+import { FAMILY_OF, FAMILIES, inferFamily } from './infer.ts';
+import { moments, spearman, corrP, bootstrapCI, kFold, binomUpper, kappa } from './stats.ts';
+
 export interface LedgerFault {
   id: string; class: string; target: string; source: string; compoundOf?: string;
   durationSec: number; a: number; b: number; failed?: string; recovery?: string;
@@ -21,7 +24,7 @@ export interface LedgerFault {
 }
 export interface SnapIncident {
   id: string; status: string; severity: string; startedAt: number; endedAt: number | null; root: string | null; confidence: string;
-  candidates: string[]; affected: string[]; atRisk: { id: string; risk: number }[]; monitoringGap?: boolean;
+  candidates: string[]; affected: string[]; atRisk: { id: string; risk: number }[]; monitoringGap?: boolean; rootEvidence?: string[];
 }
 export interface Snapshot { ts: number; incidents: SnapIncident[]; status: Record<string, string> }
 
@@ -95,6 +98,8 @@ export interface FaultResult {
   preWarned: { warned: number; of: number } | null;
   /** True when no other fault overlapped this one (nor its 30 s tail): only then can user impact be attributed to it. */
   isolated: boolean;
+  /** What kind of fault the mapper's own evidence on its named root suggests, and whether it is the family that was injected. Null when nothing was detected. */
+  inferredFamily: string | null; trueFamily: string; familyMatch: boolean | null; chance: number | null;
   /** What users experienced during the fault, from the traffic generator. Null when no traffic log was supplied OR the fault was
    *  not isolated (with another fault running, any impact could be that one's). */
   userImpact: { visible: boolean; errPctMax: number; errPctMean: number; p95Ratio: number } | null;
@@ -105,6 +110,8 @@ export interface Score {
   overall: any; byClass: Record<string, any>; falseAlarm: { episodes: number; minutes: number; perHour: number; spanHours: number };
   calibration: { n: number; brier: number; ece: number; auc: number; bins: { lo: number; hi: number; n: number; meanRisk: number; rate: number }[] } | null;
   confusion: { truth: string[]; predicted: string[]; counts: number[][] };
+  kindConfusion: { truth: string[]; predicted: string[]; counts: number[][]; accuracy: any; kappa: number };
+  research: any;
 }
 
 const f1 = (p: number, r: number) => (p + r === 0 ? 0 : (2 * p * r) / (p + r));
@@ -171,7 +178,12 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
       const p95Ratio = Math.max(...win2.map((x) => x.p95)) / baseP95, p95Worse = Math.max(...win2.map((x) => x.p95)) - baseP95;
       userImpact = { visible: errMean - baseErr >= 1 || (p95Ratio >= 3 && p95Worse >= 50), errPctMax: errMax, errPctMean: errMean, p95Ratio };
     }
+    const evidence = [...new Set(inFault.flatMap((s) => s.incidents.filter((i) => localised(i) && i.root === f.truth.rootCause).flatMap((i) => i.rootEvidence ?? [])))];
+    const inferredFamily = first ? inferFamily(evidence) : null;
+    const trueFamily = FAMILY_OF[f.class] ?? f.class;
     results.push({
+      inferredFamily, trueFamily, familyMatch: inferredFamily ? inferredFamily === trueFamily : null,
+      chance: sIn && sIn.candidates.length ? 1 / sIn.candidates.length : null,
       id: f.id, class: f.class, target: f.target, concurrent: concurrentFaults.length, a: f.a, b: f.b,
       detected: !!first, anyIncident, preexisting, delaySec, rankSettled, rankInitial,
       top1: rankSettled === 1, top3: rankSettled !== null && rankSettled <= 3, top1Initial: rankInitial === 1,
@@ -250,5 +262,28 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
   const counts = truthNames.map((t) => cols.map(() => 0));
   for (const r of results) { const i = truthNames.indexOf(r.target); const j = r.detected && r.predictedRoot ? cols.indexOf(r.predictedRoot) : cols.length - 1; counts[i][j]++; }
 
-  return { options: { graceSec, atRiskHorizonSec: horizon }, faults: results, excluded, overall, byClass, falseAlarm, calibration, confusion: { truth: truthNames, predicted: cols, counts } };
+  // ---- what kind of fault: injected family vs the family the mapper's evidence points to
+  const kRows = FAMILIES, kCols = [...FAMILIES, '(unclear)', '(missed)'];
+  const kCounts = kRows.map(() => kCols.map(() => 0));
+  for (const r of results) { const i = kRows.indexOf(r.trueFamily); if (i < 0) continue; const j = !r.detected ? kCols.length - 1 : r.inferredFamily ? kCols.indexOf(r.inferredFamily) : kCols.length - 2; kCounts[i][j]++; }
+  const withKind = results.filter((r) => r.familyMatch !== null);
+  const sq = kRows.map((_, i) => kRows.map((__, j) => kCounts[i][j]));
+  const kindConfusion = { truth: kRows, predicted: kCols, counts: kCounts, accuracy: wilson(withKind.filter((r) => r.familyMatch).length, withKind.length), kappa: kappa(sq) };
+
+  // ---- research statistics
+  const det = results.filter((r) => r.detected);
+  const delays = det.map((r) => r.delaySec!).filter((x) => x !== null);
+  const dur = det.filter((r) => r.delaySec !== null).map((r) => (r.b - r.a) / 1000);
+  const rho = spearman(dur, delays);
+  const t1 = det.map((r) => (r.top1 ? 1 : 0)), chances = det.filter((r) => r.chance !== null).map((r) => r.chance!);
+  const meanChance = mean(chances);
+  const research = {
+    delay: moments(delays),
+    delayVsDuration: { rho, p: corrP(rho, delays.length), n: delays.length },
+    bootstrap: { detected: bootstrapCI(results.map((r) => (r.detected ? 1 : 0))), top1: bootstrapCI(t1), top3: bootstrapCI(det.map((r) => (r.top3 ? 1 : 0))) },
+    crossValidation: { top1: kFold(t1, det.map((r) => r.class)), detected: kFold(results.map((r) => (r.detected ? 1 : 0)), results.map((r) => r.class)) },
+    chance: { meanCandidates: chances.length ? 1 / meanChance : NaN, top1Chance: meanChance, top1: det.length ? t1.reduce((a, b) => a + b, 0) / det.length : NaN, pValue: binomUpper(t1.reduce((a, b) => a + b, 0), det.length, meanChance) },
+  };
+
+  return { options: { graceSec, atRiskHorizonSec: horizon }, faults: results, excluded, overall, byClass, falseAlarm, calibration, confusion: { truth: truthNames, predicted: cols, counts }, kindConfusion, research };
 }

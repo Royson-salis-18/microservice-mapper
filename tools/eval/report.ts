@@ -103,6 +103,33 @@ function felt(score: Score): string {
 <p class="note">"Felt" is measured from the traffic generator's own log (error rate at least 1 point above its baseline, or p95 at least 3 times and 50 ms worse), independent of the mapper. A fault that nobody could feel (a throttle on an idle service, a cache that is never missed) is not a failure to detect; the second row shows how often the mapper noticed anyway.</p></figure></div>`;
 }
 
+function kindSection(score: Score): string {
+  const k = score.kindConfusion, n = k.counts.flat().reduce((a, b) => a + b, 0);
+  if (!n) return '';
+  return `<h2>Does the evidence match what was injected?</h2><div class="grid2">${heat('Injected kind of fault against the kind the mapper\'s evidence points to', k.truth, k.predicted, k.counts)}
+<figure><figcaption>Agreement between injection and evidence</figcaption><table><thead><tr><th>measure</th><th>value</th></tr></thead><tbody>
+<tr><td>Kind recovered correctly (of faults with a clear reading)</td><td>${ci(k.accuracy)}</td></tr><tr><td>Cohen\'s kappa (beyond chance)</td><td>${num(k.kappa, 2)}</td></tr></tbody></table>
+<p class="note">The injector applied a fault class (crash, stop, crash-loop = <i>down</i>; pause = <i>frozen</i>; brownout, flap = <i>slow</i>; memory; partition = <i>isolated</i>) without telling the mapper. This asks whether the metrics the mapper collected on the service it blames are the metrics that kind of fault leaves behind. Kappa 1 is perfect agreement, 0 is no better than chance.</p></figure></div>`;
+}
+
+function researchSection(score: Score): string {
+  const r = score.research; if (!r) return '';
+  const b = r.bootstrap, cv = r.crossValidation, d = r.delay, c = r.chance;
+  const row = (l: string, v: string, note = '') => `<tr><td>${esc(l)}</td><td>${v}</td><td>${esc(note)}</td></tr>`;
+  const bs = (x: any) => `${pct(x.mean)} (${pct(x.lo)}–${pct(x.hi)})`;
+  return `<h2>Statistical summary</h2><div class="grid2"><figure class="wide"><figcaption>Estimates, stability and significance</figcaption><div class="tablewrap"><table><thead><tr><th>quantity</th><th>value</th><th>meaning</th></tr></thead><tbody>
+${row('Detected, bootstrap 95% CI', bs(b.detected), '2000 resamples of the faults')}
+${row('Top-1, bootstrap 95% CI', bs(b.top1), 'agrees with the Wilson interval above')}
+${row('Top-3, bootstrap 95% CI', bs(b.top3))}
+${row('Top-1, 5-fold cross-validation', `${pct(cv.top1.mean)} ± ${pct(cv.top1.sd)} (${cv.top1.folds.length} folds)`, 'class-stratified; the rules are fixed, so this shows how stable the estimate is across disjoint fault groups')}
+${row('Detection, 5-fold cross-validation', `${pct(cv.detected.mean)} ± ${pct(cv.detected.sd)}`)}
+${row('Top-1 against chance', `${pct(c.top1)} vs ${pct(c.top1Chance)} at random`, `choosing one of ~${num(c.meanCandidates, 1)} candidates at random; one-sided binomial p = ${Number.isFinite(c.pValue) ? (c.pValue < 0.001 ? '< 0.001' : num(c.pValue, 3)) : 'n/a'}`)}
+${row('Detection delay: mean, sd', `${sec(d.mean)}, ${sec(d.sd)}`, `n=${d.n}`)}
+${row('Detection delay: skewness, excess kurtosis', `${num(d.skew)}, ${num(d.kurt)}`, 'positive skew = a few slow detections stretch the tail')}
+${row('Delay vs fault duration, Spearman rho', `${num(r.delayVsDuration.rho)} (p ${Number.isFinite(r.delayVsDuration.p) ? num(r.delayVsDuration.p, 3) : 'n/a'})`, 'does a longer fault get noticed later or sooner')}
+</tbody></table></div><p class="note">Every number is computed from the same ledger and snapshots as the rest of this page, with seeded resampling, so re-running gives the same values.</p></figure></div>`;
+}
+
 export function renderReport(score: Score, meta: Meta, incidents: { id: string; s: number; e: number; root: string | null }[], t0: number, t1: number, serviceOrder: string[]): string {
   const o = score.overall;
   const classes = Object.keys(score.byClass).sort((a, b) => CLASS_ORDER.indexOf(a) - CLASS_ORDER.indexOf(b));
@@ -150,6 +177,8 @@ ${histogram(o.delaySec.values, o.delaySec.median, o.delaySec.p90)}</div>
 <tr><td>one fault at a time</td><td>${o.isolated.n}</td><td>${pct(o.isolated.detected.p)}</td><td>${pct(o.isolated.top1.p)}</td><td>${pct(o.isolated.top1AnyActive.p)}</td></tr>
 <tr><td>overlapping faults</td><td>${o.overlapping.n}</td><td>${pct(o.overlapping.detected.p)}</td><td>${pct(o.overlapping.top1.p)}</td><td>${pct(o.overlapping.top1AnyActive.p)}</td></tr></tbody></table>
 <p class="note">With two faults live, an incident can only be about one of them; the lenient column counts a ranking that names any root that was active.</p></figure></div>
+${kindSection(score)}
+${researchSection(score)}
 ${table(score.faults, t0)}
 <p class="caveat">Method: a fault is <i>detected</i> when an incident open during it (plus ${score.options.graceSec} s grace) names its root or something that depends on it among its top three candidates or affected services. Intervals are Wilson 95%. ${score.excluded.length ? `Excluded from scoring because the injection itself failed: ${score.excluded.map((e) => esc(e.id)).join(', ')}.` : ''} The mapper was observed only through its public API; the ledger was read after the run. Small samples give wide intervals: read the whiskers, not just the bars.</p>
 </div></body></html>`;

@@ -858,6 +858,10 @@ export class GraphStore {
             networkTx: raw(snap.networkTx),
             networkRxRate: raw(snap.networkRxRate),
             networkTxRate: raw(snap.networkTxRate),
+            ...(snap.requestRate !== undefined && snap.requestRate !== null ? {
+              requestRate: raw(snap.requestRate), errorRate: raw(snap.errorRate) ?? undefined,
+              latency: raw(snap.latency) ?? undefined, latencyP95: raw(snap.p95Latency) ?? undefined,
+            } : {}),
             cpuAllowanceCores: raw(snap.cpuAllowanceCores),
             cpuOfAllowance: r1(snap.cpuOfAllowance),
           };
