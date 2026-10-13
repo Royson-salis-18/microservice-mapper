@@ -9,6 +9,24 @@ build/
 __pycache__/
 *.pyc
 
+# Secrets: SSH keys live next to the code on some machines; never commit them
+*.pem
+*.key
+*.ppk
+id_rsa*
+id_ed25519*
+
 # Local runtime data
 data/
 server/data/
+
+# Logs: written by the running server, collector, scorer and traffic-gen
+*.log
+ml/logs/
+
+# Packed build output (remote-collector bundles node_modules into a tarball)
+*.tar.gz
+*.tgz
+
+# Claude Code session worktrees: full checkouts, machine-specific paths
+.claude/worktrees/
