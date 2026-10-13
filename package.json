@@ -15,7 +15,8 @@
     "setup": "npm run install:all && npm run doctor",
     "doctor": "node scripts/doctor.mjs",
     "start": "npm run dev",
-    "eval": "node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts"
+    "eval": "node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts",
+    "local": "node scripts/local.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
