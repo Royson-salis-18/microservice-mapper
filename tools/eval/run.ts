@@ -7,7 +7,7 @@
 //   all       score + report, writing both next to the snapshots
 //
 //   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts observe --subject shopflow --target shopflow [--mapper http://localhost:3001] [--interval 5] [--duration 3600]
-//   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts all --subject shopflow [--ledger path] [--observed path] [--grace 60] [--out dir]
+//   node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts all --subject shopflow [--ledger path] [--observed path] [--grace 60] [--out dir] [--traffic <container>|none]
 //
 // The ledger is the injector's private ground truth (default ~/.faultlab/ledger-<subject>.jsonl). The harness reads it only
 // after the fact and never writes to it.
@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { score } from './score.ts';
-import { loadLedger, loadObserved } from './load.ts';
+import { loadLedger, loadObserved, loadTrafficImpact } from './load.ts';
 import { observe } from './observe.ts';
 import { renderReport } from './report.ts';
 
@@ -45,7 +45,11 @@ async function main() {
   // score only the faults that happened while we were watching
   const t0 = snaps[0].ts, t1 = snaps.at(-1)!.ts;
   const scored = faults.filter((f) => f.b >= t0 && f.a <= t1);
-  const result = score(scored, snaps, { graceSec: Number(o.grace ?? 60) });
+  // what users felt, from the traffic generator's own log: an independent measure the mapper never sees
+  const trafficContainer = o.traffic ?? `${subject}-traffic-1`;
+  const impact = o.traffic === 'none' ? [] : loadTrafficImpact(trafficContainer, t0);
+  if (!impact.length) console.error(`note: no traffic log from container ${trafficContainer}; faults cannot be split into felt and unfelt (use --traffic <container>)`);
+  const result = score(scored, snaps, { graceSec: Number(o.grace ?? 60) }, impact);
   if (cmd === 'score') { console.log(JSON.stringify(result, (_k, v) => (typeof v === 'number' && !Number.isFinite(v) ? null : v), 2)); return; }
 
   // service rows for the timeline: faulted services first (by first fault), then the rest

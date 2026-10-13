@@ -25,6 +25,22 @@ export interface SnapIncident {
 }
 export interface Snapshot { ts: number; incidents: SnapIncident[]; status: Record<string, string> }
 
+/** One 5-second window of what the traffic generator experienced (users' view, independent of the mapper). */
+export interface ImpactSample { ts: number; n: number; p95: number; err: number }
+/**
+ * Parse `docker logs -t <traffic container>`: lines like
+ *   2026-10-13T15:03:23.456Z 15:03:23 n=23 p50=5ms p95=10ms err5xx/net=0.0%
+ * Pure: the text is read elsewhere.
+ */
+export function parseTrafficLog(text: string): ImpactSample[] {
+  const out: ImpactSample[] = [];
+  for (const line of text.split('\n')) {
+    const m = /^(\d{4}-\d\d-\d\dT[\d:.]+Z?)\s+\S+\s+n=(\d+)\s+p50=\d+ms\s+p95=(\d+)ms\s+err5xx\/net=([\d.]+)%/.exec(line.trim());
+    if (m) out.push({ ts: Date.parse(m[1]), n: Number(m[2]), p95: Number(m[3]), err: Number(m[4]) });
+  }
+  return out.sort((a, b) => a.ts - b.ts);
+}
+
 export const norm = (id: string | null | undefined): string => (id ? (id.includes(':') ? id.split(':').slice(1).join(':') : id) : '');
 
 // ---------------------------------------------------------------- loading
@@ -77,6 +93,11 @@ export interface FaultResult {
   structural: { precision: number; recall: number; f1: number } | null;
   observed: { precision: number; recall: number; f1: number; impacted: number } | null;
   preWarned: { warned: number; of: number } | null;
+  /** True when no other fault overlapped this one (nor its 30 s tail): only then can user impact be attributed to it. */
+  isolated: boolean;
+  /** What users experienced during the fault, from the traffic generator. Null when no traffic log was supplied OR the fault was
+   *  not isolated (with another fault running, any impact could be that one's). */
+  userImpact: { visible: boolean; errPctMax: number; errPctMean: number; p95Ratio: number } | null;
 }
 export interface Score {
   options: { graceSec: number; atRiskHorizonSec: number };
@@ -93,12 +114,17 @@ const prf = (pred: Set<string>, truth: Set<string>) => {
   return { precision, recall, f1: f1(precision, recall) };
 };
 
-export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceSec?: number; atRiskHorizonSec?: number } = {}): Score {
+export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceSec?: number; atRiskHorizonSec?: number } = {}, impact: ImpactSample[] = []): Score {
   const graceSec = opts.graceSec ?? 60, horizon = opts.atRiskHorizonSec ?? 120;
   const excluded: { id: string; reason: string }[] = [];
   const faults = faultsIn.filter((f) => { if (f.failed) { excluded.push({ id: f.id, reason: `injection failed: ${f.failed.slice(0, 80)}` }); return false; } return true; });
   const results: FaultResult[] = [];
   const grace = graceSec * 1000;
+  // Users' baseline: latency and errors in windows well clear of every fault.
+  const calm = impact.filter((x) => !faults.some((f) => x.ts >= f.a - 30000 && x.ts <= f.b + 60000));
+  const med = (xs: number[]) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : NaN);
+  const baseP95 = Math.max(5, med((calm.length >= 6 ? calm : impact).map((x) => x.p95)));
+  const baseErr = med((calm.length >= 6 ? calm : impact).map((x) => x.err)) || 0;
 
   for (const f of faults) {
     const win = snaps.filter((s) => s.ts >= f.a && s.ts <= f.b + grace);
@@ -136,11 +162,20 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
         preWarned = { warned, of: truthObs.size };
       }
     }
+    // Did users feel it? Visible = errors clearly above their baseline (>= +1 point mean) or p95 at least 3x baseline and 50 ms worse.
+    let userImpact: FaultResult['userImpact'] = null;
+    const isolated = !faults.some((o) => o !== f && o.a < f.b + 30000 && o.b > f.a);
+    const win2 = impact.filter((x) => x.ts >= f.a && x.ts <= f.b + 10000 && x.n > 0);
+    if (isolated && win2.length >= 2) {
+      const errMean = win2.reduce((s, x) => s + x.err, 0) / win2.length, errMax = Math.max(...win2.map((x) => x.err));
+      const p95Ratio = Math.max(...win2.map((x) => x.p95)) / baseP95, p95Worse = Math.max(...win2.map((x) => x.p95)) - baseP95;
+      userImpact = { visible: errMean - baseErr >= 1 || (p95Ratio >= 3 && p95Worse >= 50), errPctMax: errMax, errPctMean: errMean, p95Ratio };
+    }
     results.push({
       id: f.id, class: f.class, target: f.target, concurrent: concurrentFaults.length, a: f.a, b: f.b,
       detected: !!first, anyIncident, preexisting, delaySec, rankSettled, rankInitial,
       top1: rankSettled === 1, top3: rankSettled !== null && rankSettled <= 3, top1Initial: rankInitial === 1,
-      top1AnyActive: !!top && activeRoots.has(top), predictedRoot: top, structural, observed, preWarned,
+      top1AnyActive: !!top && activeRoots.has(top), predictedRoot: top, structural, observed, preWarned, isolated, userImpact,
     });
   }
 
@@ -161,6 +196,10 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
       delaySec: { median: quantile(delays, 0.5), p90: quantile(delays, 0.9), mean: mean(delays), values: delays },
       structural: { precision: mean(sp.map((r) => r.structural!.precision)), recall: mean(sp.map((r) => r.structural!.recall)), f1: mean(sp.map((r) => r.structural!.f1)) },
       observed: { precision: mean(op.map((r) => r.observed!.precision)), recall: mean(op.map((r) => r.observed!.recall)), f1: mean(op.map((r) => r.observed!.f1)), faultsWithImpact: op.filter((r) => r.observed!.impacted > 0).length },
+      isolated: rs.filter((r) => r.isolated).length,
+      visible: rs.filter((r) => r.userImpact?.visible).length,
+      detectedWhenVisible: wilson(rs.filter((r) => r.userImpact?.visible && r.detected).length, rs.filter((r) => r.userImpact?.visible).length),
+      detectedWhenInvisible: wilson(rs.filter((r) => r.userImpact && !r.userImpact.visible && r.detected).length, rs.filter((r) => r.userImpact && !r.userImpact.visible).length),
       preWarned: pw.length ? wilson(pw.reduce((s, r) => s + r.preWarned!.warned, 0), pw.reduce((s, r) => s + r.preWarned!.of, 0)) : null,
     };
   };
