@@ -1,253 +1,120 @@
+import { memo, type CSSProperties } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { ServiceNode } from '../types';
+import { cpuBasis, cpuShown, loadColor, statusVisual, typeVisual } from './shared/serviceVisuals';
 
 interface ServiceNodeProps {
   data: ServiceNode;
   selected: boolean;
 }
 
-const typeIcons: Record<string, string> = {
-  gateway: '🌐',
-  service: '⚡',
-  database: '🗄️',
-  queue: '📨',
-  frontend: '🖥️',
-  infrastructure: '🔧',
-  external: '☁️',
-  unknown: '❓'
-};
+function Meter({ label, value, title }: { label: string; value: number | undefined; title: string }) {
+  const v = value ?? 0;
+  const color = loadColor(v);
+  return (
+    <div className="svc-meter" title={title}>
+      <span className="svc-meter-label">{label}</span>
+      <div className="svc-meter-track">
+        <div
+          className="svc-meter-fill"
+          style={{
+            width: `${Math.min(Math.max(v, 0), 100)}%`,
+            background: `linear-gradient(90deg, ${color}99, ${color})`,
+            boxShadow: `0 0 6px ${color}88`,
+          }}
+        />
+      </div>
+      <span className="svc-meter-value">{value === undefined ? '—' : `${value.toFixed(1)}%`}</span>
+    </div>
+  );
+}
 
-const getTypeColors = (type: string) => {
-  switch (type) {
-    case 'database': return { bg: 'rgba(224, 64, 251, 0.05)', tint: '#e040fb' };
-    case 'gateway': return { bg: 'rgba(0, 212, 255, 0.05)', tint: '#00d4ff' };
-    case 'queue': return { bg: 'rgba(255, 171, 0, 0.05)', tint: '#ffab00' };
-    case 'frontend': return { bg: 'rgba(59, 130, 246, 0.05)', tint: '#3b82f6' };
-    case 'service': return { bg: 'rgba(255, 255, 255, 0.03)', tint: '#94a3b8' };
-    default: return { bg: 'rgba(255, 255, 255, 0.02)', tint: '#64748b' };
-  }
-};
-
-export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
-  const getStatusColor = (s: string) => {
-    if (s === 'healthy') return 'var(--color-healthy)';
-    if (s === 'degraded') return 'var(--color-degraded)';
-    if (s === 'critical') return 'var(--color-critical)';
-    return 'var(--color-unknown)';
-  };
-  
-  const getStatusGlow = (s: string) => {
-    if (s === 'healthy') return 'var(--color-healthy-glow)';
-    if (s === 'degraded') return 'var(--color-degraded-glow)';
-    if (s === 'critical') return 'var(--color-critical-glow)';
-    return 'rgba(255,255,255,0.1)';
-  };
-
-  const color = getStatusColor(data.status);
-  const glow = getStatusGlow(data.status);
-  const isCritical = data.status === 'critical';
-  const typeStyle = getTypeColors(data.type as string);
-
+/**
+ * A service on the 2D canvas: a glass card with the category's icon tile,
+ * its live CPU and memory, and a status light. Styling lives in index.css
+ * (.svc-*); the card only sets its two colours as custom properties.
+ *
+ * Trouble reads from the card's edge: an amber rim for degraded, a pulsing
+ * red one for down. Selection is the indigo accent used everywhere else.
+ */
+function ServiceNodeInner({ data, selected }: ServiceNodeProps) {
+  const type = typeVisual(data.type as string);
+  const status = statusVisual(data.status);
+  const Icon = type.icon;
   const viewMode = ((data as any).viewMode as string) || 'dependency';
-  const isHealthy = data.status === 'healthy';
+  const cpu = cpuShown(data.metrics);
+  const mem = data.metrics?.memoryPercent;
+  const risk = data.analytics?.riskScore ?? 0;
 
-  let nodeOpacity = 1;
-  if (viewMode === 'failure' && isHealthy) {
-    nodeOpacity = 0.35;
-  }
+  const classes = ['svc-card'];
+  if (selected) classes.push('selected');
+  if (data.status === 'critical') classes.push('critical');
+  else if (data.status === 'degraded') classes.push('degraded');
+  if (viewMode === 'failure' && data.status === 'healthy') classes.push('faded');
 
-  const cpuPercent = data.metrics ? ((data.metrics as any).cpu || 0) : 0;
-  const memPercent = data.metrics ? ((data.metrics as any).memoryPercent || 0) : 0;
+  const vars = { '--svc-tint': type.color, '--svc-status': status.color } as CSSProperties;
 
   return (
-    <div style={{
-      width: '180px',
-      background: 'var(--color-bg-panel)',
-      backgroundImage: `linear-gradient(145deg, ${typeStyle.bg} 0%, rgba(10,13,24,0.95) 100%)`,
-      border: `1px solid ${selected ? color : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: '8px',
-      boxShadow: selected 
-        ? `0 8px 24px rgba(0,0,0,0.6), 0 0 16px ${glow}, inset 0 0 8px ${glow}` 
-        : '0 4px 16px rgba(0,0,0,0.4)',
-      padding: '12px',
-      color: 'var(--color-text-main)',
-      animation: isCritical ? 'pulse-critical 1.8s infinite' : 'none',
-      position: 'relative',
-      opacity: nodeOpacity,
-      transition: 'all var(--transition-normal)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      transform: selected ? 'translateY(-2px)' : 'none',
-      cursor: 'pointer'
-    }}
-    onMouseEnter={(e) => {
-      if (!selected) {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.7), 0 0 12px ${glow}`;
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-      }
-    }}
-    onMouseLeave={(e) => {
-      if (!selected) {
-        e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.4)';
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-      }
-    }}
-    >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{
-          background: 'var(--color-bg-body)',
-          border: `2px solid ${color}`,
-          width: '9px',
-          height: '9px',
-          borderRadius: '50%',
-          boxShadow: `0 0 8px ${color}`
-        }}
-      />
+    <div className={classes.join(' ')} style={vars}>
+      <Handle type="target" position={Position.Top} className="svc-handle" />
 
-      {(data.analytics?.riskScore ?? 0) > 0.6 && (
+      {risk > 0.6 && (
         <div
-          title={`Risk ${((data.analytics?.riskScore ?? 0) * 100).toFixed(0)}% — current exposure, not a predicted probability. See the Reliability tab for the breakdown.`}
-          style={{
-            position: 'absolute',
-            top: '-8px',
-            left: '-8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            background: (data.analytics!.riskScore! > 0.8) ? 'rgba(255, 23, 68, 0.15)' : 'rgba(255, 171, 0, 0.15)',
-            border: `1px solid ${(data.analytics!.riskScore! > 0.8) ? 'var(--color-critical)' : 'var(--color-degraded)'}`,
-            borderRadius: '10px',
-            padding: '2px 6px',
-            fontSize: '9px',
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            color: (data.analytics!.riskScore! > 0.8) ? 'var(--color-critical)' : 'var(--color-degraded)',
-            zIndex: 2,
-          }}
+          className="svc-badge risk"
+          style={{ color: risk > 0.8 ? '#ff3d5e' : '#ffab40' }}
+          title={`Risk ${Math.round(risk * 100)}%: current exposure, not a predicted probability. See the Reliability tab for the breakdown.`}
         >
-          RISK {((data.analytics?.riskScore ?? 0) * 100).toFixed(0)}%
+          RISK {Math.round(risk * 100)}%
         </div>
       )}
 
       {data.analytics?.anomalyPersistent && (
         <div
-          title={`Isolation Forest: anomaly score ${((data.analytics?.anomalyScore ?? 0) * 100).toFixed(0)}%, sustained over multiple windows`}
-          style={{
-            position: 'absolute',
-            top: '-8px',
-            right: '-8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            background: 'rgba(255, 23, 68, 0.15)',
-            border: '1px solid var(--color-critical)',
-            borderRadius: '10px',
-            padding: '2px 6px',
-            fontSize: '9px',
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            color: 'var(--color-critical)',
-            animation: 'pulse-critical 1.8s infinite',
-            zIndex: 2,
-          }}
+          className="svc-badge anomaly"
+          title={`ML ensemble: at least half of this service's trained detectors agree it is anomalous (score ${Math.round((data.analytics?.anomalyScore ?? 0) * 100)}%), sustained over multiple scoring windows`}
         >
           ANOMALY
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '12px' }}>{typeIcons[data.type as string] || typeIcons.unknown}</span>
-            <span style={{ 
-              fontWeight: 700, 
-              fontSize: '13px', 
-              whiteSpace: 'nowrap', 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis',
-              letterSpacing: '-0.01em',
-              color: '#fff'
-            }}>
-              {data.name as string}
-            </span>
-          </div>
-          <span style={{ 
-            fontSize: '9px', 
-            color: typeStyle.tint, 
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            fontWeight: 700,
-            marginTop: '2px',
-            opacity: 0.8
-          }}>
-            {data.project as string}
-          </span>
+      <div className="svc-head">
+        <span className="svc-icon" aria-hidden="true">
+          <Icon size={15} strokeWidth={2.2} />
+        </span>
+        <div className="svc-titles">
+          <div className="svc-name" title={data.name}>{data.name}</div>
+          <div className="svc-project">{data.project}</div>
         </div>
-        
-        <div style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          background: color,
-          boxShadow: `0 0 8px ${color}`,
-          animation: isHealthy ? 'breathe-healthy 3.5s infinite' : 'none',
-          marginTop: '4px',
-          flexShrink: 0
-        }} />
+        <span
+          className={`svc-status ${data.status === 'healthy' ? 'breathe' : ''}`}
+          title={status.label}
+          aria-label={status.label}
+        />
       </div>
 
-      <div style={{ 
-        background: 'rgba(0,0,0,0.4)', 
-        padding: '6px 8px', 
-        borderRadius: '6px', 
-        border: '1px solid rgba(255,255,255,0.03)',
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-text-muted)', width: '22px', fontFamily: 'var(--font-mono)' }}>CPU</span>
-            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ 
-                height: '100%', 
-                width: `${Math.min(cpuPercent, 100)}%`, 
-                background: cpuPercent > 80 ? 'linear-gradient(90deg, #ff1744, #ff5252)' : cpuPercent > 60 ? 'linear-gradient(90deg, #ffab00, #ffd740)' : 'linear-gradient(90deg, #00d4ff, #00e676)',
-                borderRadius: '2px',
-                transition: 'width 0.4s ease'
-              }} />
-            </div>
-            <span style={{ fontSize: '9px', color: '#fff', width: '32px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{Number(cpuPercent).toFixed(1)}%</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-text-muted)', width: '22px', fontFamily: 'var(--font-mono)' }}>MEM</span>
-            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ 
-                height: '100%', 
-                width: `${Math.min(memPercent, 100)}%`, 
-                background: memPercent > 80 ? 'linear-gradient(90deg, #ff1744, #ff5252)' : memPercent > 60 ? 'linear-gradient(90deg, #ffab00, #ffd740)' : 'linear-gradient(90deg, #e040fb, #7c4dff)',
-                borderRadius: '2px',
-                transition: 'width 0.4s ease'
-              }} />
-            </div>
-            <span style={{ fontSize: '9px', color: '#fff', width: '32px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{Number(memPercent).toFixed(1)}%</span>
-          </div>
-        </div>
-      </div>
+      <Meter label="CPU" value={cpu} title={cpuBasis(data.metrics)} />
+      <Meter label="MEM" value={mem} title={typeof mem === 'number' ? `${mem.toFixed(1)}% of its memory limit` : 'not measured'} />
 
-      <Handle 
-        type="source" 
-        position={Position.Bottom} 
-        style={{ 
-          background: 'var(--color-bg-body)', 
-          border: `2px solid ${color}`,
-          width: '9px',
-          height: '9px',
-          borderRadius: '50%',
-          boxShadow: `0 0 8px ${color}`
-        }} 
-      />
+      <Handle type="source" position={Position.Bottom} className="svc-handle" />
     </div>
   );
 }
+
+/**
+ * Re-render when something shown changes. App rebuilds node objects on every
+ * graph push; the bars and figures on this card change only when their
+ * displayed (one-decimal) values do.
+ */
+function sameNodeProps(a: ServiceNodeProps, b: ServiceNodeProps): boolean {
+  if (a.selected !== b.selected) return false;
+  const da = a.data as any, db = b.data as any;
+  if (da.id !== db.id || da.status !== db.status || da.type !== db.type || da.name !== db.name || da.viewMode !== db.viewMode || da.project !== db.project) return false;
+  const r1 = (v: unknown) => (typeof v === 'number' ? Math.round(v * 10) : -1);
+  if (r1(cpuShown(da.metrics)) !== r1(cpuShown(db.metrics)) || r1(da.metrics?.memoryPercent) !== r1(db.metrics?.memoryPercent)) return false;
+  const aa = da.analytics ?? {}, ab = db.analytics ?? {};
+  if (Math.round((aa.riskScore ?? -1) * 100) !== Math.round((ab.riskScore ?? -1) * 100)) return false;
+  if (Boolean(aa.anomalyPersistent) !== Boolean(ab.anomalyPersistent) || Math.round((aa.anomalyScore ?? -1) * 100) !== Math.round((ab.anomalyScore ?? -1) * 100)) return false;
+  return true;
+}
+
+export const CustomServiceNode = memo(ServiceNodeInner, sameNodeProps);

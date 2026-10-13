@@ -300,7 +300,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                       onClick={() => setSelectedNodeId(node.id)}
                       style={{
                         borderBottom: '1px solid rgba(255,255,255,0.03)',
-                        background: isSelected ? 'rgba(0, 212, 255, 0.08)' : 'transparent',
+                        background: isSelected ? 'rgba(107, 128, 255, 0.08)' : 'transparent',
                         cursor: 'pointer',
                         transition: 'background 0.2s'
                       }}
@@ -399,7 +399,7 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                             style={{
                               width: '100%',
                               height: `${Math.max(val, 4)}%`,
-                              background: 'linear-gradient(180deg, var(--color-accent-cyan) 0%, rgba(0,212,255,0.1) 100%)',
+                              background: 'linear-gradient(180deg, var(--color-accent-cyan) 0%, rgba(107,128,255,0.1) 100%)',
                               borderRadius: '2px 2px 0 0',
                               transition: 'height 0.3s'
                             }}

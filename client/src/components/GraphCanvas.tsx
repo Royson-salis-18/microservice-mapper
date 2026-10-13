@@ -4,6 +4,7 @@ import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CustomServiceNode } from './ServiceNode';
 import { CustomDependencyEdge } from './DependencyEdge';
+import { statusVisual, typeVisual } from './shared/serviceVisuals';
 
 interface GraphCanvasProps {
   nodes: Node[];
@@ -66,21 +67,15 @@ export function GraphCanvas({ nodes, edges, layoutKey, onNodeClick, onEdgeClick,
         <MiniMap
           zoomable
           pannable
-          maskColor="rgba(4, 6, 15, 0.75)"
-          style={{ background: 'rgba(8, 12, 22, 0.9)', border: '1px solid rgba(125,211,252,0.18)', borderRadius: '8px' }}
+          maskColor="rgba(7, 9, 20, 0.75)"
+          style={{ background: 'rgba(20, 22, 30, 0.92)', border: '1px solid rgba(148,163,255,0.14)', borderRadius: '10px' }}
           nodeColor={(n) => {
             // Warm colours are reserved for trouble, matching the 3D scene:
-            // anything amber or red on the minimap is a real problem.
-            if (n.data?.status === 'degraded') return '#ffab00';
-            if (n.data?.status === 'critical') return '#ff1744';
-            const type = (n.data as any)?.type;
-            if (type === 'gateway') return '#00e5ff';
-            if (type === 'frontend') return '#6f8cff';
-            if (type === 'database') return '#00ff9d';
-            if (type === 'cache') return '#a78bfa';
-            if (type === 'queue') return '#c084fc';
-            if (type === 'service') return '#4fd1c5';
-            return '#9f8fd6';
+            // anything amber or red on the minimap is a real problem. The
+            // category tints are the 3D scene's (TYPE_STYLE in 3d/Node3D).
+            const status = (n.data as any)?.status;
+            if (status === 'degraded' || status === 'critical') return statusVisual(status).color;
+            return typeVisual((n.data as any)?.type).color;
           }}
         />
       </ReactFlow>

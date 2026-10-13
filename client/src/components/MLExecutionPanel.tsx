@@ -135,7 +135,7 @@ function Hint({ s, current, onApply }: { s?: Suggestion; current: string; onAppl
         onClick={() => onApply(value)}
         title={applied ? 'already set' : `use ${value}`}
         style={{
-          background: applied ? 'rgba(0,230,118,0.15)' : 'rgba(0,212,255,0.12)',
+          background: applied ? 'rgba(0,230,118,0.15)' : 'rgba(107,128,255,0.12)',
           border: `1px solid ${applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)'}`,
           color: applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)',
           borderRadius: '4px', padding: '0 5px', fontSize: '9px', cursor: 'pointer', fontWeight: 700,
@@ -367,7 +367,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
         {suggest?.available && suggest.observed && (
           <div style={{
             marginBottom: '10px', padding: '8px 10px', borderRadius: '6px',
-            background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.25)',
+            background: 'rgba(107,128,255,0.06)', border: '1px solid rgba(107,128,255,0.25)',
             fontSize: '10px', color: 'var(--color-text-muted)', lineHeight: 1.6,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -411,7 +411,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
               type="button" disabled={running}
               onClick={() => setAlgorithms(suggest!.suggestions!.algorithms.suggested as string[])}
               style={{
-                background: 'rgba(0,212,255,0.12)', border: '1px solid var(--color-accent-cyan)',
+                background: 'rgba(107,128,255,0.12)', border: '1px solid var(--color-accent-cyan)',
                 color: 'var(--color-accent-cyan)', borderRadius: '6px', padding: '3px 10px',
                 fontSize: '11px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 650,
               }}
@@ -428,7 +428,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
                 onClick={() => setAlgorithms(prev => on ? prev.filter(x => x !== a.id) : [...prev, a.id])}
                 title={a.note}
                 style={{
-                  background: on ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.04)',
+                  background: on ? 'rgba(107,128,255,0.18)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${on ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
                   color: on ? '#fff' : 'var(--color-text-dim)',
                   borderRadius: '6px', padding: '5px 10px', fontSize: '10px',

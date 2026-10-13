@@ -1,11 +1,19 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls, Grid, Billboard, Text, MeshReflectorMaterial } from '@react-three/drei';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber';
+import { PerspectiveCamera, OrbitControls, Grid, Billboard, Text, Edges } from '@react-three/drei';
 import type { Node, Edge } from '@xyflow/react';
 import * as THREE from 'three';
-import { Node3D, TYPE_STYLE } from './Node3D';
-import { Edge3D } from './Edge3D';
-import { LAYOUTS, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
+import type { ServiceNode } from '../../types';
+import { Node3D, AT_RISK } from './Node3D';
+import { Edge3D, type LinkRouting } from './Edge3D';
+import { SceneHud, type ZoneSummary } from './SceneHud';
+import { Callouts, SelectedCard, type CalloutItem } from './Callouts3D';
+import { Backdrop, Bloom } from './Effects';
+import { glowTexture, tiledFloor } from './textures';
+import { cpuShown } from '../shared/serviceVisuals';
+import { computeSite, islandRoleOf, type Rect, type Site } from './site';
+import { Islands, type IslandAlert, type IslandCardInfo } from './Islands';
+import { LAYOUTS, ZONED_LAYOUTS, LABELLED_LAYOUTS, HALL_PADDING, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
 
 interface Scene3DProps {
   nodes: Node[];
@@ -15,8 +23,18 @@ interface Scene3DProps {
   onPaneClick: () => void;
 }
 
-/** Live, mutable positions shared by nodes, edges and the camera fitter. */
+/** Live, mutable positions shared by nodes, edges and the camera. */
 export type PositionMap = Map<string, THREE.Vector3>;
+
+/** Most tags hung in the scene at once. Each is a DOM element moved every
+ *  frame, and past this many they cover the equipment they point at. */
+const MAX_CALLOUTS = 8;
+
+/** The camera looks along the diagonal, from the +x/+z corner. */
+const AZIMUTH = Math.PI / 4;
+const FOV = 30;
+
+const FOG_COLOR = '#070914';
 
 /**
  * Eases every node toward the position its layout wants, writing into a
@@ -24,8 +42,7 @@ export type PositionMap = Map<string, THREE.Vector3>;
  *
  * Deliberately not React state: driving setState from useFrame re-renders
  * the scene every frame, which rebuilds the layout, which restarts the
- * animation — a loop that starves the render loop badly enough that
- * nothing inside the Canvas ever draws.
+ * animation, a loop that starves the render loop.
  */
 function LayoutDriver({ target, live }: { target: Positions; live: PositionMap }) {
   useFrame((_, delta) => {
@@ -48,65 +65,537 @@ function LayoutDriver({ target, live }: { target: Positions; live: PositionMap }
   return null;
 }
 
+export type CameraRequest =
+  | { kind: 'all'; nonce: number }
+  | { kind: 'zone'; id: string; nonce: number }
+  | { kind: 'node'; id: string; nonce: number };
+
+function boundsOf(points: [number, number, number][], pad: number): THREE.Box3 {
+  const box = new THREE.Box3();
+  for (const [x, y, z] of points) box.expandByPoint(new THREE.Vector3(x, y, z));
+  // Equipment is ~5 tall and the tags hang above it.
+  box.max.y += 9;
+  box.expandByVector(new THREE.Vector3(pad, 0, pad));
+  return box;
+}
+
 /**
- * Frames whatever the current layout produced. Each arrangement has a very
- * different footprint — a helix is tall and narrow, a ring of 45 services is
- * huge and flat — so one fixed camera either buries the scene or leaves it a
- * speck. Refits when the layout or node count changes, never on a metric
- * tick, so it doesn't fight the user's own orbiting.
+ * Where the camera goes to frame a box from the diagonal.
+ *
+ * Fitted by projection rather than by formula: the box's corners are pushed
+ * through a camera like the real one, and the distance is searched for until
+ * they all land inside the part of the canvas the HUD leaves free. A closed
+ * form under-framed badly, because under perspective the near corner of a
+ * wide site looms much larger than its far one. A second pass re-aims so
+ * the content is centred in that free area, not in the whole canvas.
  */
-function FitCamera({ target, trigger }: { target: Positions; trigger: string }) {
-  const { camera, controls, scene } = useThree() as any;
-  const lastTrigger = useRef<string>('');
+function viewFor(box: THREE.Box3, camera: THREE.PerspectiveCamera, size: { width: number; height: number }) {
+  const width = Math.max(size.width, 1);
+  const height = Math.max(size.height, 1);
+  const extent = box.getSize(new THREE.Vector3());
+  const flatness = extent.y / Math.max(extent.x, extent.z, 1);
+  // Flat arrangements want a high angle or they collapse into a line; tall
+  // ones a low angle or the stack foreshortens into a blob.
+  const elevation = flatness < 0.3 ? 0.62 : 0.36;
+  const dir = new THREE.Vector3(
+    Math.sin(AZIMUTH) * Math.cos(elevation),
+    Math.sin(elevation),
+    Math.cos(AZIMUTH) * Math.cos(elevation),
+  );
 
-  useFrame(() => {
-    if (lastTrigger.current === trigger) return;
-    const entries = Object.values(target);
-    if (entries.length === 0) return;
-    lastTrigger.current = trigger;
+  // Free area: clear of the HUD, which rearranges itself by canvas width
+  // (see the @container rules for .scene-wrap). Wide: overview panel on the
+  // left, toolbar on top. Medium: narrower panel, toolbar at the bottom.
+  // Narrow: panel reduced to a strip across the top.
+  const free = width > 980
+    ? { left: 300, right: width - 40, top: 72, bottom: height - 28 }
+    : width > 640
+      ? { left: 258, right: width - 24, top: 16, bottom: height - 64 }
+      : { left: 16, right: width - 16, top: 84, bottom: height - 64 };
 
-    const box = new THREE.Box3();
-    for (const [x, y, z] of entries) box.expandByPoint(new THREE.Vector3(x, y, z));
-    box.expandByScalar(10); // node height, halos, floating labels
+  const probe = new THREE.PerspectiveCamera(camera.fov, width / height, 0.1, 100000);
+  const corners: THREE.Vector3[] = [];
+  for (const x of [box.min.x, box.max.x])
+    for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z]) corners.push(new THREE.Vector3(x, y, z));
+  const scratch = new THREE.Vector3();
 
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const fov = (camera.fov * Math.PI) / 180;
-    const aspect = camera.aspect || 1;
-
-    // Width and height are fitted separately: judging by one "max dimension"
-    // against the vertical FOV lets a wide flat ring run off both sides.
-    const fitHeight = size.y + size.z * 0.6; // the camera looks down, so depth eats vertical space
-    const distForHeight = fitHeight / (2 * Math.tan(fov / 2));
-    const distForWidth = size.x / (2 * Math.tan(fov / 2) * aspect);
-    const distance = Math.max(distForHeight, distForWidth, 26) * 0.92;
-
-    // Elevation adapts to the shape of the arrangement. A flat one (a ring,
-    // a grid) needs a high angle or it collapses into an edge-on line; a
-    // tall one (tiers, helix) needs a low angle or the stack foreshortens
-    // into a single blob.
-    const flatness = size.y / Math.max(size.x, size.z, 1);
-    const elevation = flatness < 0.25 ? 0.62 : 0.34;
-    camera.position.set(center.x, center.y + distance * elevation, center.z + distance * 0.86);
-    camera.near = 0.1;
-    camera.far = distance * 12;
-    camera.updateProjectionMatrix();
-    camera.lookAt(center);
-    if (controls) {
-      controls.target.copy(center);
-      controls.update();
+  /** Pixel bounds of the box seen from `distance` along `dir` from `target`. */
+  const project = (target: THREE.Vector3, distance: number) => {
+    probe.position.copy(target).addScaledVector(dir, distance);
+    probe.lookAt(target);
+    probe.updateMatrixWorld();
+    probe.matrixWorldInverse.copy(probe.matrixWorld).invert();
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let behind = false;
+    for (const c of corners) {
+      // A corner behind the camera projects to a mirrored point that can
+      // look as if it fits; the search must treat it as not fitting.
+      if (scratch.copy(c).applyMatrix4(probe.matrixWorldInverse).z > -1) behind = true;
+      scratch.copy(c).project(probe);
+      const px = (scratch.x + 1) / 2 * width;
+      const py = (1 - scratch.y) / 2 * height;
+      minX = Math.min(minX, px); maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py); maxY = Math.max(maxY, py);
     }
-    if (scene.fog) {
-      // Start past the far edge of the content, or the fog erases the very
-      // thing the camera was just positioned to show.
-      scene.fog.near = distance * 1.6;
-      scene.fog.far = distance * 4.5;
+    return { minX, maxX, minY, maxY, behind };
+  };
+
+  const fitDistance = (target: THREE.Vector3) => {
+    // Size only: compare the projected extent with the free area's extent.
+    const freeW = free.right - free.left;
+    const freeH = free.bottom - free.top;
+    let lo = 5, hi = 20000;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const b = project(target, mid);
+      if (!b.behind && b.maxX - b.minX <= freeW && b.maxY - b.minY <= freeH) hi = mid; else lo = mid;
+    }
+    return Math.max(hi, 30);
+  };
+
+  const target = box.getCenter(new THREE.Vector3());
+  let distance = fitDistance(target);
+  // Re-aim: move the target so the projected box sits in the middle of the
+  // free area, then fit again from there.
+  for (let pass = 0; pass < 2; pass++) {
+    const b = project(target, distance);
+    const dx = (b.minX + b.maxX) / 2 - (free.left + free.right) / 2;
+    const dy = (b.minY + b.maxY) / 2 - (free.top + free.bottom) / 2;
+    const worldPerPx = (2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) / height;
+    const right = new THREE.Vector3().setFromMatrixColumn(probe.matrixWorld, 0);
+    const up = new THREE.Vector3().setFromMatrixColumn(probe.matrixWorld, 1);
+    target.addScaledVector(right, dx * worldPerPx).addScaledVector(up, -dy * worldPerPx);
+    distance = fitDistance(target);
+  }
+  return { position: target.clone().addScaledVector(dir, distance), target, distance };
+}
+
+/**
+ * Flies the camera to whatever was last asked for: the whole scene when the
+ * layout or the service count changes, a project's hall, or one service.
+ *
+ * A flight eases over about a second and hands control back the moment the
+ * user grabs the view, so it never fights their own orbiting. The very first
+ * framing is instant, so the scene does not open with a swoop.
+ */
+/** The four floor corners of a rectangle, and the same raised to wall height. */
+function cornersOf(r: Rect, height: number): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  for (const y of [0, height]) for (const x of [r.x0, r.x1]) for (const z of [r.z0, r.z1]) out.push([x, y, z]);
+  return out;
+}
+
+function CameraRig({ target, nodes, fitTrigger, request, site }: {
+  target: Positions;
+  nodes: LayoutNode[];
+  fitTrigger: string;
+  request: CameraRequest;
+  /** In the building arrangement: frame whole rooms and the building, not
+   *  just the units in them, so walls and islands are never cut off. */
+  site?: Site | null;
+}) {
+  // Camera, controls and size are read from the frame state, never captured
+  // at render: <PerspectiveCamera makeDefault> and <OrbitControls
+  // makeDefault> replace the defaults after this component first renders,
+  // and a captured camera was R3F's own fallback (fov 75), which nothing
+  // renders through. Every framing moved a camera no one could see.
+  const controls = useThree((s) => s.controls) as any;
+  const flight = useRef<{ position: THREE.Vector3; target: THREE.Vector3 } | null>(null);
+  const lastTrigger = useRef('');
+  const lastNonce = useRef(-1);
+  const framedOnce = useRef(false);
+  const lastSize = useRef('');
+  /** The user has moved the view since the last framing: leave it alone. */
+  const userMoved = useRef(false);
+  /** What was framed last, so a resize can reframe the same thing. */
+  const lastPlan = useRef<{ points: [number, number, number][]; pad: number } | null>(null);
+
+  useEffect(() => {
+    if (!controls) return;
+    const onStart = () => { flight.current = null; userMoved.current = true; };
+    controls.addEventListener('start', onStart);
+    return () => controls.removeEventListener('start', onStart);
+  }, [controls]);
+
+  const plan = (state: RootState, points: [number, number, number][], pad: number) => {
+    if (points.length === 0) return;
+    const camera = state.camera as THREE.PerspectiveCamera;
+    const orbit = state.controls as any;
+    lastPlan.current = { points, pad };
+    userMoved.current = false;
+    const view = viewFor(boundsOf(points, pad), camera, state.size);
+    const fog = state.scene.fog as THREE.Fog | null;
+    if (fog) {
+      // Starts past the far side of the content, so it softens the city
+      // around the halls and never the halls themselves.
+      fog.near = view.distance * 1.15;
+      fog.far = view.distance * 3.2;
+    }
+    camera.far = Math.max(view.distance * 8, 2000);
+    camera.updateProjectionMatrix();
+    if (!framedOnce.current) {
+      framedOnce.current = true;
+      camera.position.copy(view.position);
+      if (orbit) { orbit.target.copy(view.target); orbit.update(); }
+      else camera.lookAt(view.target);
+      return;
+    }
+    flight.current = { position: view.position, target: view.target };
+  };
+
+  useFrame((state, delta) => {
+    const { size } = state;
+    // Wait for the real camera and controls, and for the canvas to be
+    // measured: until then it reports the browser default 300x150, and a
+    // framing for that aspect is wrong for the real one.
+    if (!state.controls || (state.camera as THREE.PerspectiveCamera).fov !== FOV) return;
+    if (size.width === 300 && size.height === 150) return;
+    const sizeKey = `${size.width}x${size.height}`;
+    if (lastSize.current !== sizeKey) {
+      const resized = lastSize.current !== '';
+      lastSize.current = sizeKey;
+      // The inspection panel opening, or the window changing, reframes what
+      // was framed, unless the user has since set up their own view.
+      if (resized && lastPlan.current && !userMoved.current) plan(state, lastPlan.current.points, lastPlan.current.pad);
+    }
+    const all = Object.values(target);
+    const whole = site?.building ? [...all, ...cornersOf(site.building, 3)] : all;
+    if (all.length > 0 && lastTrigger.current !== fitTrigger) {
+      lastTrigger.current = fitTrigger;
+      plan(state, whole, site ? 1 : 4);
+    }
+    if (all.length > 0 && lastNonce.current !== request.nonce) {
+      lastNonce.current = request.nonce;
+      if (request.kind === 'all') plan(state, whole, site ? 1 : 4);
+      else if (request.kind === 'zone') {
+        const ids = nodes.filter((n) => n.project === request.id).map((n) => n.id);
+        const room = site?.rooms.find((r) => r.project === request.id);
+        const pts = ids.map((id) => target[id]).filter(Boolean);
+        if (room) plan(state, [...pts, ...cornersOf(room, 3)], 1);
+        else plan(state, pts, HALL_PADDING + 2);
+      } else {
+        const p = target[request.id];
+        if (p) plan(state, [p], 16);
+      }
+    }
+
+    const f = flight.current;
+    const orbit = state.controls as any;
+    if (!f || !orbit) return;
+    const camera = state.camera;
+    camera.position.x = THREE.MathUtils.damp(camera.position.x, f.position.x, 3.5, delta);
+    camera.position.y = THREE.MathUtils.damp(camera.position.y, f.position.y, 3.5, delta);
+    camera.position.z = THREE.MathUtils.damp(camera.position.z, f.position.z, 3.5, delta);
+    orbit.target.x = THREE.MathUtils.damp(orbit.target.x, f.target.x, 3.5, delta);
+    orbit.target.y = THREE.MathUtils.damp(orbit.target.y, f.target.y, 3.5, delta);
+    orbit.target.z = THREE.MathUtils.damp(orbit.target.z, f.target.z, 3.5, delta);
+    orbit.update();
+    if (camera.position.distanceToSquared(f.position) < 0.01 && orbit.target.distanceToSquared(f.target) < 0.01) {
+      flight.current = null;
     }
   });
 
   return null;
 }
 
+/** Stable pseudo-random integer for a grid cell. */
+function cellHash(x: number, z: number): number {
+  let h = Math.imul(x, 374761393) ^ Math.imul(z, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+const BLOCK_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
+
+/**
+ * The surrounding city: low dark blocks on a street grid around the site,
+ * kept clear of the content and low on the camera's side so it never hides
+ * anything. Purely setting, one instanced draw call, and invisible to the
+ * pointer.
+ */
+function CityBlocks({ target, clearance = 26 }: { target: Positions; clearance?: number }) {
+  const blocks = useMemo(() => {
+    const pts = Object.values(target);
+    if (pts.length === 0) return [];
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const [x, , z] of pts) {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    }
+    const CELL = 15, MARGIN = clearance, REACH = 200;
+    const out: { x: number; z: number; w: number; d: number; h: number; shade: number }[] = [];
+    for (let gx = Math.floor((minX - REACH) / CELL); gx <= Math.ceil((maxX + REACH) / CELL); gx++) {
+      for (let gz = Math.floor((minZ - REACH) / CELL); gz <= Math.ceil((maxZ + REACH) / CELL); gz++) {
+        const x = gx * CELL, z = gz * CELL;
+        if (x > minX - MARGIN && x < maxX + MARGIN && z > minZ - MARGIN && z < maxZ + MARGIN) continue;
+        // Streets every few cells, and the odd empty lot.
+        if (gx % 4 === 0 || gz % 5 === 0) continue;
+        const h = cellHash(gx, gz);
+        if (h % 6 === 0) continue;
+        const r = ((h >>> 8) % 1000) / 1000;
+        const inFront = x > maxX + MARGIN || z > maxZ + MARGIN;
+        const height = inFront ? 0.5 + r * 1.6 : 0.6 + Math.pow(r, 2.2) * 11;
+        out.push({
+          x: x + (((h >>> 4) % 5) - 2) * 0.4,
+          z: z + (((h >>> 12) % 5) - 2) * 0.4,
+          w: CELL * (0.55 + ((h >>> 16) % 6) / 20),
+          d: CELL * (0.55 + ((h >>> 20) % 6) / 20),
+          h: height,
+          shade: 0.8 + ((h >>> 24) % 10) / 25,
+        });
+      }
+    }
+    return out;
+  }, [target, clearance]);
+
+  // A few roofs carry a small light, the sparkle of a city at night. Chosen
+  // by hash so they stay put, and only on the taller blocks at the back.
+  const roofLights = useMemo(
+    () => blocks.filter((b, i) => b.h > 3 && (Math.imul(i + 7, 2654435761) >>> 0) % 5 === 0),
+    [blocks]
+  );
+  const lightsRef = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const mesh = lightsRef.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const p = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    roofLights.forEach((b, i) => {
+      p.set(b.x, b.h - 0.12, b.z + b.d / 2 - 0.3);
+      s.set(b.w * 0.7, 0.12, 0.12);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [roofLights]);
+
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const p = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    const c = new THREE.Color();
+    blocks.forEach((b, i) => {
+      p.set(b.x, b.h / 2 - 0.2, b.z);
+      s.set(b.w, b.h, b.d);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+      mesh.setColorAt(i, c.set('#10173b').multiplyScalar(b.shade));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [blocks]);
+
+  if (blocks.length === 0) return null;
+  return (
+    <>
+      <instancedMesh key={blocks.length} ref={ref} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
+        <meshStandardMaterial color="#ffffff" roughness={0.85} metalness={0.25} />
+      </instancedMesh>
+      {roofLights.length > 0 && (
+        <instancedMesh key={`l${roofLights.length}`} ref={lightsRef} args={[BLOCK_GEOMETRY, undefined, roofLights.length]} raycast={() => null}>
+          <meshBasicMaterial color="#3d5cff" toneMapped={false} />
+        </instancedMesh>
+      )}
+    </>
+  );
+}
+
+const WALL_BACK = 1.5;
+const WALL_FRONT = 0.3;
+const WALL_THICK = 0.3;
+/** Thickness of a hall's neon outline. */
+const NEON_T = 0.11;
+
+/**
+ * A project's hall: a floor pad with walls, sized each frame to the services
+ * standing in it, and the project's name painted on the floor in front.
+ * Back walls are taller than the ones facing the camera, like a cutaway
+ * plan, so the front row is never hidden.
+ */
+function Zone({ project, ids, live, focused, summary }: {
+  project: string;
+  ids: string[];
+  live: PositionMap;
+  focused: boolean;
+  summary?: ZoneSummary;
+}) {
+  const slab = useRef<THREE.Mesh>(null);
+  const walls = useRef<(THREE.Mesh | null)[]>([]);
+  const neon = useRef<(THREE.Mesh | null)[]>([]);
+  const label = useRef<THREE.Group>(null);
+
+  useFrame(() => {
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, y = 0;
+    for (const id of ids) {
+      const p = live.get(id);
+      if (!p) continue;
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+      y = p.y;
+    }
+    if (!Number.isFinite(minX) || !slab.current) return;
+    minX -= HALL_PADDING; maxX += HALL_PADDING; minZ -= HALL_PADDING; maxZ += HALL_PADDING;
+    const w = maxX - minX, d = maxZ - minZ, cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+    slab.current.position.set(cx, y - 0.06, cz);
+    slab.current.scale.set(w, 0.12, d);
+    const [back, left, front, right] = walls.current;
+    back?.position.set(cx, y + WALL_BACK / 2, minZ);
+    back?.scale.set(w + WALL_THICK, WALL_BACK, WALL_THICK);
+    left?.position.set(minX, y + WALL_BACK / 2, cz);
+    left?.scale.set(WALL_THICK, WALL_BACK, d);
+    front?.position.set(cx, y + WALL_FRONT / 2, maxZ);
+    front?.scale.set(w + WALL_THICK, WALL_FRONT, WALL_THICK);
+    right?.position.set(maxX, y + WALL_FRONT / 2, cz);
+    right?.scale.set(WALL_THICK, WALL_FRONT, d);
+    // Neon: a lit line round the foot of the hall and along the tops of the
+    // two tall walls, the outline that makes a building read on a dark plan.
+    const [fb, ff, fl, fr, tb, tl] = neon.current;
+    fb?.position.set(cx, y + 0.04, minZ + WALL_THICK); fb?.scale.set(w, NEON_T, NEON_T);
+    ff?.position.set(cx, y + 0.04, maxZ - WALL_THICK); ff?.scale.set(w, NEON_T, NEON_T);
+    fl?.position.set(minX + WALL_THICK, y + 0.04, cz); fl?.scale.set(NEON_T, NEON_T, d);
+    fr?.position.set(maxX - WALL_THICK, y + 0.04, cz); fr?.scale.set(NEON_T, NEON_T, d);
+    tb?.position.set(cx, y + WALL_BACK + 0.03, minZ); tb?.scale.set(w + WALL_THICK, NEON_T, NEON_T * 1.6);
+    tl?.position.set(minX, y + WALL_BACK + 0.03, cz); tl?.scale.set(NEON_T * 1.6, NEON_T, d);
+    label.current?.position.set(minX + 0.4, y + 0.02, maxZ + 1.6);
+  });
+
+  const outline = focused ? '#7d94ff' : '#3350d6';
+  const neonColor = summary?.critical ? '#ff4d6d' : focused ? '#7d94ff' : '#3d5cff';
+  return (
+    <group>
+      <mesh ref={slab} geometry={BLOCK_GEOMETRY} raycast={() => null}>
+        <meshStandardMaterial color="#0d1333" roughness={0.55} metalness={0.45} />
+        <Edges color={outline} />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => (
+        <mesh key={i} ref={(el) => { walls.current[i] = el; }} geometry={BLOCK_GEOMETRY} raycast={() => null}>
+          <meshStandardMaterial color="#141c4a" roughness={0.35} metalness={0.5} transparent opacity={0.88} />
+          <Edges color={outline} />
+        </mesh>
+      ))}
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <mesh key={`n${i}`} ref={(el) => { neon.current[i] = el; }} geometry={BLOCK_GEOMETRY} raycast={() => null}>
+          <meshBasicMaterial color={neonColor} toneMapped={false} />
+        </mesh>
+      ))}
+      <group ref={label}>
+        <Suspense fallback={null}>
+          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#b8c5ff' : '#8093f0'} anchorX="left" anchorY="top" letterSpacing={0.06}>
+            {project.toUpperCase()}
+          </Text>
+          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5a6699" anchorX="left" anchorY="top">
+            {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
+          </Text>
+        </Suspense>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * One light that follows the selected unit and spills blue onto its
+ * neighbours and the floor. Always mounted, at zero when nothing is
+ * selected: adding and removing a light would recompile every lit material
+ * in the scene.
+ */
+function SelectionLight({ live, selectedId }: { live: PositionMap; selectedId: string | null }) {
+  const ref = useRef<THREE.PointLight>(null);
+  useFrame((_, delta) => {
+    const light = ref.current;
+    if (!light) return;
+    const p = selectedId ? live.get(selectedId) : undefined;
+    if (p) light.position.set(p.x, p.y + 4.5, p.z + 1.5);
+    light.intensity = THREE.MathUtils.damp(light.intensity, p ? 120 : 0, 6, delta);
+  });
+  return <pointLight ref={ref} color="#3d6bff" intensity={0} distance={34} decay={2} />;
+}
+
+/**
+ * The main light, from above and to the camera's left. In the building
+ * arrangement it casts shadows, with its shadow camera fitted to the floor:
+ * units, walls and islands throwing shade on the floor is most of what makes
+ * the room read as a real space.
+ */
+function KeyLight({ site }: { site: Site | null }) {
+  const ref = useRef<THREE.DirectionalLight>(null);
+  const fit = useMemo(() => {
+    if (!site?.building) return null;
+    const b = site.building;
+    const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2;
+    const half = Math.max(b.x1 - b.x0, b.z1 - b.z0) / 2 + 8;
+    return { cx, cz, half };
+  }, [site]);
+  useLayoutEffect(() => {
+    const light = ref.current;
+    if (!light || !fit) return;
+    light.position.set(fit.cx - 70, 120, fit.cz + 55);
+    light.target.position.set(fit.cx, 0, fit.cz);
+    light.target.updateMatrixWorld();
+    const cam = light.shadow.camera;
+    cam.left = -fit.half; cam.right = fit.half; cam.top = fit.half; cam.bottom = -fit.half;
+    cam.near = 10; cam.far = 400;
+    cam.updateProjectionMatrix();
+    light.shadow.needsUpdate = true;
+  }, [fit]);
+  return (
+    <directionalLight
+      ref={ref}
+      position={[-60, 110, 50]}
+      intensity={site ? 2.6 : 1.5}
+      color="#c7d2ff"
+      castShadow={Boolean(fit)}
+      shadow-mapSize={[2048, 2048]}
+      shadow-bias={-0.0004}
+      shadow-normalBias={0.04}
+    />
+  );
+}
+
+/**
+ * The ground. For the islands it is paved in large faint panels, so the open
+ * space between districts has a surface rather than being a flat colour;
+ * elsewhere a plain dark plane under the grid.
+ */
+function Ground({ y, tiled }: { y: number; tiled: boolean }) {
+  const map = useMemo(() => (tiled ? tiledFloor(4000 / 14, 4000 / 14) : null), [tiled]);
+  useEffect(() => () => map?.dispose(), [map]);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} raycast={() => null} receiveShadow>
+      <planeGeometry args={[4000, 4000]} />
+      <meshStandardMaterial map={map} color={tiled ? '#8b95c8' : '#0a0f26'} roughness={0.9} metalness={0.15} />
+    </mesh>
+  );
+}
+
+/** A broad, faint blue light spill on the ground under the whole site. */
+function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread: number }) {
+  const bounds = useMemo(() => {
+    const pts = Object.values(target);
+    if (pts.length === 0) return null;
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const [x, , z] of pts) {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    }
+    return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w: maxX - minX + spread, d: maxZ - minZ + spread };
+  }, [target, spread]);
+  if (!bounds) return null;
+  return (
+    <mesh position={[bounds.cx, y, bounds.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[bounds.w, bounds.d, 1]} raycast={() => null}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={glowTexture()} color="#2b3fd0" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+/** Floating project names, for arrangements that mix projects together. */
 function ProjectLabels({ nodes, live }: { nodes: LayoutNode[]; live: PositionMap }) {
   const groupRefs = useRef<Record<string, THREE.Group | null>>({});
 
@@ -140,10 +629,10 @@ function ProjectLabels({ nodes, live }: { nodes: LayoutNode[]; live: PositionMap
       {projects.map(({ project, ids }) => (
         <group key={project} ref={(el) => { groupRefs.current[project] = el; }}>
           <Billboard>
-            <Text fontSize={2.2} color="#7dd3fc" anchorX="center" outlineWidth={0.09} outlineColor="#05070e">
+            <Text fontSize={2.2} color="#9aabff" anchorX="center" outlineWidth={0.09} outlineColor="#070913">
               {project.toUpperCase()}
             </Text>
-            <Text position={[0, -2.3, 0]} fontSize={1.1} color="#64748b" anchorX="center">
+            <Text position={[0, -2.3, 0]} fontSize={1.1} color="#5a6699" anchorX="center">
               {`${ids.length} services`}
             </Text>
           </Billboard>
@@ -153,33 +642,60 @@ function ProjectLabels({ nodes, live }: { nodes: LayoutNode[]; live: PositionMap
   );
 }
 
+function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key) as T | null;
+    return v && allowed.includes(v) ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function shortId(id: string | null | undefined): string {
+  return id ? String(id).split(':').pop() ?? String(id) : '';
+}
+
 export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick }: Scene3DProps) {
-  const [layout, setLayout] = useState<LayoutId>(() => {
-    return (localStorage.getItem('mm.scene3d.layout') as LayoutId) || 'clusters';
-  });
+  const [layout, setLayout] = useState<LayoutId>(() => readStored('mm.scene3d.layout', LAYOUTS.map((l) => l.id), 'halls'));
+  const [routing, setRouting] = useState<LinkRouting>(() => readStored('mm.scene3d.routing', ['conduit', 'arc'] as const, 'conduit'));
   const [showLabels, setShowLabels] = useState(true);
+  // Bloom is opt-in: at full strength it washed the scene out, and it costs
+  // a few full-screen passes per frame. Off unless switched on in the HUD.
+  const [glow, setGlow] = useState<boolean>(() => readStored('mm.scene3d.bloom', ['on', 'off'] as const, 'off') === 'on');
+  const [focusZone, setFocusZone] = useState<string | null>(null);
+  const [cameraRequest, setCameraRequest] = useState<CameraRequest>({ kind: 'all', nonce: 0 });
+  const alertCursor = useRef(-1);
   const live = useRef<PositionMap>(new Map()).current;
+  // Load per node for the render loop: see Node3D's `loads` prop. Refreshed
+  // on every render, read every frame, never a reason to re-render a node.
+  const loads = useRef(new Map<string, number>()).current;
+  for (const n of nodes) {
+    const m = ((n.data as any)?.metrics ?? {}) as { cpu?: number; cpuOfAllowance?: number; memoryPercent?: number };
+    loads.set(n.id, Math.max(Math.min(Math.max(cpuShown(m) ?? 0, 0), 100), Math.min(Math.max(m.memoryPercent ?? 0, 0), 100)) / 100);
+  }
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   // onPointerMissed can fire in the same gesture as a node click, which
-  // would select and then immediately deselect — the selection panel would
-  // flash and vanish. Ignore a "missed" that lands right after a real hit.
+  // would select and then immediately deselect. Ignore a "missed" that lands
+  // right after a real hit.
   const lastNodeClick = useRef(0);
 
   useEffect(() => {
-    try { localStorage.setItem('mm.scene3d.layout', layout); } catch { /* private mode */ }
-  }, [layout]);
+    try {
+      localStorage.setItem('mm.scene3d.layout', layout);
+      localStorage.setItem('mm.scene3d.routing', routing);
+      localStorage.setItem('mm.scene3d.bloom', glow ? 'on' : 'off');
+    } catch { /* private mode */ }
+  }, [layout, routing, glow]);
 
   // R3F sizes its canvas from a measured container. When this view mounts
-  // while the layout is still settling — a tab switch, a panel opening, the
-  // first paint — that measurement can come back stale, and the canvas stays
-  // at the browser default 300x150 with the renderer never initialised. The
-  // scene then appears completely blank: no grid, no nodes, no errors, and a
-  // healthy WebGL context. Nudging a resize after mount forces a real
-  // measurement. This was the cause of every "3D is blank" episode.
+  // while the layout is still settling (a tab switch, a panel opening, the
+  // first paint) that measurement can come back stale, and the canvas stays
+  // at the browser default 300x150 with nothing drawn. Nudging a resize after
+  // mount forces a real measurement.
   useEffect(() => {
     const nudge = () => window.dispatchEvent(new Event('resize'));
     const raf = requestAnimationFrame(nudge);
-    const timer = setTimeout(nudge, 250); // covers slower first paints
+    const timer = setTimeout(nudge, 250);
     const observer = new ResizeObserver(nudge);
     if (canvasWrapRef.current) observer.observe(canvasWrapRef.current);
     return () => {
@@ -196,8 +712,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   }, [onPaneClick]);
 
   // Keyed on a stable signature rather than the nodes array identity, which
-  // changes on every telemetry tick — otherwise the layout is recomputed
-  // several times a second for no reason.
+  // changes on every telemetry tick.
   const layoutSignature = useMemo(() => {
     const degree = new Map<string, number>();
     for (const e of edges) {
@@ -221,12 +736,30 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
     });
   }, [layoutSignature]);
 
-  const targetPositions = useMemo(() => computeLayout(layout, layoutNodes), [layout, layoutNodes]);
+  // Which services call which, for the tracks between islands. Keyed on a
+  // signature, so a traffic update that changes no link does not rebuild it.
+  const linkSignature = useMemo(() => edges.map((e) => `${e.source}>${e.target}`).sort().join('|'), [edges]);
+  const links = useMemo<[string, string][]>(
+    () => (linkSignature ? linkSignature.split('|').map((p) => p.split('>') as [string, string]) : []),
+    [linkSignature]
+  );
+  // The islands arrangement returns its platforms, districts and tracks as
+  // well, for the scene to draw; every other arrangement is just positions.
+  const site = useMemo(() => (layout === 'halls' ? computeSite(layoutNodes, links) : null), [layout, layoutNodes, links]);
+  const targetPositions = useMemo(
+    () => site?.positions ?? computeLayout(layout, layoutNodes),
+    [site, layout, layoutNodes]
+  );
+
+  // A new arrangement starts from the whole view (the rig refits on the
+  // layout change by itself).
+  const onLayout = useCallback((next: LayoutId) => {
+    setLayout(next);
+    setFocusZone(null);
+  }, []);
 
   // Focus mode: with something selected, only it and its immediate
-  // neighbours stay lit. Everything else dims so the question "what does
-  // this talk to" is answerable at a glance instead of by tracing lines
-  // through a crowded scene.
+  // neighbours stay lit.
   const focus = useMemo(() => {
     if (!selectedNodeId) return null;
     const related = new Set<string>([selectedNodeId]);
@@ -241,42 +774,162 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
     return { related, relatedEdges };
   }, [selectedNodeId, edges]);
 
-  // Only legend the categories actually present, so the key doesn't list
-  // shapes that aren't on screen.
-  const presentTypes = useMemo(() => {
-    const seen = new Set(layoutNodes.map((n) => n.type));
-    return Object.entries(TYPE_STYLE).filter(([type]) => seen.has(type));
-  }, [layoutNodes]);
-
   // Past ~24 services the floating labels overlap into an unreadable mat, so
   // default them off and leave the toggle.
   useEffect(() => {
     setShowLabels(nodes.length <= 24);
   }, [nodes.length]);
 
-  const activeLayout = LAYOUTS.find((l) => l.id === layout);
+  // Stable across updates so memoised nodes are not re-rendered just because
+  // a fresh click handler was created.
+  const handleSelect = useCallback((id: string) => {
+    lastNodeClick.current = Date.now();
+    if (id === selectedNodeId) onPaneClick();
+    else onNodeClick(id);
+  }, [selectedNodeId, onNodeClick, onPaneClick]);
+
+  const byId = useMemo(() => {
+    const m = new Map<string, ServiceNode>();
+    for (const n of nodes) m.set(n.id, n.data as unknown as ServiceNode);
+    return m;
+  }, [nodes]);
+
+  // Every service that needs attention, most urgent first: down, then
+  // flagged by the ML ensemble, then degraded, then predicted to be pulled
+  // down by a dependency.
+  const alerts: CalloutItem[] = useMemo(() => {
+    const out: (CalloutItem & { rank: number; p: number })[] = [];
+    for (const d of byId.values()) {
+      const p = typeof d.analytics?.failureProbability === 'number' ? d.analytics.failureProbability : 0;
+      const reason = d.metadata?.statusReason ? String(d.metadata.statusReason) : null;
+      if (d.status === 'critical') {
+        out.push({ id: d.id, kind: 'critical', title: d.name, sub: reason ?? 'down', rank: 0, p });
+      } else if (d.analytics?.anomalyPersistent) {
+        out.push({ id: d.id, kind: 'anomaly', title: d.name, sub: `ML anomaly · score ${Math.round((d.analytics.anomalyScore ?? 0) * 100)}%`, rank: 1, p });
+      } else if (d.status === 'degraded') {
+        out.push({ id: d.id, kind: 'degraded', title: d.name, sub: reason ?? `degraded · cpu ${Math.round(cpuShown(d.metrics) ?? 0)}%`, rank: 2, p });
+      } else if (d.status === 'healthy' && p >= AT_RISK) {
+        const via = shortId(d.analytics?.cascadeVia);
+        out.push({ id: d.id, kind: 'risk', title: d.name, sub: `at risk ${Math.round(p * 100)}%${via ? ` via ${via}` : ''}`, rank: 3, p });
+      }
+    }
+    out.sort((a, b) => a.rank - b.rank || b.p - a.p || a.id.localeCompare(b.id));
+    return out.map(({ rank: _rank, p: _p, ...item }) => item);
+  }, [byId]);
+
+  // Which alerts get a tag. Seen from overview distance, tags for every
+  // degraded or at-risk service pile into an unreadable stack, so the
+  // overview tags only services that are down or ML-flagged; the rest still
+  // show their amber volume or risk ring. Focusing a hall, or selecting a
+  // service, tags everything in view.
+  const callouts = useMemo(() => {
+    const visible = alerts.filter((a) => {
+      if (a.id === selectedNodeId) return false;
+      if (focus) return focus.related.has(a.id);
+      if (focusZone) return byId.get(a.id)?.project === focusZone;
+      return a.kind === 'critical' || a.kind === 'anomaly';
+    });
+    return visible.slice(0, MAX_CALLOUTS);
+  }, [alerts, selectedNodeId, focus, focusZone, byId]);
+  const calloutIds = useMemo(() => new Set(callouts.map((c) => c.id)), [callouts]);
+
+  const zones: ZoneSummary[] = useMemo(() => {
+    const m = new Map<string, ZoneSummary>();
+    for (const d of byId.values()) {
+      const z = m.get(d.project) ?? { id: d.project, services: 0, alerts: 0, critical: 0 };
+      z.services++;
+      if (d.status === 'critical') z.critical++;
+      if (d.status === 'critical' || d.status === 'degraded' || d.analytics?.anomalyPersistent) z.alerts++;
+      m.set(d.project, z);
+    }
+    return Array.from(m.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }, [byId]);
+  const zoneById = useMemo(() => new Map(zones.map((z) => [z.id, z])), [zones]);
+
+  // Per island: the worst state among its services (tints the platform) and
+  // counts for its floating card. Cards only while they fit on screen: at
+  // most a dozen islands, or those of the district in focus.
+  const { islandAlerts, islandCards } = useMemo(() => {
+    const alertsOut = new Map<string, IslandAlert>();
+    const counts = new Map<string, IslandCardInfo>();
+    if (!site) return { islandAlerts: alertsOut, islandCards: null };
+    for (const n of layoutNodes) {
+      const key = `${n.project}:${islandRoleOf(n)}`;
+      const d = byId.get(n.id);
+      const status = d?.status;
+      const c = counts.get(key) ?? { healthy: 0, degraded: 0, critical: 0, flagged: 0, atRisk: 0 };
+      if (status === 'critical') c.critical++;
+      else if (status === 'degraded') c.degraded++;
+      else c.healthy++;
+      // The same tests the units themselves are drawn with (Node3D).
+      if (status === 'healthy' && d?.analytics?.anomalyPersistent) c.flagged++;
+      else if (status === 'healthy' && (d?.analytics?.failureProbability ?? 0) >= AT_RISK) c.atRisk++;
+      counts.set(key, c);
+      const prev = alertsOut.get(key) ?? null;
+      if (status === 'critical') alertsOut.set(key, 'critical');
+      else if (status === 'degraded' && prev !== 'critical') alertsOut.set(key, 'degraded');
+      else if (!alertsOut.has(key)) alertsOut.set(key, null);
+    }
+    let cards: Map<string, IslandCardInfo> | null = counts;
+    if (focusZone) cards = new Map([...counts].filter(([k]) => k.startsWith(`${focusZone}:`)));
+    else if (site.islands.length > 12) cards = null;
+    return { islandAlerts: alertsOut, islandCards: cards };
+  }, [site, layoutNodes, byId, focusZone]);
+
+  const zoneMembers = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const n of layoutNodes) {
+      if (!m.has(n.project)) m.set(n.project, []);
+      m.get(n.project)!.push(n.id);
+    }
+    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [layoutNodes]);
+
+  const onFocusZone = useCallback((zone: string | null) => {
+    setFocusZone(zone);
+    setCameraRequest((r) => (zone ? { kind: 'zone', id: zone, nonce: r.nonce + 1 } : { kind: 'all', nonce: r.nonce + 1 }));
+  }, []);
+
+  // The alarm walks through the alerts in order: select the next one and fly
+  // to it.
+  const onNextAlert = useCallback(() => {
+    if (alerts.length === 0) return;
+    alertCursor.current = (alertCursor.current + 1) % alerts.length;
+    const id = alerts[alertCursor.current].id;
+    lastNodeClick.current = Date.now();
+    onNodeClick(id);
+    setCameraRequest((r) => ({ kind: 'node', id, nonce: r.nonce + 1 }));
+  }, [alerts, onNodeClick]);
+
+  // One alert picked from the bell's list: select it and fly there, and let
+  // "next" carry on from it.
+  const onAlertSelect = useCallback((id: string) => {
+    const i = alerts.findIndex((a) => a.id === id);
+    if (i >= 0) alertCursor.current = i;
+    lastNodeClick.current = Date.now();
+    onNodeClick(id);
+    setCameraRequest((r) => ({ kind: 'node', id, nonce: r.nonce + 1 }));
+  }, [alerts, onNodeClick]);
+
+  const selected = selectedNodeId ? byId.get(selectedNodeId) : undefined;
+  const groundY = -0.2;
+  const zoned = ZONED_LAYOUTS.has(layout);
 
   return (
     <div
       ref={canvasWrapRef}
-      // minWidth/minHeight: 0 override the flexbox "automatic minimum size"
-      // rule. main-content is a flex row with this wrapper (flex:1) beside
-      // InspectionPanel (400px, flexShrink:0). The R3F <canvas> inside sets
-      // real width/height *attributes* on itself (see the resize-nudge
-      // effect below) the first time it measures — before any panel is
-      // open, so at full main-content width. That canvas pixel size then
-      // becomes this div's content-based minimum width, and a flex item is
-      // never shrunk below that minimum unless min-width is overridden —
-      // so opening the panel just pushed it 400px past the right edge of
-      // the viewport instead of the canvas making room for it. Without
-      // this, the fix below (InspectionPanel's own flexShrink:0) is
-      // necessary but not sufficient: the panel gets its correct 400px,
-      // but the canvas never gives up the space for it to appear in.
-      style={{ width: '100%', height: '100%', minWidth: 0, minHeight: 0, background: '#04060f', position: 'relative' }}
+      // .scene-wrap sets min-width/min-height 0 to override the flexbox
+      // automatic minimum size: the canvas sets real width/height attributes
+      // on itself, and without the override the wrapper refused to shrink
+      // when the inspection panel opened beside it, pushing the panel
+      // off-screen.
+      className="scene-wrap"
       onClick={(e) => { if (e.target === e.currentTarget) onPaneClick(); }}
     >
       <Canvas
+        shadows
         dpr={[1, 1.75]}
+        gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
         resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
         onPointerMissed={() => {
           if (Date.now() - lastNodeClick.current < 150) return;
@@ -284,18 +937,19 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         }}
       >
         <Suspense fallback={null}>
-          <color attach="background" args={['#04060f']} />
-          <fog attach="fog" args={['#04060f', 200, 900]} />
+          <Backdrop />
+          <fog attach="fog" args={[FOG_COLOR, 400, 1400]} />
+          {glow && <Bloom />}
 
-          <PerspectiveCamera makeDefault position={[0, 60, 110]} fov={42} near={0.1} far={4000} />
+          <PerspectiveCamera makeDefault position={[120, 110, 120]} fov={FOV} near={0.5} far={4000} />
           <OrbitControls
             makeDefault
             enableRotate
             enablePan
             enableZoom
-            minDistance={6}
-            maxDistance={1200}
-            maxPolarAngle={Math.PI / 2 - 0.03}
+            minDistance={8}
+            maxDistance={1500}
+            maxPolarAngle={Math.PI / 2 - 0.06}
             dampingFactor={0.08}
             mouseButtons={{
               LEFT: THREE.MOUSE.ROTATE,
@@ -304,53 +958,59 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             }}
           />
 
-          <ambientLight intensity={0.85} />
-          <directionalLight position={[30, 60, 30]} intensity={1.6} color="#bae6fd" />
-          <directionalLight position={[-35, 30, -20]} intensity={0.8} color="#34d399" />
-          {/* Low warm fill from the front so chassis faces aren't flat black */}
-          <directionalLight position={[0, 14, 70]} intensity={0.7} color="#ffffff" />
+          {/* Cool, low light: tops and the faces toward the camera catch a
+              soft blue, sides fall away into navy. */}
+          <ambientLight intensity={site ? 0.12 : 0.35} color="#9fb0ff" />
+          <hemisphereLight args={[site ? '#3a4684' : '#4a5dff', '#05060b', site ? 0.3 : 0.55]} />
+          <KeyLight site={site} />
+          <directionalLight position={[80, 40, -40]} intensity={0.9} color="#3d5cff" />
+          <directionalLight position={[40, 25, 90]} intensity={0.35} color="#8fa2ff" />
 
-          {/* Reflective floor: the equipment glow bounces back up, which is
-              what stops a dark scene reading as flat silhouettes. */}
-          {/* Kept deliberately cheap: a 4000-unit plane at 1024 with heavy
-              blur stalls the first frames badly enough to look like a broken
-              scene. This is the same effect at a fraction of the cost. */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
-            <planeGeometry args={[900, 900]} />
-            <MeshReflectorMaterial
-              blur={[120, 40]}
-              resolution={512}
-              mixBlur={1}
-              mixStrength={16}
-              roughness={0.9}
-              depthScale={0.9}
-              minDepthThreshold={0.4}
-              maxDepthThreshold={1.2}
-              color="#0a111c"
-              metalness={0.6}
-              mirror={0.3}
-            />
-          </mesh>
-
-          {/* Sits clear of the reflector below it, with coarser cells and a
-              shorter fade — a dense infinite grid aliases into moiré once the
-              camera pulls back to frame a large layout. */}
+          {/* In the building arrangement the floor is a slab lifted above the
+              ground grid; otherwise the grid is the floor. */}
+          <Ground y={groundY - 0.02} tiled={Boolean(site)} />
           <Grid
-            position={[0, 0.01, 0]}
+            position={[0, groundY, 0]}
             args={[10, 10]}
-            cellSize={10}
+            cellSize={5}
             cellThickness={0.5}
-            cellColor="#15384f"
-            sectionSize={50}
-            sectionThickness={1}
-            sectionColor="#236b8a"
-            fadeDistance={380}
-            fadeStrength={1.6}
+            cellColor={site ? '#141d4c' : '#111a40'}
+            sectionSize={30}
+            sectionThickness={0.9}
+            sectionColor={site ? '#24327e' : '#1a2763'}
+            fadeDistance={520}
+            fadeStrength={2}
             infiniteGrid
           />
 
+          <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} />
+          {/* The dark city around the site: close in for the flat
+              arrangements, pushed back to a skyline for the islands. */}
+          <CityBlocks target={targetPositions} clearance={site ? 70 : 26} />
+
+          <SelectionLight live={live} selectedId={selectedNodeId} />
+
           <LayoutDriver target={targetPositions} live={live} />
-          <FitCamera target={targetPositions} trigger={`${layout}:${layoutNodes.length}`} />
+          <CameraRig
+            target={targetPositions}
+            nodes={layoutNodes}
+            fitTrigger={`${layout}:${layoutNodes.length}`}
+            request={cameraRequest}
+            site={site}
+          />
+
+          {site && <Islands site={site} focusZone={focusZone} summaries={zoneById} alerts={islandAlerts} cards={islandCards} />}
+
+          {zoned && !site && zoneMembers.map(([project, ids]) => (
+            <Zone
+              key={project}
+              project={project}
+              ids={ids}
+              live={live}
+              focused={focusZone === project}
+              summary={zoneById.get(project)}
+            />
+          ))}
 
           {edges.map((edge) => (
             <Edge3D
@@ -359,6 +1019,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               sourceId={edge.source}
               targetId={edge.target}
               live={live}
+              routing={routing}
+              targetStatus={byId.get(edge.target)?.status}
               dimmed={focus ? !focus.relatedEdges.has(edge.id) : false}
             />
           ))}
@@ -368,100 +1030,51 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               key={node.id}
               node={node as any}
               live={live}
+              loads={loads}
               isSelected={node.id === selectedNodeId}
-              onClick={() => {
-                lastNodeClick.current = Date.now();
-                if (node.id === selectedNodeId) onPaneClick();
-                else onNodeClick(node.id);
-              }}
+              onSelect={handleSelect}
               // With a selection active, label the neighbours regardless of
-              // the global toggle — they're the ones being asked about.
-              showLabel={focus ? focus.related.has(node.id) : showLabels}
+              // the global toggle; they're the ones being asked about. A
+              // service with a tag or card over it already shows its name.
+              showLabel={(focus ? focus.related.has(node.id) : showLabels) && !calloutIds.has(node.id) && node.id !== selectedNodeId}
               dimmed={focus ? !focus.related.has(node.id) : false}
             />
           ))}
 
+          <Callouts items={callouts} live={live} onSelect={handleSelect} />
+          {selected && (
+            <SelectedCard node={selected} live={live} pinned={selected.status === 'critical' || Boolean(selected.analytics?.anomalyPersistent)} />
+          )}
+
           {/* Its own boundary: troika's Text suspends while it fetches a
               font, and if that request hangs a shared boundary takes the
-              entire scene — grid, nodes and all — down with it. */}
-          <Suspense fallback={null}>
-            <ProjectLabels nodes={layoutNodes} live={live} />
-          </Suspense>
+              whole scene down with it. */}
+          {LABELLED_LAYOUTS.has(layout) && (
+            <Suspense fallback={null}>
+              <ProjectLabels nodes={layoutNodes} live={live} />
+            </Suspense>
+          )}
         </Suspense>
       </Canvas>
 
-      <div
-        style={{
-          position: 'absolute', top: '16px', left: '16px', zIndex: 10,
-          background: 'rgba(8, 12, 22, 0.82)', backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(125, 211, 252, 0.18)', borderRadius: '10px',
-          padding: '12px 14px', width: '218px',
-        }}
-      >
-        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', color: '#7dd3fc', textTransform: 'uppercase', marginBottom: '8px' }}>
-          Spatial arrangement
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-          {LAYOUTS.map((opt) => {
-            const active = opt.id === layout;
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setLayout(opt.id)}
-                title={opt.hint}
-                style={{
-                  padding: '6px 4px',
-                  background: active ? 'rgba(0, 212, 255, 0.18)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${active ? 'rgba(0,212,255,0.55)' : 'rgba(255,255,255,0.08)'}`,
-                  color: active ? '#e0f2fe' : '#94a3b8',
-                  borderRadius: '6px', fontSize: '10px', fontWeight: 700,
-                  letterSpacing: '0.4px', cursor: 'pointer',
-                }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-        {activeLayout && (
-          <div style={{ marginTop: '8px', fontSize: '10px', color: '#64748b', lineHeight: 1.4 }}>
-            {activeLayout.hint}
-          </div>
-        )}
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', fontSize: '10px', color: '#94a3b8', cursor: 'pointer' }}>
-          <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} style={{ accentColor: '#00d4ff' }} />
-          Show labels ({nodes.length} services)
-        </label>
-
-        {presentTypes.length > 0 && (
-          <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
-            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1px', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
-              Category
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px' }}>
-              {presentTypes.map(([type, style]) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#94a3b8' }}>
-                  <span style={{
-                    // Echo the 3D silhouette so the key maps to the hardware
-                    // on screen: tall for racks, round for disk stacks, wide
-                    // and flat for routers, screen-shaped for frontends.
-                    width: style.shape === 'router' || style.shape === 'screen' ? '11px' : style.shape === 'rack' ? '6px' : '8px',
-                    height: style.shape === 'rack' ? '10px' : style.shape === 'router' ? '5px' : '8px',
-                    flexShrink: 0,
-                    background: style.color,
-                    boxShadow: `0 0 6px ${style.color}`,
-                    borderRadius: style.shape === 'storage' || style.shape === 'pipe' ? '50%' : '2px',
-                  }} />
-                  {style.label}
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: '6px', fontSize: '9px', color: '#475569', lineHeight: 1.4 }}>
-              Colour + shape = category. Ring colour = health. Glow = live load.
-            </div>
-          </div>
-        )}
-      </div>
+      <SceneHud
+        nodes={nodes}
+        edges={edges}
+        layout={layout}
+        onLayout={onLayout}
+        routing={routing}
+        onRouting={setRouting}
+        showLabels={showLabels}
+        onShowLabels={setShowLabels}
+        glow={glow}
+        onGlow={setGlow}
+        zones={zones}
+        focusZone={focusZone}
+        onFocusZone={onFocusZone}
+        alerts={alerts}
+        onAlertSelect={onAlertSelect}
+        onNextAlert={onNextAlert}
+      />
     </div>
   );
 }

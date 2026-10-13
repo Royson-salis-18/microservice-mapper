@@ -203,9 +203,9 @@ function PipelineFunnelChart({ projectNames, byProject }: { projectNames: string
             <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
             <Legend wrapperStyle={{ fontSize: '11px' }} />
             <Bar dataKey="collected" name="Collected" fill="#94a3b8" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="featureReady" name="Feature-ready" fill="#00d4ff" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="featureReady" name="Feature-ready" fill="#6b80ff" radius={[3, 3, 0, 0]} />
             <Bar dataKey="trained" name="Trained" fill="#00e676" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="scored" name="Scored" fill="#e040fb" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="scored" name="Scored" fill="#9b6bff" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -302,7 +302,7 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
               <YAxis domain={[0, 100]} tick={{ fill: AXIS_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} tickLine={false} unit="%" />
               <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [`${v}%`, 'anomaly score']} labelStyle={{ color: AXIS_COLOR }} />
               <ReferenceLine y={100} stroke="#ff1744" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: 'threshold', fill: '#ff1744', fontSize: 10, position: 'insideTopRight' }} />
-              <Line type="monotone" dataKey="score" stroke="#00d4ff" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="score" stroke="#6b80ff" strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -312,10 +312,10 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
 }
 
 const FEATURE_SERIES = [
-  { raw: 'cpu_percent', z: 'z_cpu_percent', label: 'cpu %', color: '#00d4ff' },
+  { raw: 'cpu_percent', z: 'z_cpu_percent', label: 'cpu %', color: '#6b80ff' },
   { raw: 'memory_percent', z: 'z_memory_percent', label: 'mem %', color: '#00e676' },
   { raw: 'network_rx_rate', z: 'z_network_rx_rate', label: 'rx B/s', color: '#ffab00' },
-  { raw: 'network_tx_rate', z: 'z_network_tx_rate', label: 'tx B/s', color: '#e040fb' },
+  { raw: 'network_tx_rate', z: 'z_network_tx_rate', label: 'tx B/s', color: '#9b6bff' },
 ];
 
 // Shows the exact rows train.py fits on — raw values on the left, the
@@ -693,7 +693,7 @@ export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; o
     })), [models]);
 
   const projects = useMemo(() => Array.from(new Set(points.map(p => p.project))).sort(), [points]);
-  const colors = ['#00d4ff', '#00e676', '#ffab00', '#e040fb', '#ff1744'];
+  const colors = ['#6b80ff', '#00e676', '#ffab00', '#9b6bff', '#ff1744'];
 
   return (
     <CollapsiblePanel 
@@ -1459,7 +1459,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           the machine: how the pipeline is configured and how far each service
           has got through it. */}
       <div style={{
-        background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.22)',
+        background: 'rgba(107,128,255,0.05)', border: '1px solid rgba(107,128,255,0.22)',
         borderRadius: '10px', padding: '12px 14px', fontSize: '11px',
         color: 'var(--color-text-muted)', lineHeight: 1.6,
       }}>

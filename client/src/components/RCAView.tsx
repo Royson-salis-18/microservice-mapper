@@ -98,7 +98,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
                   borderRadius: '12px',
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: 'rgba(0, 212, 255, 0.15)',
+                  background: 'rgba(107, 128, 255, 0.15)',
                   color: 'var(--color-accent-cyan)',
                   border: '1px solid var(--color-accent-cyan)'
                 }}>
@@ -162,7 +162,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
                       onClick={() => setSelectedCandidateId(candidate.serviceId)}
                       style={{
                         padding: '12px 16px',
-                        background: isSelected ? 'rgba(0, 212, 255, 0.08)' : 'rgba(0,0,0,0.2)',
+                        background: isSelected ? 'rgba(107, 128, 255, 0.08)' : 'rgba(0,0,0,0.2)',
                         border: `1px solid ${isSelected ? 'var(--color-accent-cyan)' : 'rgba(255,255,255,0.04)'}`,
                         borderRadius: '8px',
                         cursor: 'pointer',
@@ -242,7 +242,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
 
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Causal Explanation (Why)</div>
-                  <div style={{ fontSize: '13px', marginTop: '2px', color: 'var(--color-accent-cyan)', background: 'rgba(0,212,255,0.05)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,212,255,0.1)' }}>
+                  <div style={{ fontSize: '13px', marginTop: '2px', color: 'var(--color-accent-cyan)', background: 'rgba(107,128,255,0.05)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(107,128,255,0.1)' }}>
                     {activeIncident.explanation.why}
                   </div>
                 </div>

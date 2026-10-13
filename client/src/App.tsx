@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { ReactFlowProvider, type Node, type Edge } from '@xyflow/react';
 import { TopBar } from './components/TopBar';
 import { GraphCanvas } from './components/GraphCanvas';
 import { Scene3D } from './components/3d/Scene3D';
@@ -67,6 +67,9 @@ export default function App() {
     }
   }, [targets, pendingTargetId]);
 
+  // Stable, so the memoised 3D scene is not re-rendered by a fresh closure.
+  const clearSelection = useCallback(() => setSelectedNodeId(null), []);
+
   const highlightedNodeIds = useMemo(() => {
     if (!selectedNodeId && !selectedEdgeId) return null;
     const ids = new Set<string>();
@@ -87,6 +90,16 @@ export default function App() {
     return ids;
   }, [selectedNodeId, selectedEdgeId, edges]);
 
+  // Identity is carried through each stage below. The source nodes keep
+  // their object when their content is unchanged (useGraphData), and if each
+  // stage then wraps every node in a new object anyway, React Flow sees all
+  // of them as changed on every push and rebuilds its internal state for
+  // each — measured at ~77 ms per push with 75 services. So each stage reuses
+  // its previous output for a node whose inputs are the same objects/values.
+  const filteredNodeCache = useRef(new Map<string, { src: Node; highlighted: boolean; viewMode: string; out: Node }>());
+  const filteredEdgeCache = useRef(new Map<string, { src: Edge; highlighted: boolean; emphasized: boolean; out: Edge }>());
+  const arrangedCache = useRef(new Map<string, { src: Node; x: number; y: number; out: Node }>());
+
   const filteredNodes = useMemo(() => {
     return nodes.filter(node => {
       const data = node.data as unknown as ServiceNode;
@@ -106,7 +119,11 @@ export default function App() {
       return false;
     }).map(node => {
       const isHighlighted = highlightedNodeIds === null || highlightedNodeIds.has(node.id);
-      return {
+      const cached = filteredNodeCache.current.get(node.id);
+      if (cached && cached.src === node && cached.highlighted === isHighlighted && cached.viewMode === viewMode) {
+        return cached.out;
+      }
+      const out = {
         ...node,
         style: {
           ...node.style,
@@ -118,6 +135,8 @@ export default function App() {
           viewMode
         }
       };
+      filteredNodeCache.current.set(node.id, { src: node, highlighted: isHighlighted, viewMode, out });
+      return out;
     });
   }, [nodes, selectedProjectId, searchQuery, filters, viewMode, highlightedNodeIds]);
 
@@ -139,14 +158,22 @@ export default function App() {
           isHighlighted = edge.source === selectedNodeId || edge.target === selectedNodeId;
         }
       }
-      return {
+      // Emphasized: one of the links of the selected service or the selected
+      // link itself. These carry their weight tag on the 2D canvas.
+      const emphasized = highlightedNodeIds !== null && isHighlighted;
+      const cached = filteredEdgeCache.current.get(edge.id);
+      if (cached && cached.src === edge && cached.highlighted === isHighlighted && cached.emphasized === emphasized) return cached.out;
+      const out = {
         ...edge,
+        data: emphasized ? { ...edge.data, emphasized: true } : edge.data,
         style: {
           ...edge.style,
           opacity: isHighlighted ? 1 : 0.2,
           transition: 'opacity 0.3s'
         }
       };
+      filteredEdgeCache.current.set(edge.id, { src: edge, highlighted: isHighlighted, emphasized, out });
+      return out;
     });
   }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode]);
 
@@ -195,7 +222,12 @@ export default function App() {
   const arrangedNodes = useMemo(() => {
     return filteredNodes.map((n) => {
       const p = layoutPositions2d[n.id];
-      return p ? { ...n, position: p } : n;
+      if (!p) return n;
+      const cached = arrangedCache.current.get(n.id);
+      if (cached && cached.src === n && cached.x === p.x && cached.y === p.y) return cached.out;
+      const out = { ...n, position: p };
+      arrangedCache.current.set(n.id, { src: n, x: p.x, y: p.y, out });
+      return out;
     });
   }, [filteredNodes, layoutPositions2d]);
 
@@ -217,6 +249,18 @@ export default function App() {
     return node ? (node.data as unknown as ServiceNode) : null;
   }, [selectedNodeId, nodes]);
 
+  // For the inspection panels: neighbour names and states, and the raw edges.
+  const nodesById = useMemo(
+    () => new Map(nodes.map(n => [n.id, n.data as unknown as ServiceNode])),
+    [nodes]
+  );
+  const edgeData = useMemo(() => edges.map(e => e.data as unknown as DependencyEdge), [edges]);
+  // Jumping to another service from a panel: select it, drop any link.
+  const selectService = useCallback((id: string) => {
+    setSelectedNodeId(id);
+    setSelectedEdgeId(null);
+  }, []);
+
   /**
    * Keep the floating terminal clear of the inspection sidebar.
    *
@@ -233,12 +277,18 @@ export default function App() {
    * closed, and a deliberate drag still wins inside the remaining space.
    */
   const INSPECTOR_WIDTH = 400;
+  /** The traffic panel: 450px wide, fixed 24px from the right edge. */
+  const TRAFFIC_PANEL_WIDTH = 474;
   const TERMINAL_WIDTH = 300;
   const isInspectorOpen = Boolean(selectedNodeData || selectedEdgeId);
-  const terminalLeft = isInspectorOpen
+  // Same rule for every panel docked on the right: the terminal slides left
+  // of whichever is widest. The traffic panel used to be left out, so the
+  // terminal sat over its lower half, START button included.
+  const rightReserve = Math.max(isInspectorOpen ? INSPECTOR_WIDTH : 0, isTrafficPanelOpen ? TRAFFIC_PANEL_WIDTH : 0);
+  const terminalLeft = rightReserve > 0
     ? Math.min(
         terminalPosition.x,
-        Math.max(0, window.innerWidth - INSPECTOR_WIDTH - TERMINAL_WIDTH - 16),
+        Math.max(0, window.innerWidth - rightReserve - TERMINAL_WIDTH - 16),
       )
     : terminalPosition.x;
 
@@ -288,7 +338,7 @@ export default function App() {
             edges={filteredEdges}
             selectedNodeId={selectedNodeId}
             onNodeClick={setSelectedNodeId}
-            onPaneClick={() => setSelectedNodeId(null)}
+            onPaneClick={clearSelection}
           />
         ) : activeTab === 'Telemetry' ? (
           <ProjectSections selectedProject={selectedProjectId} projects={projectIds} summary={projectSummary}>
@@ -381,17 +431,21 @@ export default function App() {
         )}
         
         {selectedNodeData && (
-          <InspectionPanel 
+          <InspectionPanel
             node={selectedNodeData}
-            edges={edges.map(e => e.data as unknown as DependencyEdge)}
+            edges={edgeData}
+            nodesById={nodesById}
             onClose={() => setSelectedNodeId(null)}
+            onSelectNode={selectService}
           />
         )}
-        
+
         {selectedEdgeId && (
           <EdgeInspectionPanel
             edge={(edges.find(e => e.id === selectedEdgeId)?.data as unknown as DependencyEdge) || null}
+            nodesById={nodesById}
             onClose={() => setSelectedEdgeId(null)}
+            onSelectNode={selectService}
           />
         )}
 
@@ -418,7 +472,7 @@ export default function App() {
         top: terminalPosition.y,
         width: `${TERMINAL_WIDTH}px`,
         height: isTerminalVisible ? '400px' : '40px',
-        background: 'rgba(12, 12, 24, 0.95)',
+        background: 'rgba(18, 20, 28, 0.95)',
         backdropFilter: 'blur(24px)',
         border: '1px solid var(--color-border)',
         borderRadius: '12px',

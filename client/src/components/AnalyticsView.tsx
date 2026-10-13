@@ -1,3 +1,4 @@
+import { shortName } from './shared/serviceVisuals';
 import { useState, useEffect, useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, DependencyEdge } from '../types';
@@ -45,7 +46,7 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
               evidence: inc.evidence ? inc.evidence.map((ev: any) => ev.description) : []
             })) || [],
             blastRadius: {
-              affectedServices: inc.affectedServices ? inc.affectedServices.map((id: string) => id.replace(/^(sock-shop|vertikal)-/, '')) : []
+              affectedServices: inc.affectedServices ? inc.affectedServices.map((id: string) => shortName(id)) : []
             },
             remediationGuide: (inc.remediationGuide && inc.remediationGuide.length > 0) ? inc.remediationGuide.join(' && ') : `docker restart ${inc.rootCauseServiceId}`
           });
@@ -145,7 +146,7 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
             </div>
 
             {/* Blast Radius & Remediation Guide */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(0,212,255,0.2)' }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(107,128,255,0.2)' }}>
               <div style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Blast Radius & Remediation</div>
               <div style={{ marginTop: '8px', fontSize: '13px' }}>
                 Impacted Services: <span style={{ fontWeight: 600, color: '#fff' }}>{rcaData.blastRadius?.affectedServices?.join(', ') || 'None'}</span>
@@ -208,7 +209,7 @@ export function AnalyticsView({ nodes, edges, selectedProject, embedded = false 
                     <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{item.upstream} Upstream • {item.downstream} Downstream</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(0, 212, 255, 0.15)', color: 'var(--color-accent-cyan)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                <div style={{ background: 'rgba(107, 128, 255, 0.15)', color: 'var(--color-accent-cyan)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
                   {item.degree} Edges
                 </div>
               </div>

@@ -1,4 +1,5 @@
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { useId } from 'react';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 import type { MetricSnapshot } from '../types';
 
 interface MiniChartProps {
@@ -8,42 +9,47 @@ interface MiniChartProps {
 }
 
 export function MiniChart({ data, dataKey, color }: MiniChartProps) {
+  // Unique per chart: two charts sharing a gradient id paint each other's fill.
+  const gradientId = `mini-${useId().replace(/:/g, '')}`;
+
   if (!data || data.length < 2) {
     return (
-      <div style={{ 
-        height: '80px', 
-        width: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        height: '72px',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '4px',
+        background: 'rgba(0,0,0,0.18)',
+        border: '1px dashed rgba(148,163,255,0.12)',
+        borderRadius: '9px',
         fontSize: '11px',
         color: 'var(--color-text-dim)',
-        fontStyle: 'italic'
       }}>
-        Insufficient data
+        Collecting history…
       </div>
     );
   }
 
   return (
-    <div style={{ height: '80px', width: '100%', position: 'relative' }}>
+    <div style={{ height: '72px', width: '100%', position: 'relative', background: 'rgba(0,0,0,0.18)', borderRadius: '9px', overflow: 'hidden' }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id={`color-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-              <stop offset="95%" stopColor={color} stopOpacity={0}/>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.42} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <Tooltip 
-            contentStyle={{ background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '11px' }}
-            itemStyle={{ color: 'var(--color-text-main)' }}
+          <YAxis hide domain={[0, (max: number) => Math.max(10, Math.ceil(max * 1.15))]} />
+          <Tooltip
+            cursor={{ stroke: 'rgba(148,163,255,0.3)', strokeWidth: 1 }}
+            contentStyle={{ background: '#181a24', border: '1px solid rgba(148,163,255,0.18)', borderRadius: '8px', fontSize: '11px', padding: '4px 8px' }}
+            itemStyle={{ color: '#e8ecff' }}
             labelStyle={{ display: 'none' }}
+            formatter={(v: any) => [`${Number(v).toFixed(1)}%`, dataKey === 'cpu' ? 'CPU' : 'Memory']}
           />
-          <Area type="monotone" dataKey={dataKey} stroke={color} fillOpacity={1} fill={`url(#color-${dataKey})`} isAnimationActive={false} />
+          <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#${gradientId})`} isAnimationActive={false} dot={false} activeDot={{ r: 3, fill: color, stroke: '#0b0d16' }} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

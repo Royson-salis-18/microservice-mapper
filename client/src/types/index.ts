@@ -44,8 +44,19 @@ export interface ServiceNode {
     cpu?: number;
     memory?: number;
     memoryPercent?: number;
+    /** Bytes received / sent since the container started (cumulative). */
     networkRx?: number;
     networkTx?: number;
+    /** Bytes per second over the last interval: exact, from the container's
+     *  /proc/<pid>/net/dev counters where readable. Undefined until two
+     *  readings exist. */
+    networkRxRate?: number;
+    networkTxRate?: number;
+    /** Cores the container may use: its CPU limit, else the host's cores. */
+    cpuAllowanceCores?: number;
+    /** CPU as a share of that allowance, 0..100. `cpu` above is docker's
+     *  figure, percent of ONE core, which can exceed 100. */
+    cpuOfAllowance?: number;
     // Tier 1/2 only. Nothing outside the container can measure these, so
     // they are absent rather than zero when no source supplied them.
     latency?: number | null;
@@ -72,11 +83,16 @@ export interface ServiceNode {
     /** Current exposure — half current health, half how much observed
      *  traffic structurally depends on this node. Not a predicted probability. */
     riskScore?: number | null;
-    /** Deliberately never populated — would need labelled failure outcomes
-     *  this system doesn't collect. See server/models/ServiceNode.ts. */
+    /** Predicted probability of failure from the cascade model — an estimate
+     *  under a stated model, not an observed frequency. See
+     *  server/graph/CascadeEngine.ts. */
     failureProbability?: number | null;
-    /** Deliberately never populated — same reason as failureProbability. */
+    /** The part of failureProbability arriving through dependencies alone. */
     affectedProbability?: number | null;
+    /** Id of the dependency contributing most of the inherited risk. */
+    cascadeVia?: string | null;
+    /** Hops from where this service's risk originates; 0 = its own state. */
+    cascadeDepth?: number;
     criticality?: number | null;
     centrality?: number | null;
     upstreamCount?: number;
@@ -120,10 +136,75 @@ export interface DependencyEdge {
     /** Socket observations/min — see server DependencyEdge for what this
      * does and does not mean. */
     samplesPerMin: number;
+    /** Slow-moving baseline of samplesPerMin (rises in ~1 min, falls over
+     *  ~10), which edge weights are computed from. */
+    baselinePerMin?: number;
     windowSec: number;
     lastSeen: string;
+    /** Average number of distinct open (ESTABLISHED) connections over the
+     *  last two minutes, each counted once whichever end reported it. */
+    openConnections?: number;
+    /** Distinct connections opened per minute over the same window. A closed
+     *  connection lingers ~60s in TIME_WAIT and is still counted once. */
+    newConnectionsPerMin?: number;
+    /** Socket sweeps behind those two figures. */
+    connectionSweeps?: number;
   };
   status: 'active' | 'degraded' | 'failed' | 'unknown';
+  /** How strongly the source depends on the target — see
+   *  server/graph/EdgeWeights.ts. Absent until the first poll cycle. */
+  weight?: EdgeWeight;
+}
+
+export interface EdgeWeight {
+  /** 0..1, confidence × dependency: how strongly a failure of the target
+   *  transmits to the source. */
+  value: number;
+  dependency: number;
+  dependencyBasis: 'requests' | 'activity' | 'uniform';
+  /** telemetry = monitoring traffic, weighted at a tenth — see server EdgeWeights. */
+  kind: 'request' | 'telemetry';
+  volume: number | null;
+  confidence: number;
+  confidenceBasis: string;
+  stress: number | null;
+}
+
+export type RiskBand = 'high' | 'elevated' | 'low' | 'minimal';
+
+export interface NodeCascade {
+  nodeId: string;
+  nodeName: string;
+  probability: number;
+  intrinsic: number;
+  inherited: number;
+  band: RiskBand;
+  via: { nodeId: string; nodeName: string; contribution: number } | null;
+  path: string[];
+  depth: number;
+  intrinsicReasons: string[];
+}
+
+export interface CascadePrediction {
+  project: string;
+  generatedAt: string;
+  model: string;
+  transmission: number;
+  iterations: number;
+  converged: boolean;
+  expectedFailures: number;
+  atRisk: NodeCascade[];
+  nodes: NodeCascade[];
+}
+
+export interface WhatIfResult {
+  project: string;
+  generatedAt: string;
+  model: string;
+  transmission: number;
+  origin: { nodeId: string; nodeName: string };
+  expectedAdditionalFailures: number;
+  affected: Array<NodeCascade & { baseline: number; delta: number }>;
 }
 
 export interface GraphData {

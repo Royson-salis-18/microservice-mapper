@@ -1,6 +1,10 @@
+import type { CSSProperties } from 'react';
 import { useReactFlow } from '@xyflow/react';
+import { Maximize, Minus, Plus } from 'lucide-react';
 import { LayoutPicker2D } from './LayoutPicker2D';
 import type { Layout2DId } from './layouts2d';
+import { TYPE_VISUAL } from './shared/serviceVisuals';
+import { LINK_THRESHOLDS } from './shared/edgeHeat';
 
 interface GraphControlsProps {
   viewMode: string;
@@ -13,173 +17,101 @@ interface GraphControlsProps {
   edgeCount: number;
 }
 
-const filterColors: Record<string, string> = {
-  services: '#00d4ff', // cyan
-  databases: '#e040fb', // purple/magenta
-  queues: '#ffab00', // amber
-  gateways: '#00e676', // green
-  infrastructure: '#9e9e9e', // gray
-  all: '#ffffff'
+/** Filter chip colours are the category colours the cards use. */
+const FILTER_COLOR: Record<string, string> = {
+  services: TYPE_VISUAL.service.color,
+  databases: TYPE_VISUAL.database.color,
+  queues: TYPE_VISUAL.queue.color,
+  gateways: TYPE_VISUAL.gateway.color,
+  infrastructure: TYPE_VISUAL.infrastructure.color,
 };
+
+const MODES = [
+  { key: 'architecture', label: 'Declared', hint: 'Only links declared in config (compose depends_on and similar)' },
+  { key: 'runtime', label: 'Observed', hint: 'Only links seen carrying traffic' },
+  { key: 'combined', label: 'Both', hint: 'Declared and observed links together' },
+];
+
+function LinkSwatch({ color, dashed, width = 2.4 }: { color: string; dashed?: boolean; width?: number }) {
+  return (
+    <svg width="26" height="8" aria-hidden="true">
+      <line x1="1" y1="4" x2="25" y2="4" stroke={color} strokeWidth={width} strokeLinecap="round" strokeDasharray={dashed ? '4 4' : undefined} />
+    </svg>
+  );
+}
 
 export function GraphControls({ viewMode, setViewMode, filters, setFilters, layout2d, setLayout2d, nodeCount, edgeCount }: GraphControlsProps) {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
-  const handleFilterToggle = (key: string) => {
-    if (key === 'all') {
-      const newValue = !filters.all;
-      setFilters({
-        all: newValue,
-        services: newValue,
-        databases: newValue,
-        queues: newValue,
-        gateways: newValue,
-        infrastructure: newValue,
-      });
-    } else {
-      const newFilters = { ...filters, [key]: !filters[key] };
-      newFilters.all = ['services', 'databases', 'queues', 'gateways', 'infrastructure'].every(k => newFilters[k]);
-      setFilters(newFilters);
-    }
+  const toggle = (key: string) => {
+    const next = { ...filters, [key]: !filters[key] };
+    next.all = Object.keys(FILTER_COLOR).every((k) => next[k]);
+    setFilters(next);
   };
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: '20px',
-      left: '20px',
-      zIndex: 10,
-      width: '220px',
-      maxHeight: 'calc(100vh - 120px)',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '16px',
-      background: 'rgba(12, 12, 24, 0.7)',
-      backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(255,255,255,0.05)',
-      borderRadius: '12px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-      color: '#fff',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      <style>{`
-        .ctrl-btn {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #fff;
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          cursor: pointer;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          transition: all 0.2s;
-          font-size: 16px;
-        }
-        .ctrl-btn:hover {
-          background: rgba(255,255,255,0.15);
-          border-color: rgba(255,255,255,0.2);
-          box-shadow: 0 0 10px rgba(255,255,255,0.1);
-        }
-        .custom-radio {
-          display: none;
-        }
-        .radio-indicator {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          border: 1px solid rgba(255,255,255,0.3);
-          display: inline-block;
-          margin-right: 8px;
-          position: relative;
-          transition: all 0.2s;
-        }
-        .custom-radio:checked + .radio-indicator {
-          border-color: #00d4ff;
-          box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
-        }
-        .custom-radio:checked + .radio-indicator::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #00d4ff;
-        }
-        .custom-checkbox {
-          display: none;
-        }
-      `}</style>
-      
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'center' }}>
-        <button id="btn-fit" onClick={() => fitView()} className="ctrl-btn" title="Fit View">⛶</button>
-        <button id="btn-zoom-in" onClick={() => zoomIn()} className="ctrl-btn" title="Zoom In">+</button>
-        <button id="btn-zoom-out" onClick={() => zoomOut()} className="ctrl-btn" title="Zoom Out">−</button>
+    <div className="gc-panel">
+      <div className="gc-head">
+        <div>
+          <div className="gc-title">Architecture</div>
+          <div className="gc-sub">{nodeCount} services · {edgeCount} links</div>
+        </div>
+        <div className="gc-icon-row">
+          <button type="button" className="gc-icon-btn" onClick={() => fitView({ padding: 0.18, duration: 500 })} title="Fit to screen" aria-label="Fit to screen"><Maximize size={13} /></button>
+          <button type="button" className="gc-icon-btn" onClick={() => zoomIn({ duration: 200 })} title="Zoom in" aria-label="Zoom in"><Plus size={14} /></button>
+          <button type="button" className="gc-icon-btn" onClick={() => zoomOut({ duration: 200 })} title="Zoom out" aria-label="Zoom out"><Minus size={14} /></button>
+        </div>
       </div>
 
-      <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)', margin: '12px 0' }} />
-
-      <div style={{ marginBottom: '12px' }}>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '12px', fontWeight: 700, letterSpacing: '1px' }}>GRAPH MODE</div>
-        {[
-          { key: 'architecture', label: 'Architecture (Declared)' },
-          { key: 'runtime', label: 'Runtime (Observed)' },
-          { key: 'combined', label: 'Combined' },
-        ].map(({ key, label }) => (
-          <label key={key} style={{ display: 'flex', alignItems: 'center', fontSize: '12px', marginBottom: '10px', cursor: 'pointer', transition: 'color 0.2s' }}>
-            <input 
-              type="radio" 
-              name="viewMode" 
-              className="custom-radio"
-              checked={viewMode === key} 
-              onChange={() => setViewMode(key)}
-            />
-            <span className="radio-indicator"></span>
-            <span style={{ color: viewMode === key ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: viewMode === key ? 500 : 400 }}>{label}</span>
-          </label>
+      <div className="gc-section-title">Links shown</div>
+      <div className="gc-segment" role="tablist" aria-label="Links shown">
+        {MODES.map((m) => (
+          <button key={m.key} type="button" role="tab" aria-selected={viewMode === m.key} className={viewMode === m.key ? 'active' : ''} title={m.hint} onClick={() => setViewMode(m.key)}>
+            {m.label}
+          </button>
         ))}
       </div>
 
-      <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)', margin: '12px 0' }} />
-
-      <div>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '12px', fontWeight: 700, letterSpacing: '1px' }}>FILTERS</div>
-        {Object.entries(filters).map(([key, value]) => {
-          const dotColor = filterColors[key] || filterColors.all;
-          return (
-            <label key={key} id={`filter-${key}`} style={{ 
-              display: 'flex', alignItems: 'center', fontSize: '12px', marginBottom: '10px', cursor: 'pointer',
-              opacity: value ? 1 : 0.5, transition: 'opacity 0.2s'
-            }}>
-              <input 
-                type="checkbox" 
-                className="custom-checkbox"
-                checked={value} 
-                onChange={() => handleFilterToggle(key)}
-              />
-              <div style={{ 
-                width: '16px', height: '16px', borderRadius: '4px', border: `1px solid ${value ? dotColor : 'rgba(255,255,255,0.2)'}`,
-                display: 'flex', justifyContent: 'center', alignItems: 'center', marginRight: '10px',
-                background: value ? `rgba(${dotColor === '#00d4ff' ? '0,212,255' : dotColor === '#e040fb' ? '224,64,251' : dotColor === '#ffab00' ? '255,171,0' : dotColor === '#00e676' ? '0,230,118' : dotColor === '#9e9e9e' ? '158,158,158' : '255,255,255'}, 0.15)` : 'transparent',
-                boxShadow: value ? `0 0 8px ${dotColor}40` : 'none',
-                transition: 'all 0.2s'
-              }}>
-                {value && <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: dotColor }} />}
-              </div>
-              <span style={{ color: value ? '#fff' : 'rgba(255,255,255,0.6)', textTransform: 'capitalize', fontWeight: value ? 500 : 400 }}>
-                {key}
-              </span>
-            </label>
-          )
-        })}
+      <div className="gc-section-title" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>Services</span>
+        <button
+          type="button"
+          onClick={() => setFilters(Object.fromEntries([['all', !filters.all], ...Object.keys(FILTER_COLOR).map((k) => [k, !filters.all])]))}
+          style={{ background: 'none', border: 'none', color: 'var(--color-accent-cyan)', fontSize: 9.5, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.6, fontFamily: 'inherit' }}
+        >
+          {filters.all ? 'NONE' : 'ALL'}
+        </button>
+      </div>
+      <div className="gc-chips">
+        {Object.entries(FILTER_COLOR).map(([key, color]) => (
+          <button
+            key={key}
+            type="button"
+            className={`gc-chip ${filters[key] ? 'on' : ''}`}
+            style={{ '--chip': color } as CSSProperties}
+            aria-pressed={filters[key]}
+            onClick={() => toggle(key)}
+          >
+            <span className="gc-chip-dot" />
+            {key === 'infrastructure' ? 'infra' : key}
+          </button>
+        ))}
       </div>
 
-      <LayoutPicker2D layout={layout2d} onChange={setLayout2d} nodeCount={nodeCount} edgeCount={edgeCount} />
+      <LayoutPicker2D layout={layout2d} onChange={setLayout2d} />
+
+      <div className="gc-section-title">Link colour</div>
+      <div className="gc-legend-row"><LinkSwatch color="#4f7dff" />calm</div>
+      <div className="gc-legend-row"><LinkSwatch color="#2f9bff" />busy</div>
+      <div className="gc-legend-row"><LinkSwatch color="#1fd1ff" />heavy</div>
+      <div className="gc-legend-row" title={`p95 ≥ ${LINK_THRESHOLDS.slowMs} ms, errors ≥ ${LINK_THRESHOLDS.errorWarn * 100}%, or calling a degraded service`}>
+        <LinkSwatch color="#ff9a3c" />slow or erroring
+      </div>
+      <div className="gc-legend-row" title={`p95 ≥ ${LINK_THRESHOLDS.verySlowMs} ms, errors ≥ ${LINK_THRESHOLDS.errorCritical * 100}%, or calling a service that is down`}>
+        <LinkSwatch color="#ff3d5e" />failing
+      </div>
+      <div className="gc-legend-row"><LinkSwatch color="#5b6aa0" dashed />declared, never seen</div>
+      <div className="gc-hint">Thickness is reliance: how much of the caller's traffic goes over the link. Arrows point from caller to callee. The moving pulses arrive at the link's rate: requests per second where measured, socket activity otherwise.</div>
     </div>
   );
 }
