@@ -82,3 +82,6 @@ The same pages are published as an illustrated book with diagrams and interactiv
 6. **Make the judgement sharper.** Edge weights (confidence × reliance), the noisy-OR cascade model, structural criticality, materiality and the victim penalty in RCA, a four-detector ML ensemble. → 22, 08, 11
 7. **Make every number exact.** A ground-truth simulator, the accuracy audit (exact network counters, CPU against allowance, distinct connections, IPv4-mapped decoding, ids everywhere, shares that sum to 1), and a live self-check. → 31, 32
 8. **Make it readable.** One visual language for 2D and 3D: warm means trouble, pulses follow the traffic rate, thickness is reliance; flat 2D cards; the 3D islands. → 33
+
+---
+Visual version: open `wiki visualizer/index.html`. Table of every doc: `docs/README.md`. Page-by-page app guide: `37-app-pages-guide.md`.
