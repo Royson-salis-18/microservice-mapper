@@ -38,10 +38,10 @@ export const AT_RISK = 0.4;
  * nothing else.
  */
 export const STATUS_LIGHT: Record<string, string> = {
-  healthy: '#4d7cff',
-  degraded: '#ffab40',
-  critical: '#ff3d5e',
-  unknown: '#3b4566',
+  healthy: '#3ecf8e',
+  degraded: '#e8a33d',
+  critical: '#ef5f67',
+  unknown: '#6b7079',
 };
 
 export type NodeShape = 'rack' | 'storage' | 'router' | 'screen' | 'module' | 'pipe';
@@ -62,10 +62,10 @@ export const TYPE_STYLE: Record<string, { color: string; shape: NodeShape; label
   Object.entries(TYPE_VISUAL).map(([type, v]) => [type, { color: v.color, shape: SHAPE[type] ?? 'rack', label: v.label }]),
 );
 
-const CHASSIS = '#161d3f';
-const CHASSIS_EDGE = '#2e3d8a';
-const SELECT_BLUE = '#3d6bff';
-const ALERT_PINK = '#ff4d6d';
+const CHASSIS = '#262628';
+const CHASSIS_EDGE = '#525254';
+const SELECT_BLUE = '#8ab4ff';
+const ALERT_PINK = '#ef5f67';
 
 /** Geometry shared by every unit. */
 const PLINTH = new THREE.BoxGeometry(4.4, 0.14, 4.4);
@@ -125,10 +125,10 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
   const anomalous = Boolean(analytics.anomalyPersistent);
   const predicted: number = typeof analytics.failureProbability === 'number' ? analytics.failureProbability : 0;
   const atRisk = status === 'healthy' && predicted >= AT_RISK;
-  const riskColor = predicted >= 0.7 ? '#ff3d5e' : '#ffab40';
+  const riskColor = predicted >= 0.7 ? '#ef5f67' : '#e8a33d';
   // The alert volume: a translucent block around the unit, pink for a unit
   // that is down or that the ML ensemble flags, amber for degraded.
-  const alert = status === 'critical' || anomalous ? ALERT_PINK : status === 'degraded' ? '#ffab40' : null;
+  const alert = status === 'critical' || anomalous ? ALERT_PINK : status === 'degraded' ? '#e8a33d' : null;
   const pinned = status === 'critical' || anomalous;
 
   const shortName = useMemo(() => {
@@ -223,9 +223,9 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
   });
 
   const highlight = isSelected || hovered;
-  const edgeColor = isSelected ? '#a9bcff' : hovered ? '#7d94ff' : CHASSIS_EDGE;
+  const edgeColor = isSelected ? '#cfd3da' : hovered ? '#8ab4ff' : CHASSIS_EDGE;
   const haloColor = isSelected ? SELECT_BLUE : alert ?? light;
-  const poolColor = isSelected ? SELECT_BLUE : alert ?? '#2f4de0';
+  const poolColor = isSelected ? SELECT_BLUE : alert ?? '#8ab4ff';
 
   const chassis = (
     <meshStandardMaterial
@@ -243,8 +243,8 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
     <group ref={rootRef} scale={UNIT_SCALE}>
       {/* Floor plinth, outlined like a footprint on a plan */}
       <mesh geometry={PLINTH} position={[0, PLATFORM_Y / 2, 0]} raycast={() => null} receiveShadow>
-        <meshStandardMaterial color="#10162f" roughness={0.8} metalness={0.3} />
-        <Edges threshold={18} color={highlight ? '#6d86ff' : '#26336e'} />
+        <meshStandardMaterial color="#1c1c1e" roughness={0.8} metalness={0.3} />
+        <Edges threshold={18} color={highlight ? '#8ab4ff' : '#424244'} />
       </mesh>
       <mesh ref={poolRef} geometry={POOL} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
         <meshBasicMaterial map={glowTexture()} color={poolColor} toneMapped={false} transparent opacity={0.15} blending={THREE.AdditiveBlending} depthWrite={false} />
@@ -333,7 +333,7 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
               <group key={i} position={[x, 0.42, -0.8]}>
                 <mesh position={[0, 0.75, 0]}>
                   <cylinderGeometry args={[0.05, 0.05, 1.5, 8]} />
-                  <meshStandardMaterial color="#2a3563" roughness={0.5} metalness={0.7} />
+                  <meshStandardMaterial color="#2a2d33" roughness={0.5} metalness={0.7} />
                 </mesh>
                 <mesh position={[0, 1.55, 0]}>
                   <sphereGeometry args={[0.12, 12, 12]} />
@@ -353,7 +353,7 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
             </mesh>
             <mesh position={[0, 1.1, 0]}>
               <cylinderGeometry args={[0.14, 0.14, 1.4, 12]} />
-              <meshStandardMaterial color="#2a3563" roughness={0.5} metalness={0.7} />
+              <meshStandardMaterial color="#2a2d33" roughness={0.5} metalness={0.7} />
             </mesh>
             <group position={[0, 2.55, 0]}>
               <RoundedBox castShadow args={[3.4, 2.1, 0.22]} radius={0.07} smoothness={2}>
@@ -438,14 +438,14 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
           // never take the rest of the scene down with it.
           <Suspense fallback={null}>
             <Billboard position={[0, pinned ? 9.4 : 6.1, 0]}>
-              <Text fontSize={highlight ? 0.9 : 0.76} color={highlight ? '#ffffff' : '#dfe5ff'} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#070913">
+              <Text fontSize={highlight ? 0.9 : 0.76} color={highlight ? '#ffffff' : '#e6e8ec'} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#0d0e10">
                 {shortName}
               </Text>
-              <Text position={[0, -0.92, 0]} fontSize={0.52} color="#8d9bc9" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#070913">
+              <Text position={[0, -0.92, 0]} fontSize={0.52} color="#8ab4ff" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
                 {`${Math.round(cpu)}% cpu · ${Math.round(mem)}% mem`}
               </Text>
               {atRisk && (
-                <Text position={[0, -1.7, 0]} fontSize={0.5} color={riskColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#070913">
+                <Text position={[0, -1.7, 0]} fontSize={0.5} color={riskColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
                   {`at risk ${Math.round(predicted * 100)}%${analytics.cascadeVia ? ` via ${String(analytics.cascadeVia).split(':').pop()}` : ''}`}
                 </Text>
               )}

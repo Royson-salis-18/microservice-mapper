@@ -18,10 +18,10 @@ export interface CalloutItem {
 }
 
 const KIND: Record<CalloutKind, { color: string; icon: typeof ServerCrash }> = {
-  critical: { color: '#ff3d5e', icon: ServerCrash },
-  anomaly: { color: '#ec4899', icon: Brain },
-  degraded: { color: '#f59e0b', icon: AlertTriangle },
-  risk: { color: '#8b5cf6', icon: Radar },
+  critical: { color: '#ef5f67', icon: ServerCrash },
+  anomaly: { color: '#8ab4ff', icon: Brain },
+  degraded: { color: '#e8a33d', icon: AlertTriangle },
+  risk: { color: '#8ab4ff', icon: Radar },
 };
 
 /** Units with a pin over them need the tag hung higher, clear of the pin.
@@ -119,8 +119,8 @@ export function SelectedCard({ node, live, pinned }: { node: ServiceNode; live: 
   const p = typeof node.analytics?.failureProbability === 'number' ? node.analytics.failureProbability : null;
   const via = node.analytics?.cascadeVia ? String(node.analytics.cascadeVia).split(':').pop() : null;
   const statusColor = STATUS_LIGHT[node.status] ?? STATUS_LIGHT.unknown;
-  const pColor = p === null ? '#4b5575' : p >= 0.7 ? '#ff3d5e' : p >= 0.4 ? '#ffab40' : '#4d7cff';
-  const barColor = (v: number) => (v > 80 ? '#ff3d5e' : v > 60 ? '#ffab40' : '#4d7cff');
+  const pColor = p === null ? '#5c5c5e' : p >= 0.7 ? '#ef5f67' : p >= 0.4 ? '#e8a33d' : '#3ecf8e';
+  const barColor = (v: number) => (v > 80 ? '#ef5f67' : v > 60 ? '#e8a33d' : '#3ecf8e');
 
   return (
     <Anchor id={node.id} live={live} height={heightFor('selected', pinned)}>
@@ -129,7 +129,7 @@ export function SelectedCard({ node, live, pinned }: { node: ServiceNode; live: 
           <div className="scene-card-row" style={{ alignItems: 'flex-start', marginBottom: 10 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 170 }}>{node.name}</div>
-              <div style={{ fontSize: 9.5, color: 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: 0.6 }}>{node.project} · {node.type}</div>
+              <div style={{ fontSize: 9.5, color: 'var(--color-text-dim)', letterSpacing: 0 }}>{node.project} · {node.type}</div>
             </div>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: statusColor, textTransform: 'capitalize' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, boxShadow: `0 0 6px ${statusColor}` }} />

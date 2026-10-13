@@ -1,5 +1,5 @@
 /* 3D scene HUD (from the bharath-ui branch), retuned to the app tokens */
-:root { --color-bg-card: #15171b; --color-accent-indigo-glow: rgba(138, 180, 255, 0.22); }
+:root { --color-bg-card: #15171b; --color-accent-indigo-glow: rgba(191,191,193, 0.22); }
 /* ---------------------------------------------------------------------------
    3D scene: HUD and in-scene callouts.
 
@@ -21,7 +21,7 @@
   min-height: 0;
   overflow: hidden;
   background:
-    radial-gradient(90% 75% at 62% 38%, #131b44 0%, #0b1030 38%, #070914 72%, #05060b 100%);
+    radial-gradient(90% 75% at 62% 38%, #262628 0%, #19191b 38%, #0c0c0e 72%, #05060b 100%);
 }
 
 /* Vignette: the edges of the view fall into darkness, so the eye settles on
@@ -37,7 +37,7 @@
 
 .scene-panel {
   background: rgba(20, 22, 30, 0.9);
-  border: 1px solid rgba(148, 163, 255, 0.1);
+  border: 1px solid rgba(189,189,191, 0.1);
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
@@ -71,7 +71,7 @@
   padding: 5px 6px 5px 10px;
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(148, 163, 255, 0.08);
+  border: 1px solid rgba(189,189,191, 0.08);
   font-size: 10px;
   line-height: 1.15;
   color: var(--color-text-muted);
@@ -88,11 +88,11 @@
   font-size: 11px;
   font-weight: 700;
   color: #fff;
-  background: #3b4262;
+  background: #3a3e45;
 }
 
 .scene-chip-count.hot {
-  background: #ff3d5e;
+  background: #ef5f67;
   box-shadow: 0 0 12px rgba(255, 61, 94, 0.55);
 }
 
@@ -104,7 +104,7 @@
 
 .scene-stat {
   background: var(--color-bg-card);
-  border: 1px solid rgba(148, 163, 255, 0.06);
+  border: 1px solid rgba(189,189,191, 0.06);
   border-radius: 11px;
   padding: 10px;
   min-width: 0;
@@ -179,7 +179,7 @@
   padding: 4px;
   border-radius: 999px;
   background: rgba(20, 22, 30, 0.9);
-  border: 1px solid rgba(148, 163, 255, 0.1);
+  border: 1px solid rgba(189,189,191, 0.1);
 }
 
 .scene-pill {
@@ -198,7 +198,7 @@
 
 .scene-pill:hover {
   color: var(--color-text-main);
-  background: rgba(148, 163, 255, 0.07);
+  background: rgba(189,189,191, 0.07);
 }
 
 .scene-pill:focus-visible {
@@ -221,17 +221,17 @@
 }
 
 .scene-pill.active {
-  color: #fff;
-  background: linear-gradient(180deg, #5d6bff 0%, #4452e8 100%);
-  box-shadow: 0 4px 14px var(--color-accent-indigo-glow);
+  color: #0b0c0e;
+  background: #8ab4ff;
+  box-shadow: none;
 }
 
 /* The fill above would wipe the select's arrow; layer it back on top. */
 .scene-pill-select.active {
   background:
-    linear-gradient(45deg, transparent 50%, #fff 50%) calc(100% - 12px) 52% / 4px 4px no-repeat,
-    linear-gradient(135deg, #fff 50%, transparent 50%) calc(100% - 8px) 52% / 4px 4px no-repeat,
-    linear-gradient(180deg, #5d6bff 0%, #4452e8 100%);
+    linear-gradient(45deg, transparent 50%, #0b0c0e 50%) calc(100% - 12px) 52% / 4px 4px no-repeat,
+    linear-gradient(135deg, #0b0c0e 50%, transparent 50%) calc(100% - 8px) 52% / 4px 4px no-repeat,
+    #8ab4ff;
 }
 
 .scene-focus {
@@ -246,7 +246,7 @@
   padding: 4px;
   border-radius: 18px;
   background: rgba(20, 22, 30, 0.9);
-  border: 1px solid rgba(148, 163, 255, 0.1);
+  border: 1px solid rgba(189,189,191, 0.1);
   max-height: calc(100% - 200px);
   overflow-y: auto;
 }
@@ -289,7 +289,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: #2a2f45;
+  background: #353537;
   transition: transform var(--transition-fast);
 }
 
@@ -298,20 +298,20 @@
 .scene-alarm:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
 .scene-alarm.hot {
-  background: radial-gradient(circle at 50% 40%, #ff5a76 0%, #e8254a 70%);
+  background: radial-gradient(circle at 50% 40%, #f58a90 0%, #ef5f67 70%);
   box-shadow: 0 0 0 8px rgba(255, 61, 94, 0.14), 0 0 0 16px rgba(255, 61, 94, 0.07), 0 0 26px rgba(255, 61, 94, 0.6);
   animation: scene-alarm-pulse 1.8s ease-in-out infinite;
 }
 
 /* Degraded: amber, steady. Only ML flags or predictions: calm violet. */
 .scene-alarm.warn {
-  background: radial-gradient(circle at 50% 40%, #ffbf5e 0%, #e0901a 75%);
+  background: radial-gradient(circle at 50% 40%, #f0bd6a 0%, #e8a33d 75%);
   box-shadow: 0 0 0 6px rgba(255, 171, 64, 0.12), 0 0 20px rgba(255, 171, 64, 0.35);
 }
 
 .scene-alarm.info {
-  background: radial-gradient(circle at 50% 40%, #8f7cf8 0%, #5b4bd1 75%);
-  box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.12), 0 0 18px rgba(139, 92, 246, 0.3);
+  background: radial-gradient(circle at 50% 40%, #acacae 0%, #8ab4ff 75%);
+  box-shadow: 0 0 0 6px rgba(159,159,161, 0.12), 0 0 18px rgba(159,159,161, 0.3);
 }
 
 .scene-alarm-panel {
@@ -320,10 +320,10 @@
   max-height: min(70vh, 560px);
   display: flex;
   flex-direction: column;
-  background: rgba(11, 15, 32, 0.94);
-  border: 1px solid rgba(124, 140, 255, 0.22);
+  background: rgba(19,19,21, 0.94);
+  border: 1px solid rgba(173,173,175, 0.22);
   border-radius: 14px;
-  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(124, 140, 255, 0.06);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(173,173,175, 0.06);
   backdrop-filter: blur(12px);
   overflow: hidden;
   animation: scene-alarm-in 160ms ease-out;
@@ -333,18 +333,18 @@
 
 .scene-alarm-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 12px 14px; border-bottom: 1px solid rgba(124, 140, 255, 0.14);
-  font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: #e3e8ff;
+  padding: 12px 14px; border-bottom: 1px solid rgba(173,173,175, 0.14);
+  font-size: 12px; font-weight: 700; letter-spacing: 0; color: #e6e8ec;
 }
 
-.scene-alarm-head b { margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: rgba(124, 140, 255, 0.18); font-size: 11px; }
+.scene-alarm-head b { margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: rgba(173,173,175, 0.18); font-size: 11px; }
 
 .scene-alarm-next {
-  border: 1px solid rgba(124, 140, 255, 0.3); background: transparent; color: #c7cdfc;
+  border: 1px solid rgba(173,173,175, 0.3); background: transparent; color: #dbdbdd;
   border-radius: 7px; padding: 3px 9px; font-size: 11px; cursor: pointer;
 }
 
-.scene-alarm-next:hover { border-color: #8f9cff; color: #fff; }
+.scene-alarm-next:hover { border-color: #b9b9bb; color: #fff; }
 
 .scene-alarm-list { overflow-y: auto; padding: 6px 6px 8px; }
 
@@ -352,7 +352,7 @@
 
 .scene-alarm-group-head {
   display: flex; align-items: center; gap: 6px; padding: 4px 8px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase;
+  font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: uppercase;
 }
 
 .scene-alarm-group-head span { margin-left: auto; opacity: 0.8; }
@@ -363,20 +363,20 @@
   background: transparent; color: inherit; cursor: pointer;
 }
 
-.scene-alarm-item:hover, .scene-alarm-item:focus-visible { background: rgba(124, 140, 255, 0.1); outline: none; }
+.scene-alarm-item:hover, .scene-alarm-item:focus-visible { background: rgba(173,173,175, 0.1); outline: none; }
 
 .scene-alarm-dot { grid-row: span 2; align-self: center; width: 7px; height: 7px; border-radius: 50%; }
 
-.scene-alarm-name { font-size: 12.5px; font-weight: 600; color: #eef1ff; }
+.scene-alarm-name { font-size: 12.5px; font-weight: 600; color: #f5f5f7; }
 
 .scene-alarm-name em { margin-left: 6px; font-style: normal; font-weight: 400; font-size: 10.5px; color: var(--color-text-muted); }
 
-.scene-alarm-why { font-size: 11px; color: #9aa3c7; line-height: 1.35; }
+.scene-alarm-why { font-size: 11px; color: #acacae; line-height: 1.35; }
 
 .scene-alarm-empty { padding: 16px 14px; font-size: 12px; color: var(--color-text-muted); }
 
 .scene-alarm-foot {
-  padding: 9px 14px; border-top: 1px solid rgba(124, 140, 255, 0.14);
+  padding: 9px 14px; border-top: 1px solid rgba(173,173,175, 0.14);
   font-size: 10.5px; line-height: 1.45; color: var(--color-text-muted);
 }
 
@@ -389,7 +389,7 @@
   padding: 0 4px;
   border-radius: 9px;
   background: #fff;
-  color: #e8254a;
+  color: #ef5f67;
   font-size: 10px;
   font-weight: 800;
   display: flex;
@@ -412,8 +412,7 @@
 .scene-legend-title {
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--color-text-dim);
   margin-bottom: 6px;
 }
@@ -441,7 +440,7 @@
   padding: 6px 10px 6px 6px;
   border-radius: 10px;
   background: rgba(18, 20, 28, 0.94);
-  border: 1px solid rgba(148, 163, 255, 0.14);
+  border: 1px solid rgba(189,189,191, 0.14);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
   cursor: pointer;
@@ -456,10 +455,10 @@
   bottom: -10px;
   width: 1px;
   height: 10px;
-  background: rgba(148, 163, 255, 0.35);
+  background: rgba(189,189,191, 0.35);
 }
 
-.scene-callout:hover { border-color: rgba(148, 163, 255, 0.35); }
+.scene-callout:hover { border-color: rgba(189,189,191, 0.35); }
 
 .scene-callout-icon {
   width: 22px;
@@ -491,8 +490,8 @@
   padding: 12px;
   border-radius: 14px;
   background: rgba(20, 22, 30, 0.95);
-  border: 1px solid rgba(107, 128, 255, 0.35);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(79, 94, 245, 0.18);
+  border: 1px solid rgba(163,163,165, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(139,139,141, 0.18);
   font-family: var(--font-family);
   color: var(--color-text-main);
   pointer-events: none;
@@ -505,7 +504,7 @@
   bottom: -12px;
   width: 1px;
   height: 12px;
-  background: rgba(107, 128, 255, 0.6);
+  background: rgba(163,163,165, 0.6);
 }
 
 .scene-card-row {
@@ -529,7 +528,7 @@
 .scene-bar {
   height: 4px;
   border-radius: 2px;
-  background: rgba(148, 163, 255, 0.1);
+  background: rgba(189,189,191, 0.1);
   overflow: hidden;
   margin-top: 4px;
 }
@@ -566,7 +565,7 @@
   padding: 7px 10px;
   border-radius: 10px;
   background: rgba(16, 18, 26, 0.9);
-  border: 1px solid rgba(148, 163, 255, 0.16);
+  border: 1px solid rgba(189,189,191, 0.16);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
   font-family: var(--font-family);
   white-space: nowrap;
@@ -579,9 +578,8 @@
   gap: 6px;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: #e3e8ff;
+  letter-spacing: 0;
+  color: #e6e8ec;
 }
 
 .island-card-title span {

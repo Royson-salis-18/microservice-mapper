@@ -9,14 +9,14 @@ import { Cloud, Database, Globe, Inbox, Layers, Monitor, Server, Wrench, type Lu
  * real problem and never "this is a queue".
  */
 export const TYPE_VISUAL: Record<string, { color: string; icon: LucideIcon; label: string }> = {
-  gateway:        { color: '#38bdf8', icon: Globe,    label: 'Gateway' },
-  frontend:       { color: '#818cf8', icon: Monitor,  label: 'Frontend' },
-  database:       { color: '#2ed3a0', icon: Database, label: 'Database' },
-  cache:          { color: '#a78bfa', icon: Layers,   label: 'Cache' },
-  queue:          { color: '#c084fc', icon: Inbox,    label: 'Queue' },
-  service:        { color: '#6b8cff', icon: Server,   label: 'Service' },
-  infrastructure: { color: '#94a3b8', icon: Wrench,   label: 'Infra' },
-  external:       { color: '#cbd5e1', icon: Cloud,    label: 'External' },
+  gateway:        { color: '#a9b0ba', icon: Globe,    label: 'Gateway' },
+  frontend:       { color: '#8ab4ff', icon: Monitor,  label: 'Frontend' },
+  database:       { color: '#3ecf8e', icon: Database, label: 'Database' },
+  cache:          { color: '#8ab4ff', icon: Layers,   label: 'Cache' },
+  queue:          { color: '#8ab4ff', icon: Inbox,    label: 'Queue' },
+  service:        { color: '#8ab4ff', icon: Server,   label: 'Service' },
+  infrastructure: { color: '#a9b0ba', icon: Wrench,   label: 'Infra' },
+  external:       { color: '#a9b0ba', icon: Cloud,    label: 'External' },
 };
 
 export function typeVisual(type: string | undefined) {
@@ -24,10 +24,10 @@ export function typeVisual(type: string | undefined) {
 }
 
 export const STATUS_VISUAL: Record<string, { color: string; label: string }> = {
-  healthy:  { color: '#25e3a3', label: 'Healthy' },
-  degraded: { color: '#ffab40', label: 'Degraded' },
-  critical: { color: '#ff3d5e', label: 'Down' },
-  unknown:  { color: '#6b7494', label: 'Unknown' },
+  healthy:  { color: '#3ecf8e', label: 'Healthy' },
+  degraded: { color: '#e8a33d', label: 'Degraded' },
+  critical: { color: '#ef5f67', label: 'Down' },
+  unknown:  { color: '#6b7079', label: 'Unknown' },
 };
 
 export function statusVisual(status: string | undefined) {
@@ -36,7 +36,7 @@ export function statusVisual(status: string | undefined) {
 
 /** Load colour for a 0–100 figure: calm blue, amber past 60, red past 80. */
 export function loadColor(percent: number): string {
-  return percent > 80 ? '#ff3d5e' : percent > 60 ? '#ffab40' : '#5b7cff';
+  return percent > 80 ? '#ef5f67' : percent > 60 ? '#e8a33d' : '#8ab4ff';
 }
 
 /** `project:service` → `service`. */
