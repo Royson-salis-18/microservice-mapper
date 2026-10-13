@@ -60,12 +60,16 @@ export function dependencyReach(rootId: string, edges: DependencyEdge[], weightO
 }
 
 
+const INCUMBENT_BONUS = 1.15;
+
 export interface RCAParameters {
   targetId: string;
   nodes: ServiceNode[];
   edges: DependencyEdge[];
   anomalies: AnomalyRecord[];
   thresholds?: IncidentThresholds;
+  /** The root cause of the incident already open, if any. Keeps the verdict from flipping between near-equal candidates. */
+  incumbent?: string | null;
 }
 
 /**
@@ -214,6 +218,9 @@ export class RCAEngine {
       // Scaled by gamma like explain-away, so gamma = 0 is still plain "most abnormal".
       raw.set(n.id, (raw.get(n.id) ?? 0) + share * t.zScoreAnomaly * Math.min(1, t.explainAwayGamma));
     }
+    // Hysteresis: the open incident's cause stays on top unless another candidate beats it by a clear margin (15%),
+    // so ordinary measurement noise between two near-equal candidates does not rewrite the verdict every few minutes.
+    if (params.incumbent && raw.has(params.incumbent) && !hard.get(params.incumbent)) raw.set(params.incumbent, raw.get(params.incumbent)! * INCUMBENT_BONUS);
     ranked.sort((a, b) => (raw.get(b.id)! - raw.get(a.id)!) || a.name.localeCompare(b.name));
 
     const top = ranked[0], second = ranked[1];
