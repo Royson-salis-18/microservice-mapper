@@ -1,0 +1,141 @@
+{
+  "service_id": "open-telemetry:valkey-cart",
+  "project": "open-telemetry",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 40,
+  "trained_at": "2026-09-30T17:39:46.303806+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": 4.336808689942018e-18,
+  "train_score_mean": -0.26998047482050636,
+  "train_score_max": 0.007088805460031988,
+  "holdout": {
+    "samples": 9,
+    "flag_rate": 0.0,
+    "mean_score": -0.2600725890563753,
+    "max_score": -0.07767728262757445,
+    "from": "2026-09-18T15:13:58.590617+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": 4.336808689942018e-18,
+      "train_score_mean": -0.26998047482050636,
+      "train_score_median": -0.3024553872614619,
+      "train_score_max": 0.007088805460031988,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.2600725890563753,
+        "max_score": -0.07767728262757445,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_valkey-cart.joblib"
+    },
+    "lof": {
+      "threshold_p99": 0.9889562164694539,
+      "train_score_mean": 0.9889562164694539,
+      "train_score_median": 0.9889562164694536,
+      "train_score_max": 0.9889562164694539,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.8888888888888888,
+        "mean_score": 0.9889562164694539,
+        "max_score": 0.9889562164694539,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_valkey-cart.lof.joblib"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.00048099466129746763,
+      "train_score_mean": -0.002404535041176994,
+      "train_score_median": -0.0024394742666611832,
+      "train_score_max": 0.0006097997800168717,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.2222222222222222,
+        "mean_score": -0.0001565770693657951,
+        "max_score": 0.023184733867556463,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_valkey-cart.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 4.392336451398821,
+      "train_score_mean": 1.3435513563796633,
+      "train_score_median": 0.7863733683977333,
+      "train_score_max": 5.056041955218913,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": 1.3587439393324527,
+        "max_score": 3.3540552087483704,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_valkey-cart.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|lof": {
+      "same_verdict_rate": 0.1111111111111111,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 8
+    },
+    "iforest|ocsvm": {
+      "same_verdict_rate": 0.7777777777777778,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 2
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "lof|ocsvm": {
+      "same_verdict_rate": 0.1111111111111111,
+      "jaccard": 0.1111111111111111,
+      "both_flagged": 1,
+      "either_flagged": 9
+    },
+    "lof|zscore": {
+      "same_verdict_rate": 0.1111111111111111,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 8
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 0.7777777777777778,
+      "jaccard": 0.0,
+      "both_flagged": 0,
+      "either_flagged": 2
+    }
+  },
+  "data_quality": {
+    "rows": 40,
+    "unique_rows": 20,
+    "unique_fraction": 0.5,
+    "feature_std": {
+      "z_cpu_percent": 1.0107753826010657,
+      "z_memory_percent": 1.0625441600244026,
+      "z_network_rx_rate": 0.9619736559988479,
+      "z_network_tx_rate": 1.029895113127844
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}
