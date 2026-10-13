@@ -24,7 +24,9 @@ export class IncidentManager {
     const anomalies = this.anomalyDetector.detectAnomaliesForTarget(targetId, targetNodes);
 
     // 2. Execute RCA Analysis
+    const open = this.activeIncidents.get(targetId);
     const rcaResult = this.rcaEngine.analyzeIncident({
+      incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
       targetId,
       nodes: targetNodes,
       edges: targetEdges,
