@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import Docker from 'dockerode';
 import axios from 'axios';
 
@@ -14,7 +17,17 @@ const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000', 10);
 const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT || '';
 const inProject = (c: { Labels?: Record<string, string> }) => !COMPOSE_PROJECT || (c.Labels?.['com.docker.compose.project'] === COMPOSE_PROJECT);
 
-const docker = new Docker();
+// Where Docker's socket is differs by machine: /var/run/docker.sock on Linux and most Macs, but Docker Desktop (without the
+// symlink option), Colima and Rancher Desktop keep it under the home directory. DOCKER_HOST wins; Windows uses its named pipe.
+function dockerOptions(): { socketPath?: string } {
+  if (process.env.DOCKER_HOST || process.platform === 'win32') return {};
+  const home = os.homedir();
+  for (const p of ['/var/run/docker.sock', path.join(home, '.docker', 'run', 'docker.sock'), path.join(home, '.colima', 'default', 'docker.sock'), path.join(home, '.rd', 'docker.sock')]) {
+    if (fs.existsSync(p)) return { socketPath: p };
+  }
+  return {};
+}
+const docker = new Docker(dockerOptions());
 
 interface ServiceNode {
   id: string;

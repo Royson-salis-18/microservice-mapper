@@ -54,6 +54,9 @@ This is not a distributed tracing tool. There are no OpenTelemetry spans or requ
 
 ## Quick Start
 
+**Fastest way to see it working on your own machine** (macOS, Linux or Windows, with Docker running): `npm run setup && npm run local`, then open http://localhost:5173.
+Step by step, including starting a test bench, injecting faults and scoring the mapper: [docs/RUN_LOCAL.md](docs/RUN_LOCAL.md). How the algorithms work: [docs/MAPPER_ALGORITHMS.md](docs/MAPPER_ALGORITHMS.md).
+
 ### Prerequisites
 
 - Node.js ^20.19 or ≥ 22.12 (what Vite 8 requires), npm ≥ 9
@@ -88,6 +91,8 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run client` | Start Vite dev server only |
 | `npm run build` | Production client build |
 | `npm run install:all` | Install server, client, remote-collector, traffic-gen |
+| `npm run local` | Start the mapper plus a collector for every docker compose project running on this machine |
+| `npm run eval` | Score the mapper against a fault-injection campaign (`observe`, `score`, `report`, `all`) |
 | `npm run traffic-gen` | Run traffic generator |
 | `npm test` | Run the test suite: graph, root cause, risk and cascades, layouts, SSH/Docker parsing, command sanitising |
 
