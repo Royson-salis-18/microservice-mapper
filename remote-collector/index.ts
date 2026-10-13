@@ -179,7 +179,8 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
     const containers = (await docker.listContainers({ all: false })).filter(inProject);
     for (const cInfo of containers) {
       const containerName = cInfo.Names[0].replace(/^\//, '');
-      const cleanName = containerName.replace(/^docker-compose-/, '').replace(/-\d+$/, '');
+      // Same name as the node uses (compose service label first), or edges built from logs point at services that do not exist.
+      const cleanName = deriveServiceName(cInfo);
       
       try {
         const container = docker.getContainer(cInfo.Id);

@@ -27,8 +27,8 @@ interface SidebarProps {
 interface NavItem { id: string; icon: LucideIcon; label: string }
 
 // Tab ids are what App.tsx switches on, so they stay as they were; only the labels are for people.
-// Ordered the way an on-call engineer works: what is broken, then where to look, then how to test. The ML screens are a
-// research tool, not part of the daily loop, so they sit under "Advanced" and stay hidden until switched on.
+// Ordered the way an on-call engineer works: what is broken, then where to look, then how to test. Experiments, model findings and the ML
+// pipeline are research tools, not part of the daily loop, so they sit under "Research" and stay hidden until switched on.
 const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
   {
     title: 'Now',
@@ -48,13 +48,10 @@ const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
     ],
   },
   {
-    title: 'Test',
-    items: [{ id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' }],
-  },
-  {
-    title: 'Advanced',
+    title: 'Research',
     advanced: true,
     items: [
+      { id: 'EXPERIMENTS', icon: FlaskConical, label: 'Experiments' },
       { id: 'FINDINGS', icon: Microscope, label: 'Model findings' },
       { id: 'ML PIPELINE', icon: Brain, label: 'ML pipeline' },
     ],
@@ -136,10 +133,10 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
           <Plus size={16} strokeWidth={1.75} />
           <span className="label">Add project</span>
         </div>
-        <div className="mm-nav" onClick={() => setAdvanced(a => !a)} role="button" tabIndex={0} title={collapsed ? 'Show or hide the ML screens' : undefined}
+        <div className="mm-nav" onClick={() => setAdvanced(a => !a)} role="button" tabIndex={0} title={collapsed ? 'Show or hide the research tools' : undefined}
           onKeyDown={e => { if (e.key === 'Enter') setAdvanced(a => !a); }}>
           <Brain size={16} strokeWidth={1.75} />
-          <span className="label">{advanced ? 'Hide ML screens' : 'Show ML screens'}</span>
+          <span className="label">{advanced ? 'Hide research tools' : 'Show research tools'}</span>
         </div>
         <div className="mm-nav" onClick={() => setCollapsed(c => !c)} role="button" tabIndex={0} title={collapsed ? 'Expand sidebar' : undefined}
           onKeyDown={e => { if (e.key === 'Enter') setCollapsed(c => !c); }}>
