@@ -2,14 +2,14 @@
 
 ## Overview
 
-The client (`client/src/`) is a React 19 + TypeScript application built with Vite, using React Flow (XYFlow) for 2D graph visualization and Three.js for 3D visualization. It provides 11 distinct view tabs, each showing a different perspective of the monitored microservice systems.
+The client (`client/src/`) is a React 19 + TypeScript application built with Vite, using React Flow (XYFlow) for the 2D graph and three.js through react-three-fiber for the 3D scene. It provides 11 view tabs, each a different perspective on the monitored systems. What every colour, width and pulse means is in [Reading the picture](33-visual-language.md).
 
 ## Technology Stack
 
 - **React 19** with hooks-based architecture
 - **Vite** for build tooling
 - **React Flow (@xyflow/react)** for 2D graph canvas
-- **Three.js** for 3D visualization (`Scene3D`)
+- **three.js + @react-three/fiber + drei** for the 3D scene (`components/3d/`)
 - **WebSocket** for real-time graph updates and terminal streaming
 - **CSS** custom design system (no framework)
 
@@ -20,7 +20,7 @@ The main `App` component manages:
 - **Active tab** (3D Vision, Telemetry, Dependencies, etc.)
 - **Node/Edge selection** for inspection panels
 - **View mode** (combined, architecture, runtime)
-- **2D layout algorithm** (clusters, radial, force, hierarchy, dagre)
+- **2D layout algorithm** (clusters, hierarchy, tiers, grid, circle, polygon, radial, spiral)
 - **Filter state** (services, databases, queues, gateways, infrastructure)
 - **Terminal state** (position, visibility)
 
@@ -28,7 +28,7 @@ The main `App` component manages:
 
 | Tab | Component | Size | Description |
 |-----|-----------|------|-------------|
-| 3D Vision | `Scene3D` | - | Three.js 3D graph with orbiting camera |
+| 3D Vision | `Scene3D` | - | Islands layout: a district per project, a raised platform per role, rate-driven link pulses, HUD with layout / routing / bloom toggles and the consistency chip |
 | Graph | `GraphCanvas` + `GraphControls` | - | React Flow 2D graph with layout picker |
 | Telemetry | `TelemetryView` | 27KB | Live CPU/memory/network metrics per service |
 | Dependencies | `DependenciesView` | 10KB | Edge analysis: declared vs observed |
@@ -40,13 +40,13 @@ The main `App` component manages:
 | FINDINGS | `FindingsView` | 9KB | ML anomaly detection results |
 | RELIABILITY | `ReliabilityView` | 15KB | Risk scores and health breakdowns |
 
-## Layout System (layouts2d.ts)
+## Layout System
 
-Five 2D layout algorithms available:
+Layouts are deterministic functions, not a force simulation, so the picture does not wobble every time data arrives.
 
-```typescript
-type Layout2DId = 'clusters' | 'radial' | 'force' | 'hierarchy' | 'dagre';
-```
+**2D** (`layouts2d.ts`): `clusters` (each project separately, stacked by role), `hierarchy` (left to right by dependency depth), `tiers` (shared rows by role), `grid`, `circle`, `polygon`, `radial` (busiest in the middle), `spiral`.
+
+**3D** (`3d/layouts.ts`): `halls`, labelled **Islands**, the default (delegates to `3d/site.ts`); `clusters`, `tiers` and others. The islands layout returns geometry as well as positions (districts, platforms with their heights, tracks between sections that call each other, scenery pads and roads), so the scene can draw the landscape. `tests/logic.test.ts` checks that services stand exactly on their platform, that platforms never overlap, and that tracks appear only between sections that really call each other.
 
 ### Layout Stability
 
@@ -138,19 +138,20 @@ const terminalLeft = isInspectorOpen
 
 ## Inspection Panels
 
-### Node Inspection (InspectionPanel — 21KB)
-- Service metadata (container ID, image, ports, uptime)
-- Live metrics (CPU, memory, network I/O)
-- Health/Risk scores with breakdown
-- Connected edges list
-- Anomaly score from ML pipeline
+### Node Inspection (InspectionPanel)
+- Hero: name, type, status, and the reason for the status in words
+- Live metrics: CPU as a share of its allowance ("· of N cores", raw figure in the tooltip), memory, network **per second** (totals in the tooltip), de-duplicated ports
+- Health with its factor breakdown, risk, criticality, cascade probability and the dependency it arrives through
+- What-if: re-solves the cascade model with this service failed
+- Incident role: root cause, suspect (another candidate), affected, or uninvolved
+- Calls / called by, each clickable
 
-### Edge Inspection (EdgeInspectionPanel — 13KB)
-- Declared vs observed status
-- Evidence sources
-- Edge metrics (request count, latency percentiles, error rate)
-- Activity rate (samples/min from TCP connections)
-- Status code distribution
+### Edge Inspection (EdgeInspectionPanel)
+- Evidence chips (`observed`, `declared`, `direction:listen-port`…)
+- Weight, with its confidence basis and the caller's share
+- Flow: `req/s` where measured, otherwise "2 open · 8 new/min" (distinct connections)
+- Latency (p50/p95/p99) and error rate **only** where a request-level source measured them; otherwise an explicit "unknown, and here is why the link has its colour"
+- Status code distribution (Tier 1)
 
 ## ML Pipeline View (73KB)
 
@@ -159,7 +160,7 @@ The largest single component. Manages the entire ML workflow from the UI:
 - **Preprocessing** — trigger `preprocess.py`, view normalization stats
 - **Training** — configure and run `train.py` with parameter tuning
 - **Scoring** — monitor `score.py` live scoring loop
-- **Model comparison** — cross-model agreement (IsolationForest vs LOF vs OCSVM vs z-score)
+- **Model comparison** — per-detector scores and votes (Isolation Forest, LOF, one-class SVM, z-score); the verdict is a majority vote with the median score
 
 ## Real-Time Data Hook (useGraphData)
 
@@ -171,6 +172,8 @@ The `useGraphData` hook manages:
 5. **Graph reload** via REST fallback
 
 All data flows through the single WebSocket connection for `graph-update`, `incident.updated`, and `trace-events` messages.
+
+Each `graph-update` replaces the whole graph, but the hook **reuses** every node and edge whose *displayed* values have not changed (CPU to 0.1%, bytes to the MiB, scores to the percent; see `DISPLAY_PRECISION`). React then skips them, so a 50-service canvas re-renders only what visibly moved. Shared objects are tracked with a `WeakMap` keyed by the data object (`hooks/shareById.ts`), which keeps it correct under React StrictMode's double-invoked updaters.
 
 ## Sidebar Navigation (Sidebar.tsx — 6KB)
 

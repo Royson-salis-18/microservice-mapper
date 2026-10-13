@@ -59,3 +59,9 @@ The system is designed to run the backend on a developer laptop and the collecto
 - Configurable polling intervals (default 5s)
 - In-memory state with JSON-on-disk persistence
 - ~1 hour metric history (ring buffer, not a time-series DB)
+
+## Where next
+
+- [How it all works](19-how-it-all-works.md): the whole loop, plainly.
+- [The rules it is built on](29-design-principles.md): why the code looks the way it does.
+- [Frameworks and why](30-tech-stack.md): what each library is for.

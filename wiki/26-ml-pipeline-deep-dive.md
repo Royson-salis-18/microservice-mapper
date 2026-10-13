@@ -176,15 +176,22 @@ consecutive_above[service_id] = consecutive_above[service_id] + 1 if above else 
 persistent = consecutive_above[service_id] >= persistence_windows  # default: 3
 ```
 
-### Score Normalization
+### Score Normalization and the Vote
 
-Raw scores are squashed to 0..1 relative to the service's own threshold:
+Each detector's raw output is placed on a common scale relative to **its own training distribution** (`ml/ensemble.py`, `detector_score`):
 
 ```python
-anomaly_score = min(1.0, max(0.0, anomaly_raw / threshold)) if threshold > 0 else 0.0
+centre = stats.get("train_score_median", stats.get("train_score_mean"))
+r = (raw - centre) / (stats["threshold_p99"] - centre)
+score = max(0.0, min(1.0, r / 2.0))     # typical → 0, at threshold → 0.5, twice as far → 1.0
+above = raw >= stats["threshold_p99"]
 ```
 
-This is **purely for display** — the real decision uses the raw score vs threshold.
+A detector whose threshold and centre coincide (spread below `1e-9`) is unusable and returns `None` instead of dividing by noise. The median is preferred as the centre: a one-class SVM's mean was dragged past its own p99 by a few extreme training scores.
+
+`combine()` then takes a **majority vote** (`votes >= ceil(n/2)` of the usable detectors) and uses the **median** score, so one misbehaving detector cannot drag the result. `tests` for this live in `ml/test_ensemble.py`.
+
+The old formula, `raw / threshold`, broke because an Isolation Forest's threshold is about 0 by construction: the score was pinned at 0, or at 1.0 for the faintest deviation.
 
 ### Score History
 
@@ -200,6 +207,10 @@ Append-only CSV (`data/score_history.csv`) trimmed at 50,000 rows for the UI to 
     "raw_score": 0.0106,
     "threshold": 0.0234,
     "above_threshold": false,
+    "votes": 1,
+    "votes_needed": 2,
+    "detectors_used": 4,
+    "detectors": { "iforest": { "score": 0.45, "raw": 0.0106, "threshold": 0.0234, "above": false } },
     "consecutive_windows": 0,
     "persistent": false,
     "scored_at": "2026-09-18T14:32:00Z"

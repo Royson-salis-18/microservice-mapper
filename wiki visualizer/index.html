@@ -3,63 +3,68 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <title>Microservice Mapper | Visual Wiki & Interactive Master Hub</title>
+    <title>Microservice Mapper &mdash; how this system works</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
     <style>
+  /* Same language as the app: navy and indigo, warm colours only for trouble. */
   :root {
-    --bg:        #f6f7f9;
+    --bg:        #f5f6fb;
     --panel:     #ffffff;
-    --panel-2:   #eceff4;
-    --ink:       #141413;
-    --ink-2:     #334155;
-    --muted:     #76828f;
-    --faint:     #97a1af;
-    --rule:      #dbe0e8;
-    --rule-2:    #e9ecf2;
+    --panel-2:   #eef0f8;
+    --ink:       #12142a;
+    --ink-2:     #363b5c;
+    --muted:     #6c7293;
+    --faint:     #9aa0bd;
+    --rule:      #dcdfee;
+    --rule-2:    #e9ebf5;
 
-    --sig:       #00e5ff;
-    --sig-bg:    rgba(0, 229, 255, 0.12);
-    --ok:        #0a7a46;
-    --warn:      #96620a;
-    --err:       #b41f3c;
-    --t0:        #626d7d;
-    --t1:        #96620a;
-    --t2:        #0a7ea4;
+    --sig:       #4f5bd5;
+    --sig-bg:    rgba(79, 91, 213, 0.10);
+    --ok:        #0b8a5c;
+    --warn:      #b5650a;
+    --err:       #c42443;
+    --t0:        #6c7293;
+    --t1:        #b5650a;
+    --t2:        #2f78c4;
+    --link-calm: #4f7dff; --link-busy: #2f9bff; --link-heavy: #1fd1ff; --link-sat: #9cf4ff;
+    --link-orange: #ff9a3c; --link-red: #ff3d5e; --link-idle: #5b6aa0;
 
     --body: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg:      #05080d;
-      --panel:   #0b1119;
-      --panel-2: #121a25;
-      --ink:     #e6ecf4;
-      --ink-2:   #aeb9c8;
-      --muted:   #76828f;
-      --faint:   #545e6c;
-      --rule:    #1a2430;
-      --rule-2:  #131b25;
-      --sig:     #3ec8ee;
-      --sig-bg:  #3ec8ee14;
-      --ok:      #35d38b;
-      --warn:    #f0ab2e;
+      --bg:      #070914;
+      --panel:   #0d1122;
+      --panel-2: #131a30;
+      --ink:     #e7eaf8;
+      --ink-2:   #b0b6d4;
+      --muted:   #7a81a6;
+      --faint:   #4f5679;
+      --rule:    #1c2340;
+      --rule-2:  #151b33;
+      --sig:     #8f9cff;
+      --sig-bg:  rgba(143, 156, 255, 0.10);
+      --ok:      #25e3a3;
+      --warn:    #ffab40;
       --err:     #ff5f7a;
-      --t0:      #76828f;
-      --t1:      #f0ab2e;
-      --t2:      #3ec8ee;
+      --t0:      #7a81a6;
+      --t1:      #ffab40;
+      --t2:      #5fb4f0;
     }
   }
   :root[data-theme="dark"] {
-    --bg:      #05080d;  --panel:   #0b1119;  --panel-2: #121a25;
-    --ink:     #e6ecf4;  --ink-2:   #aeb9c8;  --muted:   #76828f;
-    --faint:   #545e6c;  --rule:    #1a2430;  --rule-2:  #131b25;
-    --sig:     #3ec8ee;  --sig-bg:  #3ec8ee14;
-    --ok:      #35d38b;  --warn:    #f0ab2e;  --err:     #ff5f7a;
-    --t0:      #76828f;  --t1:      #f0ab2e;  --t2:      #3ec8ee;
+    --bg:      #070914;  --panel:   #0d1122;  --panel-2: #131a30;
+    --ink:     #e7eaf8;  --ink-2:   #b0b6d4;  --muted:   #7a81a6;
+    --faint:   #4f5679;  --rule:    #1c2340;  --rule-2:  #151b33;
+    --sig:     #8f9cff;  --sig-bg:  rgba(143, 156, 255, 0.10);
+    --ok:      #25e3a3;  --warn:    #ffab40;  --err:     #ff5f7a;
+    --t0:      #7a81a6;  --t1:      #ffab40;  --t2:      #5fb4f0;
   }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: radial-gradient(1200px 600px at 20% -10%, #121a3a 0%, transparent 60%), var(--bg); background-attachment: fixed; } }
+  :root[data-theme="dark"] body { background: radial-gradient(1200px 600px at 20% -10%, #121a3a 0%, transparent 60%), var(--bg); background-attachment: fixed; }
 
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; margin: 0; padding: 0; }
@@ -98,7 +103,7 @@
   a {
     color: var(--sig);
     text-decoration: underline;
-    text-decoration-color: rgba(62, 200, 238, 0.4);
+    text-decoration-color: color-mix(in srgb, var(--sig) 40%, transparent);
     text-underline-offset: 3px;
     font-weight: 500;
   }
@@ -219,12 +224,12 @@
   .pill.t2 { background: color-mix(in srgb, var(--t2) 15%, transparent); color: var(--t2); }
 
   .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
-  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid rgba(0, 229, 255, 0.3); }
+  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid color-mix(in srgb, var(--sig) 35%, transparent); }
   .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid rgba(16, 185, 129, 0.3); }
   .badge-orange { background: rgba(245, 158, 11, 0.15); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.3); }
   .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--err); border: 1px solid rgba(239, 68, 68, 0.3); }
-  .badge-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
-  .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+  .badge-purple { background: rgba(192, 132, 252, 0.13); color: #a26be0; border: 1px solid rgba(192, 132, 252, 0.3); }
+  .badge-blue { background: rgba(56, 189, 248, 0.13); color: var(--t2); border: 1px solid rgba(56, 189, 248, 0.3); }
 
   /* Flowchart / Architecture Styles */
   .flow-container { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
@@ -243,7 +248,7 @@
   /* Interactive Lab Box */
   .interactive-lab { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--sig); border-radius: 10px; padding: 1.5rem; margin: 2rem 0; }
   .lab-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.6rem; }
-  .lab-btn { background: var(--sig); color: #070b14; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .lab-btn { background: var(--sig); color: #fff; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
   .lab-btn:hover { filter: brightness(1.2); box-shadow: 0 0 12px var(--sig-bg); transform: translateY(-1px); }
   .lab-output { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); min-height: 60px; }
 
@@ -278,976 +283,609 @@
   @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr !important; } }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.chapter-rail {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 10px 0 12px; margin: 0 0 18px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.chapter-part {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sig);
+}
+.chapter-count {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+}
+.chapter-learn {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-left: 3px solid var(--sig);
+  border-radius: 10px; padding: 16px 20px; margin: 0 0 20px;
+}
+.chapter-learn-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--sig); margin-bottom: 8px;
+}
+.chapter-learn ul { margin: 0; padding-left: 18px; }
+.chapter-learn li { margin-bottom: 5px; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.chapter-learn li:last-child { margin-bottom: 0; }
+.chapter-figure { margin: 0 0 24px; }
+.chapter-figure .fx {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 10px; padding: 18px; overflow-x: auto;
+}
+.chapter-figure figcaption {
+  font-size: 13px; color: var(--muted); line-height: 1.6;
+  margin-top: 10px; max-width: 76ch;
+}
+
+/* Contents page */
+.part-block { margin: 0 0 30px; }
+.part-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.part-num {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+  color: var(--sig); text-transform: uppercase;
+}
+.part-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.part-blurb { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; max-width: 76ch; line-height: 1.6; }
+.chapter-row {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 11px 14px; border: 1px solid var(--rule); border-radius: 9px;
+  background: var(--panel); margin-bottom: 7px; text-decoration: none;
+}
+.chapter-row:hover { border-color: var(--sig); }
+.chapter-row .n {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  min-width: 26px; flex-shrink: 0;
+}
+.chapter-row .t { font-weight: 600; color: var(--ink); font-size: 14.5px; }
+.chapter-row .d { color: var(--muted); font-size: 12.5px; margin-left: auto; text-align: right; max-width: 46ch; }
+@media (max-width: 720px) { .chapter-row .d { display: none; } }
+
+/* Labs: a grid of labelled fields, live results. */
+.lab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 14px 0 12px; }
+.lab-field label { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.lab-field input, .lab-field select { width: 100%; background: var(--bg); border: 1px solid var(--rule); color: var(--ink); padding: 8px 9px; border-radius: 6px; font-family: var(--mono); font-size: 13px; }
+.lab-field input:focus, .lab-field select:focus { outline: none; border-color: var(--sig); }
+.lab-src { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: -2px; }
+.lab-note { color: var(--muted); font-size: 13px; margin: 6px 0 0; max-width: 80ch; }
+.lab-big { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--ink); letter-spacing: -.02em; }
+.lab-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.lab-row code { min-width: 170px; color: var(--sig); background: none; padding: 0; font-size: 12px; }
+.lab-bar { flex: 1; height: 7px; background: var(--rule-2); border-radius: 4px; overflow: hidden; }
+.lab-bar > div { height: 100%; border-radius: 4px; }
+.lab-why { font-size: 12px; color: var(--muted); margin: 1px 0 4px 180px; font-family: var(--body); }
+.lab-foot { font-size: 12px; color: var(--muted); margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--body); }
+@media (max-width: 640px) { .lab-row code { min-width: 110px; } .lab-why { margin-left: 0; } }
+
+/* Contents page: reading paths */
+.paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin: 8px 0 34px; }
+.path { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.path h3 { margin: 0 0 8px; font-size: 14px; }
+.path ol { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.path li { margin-bottom: 3px; }
+.path a { font-weight: 500; }
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 18px 0 28px; }
+.stat { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+.stat .v { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--ink); }
+.stat .k { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+hr.rule { border: none; border-top: 1px solid var(--rule); margin: 2.2rem 0 0; }
+.t tr.sect td { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--sig); padding-top: 16px; }
+.t tr.sect td strong { color: var(--sig); font-weight: 600; }
+.box h4 + p { margin-top: 0; }
+
+/* On a phone, figures keep a readable size and scroll inside their frame. */
+@media (max-width: 700px) { .chapter-figure svg, figure .fx svg { min-width: 640px; } }
+
+
+/* ---- atmosphere: a slow, dim aurora and a dot grid, behind everything ---- */
+body::before { content: ""; position: fixed; inset: -20%; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 15% 10%, rgba(107,140,255,.10), transparent 70%),
+    radial-gradient(35% 30% at 85% 18%, rgba(45,212,191,.06), transparent 70%),
+    radial-gradient(45% 40% at 60% 95%, rgba(192,132,252,.06), transparent 70%);
+  animation: drift 40s ease-in-out infinite alternate; }
+body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(rgba(143,156,255,.08) 1px, transparent 1px); background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 75%); mask-image: linear-gradient(to bottom, #000, transparent 75%); }
+@keyframes drift { to { transform: translate3d(4%, 3%, 0) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
+
+/* ---- top bar: sticky glass ---- */
+[hidden] { display: none !important; }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; padding: 11px 0; margin: 0 0 24px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
+  /* Edge to edge without widening the page: shadows are painted, not laid out. */
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 80%, transparent), 0 1px 0 100vmax var(--rule);
+  clip-path: inset(0 -100vmax -1px); }
+.topbar .crumbs { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;
+  min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; }
+.topbar .crumbs > * { flex: none; }
+.topbar .crumbs b { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.topbar .tools { flex: none; }
+@media (min-width: 900px) { .topbar { flex-wrap: nowrap; } }
+@media (max-width: 899px) {
+  .topbar .crumbs { flex-basis: 100%; }
+  .topbar .tools { flex: 1 1 100%; min-width: 0; }
+}
+@media (max-width: 640px) {
+  .quick-jump-select { display: none; }
+  .search-btn { min-width: 0; flex: 1 1 auto; }
+}
+h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
+.topbar .crumbs a { color: var(--ink); text-decoration: none; font-weight: 600; }
+.topbar .crumbs b { color: var(--sig); font-weight: 600; }
+.topbar .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tbtn { font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2);
+  padding: 5px 11px; border-radius: 7px; text-decoration: none; cursor: pointer; font-weight: 500; }
+.tbtn:hover { border-color: var(--sig); color: var(--ink); }
+.search-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: 14px; min-width: 168px; color: var(--muted); }
+.quick-jump-select { max-width: 210px; }
+@media (min-width: 1200px) { .has-side-toc .hd .toc { display: none; } }
+.search-btn kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--rule); border-radius: 4px; padding: 0 5px; color: var(--muted); }
+.read-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; transform-origin: 0 50%; transform: scaleX(0); z-index: 40;
+  background: linear-gradient(90deg, var(--accent, var(--sig)), #2dd4bf); }
+
+/* ---- search palette ---- */
+.palette { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: flex-start;
+  padding: 12vh 16px 16px; background: rgba(4,6,14,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.palette[hidden] { display: none; }
+.palette-box { width: min(680px, 100%); background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 0 0 1px color-mix(in srgb, var(--sig) 25%, transparent); }
+.palette-box input { width: 100%; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink);
+  font-family: var(--body); font-size: 17px; padding: 16px 18px; outline: none; }
+.palette-results { max-height: 52vh; overflow-y: auto; padding: 6px; }
+.hit { display: grid; grid-template-columns: 70px 1fr; gap: 1px 10px; padding: 9px 12px; border-radius: 9px; text-decoration: none; color: var(--ink-2); font-weight: 400; }
+.hit.sel, .hit:hover { background: var(--sig-bg); }
+.hit-k { grid-row: span 2; align-self: center; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.k-chapter { color: var(--sig); } .k-section { color: var(--t2); } .k-term { color: #a26be0; }
+.hit-t { color: var(--ink); font-weight: 600; font-size: 14px; }
+.hit-s { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hit mark { background: color-mix(in srgb, var(--sig) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.palette-foot { display: flex; gap: 16px; padding: 8px 14px; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.palette-none { padding: 18px; color: var(--muted); font-size: 13px; }
+
+/* ---- chapter hero ---- */
+.hd { position: relative; }
+.hd > *:not(.bignum) { position: relative; z-index: 1; }
+.hd .bignum { position: absolute; right: -4px; top: 26px; z-index: 0; font-family: var(--body); font-weight: 700;
+  font-size: clamp(100px, 17vw, 210px); line-height: 1; letter-spacing: -.06em; color: transparent; pointer-events: none; user-select: none;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--accent, var(--sig)) 45%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent); mask-image: linear-gradient(to bottom, #000 30%, transparent); }
+.hd h1::after { content: ""; display: block; width: 120px; height: 3px; margin-top: 16px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent, var(--sig)), transparent); }
+.hero h1 { font-size: clamp(36px, 6vw, 60px); background: linear-gradient(95deg, var(--ink) 25%, var(--sig) 70%, #2dd4bf);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.chapter-rail { border-color: color-mix(in srgb, var(--accent, var(--sig)) 30%, var(--rule)); }
+.chapter-part { color: var(--accent, var(--sig)); }
+@media (max-width: 700px) { .hd .bignum { opacity: .55; } }
+
+/* ---- two columns: the chapter and "on this page" ---- */
+@media (min-width: 1200px) {
+  .doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 44px; align-items: start; }
+  .side-toc { position: sticky; top: 80px; max-height: calc(100vh - 110px); overflow: auto; padding-left: 14px; border-left: 1px solid var(--rule); }
+}
+@media (max-width: 1199px) { .side-toc { display: none; } }
+.side-toc-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 6px 0 10px; }
+.side-toc a { display: block; font-size: 12.5px; line-height: 1.4; color: var(--muted); text-decoration: none; font-weight: 400;
+  padding: 5px 0 5px 12px; margin-left: -15px; border-left: 2px solid transparent; transition: color .2s, border-color .2s; }
+.side-toc a:hover { color: var(--ink); }
+.side-toc a.on { color: var(--ink); border-left-color: var(--accent, var(--sig)); }
+.side-toc a.try { color: var(--sig); margin-top: 8px; }
+
+/* ---- motion, all of it optional ---- */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.chapter-figure .fx, .interactive-lab, .flow-container, .path, .stat { transition: box-shadow .3s, border-color .3s, transform .3s; }
+.chapter-figure .fx:hover, .interactive-lab:hover, .path:hover, .stat:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--sig)) 40%, var(--rule));
+  box-shadow: 0 18px 50px -30px color-mix(in srgb, var(--accent, var(--sig)) 75%, transparent); }
+.path:hover, .stat:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: no-preference) {
+  .chapter-figure path[stroke-dasharray], .chapter-figure line[stroke-dasharray] { animation: flowdash 1.6s linear infinite; }
+}
+@keyframes flowdash { to { stroke-dashoffset: -16; } }
+
+/* ---- contents rows ---- */
+.chapter-row { position: relative; transition: border-color .2s, transform .2s, box-shadow .2s, background .2s; }
+.chapter-row::before { content: ""; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: var(--pa, var(--sig)); opacity: 0; transition: opacity .2s; }
+.chapter-row:hover { transform: translateX(3px); border-color: color-mix(in srgb, var(--pa, var(--sig)) 45%, var(--rule));
+  box-shadow: 0 10px 30px -20px var(--pa, var(--sig)); }
+.chapter-row:hover::before { opacity: 1; }
+.chapter-row.visited .n::after { content: " ✓"; color: var(--ok); }
+.part-num { color: var(--pa, var(--sig)); }
+.continue { margin-left: 4px; }
+
+/* ---- the live system on the contents page ---- */
+.live { padding: 0; margin: 6px 0 34px; border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; position: relative;
+  background: radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--sig) 7%, var(--panel)), var(--panel) 60%);
+  box-shadow: 0 30px 80px -50px color-mix(in srgb, var(--sig) 80%, transparent); }
+.live-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--rule); }
+.live-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+.live-title span { font-family: var(--mono); font-size: 10.5px; color: var(--sig); letter-spacing: .1em; margin-right: 8px; text-transform: uppercase; }
+.live-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.live-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.live-btns button { font-family: var(--mono); font-size: 11px; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--rule); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+.live-btns button:hover, .live-btns button.on { border-color: var(--sig); color: var(--ink); box-shadow: 0 0 0 3px var(--sig-bg); }
+.live-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; }
+@media (max-width: 960px) { .live-grid { grid-template-columns: 1fr; } }
+.ls-stage { position: relative; min-height: 300px; }
+.ls-stage canvas { display: block; }
+.ls-tip { position: absolute; z-index: 2; pointer-events: none; max-width: 250px; padding: 8px 10px; border-radius: 9px; font-size: 12px; color: var(--ink-2);
+  background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--rule); box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); }
+.ls-tip b { color: var(--ink); }
+.ls-tip-hint { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.ls-panel { border-left: 1px solid var(--rule); padding: 14px 16px; font-size: 13px; background: color-mix(in srgb, var(--panel-2) 45%, transparent); }
+@media (max-width: 960px) { .ls-panel { border-left: none; border-top: 1px solid var(--rule); } }
+.ls-h { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 6px 0 8px; }
+.ls-h span { color: var(--faint); letter-spacing: .02em; text-transform: none; }
+.ls-root { display: flex; align-items: baseline; gap: 10px; }
+.ls-root b { font-size: 19px; color: var(--ink); }
+.ls-score { font-family: var(--mono); font-size: 18px; color: var(--ink); }
+.ls-conf { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+.ls-why { color: var(--muted); font-size: 12.5px; margin: 4px 0 10px; line-height: 1.5; }
+.ls-truth { font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 6px; margin-bottom: 10px; }
+.ls-truth.ok { background: rgba(37,227,163,.1); color: var(--ok); }
+.ls-truth.bad { background: rgba(255,61,94,.1); color: var(--err); }
+.ls-cand { padding: 7px 0; border-top: 1px solid var(--rule-2); }
+.ls-cand-h { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); }
+.ls-cand-h span:last-child { font-family: var(--mono); font-size: 11.5px; }
+.ls-cand.top .ls-cand-h span:first-child { color: var(--ink); font-weight: 600; }
+.ls-bar { display: flex; height: 6px; gap: 2px; margin: 5px 0 4px; }
+.ls-bar i { display: block; border-radius: 2px; }
+.f-first { background: #8f9cff; } .f-anomaly { background: #6b7bd8; } .f-down { background: #ff3d5e; } .f-degraded { background: #ffab40; }
+.f-observed { background: #1fd1ff; } .f-explains { background: #25e3a3; }
+.ls-bar i.neg { background: repeating-linear-gradient(45deg, #ff3d5e 0 3px, transparent 3px 6px); }
+.ls-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ls-chips span { font-family: var(--mono); font-size: 10px; color: var(--muted); background: var(--panel-2); border-radius: 4px; padding: 1px 5px; }
+.ls-chips span.neg { color: var(--err); }
+.ls-path { font-family: var(--mono); font-size: 11px; color: var(--ink-2); margin: 10px 0 14px; }
+.ls-path i { color: var(--err); font-style: normal; }
+.ls-kv, .ls-risk, .ls-w { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: var(--ink-2); }
+.ls-risk em { color: var(--muted); font-style: normal; font-size: 11.5px; }
+.ls-kv b, .ls-risk b, .ls-w b { font-family: var(--mono); }
+.b-high { color: var(--err); } .b-elevated { color: #ff9a3c; } .b-low { color: var(--warn); }
+.ls-empty { color: var(--ink-2); font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+.live-foot { padding: 10px 18px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+
+/* Swatches for colour legends */
+.sw { display: inline-block; width: 26px; height: 10px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
 </style>
 </head>
-<body>
+<body style="--accent: #8f9cff;">
     <div class="wrap">
+
         
-    <div style="display: flex; justify-content: space-between; align-items: center; padding-block: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-      <div style="font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;">
-        <a href="index.html" style="color: var(--ink); text-decoration: none;">Wiki Visualizer</a>
-        <span>/</span>
-        <span>1. Master Hub &amp; Foundations</span>
-        <span>/</span>
-        <span style="color: var(--sig); font-weight: 600;">Master Hub</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <select id="quick-jump" class="quick-jump-select" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;" title="Jump directly to any document">
-<option value="" disabled selected>⚡ Jump to document...</option>
-<optgroup label="1. Master Hub &amp; Foundations">
-<option value="index.html" selected>Master Visual Wiki &amp; Architecture ...</option>
-<option value="architecture-map.html">Master Architecture Flowchart Map</option>
-<option value="19-how-it-all-works.html">19 — How It All Works (Plain &amp; Det...</option>
-<option value="01-overview.html">01 — Overview &amp; Design Philosophy</option>
-<option value="02-architecture.html">02 — System Layers &amp; Data Flow</option>
-<option value="readme.html">Project README &amp; Quickstart</option>
-<option value="wiki-deep-dive.html">Complete System Wiki (30 Sections)</option>
-<option value="wiki-index.html">Wiki Table of Contents</option>
+    <div class="topbar">
+      <div class="crumbs"><a href="index.html">Microservice Mapper</a><span>/</span><b>Contents</b></div>
+      <div class="tools">
+        <button class="tbtn search-btn" data-open-search type="button"><span>Search the book</span><kbd>Ctrl K</kbd></button>
+        <select id="quick-jump" class="tbtn quick-jump-select" title="Jump to a chapter">
+<option value="" disabled>Jump to a chapter…</option>
+<optgroup label="Contents">
+<option value="index.html" selected>Contents</option>
 </optgroup>
-<optgroup label="2. Core Graph Engine">
-<option value="03-graphstore.html">03 — GraphStore Central Nervous Sy...</option>
-<option value="04-id-system.html">04 — Node &amp; Edge ID System</option>
-<option value="05-telemetry-ingestion.html">05 — Telemetry Ingestion Pipeline</option>
-<option value="06-node-edge-lifecycle.html">06 — Node &amp; Edge Lifecycle</option>
+<optgroup label="Understanding the system">
+<option value="01-overview.html">What this is, and why</option>
+<option value="19-how-it-all-works.html">How it all works</option>
+<option value="29-design-principles.html">The rules it is built on</option>
+<option value="02-architecture.html">The four layers</option>
+<option value="30-tech-stack.html">Frameworks, and why each</option>
+<option value="architecture-map.html">The system, as one map</option>
+<option value="readme.html">Running it yourself</option>
 </optgroup>
-<optgroup label="3. Connection &amp; Discovery">
-<option value="21-connection-layer.html">21 — Connection Layer &amp; Target Agent</option>
-<option value="23-endpoint-discovery.html">23 — Endpoint Discovery Engine</option>
+<optgroup label="Getting the data">
+<option value="21-connection-layer.html">Reaching the target</option>
+<option value="23-endpoint-discovery.html">Finding what is running</option>
+<option value="31-measurement-precision.html">Measuring precisely</option>
+<option value="25-telemetry-sources.html">Where numbers come from</option>
+<option value="18-telemetry-tiers-plan.html">The three tiers of evidence</option>
 </optgroup>
-<optgroup label="4. Remote Collection">
-<option value="07-remote-collector.html">07 — Remote Collector Daemon</option>
-<option value="25-telemetry-sources.html">25 — Telemetry Sources &amp; Ingestion</option>
-<option value="18-telemetry-tiers-plan.html">18 — Telemetry Tiers Plan (0, 1, 2)</option>
-<option value="telemetry-platform-readme.html">Telemetry Platform Daemon Readme</option>
+<optgroup label="Building the graph">
+<option value="03-graphstore.html">The graph store</option>
+<option value="04-id-system.html">Identity</option>
+<option value="05-telemetry-ingestion.html">Ingestion</option>
+<option value="06-node-edge-lifecycle.html">Lifecycle and direction</option>
 </optgroup>
-<optgroup label="5. RCA &amp; Risk">
-<option value="08-rca-engine.html">08 — RCA Engine &amp; Incident Manager</option>
-<option value="22-risk-engine.html">22 — Risk Engine &amp; Centrality Scor...</option>
-<option value="17-findings-vs-incidents.html">17 — Findings vs Incidents Archite...</option>
+<optgroup label="Forming a judgement">
+<option value="17-findings-vs-incidents.html">Two opinions, kept apart</option>
+<option value="08-rca-engine.html">Root cause</option>
+<option value="22-risk-engine.html">Risk, cascades and blast radius</option>
+<option value="11-ml-pipeline.html">The learning pipeline</option>
+<option value="26-ml-pipeline-deep-dive.html">The pipeline, at code level</option>
 </optgroup>
-<optgroup label="6. Frontend &amp; UI">
-<option value="09-frontend.html">09 — Frontend Architecture &amp; 2D/3D...</option>
-<option value="24-client-frontend.html">24 — Client Frontend &amp; 3D Spatial ...</option>
-<option value="10-websocket.html">10 — WebSocket &amp; Real-Time Streaming</option>
-<option value="traces-section-prompt.html">Traces Section Specification</option>
+<optgroup label="Driving the system">
+<option value="20-traffic-experiments.html">Generating traffic</option>
+<option value="traffic-gen-readme.html">The load generator</option>
 </optgroup>
-<optgroup label="7. Traffic &amp; ML Pipeline">
-<option value="20-traffic-experiments.html">20 — Traffic Controller &amp; Load Gen...</option>
-<option value="traffic-gen-readme.html">Traffic Generator Readme</option>
-<option value="11-ml-pipeline.html">11 — ML Anomaly Detection Pipeline</option>
-<option value="26-ml-pipeline-deep-dive.html">26 — ML Pipeline Deep Dive (Code-L...</option>
-<option value="ml-readme.html">ML Subsystem Readme</option>
+<optgroup label="Seeing it">
+<option value="09-frontend.html">The frontend</option>
+<option value="33-visual-language.html">Reading the picture</option>
+<option value="24-client-frontend.html">Views, layouts and inspectors</option>
+<option value="10-websocket.html">Staying live</option>
 </optgroup>
-<optgroup label="8. Reference &amp; Operations">
-<option value="27-project-technical-reference.html">27 — Engineering Manual &amp; Technica...</option>
-<option value="28-mapper-technical-reference.html">28 — Mapper Technical Reference (1...</option>
-<option value="12-data-models.html">12 — Data Models &amp; Schemas</option>
-<option value="13-api-reference.html">13 — API Reference</option>
-<option value="14-configuration.html">14 — Configuration Reference</option>
-<option value="15-troubleshooting.html">15 — Troubleshooting Runbook</option>
-<option value="16-change-log-and-rationale.html">16 — Change Log &amp; Design Rationale</option>
+<optgroup label="Trusting it, and working on it">
+<option value="32-accuracy-and-self-check.html">Keeping the numbers honest</option>
+<option value="34-code-tour.html">A tour of the code</option>
+<option value="35-dev-workflow.html">Working on it</option>
+</optgroup>
+<optgroup label="Reference">
+<option value="36-glossary.html">Glossary</option>
+<option value="12-data-models.html">Data models</option>
+<option value="13-api-reference.html">API reference</option>
+<option value="14-configuration.html">Configuration</option>
+<option value="15-troubleshooting.html">Troubleshooting</option>
+<option value="16-change-log-and-rationale.html">Why things changed</option>
+<option value="07-remote-collector.html">The optional push collector</option>
+<option value="27-project-technical-reference.html">Engineering manual</option>
+<option value="28-mapper-technical-reference.html">Subsystem reference</option>
+<option value="ml-readme.html">ML subsystem readme</option>
 </optgroup>
 </select>
-        <button id="theme-toggle-btn" style="background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; font-family: var(--mono); font-size: 11.5px; cursor: pointer;">🌓 Mode</button>
-        <a href="architecture-map.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🗺 Architecture Map</a>
-        <a href="index.html" style="font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2); padding: 5px 11px; border-radius: 6px; text-decoration: none;">🏠 Master Hub</a>
+        <button id="theme-toggle-btn" class="tbtn" type="button">Theme</button>
+        <a href="architecture-map.html" class="tbtn">Map</a>
+        <a href="index.html" class="tbtn">Contents</a>
       </div>
     </div>
     
-
-        <header class="hd">
-            <div class="eye">Autonomous Observability &middot; Visual Reference &middot; 2026</div>
-            <h1>Microservice Mapper</h1>
+        <header class="hd hero">
+            <div class="eye">Microservice Mapper</div>
+            <h1>How this system works</h1>
             <p class="lead">
-                The authoritative visual reference, engineering manual, and interactive learning visualizer for Microservice Mapper — an autonomous, zero-instrumentation observability platform for Docker microservices on AWS EC2.
+                Microservice Mapper watches a running Docker microservice system from the outside, over one SSH
+                connection, installing nothing. From socket tables and container stats it builds a live dependency
+                graph, finds the root cause when something breaks, predicts what would fail next, and draws it in 2D and 3D.
             </p>
-            <div class="strip">
-                <div class="m"><div class="v">37</div><div class="k">Interactive documentation modules</div></div>
-                <div class="m ok"><div class="v">5.0 s</div><div class="k">Continuous telemetry loop & pulse</div></div>
-                <div class="m"><div class="v">3 Tiers</div><div class="k">Data provenance (Kernel / Logs / Prom)</div></div>
-                <div class="m ok"><div class="v">97&times;</div><div class="k">Tail CSV feature table read speedup</div></div>
+            <p class="lead">
+                40 chapters in 8 parts. Read them in order, or start from the question you have below.
+                Several chapters carry an interactive lab that runs the real formula with the real constants.
+            </p>
+            <div class="metadata-strip">
+                <a href="01-overview.html" class="badge badge-cyan" style="text-decoration:none;">Start at chapter 1 &rarr;</a>
+                <span class="meta-item">40 chapters</span>
+                <span class="meta-item">8 parts</span>
+                <a href="architecture-map.html" class="meta-item">the system as one map</a>
+                <a href="#" class="badge badge-blue continue" data-continue hidden></a>
+                <span class="meta-item"><span data-progress-count>0</span>/40 read in this browser</span>
             </div>
-            <nav class="toc">
-                <a href="#master-architecture-map">01 Master Architecture Flowchart</a>
-                <a href="#interactive-topology-lab">02 Live Multi-Mode Sandbox</a>
-                <a href="#chronological-architecture-guide">03 Chronological Progression</a>
-                <a href="#documentation-directory">04 Documentation Catalog</a>
-            </nav>
         </header>
 
-        <!-- Master Interactive Architecture Flowchart -->
-        <section id="master-architecture-map">
-            <h2><span class="id">01</span> End-to-End System Architecture Flowchart</h2>
-            <p class="lead">
-                Every subsystem mapped out with directional data flows. Click any card below to navigate directly into its specific deep-dive documentation:
-            </p>
+        <section class="live" id="live-system" aria-label="A live system to break">
+            <div class="live-head">
+                <div>
+                    <div class="live-title"><span>Live</span>Break something, and watch the mapper reason about it</div>
+                    <div class="live-sub">The simulator's shop, running the real cascade and root-cause arithmetic in your browser. Click a service to degrade it, again to take it down.</div>
+                </div>
+                <div class="live-btns">
+                    <button type="button" data-scenario="db-crash">db-crash</button>
+                    <button type="button" data-scenario="slow-payment">slow-payment</button>
+                    <button type="button" data-scenario="crash-loop">crash-loop</button>
+                    <button type="button" data-scenario="reset">reset</button>
+                </div>
+            </div>
+            <div class="live-grid">
+                <div class="ls-stage"><canvas aria-label="Services on islands, with live links"></canvas><div class="ls-tip" hidden></div></div>
+                <div class="ls-panel"><div class="ls-panel-body"></div></div>
+            </div>
+            <div class="live-foot">Weights from <a href="31-measurement-precision.html">EdgeWeights</a> · cascade from <a href="22-risk-engine.html">CascadeEngine</a> (τ 0.7) · root cause from <a href="08-rca-engine.html">RCAEngine</a> · link colour and pulse rate from <a href="33-visual-language.html">edgeHeat and linkFlow</a>. Same constants as the server; statuses are yours.</div>
+        </section>
+
+        <div class="stat-strip"><div class="stat"><div class="v">0</div><div class="k">agents installed on the target; one SSH connection reads everything</div></div><div class="stat"><div class="v">5 s</div><div class="k">cycle: incidents, then risk, then one broadcast</div></div><div class="stat"><div class="v">12</div><div class="k">invariants checked live at /api/diagnostics/consistency</div></div><div class="stat"><div class="v">4</div><div class="k">ML detectors per service, combined by majority vote</div></div></div>
+
+        <h2 style="border:none;margin-top:8px;">Start from a question</h2>
+        <div class="paths"><div class="path"><h3>Understand it in ten minutes</h3><ol><li><a href="01-overview.html">What this is, and why</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">01</span></li><li><a href="19-how-it-all-works.html">How it all works</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">02</span></li><li><a href="architecture-map.html">The system, as one map</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">06</span></li></ol></div><div class="path"><h3>Know why it is built this way</h3><ol><li><a href="29-design-principles.html">The rules it is built on</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">03</span></li><li><a href="30-tech-stack.html">Frameworks, and why each</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">05</span></li><li><a href="17-findings-vs-incidents.html">Two opinions, kept apart</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">17</span></li></ol></div><div class="path"><h3>Trust, or check, a number</h3><ol><li><a href="31-measurement-precision.html">Measuring precisely</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">10</span></li><li><a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">28</span></li><li><a href="36-glossary.html">Glossary</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">31</span></li></ol></div><div class="path"><h3>Follow the maths</h3><ol><li><a href="03-graphstore.html">The graph store</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">13</span></li><li><a href="08-rca-engine.html">Root cause</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">18</span></li><li><a href="22-risk-engine.html">Risk, cascades and blast radius</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">19</span></li><li><a href="11-ml-pipeline.html">The learning pipeline</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">20</span></li></ol></div><div class="path"><h3>Read the screen</h3><ol><li><a href="33-visual-language.html">Reading the picture</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">25</span></li><li><a href="24-client-frontend.html">Views, layouts and inspectors</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">26</span></li></ol></div><div class="path"><h3>Change the code</h3><ol><li><a href="34-code-tour.html">A tour of the code</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">29</span></li><li><a href="35-dev-workflow.html">Working on it</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">30</span></li><li><a href="13-api-reference.html">API reference</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">33</span></li><li><a href="12-data-models.html">Data models</a> <span style="color:var(--muted);font-size:11.5px;font-family:var(--mono);">32</span></li></ol></div></div>
+
+        <h2 style="border:none;">The whole book</h2>
+        <div class="part-block" style="--pa: #8f9cff;"><div class="part-head"><span class="part-num">Part I</span><h2 class="part-title">Understanding the system</h2></div><p class="part-blurb">What it is, the rules it is built on, the frameworks it uses, and what it does end to end.</p><a href="01-overview.html" class="chapter-row"><span class="n">01</span><span class="t">What this is, and why</span><span class="d">Watching a live microservice system from the outside, without installing anything inside it.</span></a><a href="19-how-it-all-works.html" class="chapter-row"><span class="n">02</span><span class="t">How it all works</span><span class="d">The complete walkthrough, in plain English first and then in detail.</span></a><a href="29-design-principles.html" class="chapter-row"><span class="n">03</span><span class="t">The rules it is built on</span><span class="d">Twelve rules that explain why the code looks the way it does, and every major design choice with its alternatives.</span></a><a href="02-architecture.html" class="chapter-row"><span class="n">04</span><span class="t">The four layers</span><span class="d">Collection, server processing, intelligence, and the frontend, and what crosses between them.</span></a><a href="30-tech-stack.html" class="chapter-row"><span class="n">05</span><span class="t">Frameworks, and why each</span><span class="d">Every library in the four programs, what it is used for here, and what it was chosen over.</span></a><a href="architecture-map.html" class="chapter-row"><span class="n">06</span><span class="t">The system, as one map</span><span class="d">Every process, store and engine on one page, each linked to the chapter that explains it.</span></a><a href="readme.html" class="chapter-row"><span class="n">07</span><span class="t">Running it yourself</span><span class="d">Prerequisites, target setup, and the install runbook.</span></a></div><div class="part-block" style="--pa: #38bdf8;"><div class="part-head"><span class="part-num">Part II</span><h2 class="part-title">Getting the data</h2></div><p class="part-blurb">How it reaches a machine it was never installed on, and how each number it reads is kept exact.</p><a href="21-connection-layer.html" class="chapter-row"><span class="n">08</span><span class="t">Reaching the target</span><span class="d">The SSH layer, the agent that owns each target, and what happens when a host goes quiet.</span></a><a href="23-endpoint-discovery.html" class="chapter-row"><span class="n">09</span><span class="t">Finding what is running</span><span class="d">Reading the container runtime and compose files to learn what exists and what it claims to depend on.</span></a><a href="31-measurement-precision.html" class="chapter-row"><span class="n">10</span><span class="t">Measuring precisely</span><span class="d">What the raw sources get wrong, and how every published figure is made to agree with a hand check on the host.</span></a><a href="25-telemetry-sources.html" class="chapter-row"><span class="n">11</span><span class="t">Where numbers come from</span><span class="d">The source abstraction, and how a metric carries its own provenance.</span></a><a href="18-telemetry-tiers-plan.html" class="chapter-row"><span class="n">12</span><span class="t">The three tiers of evidence</span><span class="d">What is always available, what is sometimes available, and what only a self-instrumented target can give you.</span></a></div><div class="part-block" style="--pa: #2ed3a0;"><div class="part-head"><span class="part-num">Part III</span><h2 class="part-title">Building the graph</h2></div><p class="part-blurb">Turning raw socket and container observations into a model of the system.</p><a href="03-graphstore.html" class="chapter-row"><span class="n">13</span><span class="t">The graph store</span><span class="d">The single in-memory model everything else reads from.</span></a><a href="04-id-system.html" class="chapter-row"><span class="n">14</span><span class="t">Identity</span><span class="d">One service, one id, and what goes wrong when that breaks.</span></a><a href="05-telemetry-ingestion.html" class="chapter-row"><span class="n">15</span><span class="t">Ingestion</span><span class="d">How a telemetry envelope becomes nodes, edges and metrics.</span></a><a href="06-node-edge-lifecycle.html" class="chapter-row"><span class="n">16</span><span class="t">Lifecycle and direction</span><span class="d">How nodes and edges appear, age, decay and disappear, and which way the arrows point.</span></a></div><div class="part-block" style="--pa: #c084fc;"><div class="part-head"><span class="part-num">Part IV</span><h2 class="part-title">Forming a judgement</h2></div><p class="part-blurb">Fixed rules, learned models, root cause, and cascade risk, and why those are kept apart.</p><a href="17-findings-vs-incidents.html" class="chapter-row"><span class="n">17</span><span class="t">Two opinions, kept apart</span><span class="d">Rule-based incidents and model-based findings, and why merging them would destroy both.</span></a><a href="08-rca-engine.html" class="chapter-row"><span class="n">18</span><span class="t">Root cause</span><span class="d">Five named evidence factors, a materiality cut-off and a victim penalty, with a worked example from the real engine.</span></a><a href="22-risk-engine.html" class="chapter-row"><span class="n">19</span><span class="t">Risk, cascades and blast radius</span><span class="d">Health, criticality and risk; the noisy-OR cascade model; what-if and blast radius, with numbers you can check by hand.</span></a><a href="11-ml-pipeline.html" class="chapter-row"><span class="n">20</span><span class="t">The learning pipeline</span><span class="d">Four detectors per service, trained on that service&#x27;s own history, combined by vote.</span></a><a href="26-ml-pipeline-deep-dive.html" class="chapter-row"><span class="n">21</span><span class="t">The pipeline, at code level</span><span class="d">Feature construction, thresholds, the vote, and the failure modes worth knowing about.</span></a></div><div class="part-block" style="--pa: #2dd4bf;"><div class="part-head"><span class="part-num">Part V</span><h2 class="part-title">Driving the system</h2></div><p class="part-blurb">Generating traffic, because an idle system reveals very little.</p><a href="20-traffic-experiments.html" class="chapter-row"><span class="n">22</span><span class="t">Generating traffic</span><span class="d">The traffic controller, endpoint probing, and experiments.</span></a><a href="traffic-gen-readme.html" class="chapter-row"><span class="n">23</span><span class="t">The load generator</span><span class="d">The standalone generator on port 4400 and its workflows.</span></a></div><div class="part-block" style="--pa: #6b8cff;"><div class="part-head"><span class="part-num">Part VI</span><h2 class="part-title">Seeing it</h2></div><p class="part-blurb">What every colour, width and pulse on the screen means, and how the picture stays live.</p><a href="09-frontend.html" class="chapter-row"><span class="n">24</span><span class="t">The frontend</span><span class="d">How the client is put together and how each view gets its data.</span></a><a href="33-visual-language.html" class="chapter-row"><span class="n">25</span><span class="t">Reading the picture</span><span class="d">What every colour, width and pulse means, the exact rule behind each, and why the interface looks the way it does.</span></a><a href="24-client-frontend.html" class="chapter-row"><span class="n">26</span><span class="t">Views, layouts and inspectors</span><span class="d">Every tab, the 2D and 3D layouts, the inspection panels, and the live data hook.</span></a><a href="10-websocket.html" class="chapter-row"><span class="n">27</span><span class="t">Staying live</span><span class="d">The WebSocket protocol and what is pushed when.</span></a></div><div class="part-block" style="--pa: #7fc8f0;"><div class="part-head"><span class="part-num">Part VII</span><h2 class="part-title">Trusting it, and working on it</h2></div><p class="part-blurb">How the numbers are checked against ground truth, a tour of the code, and the loop every change goes through.</p><a href="32-accuracy-and-self-check.html" class="chapter-row"><span class="n">28</span><span class="t">Keeping the numbers honest</span><span class="d">A ground-truth simulator, twelve live invariants, and the tests that pin every formula, plus what the audit fixed.</span></a><a href="34-code-tour.html" class="chapter-row"><span class="n">29</span><span class="t">A tour of the code</span><span class="d">The repository map, one measurement and one failure followed through every file, and where to change what.</span></a><a href="35-dev-workflow.html" class="chapter-row"><span class="n">30</span><span class="t">Working on it</span><span class="d">Run it, check it, prove it: tests, types, the isolated server and simulator, screenshots, and building this book.</span></a></div><div class="part-block" style="--pa: #94a3b8;"><div class="part-head"><span class="part-num">Part VIII</span><h2 class="part-title">Reference</h2></div><p class="part-blurb">Material to look things up in, not to read front to back.</p><a href="36-glossary.html" class="chapter-row"><span class="n">31</span><span class="t">Glossary</span><span class="d">Every term used in a specific sense, and where it is defined.</span></a><a href="12-data-models.html" class="chapter-row"><span class="n">32</span><span class="t">Data models</span><span class="d">Every interface, with units and what null means.</span></a><a href="13-api-reference.html" class="chapter-row"><span class="n">33</span><span class="t">API reference</span><span class="d">Every route, including reliability and the consistency check.</span></a><a href="14-configuration.html" class="chapter-row"><span class="n">34</span><span class="t">Configuration</span><span class="d">Environment variables, config files and data paths.</span></a><a href="15-troubleshooting.html" class="chapter-row"><span class="n">35</span><span class="t">Troubleshooting</span><span class="d">Common problems and how to diagnose them.</span></a><a href="16-change-log-and-rationale.html" class="chapter-row"><span class="n">36</span><span class="t">Why things changed</span><span class="d">What changed, why, and where, including the accuracy audit and the visual redesign.</span></a><a href="07-remote-collector.html" class="chapter-row"><span class="n">37</span><span class="t">The optional push collector</span><span class="d">An agent you may choose to run on a host. Not the default path, which installs nothing.</span></a><a href="27-project-technical-reference.html" class="chapter-row"><span class="n">38</span><span class="t">Engineering manual</span><span class="d">Long-form manual from an earlier stage. Where it disagrees, the chapters above win.</span></a><a href="28-mapper-technical-reference.html" class="chapter-row"><span class="n">39</span><span class="t">Subsystem reference</span><span class="d">Subsystem notes from an earlier stage. Where they disagree, the chapters above win.</span></a><a href="ml-readme.html" class="chapter-row"><span class="n">40</span><span class="t">ML subsystem readme</span><span class="d">Running the Python pipeline directly.</span></a></div>
+
+        <section style="margin-top: 36px;">
+            <h2>The system on one page</h2>
+            <p class="lead">Every process, store and engine, top to bottom, each linked to its chapter.</p>
             
     <div class="flow-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 10px;">
             <div>
-                <h3 style="margin: 0; color: var(--ink); font-size: 1.1rem;">🗺️ End-to-End System Flowchart</h3>
-                <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Click any component below to jump directly into its dedicated technical documentation module:</p>
+                <h3 style="margin: 0; color: var(--ink); font-size: 1.05rem;">End-to-end, top to bottom</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Trace a path to highlight the boxes it passes through. Every box opens its chapter.</p>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="lab-btn flow-trace-btn" data-flow="TELEMETRY" style="font-size: 11px; padding: 4px 10px;">⚡ Trace Telemetry Flow</button>
-                <button class="lab-btn flow-trace-btn" data-flow="RCA" style="font-size: 11px; padding: 4px 10px; background: var(--err); color: #fff;">🚨 Trace Incident RCA Flow</button>
-                <button class="lab-btn flow-trace-btn" data-flow="ML" style="font-size: 11px; padding: 4px 10px; background: var(--purple); color: #070b14;">🧠 Trace ML Drift Flow</button>
-                <button class="lab-btn flow-trace-btn" data-flow="RESET" style="font-size: 11px; padding: 4px 10px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--rule);">🔄 Reset View</button>
+                <button class="lab-btn flow-trace-btn" data-flow="TELEMETRY" style="font-size: 11px; padding: 4px 10px;">A measurement</button>
+                <button class="lab-btn flow-trace-btn" data-flow="RCA" style="font-size: 11px; padding: 4px 10px; background: var(--err); color: #fff;">A failure</button>
+                <button class="lab-btn flow-trace-btn" data-flow="ML" style="font-size: 11px; padding: 4px 10px; background: #a26be0; color: #fff;">An ML finding</button>
+                <button class="lab-btn flow-trace-btn" data-flow="RESET" style="font-size: 11px; padding: 4px 10px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--rule);">Show all</button>
             </div>
         </div>
-
-        <!-- Layer 1: Target Host Data Plane -->
-        <div class="flow-layer" id="layer-target" style="border-left: 3px solid var(--sig);">
-            <div class="flow-layer-title">
-                <span>1. Target Host Data Plane (Zero-Touch EC2 & Docker Compose)</span>
-                <span class="badge badge-cyan">PORT 22 &bull; ZERO AGENT</span>
-            </div>
+        
+        <div class="flow-layer" style="border-left: 3px solid var(--muted);">
+            <div class="flow-layer-title"><span>1 · The target: read, never written</span><span class="badge badge-cyan">SSH :22 · NOTHING INSTALLED</span></div>
             <div class="flow-node-grid">
-                <a href="21-connection-layer.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                <a href="21-connection-layer.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🖥️ AWS EC2 Host</span>
-                        <span class="badge badge-blue">SSH2:22</span>
+                        <span class="flow-node-name">Docker host</span>
+                        <span class="badge badge-blue">TARGET</span>
                     </div>
-                    <div class="flow-node-desc">Remote target running microservice containers under Docker Compose.</div>
-                    <div class="flow-node-footer">
-                        <span>21-connection-layer</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Any machine you can SSH to. Containers stay unmodified.</div>
+                    <div class="flow-node-footer"><span>21-connection-layer</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="07-remote-collector.html" class="flow-node-card flow-node" data-tags="telemetry">
+                <a href="23-endpoint-discovery.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">⚙️ Remote Collector Daemon</span>
-                        <span class="badge badge-purple">NODE DAEMON</span>
-                    </div>
-                    <div class="flow-node-desc">Autonomous daemon polling kernel socket tables and docker.sock frames.</div>
-                    <div class="flow-node-footer">
-                        <span>07-remote-collector</span>
-                        <span>Explore →</span>
-                    </div>
-                </a>
-
-                <a href="25-telemetry-sources.html" class="flow-node-card flow-node" data-tags="telemetry">
-                    <div class="flow-node-header">
-                        <span class="flow-node-name">🔬 /proc/net/tcp Demuxer</span>
+                        <span class="flow-node-name">docker ps · inspect · stats</span>
                         <span class="badge badge-green">TIER 0</span>
                     </div>
-                    <div class="flow-node-desc">Reads socket inodes to detect active ESTABLISHED connections without APM.</div>
-                    <div class="flow-node-footer">
-                        <span>25-telemetry-sources</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">What exists, its limits, its CPU and memory, its state.</div>
+                    <div class="flow-node-footer"><span>23-endpoint-discovery</span><span>Open &rarr;</span></div>
                 </a>
-
+                <a href="31-measurement-precision.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">/proc/&lt;pid&gt;/net/tcp(6) · net/dev</span>
+                        <span class="badge badge-green">TIER 0</span>
+                    </div>
+                    <div class="flow-node-desc">Sockets (who calls whom) and exact byte counters, in one exec per container.</div>
+                    <div class="flow-node-footer"><span>31-measurement-precision</span><span>Open &rarr;</span></div>
+                </a>
                 <a href="18-telemetry-tiers-plan.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">📦 Docker Access Log Parser</span>
-                        <span class="badge badge-orange">TIER 1</span>
+                        <span class="flow-node-name">Gateway log · Prometheus</span>
+                        <span class="badge badge-orange">TIER 1–2</span>
                     </div>
-                    <div class="flow-node-desc">Demuxes 8-byte framed streams from /var/run/docker.sock for HTTP codes.</div>
-                    <div class="flow-node-footer">
-                        <span>18-telemetry-tiers-plan</span>
-                        <span>Explore →</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <div class="flow-arrow-down">⬇️ Reverse SSH2 Encrypted Tunnel (Port 3001) ⬇️</div>
-
-        <!-- Layer 2: Transport & Central Server Ingestion -->
-        <div class="flow-layer" id="layer-server" style="border-left: 3px solid #38bdf8;">
-            <div class="flow-layer-title">
-                <span>2. Central Server Ingestion & Concurrency Core (Express 5 & TSX)</span>
-                <span class="badge badge-blue">PORT 3001 &bull; REVERSE TUNNEL</span>
-            </div>
+                    <div class="flow-node-desc">Per-request latency and errors, where a gateway logs them (Tier 1) or Prometheus is enabled (Tier 2, opt-in).</div>
+                    <div class="flow-node-footer"><span>18-telemetry-tiers-plan</span><span>Open &rarr;</span></div>
+                </a></div>
+        </div><div class="flow-arrow-down">&darr; read-only commands over one SSH connection &darr;</div>
+        <div class="flow-layer" style="border-left: 3px solid var(--sig);">
+            <div class="flow-layer-title"><span>2 · Collection, on your machine</span><span class="badge badge-blue">POLL · SWEEP · REDISCOVER</span></div>
             <div class="flow-node-grid">
-                <a href="05-telemetry-ingestion.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                <a href="21-connection-layer.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">⚡ 8-Stage Ingestion Pipeline</span>
-                        <span class="badge badge-green">POST /ingest</span>
+                        <span class="flow-node-name">ConnectionManager</span>
+                        <span class="badge badge-cyan">ssh2</span>
                     </div>
-                    <div class="flow-node-desc">Validates Bearer token, unpacks envelopes, and feeds state engines.</div>
-                    <div class="flow-node-footer">
-                        <span>05-telemetry-ingestion</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">One ssh2 connection per target, many exec channels, recovery when a host goes quiet.</div>
+                    <div class="flow-node-footer"><span>21-connection-layer</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="04-id-system.html" class="flow-node-card flow-node" data-tags="telemetry">
+                <a href="23-endpoint-discovery.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🔑 Canonical ID Resolver</span>
-                        <span class="badge badge-red">normalizeId()</span>
+                        <span class="flow-node-name">EndpointDiscoveryEngine</span>
+                        <span class="badge badge-blue">LOOPS</span>
                     </div>
-                    <div class="flow-node-desc">Eliminates ghost duplicates by hashing compose names to canonical keys.</div>
-                    <div class="flow-node-footer">
-                        <span>04-id-system</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Poll and sweep loops that wait for themselves (5 s after finishing); rediscovery every 180 s.</div>
+                    <div class="flow-node-footer"><span>23-endpoint-discovery</span><span>Open &rarr;</span></div>
                 </a>
-
+                <a href="31-measurement-precision.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">MetricCollector</span>
+                        <span class="badge badge-green">PRECISION</span>
+                    </div>
+                    <div class="flow-node-desc">Decodes sockets (IPv4-mapped too), orients by LISTEN port, keys each connection, reads net/dev, CPU allowance.</div>
+                    <div class="flow-node-footer"><span>31-measurement-precision</span><span>Open &rarr;</span></div>
+                </a>
+                <a href="07-remote-collector.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">Optional push collector</span>
+                        <span class="badge badge-orange">OPTIONAL</span>
+                    </div>
+                    <div class="flow-node-desc">An agent you may choose to run; posts to /api/ingest, the same door the ground-truth simulator uses.</div>
+                    <div class="flow-node-footer"><span>07-remote-collector</span><span>Open &rarr;</span></div>
+                </a></div>
+        </div><div class="flow-arrow-down">&darr; TelemetryEnvelope → GraphStore.ingestRemote() &darr;</div>
+        <div class="flow-layer" style="border-left: 3px solid var(--ok);">
+            <div class="flow-layer-title"><span>3 · The model</span><span class="badge badge-green">IN MEMORY · JSON SNAPSHOT</span></div>
+            <div class="flow-node-grid">
                 <a href="03-graphstore.html" class="flow-node-card flow-node" data-tags="telemetry,rca,ml">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🧠 In-Memory GraphStore</span>
-                        <span class="badge badge-cyan">CENTRAL NERVOUS</span>
+                        <span class="flow-node-name">GraphStore</span>
+                        <span class="badge badge-cyan">CORE</span>
                     </div>
-                    <div class="flow-node-desc">Central Map&lt;string, Node&gt; tracking topology, status, and edge heat.</div>
-                    <div class="flow-node-footer">
-                        <span>03-graphstore</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Nodes, edges, activity and baselines, distinct open and new connections, anomaly scores merged in.</div>
+                    <div class="flow-node-footer"><span>03-graphstore</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="06-node-edge-lifecycle.html" class="flow-node-card flow-node" data-tags="telemetry">
+                <a href="04-id-system.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🔄 MetricStore Ring Buffers</span>
-                        <span class="badge badge-purple">1H BUFFER</span>
+                        <span class="flow-node-name">Identity</span>
+                        <span class="badge badge-red">IDS</span>
                     </div>
-                    <div class="flow-node-desc">Circular 1-hour buffers holding 10,000 metrics events with zero leak.</div>
-                    <div class="flow-node-footer">
-                        <span>06-node-edge-lifecycle</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Every id is project:name, everywhere: graph, incidents, cascade fields.</div>
+                    <div class="flow-node-footer"><span>04-id-system</span><span>Open &rarr;</span></div>
                 </a>
-            </div>
-        </div>
-
-        <div class="flow-arrow-down">⬇️ Internal Event Emitter & Analysis Bus ⬇️</div>
-
-        <!-- Layer 3: Automated Intelligence & RCA Engines -->
-        <div class="flow-layer" id="layer-intel" style="border-left: 3px solid var(--err);">
-            <div class="flow-layer-title">
-                <span>3. Intelligence, Anomaly Detection & RCA Core</span>
-                <span class="badge badge-red">ANOMALY ENGINE</span>
-            </div>
+                <a href="05-telemetry-ingestion.html" class="flow-node-card flow-node" data-tags="telemetry">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">Ingestion</span>
+                        <span class="badge badge-green">INGEST</span>
+                    </div>
+                    <div class="flow-node-desc">Envelope → nodes, edges, evidence; declared and observed merged on one edge.</div>
+                    <div class="flow-node-footer"><span>05-telemetry-ingestion</span><span>Open &rarr;</span></div>
+                </a>
+                <a href="06-node-edge-lifecycle.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">Lifecycle and direction</span>
+                        <span class="badge badge-orange">DIRECTION</span>
+                    </div>
+                    <div class="flow-node-desc">Ageing and pruning; the listening end is the callee.</div>
+                    <div class="flow-node-footer"><span>06-node-edge-lifecycle</span><span>Open &rarr;</span></div>
+                </a></div>
+        </div><div class="flow-arrow-down">&darr; every 5 s: incidents → risk → broadcast &darr;</div>
+        <div class="flow-layer" style="border-left: 3px solid var(--err);">
+            <div class="flow-layer-title"><span>4 · Judgement</span><span class="badge badge-red">RULES ≠ MODELS</span></div>
             <div class="flow-node-grid">
-                <a href="22-risk-engine.html" class="flow-node-card flow-node" data-tags="rca">
-                    <div class="flow-node-header">
-                        <span class="flow-node-name">🛡️ Risk Engine & Centrality</span>
-                        <span class="badge badge-red">BLAST RADIUS</span>
-                    </div>
-                    <div class="flow-node-desc">Computes Betweenness Centrality and flags Single Points of Failure (SPOFs).</div>
-                    <div class="flow-node-footer">
-                        <span>22-risk-engine</span>
-                        <span>Explore →</span>
-                    </div>
-                </a>
-
                 <a href="08-rca-engine.html" class="flow-node-card flow-node" data-tags="rca">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🎯 RCA Incident Engine</span>
-                        <span class="badge badge-red">BFS CASCADE</span>
+                        <span class="flow-node-name">Incidents and RCA</span>
+                        <span class="badge badge-red">RULES</span>
                     </div>
-                    <div class="flow-node-desc">4-factor weighted scoring + reverse BFS dependency traversal.</div>
-                    <div class="flow-node-footer">
-                        <span>08-rca-engine</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Rule-based symptoms with remembered onsets; five named factors, materiality, victim penalty.</div>
+                    <div class="flow-node-footer"><span>08-rca-engine</span><span>Open &rarr;</span></div>
                 </a>
-
+                <a href="22-risk-engine.html" class="flow-node-card flow-node" data-tags="rca">
+                    <div class="flow-node-header">
+                        <span class="flow-node-name">Risk and cascades</span>
+                        <span class="badge badge-orange">MODEL</span>
+                    </div>
+                    <div class="flow-node-desc">Weights → health and risk → noisy-OR cascade (τ = 0.7), what-if, blast radius.</div>
+                    <div class="flow-node-footer"><span>22-risk-engine</span><span>Open &rarr;</span></div>
+                </a>
                 <a href="11-ml-pipeline.html" class="flow-node-card flow-node" data-tags="ml">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🤖 Python ML Sidecar</span>
-                        <span class="badge badge-purple">IFOREST / LOF</span>
+                        <span class="flow-node-name">ML ensemble</span>
+                        <span class="badge badge-purple">PYTHON</span>
                     </div>
-                    <div class="flow-node-desc">4 unsupervised models detecting metric drift with 97x tail CSV speedup.</div>
-                    <div class="flow-node-footer">
-                        <span>11-ml-pipeline</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">Four detectors per service, majority vote, median score, persistence. Findings only.</div>
+                    <div class="flow-node-footer"><span>11-ml-pipeline</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="17-findings-vs-incidents.html" class="flow-node-card flow-node" data-tags="rca">
+                <a href="32-accuracy-and-self-check.html" class="flow-node-card flow-node" data-tags="rca,ml,telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">📋 Findings vs Incidents</span>
-                        <span class="badge badge-orange">TAXONOMY</span>
+                        <span class="flow-node-name">Consistency check</span>
+                        <span class="badge badge-green">SELF-CHECK</span>
                     </div>
-                    <div class="flow-node-desc">Clear separation of static architectural findings from live incidents.</div>
-                    <div class="flow-node-footer">
-                        <span>17-findings-vs-incidents</span>
-                        <span>Explore →</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <div class="flow-arrow-down">⬇️ Real-Time WebSocket Frames & REST API (Port 5173 / 4400) ⬇️</div>
-
-        <!-- Layer 4: Presentation, Traffic Gen & Visualization -->
-        <div class="flow-layer" id="layer-presentation" style="border-left: 3px solid var(--ok);">
-            <div class="flow-layer-title">
-                <span>4. Presentation & Real-Time Visualization (React 19 & Three.js)</span>
-                <span class="badge badge-green">VITE :5173</span>
-            </div>
+                    <div class="flow-node-desc">Twelve invariants over everything published; /api/diagnostics/consistency.</div>
+                    <div class="flow-node-footer"><span>32-accuracy-and-self-check</span><span>Open &rarr;</span></div>
+                </a></div>
+        </div><div class="flow-arrow-down">&darr; graph-update (≤ 1 per 3 s) · incident.updated (on visible change) &darr;</div>
+        <div class="flow-layer" style="border-left: 3px solid var(--t2);">
+            <div class="flow-layer-title"><span>5 · What you see</span><span class="badge badge-purple">REACT 19 · VITE :5173</span></div>
             <div class="flow-node-grid">
-                <a href="09-frontend.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                <a href="24-client-frontend.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">📊 2D XYFlow Graph Canvas</span>
-                        <span class="badge badge-cyan">@XYFLOW/REACT</span>
+                        <span class="flow-node-name">Live data hook</span>
+                        <span class="badge badge-green">WS</span>
                     </div>
-                    <div class="flow-node-desc">Interactive 2D graph with auto-layout and service health indicators.</div>
-                    <div class="flow-node-footer">
-                        <span>09-frontend</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">One WebSocket; unchanged nodes and edges reused, so React redraws only what moved.</div>
+                    <div class="flow-node-footer"><span>24-client-frontend</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="24-client-frontend.html" class="flow-node-card flow-node" data-tags="telemetry">
+                <a href="33-visual-language.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🌐 3D Spatial Mesh Canvas</span>
-                        <span class="badge badge-purple">THREE.JS 3D</span>
+                        <span class="flow-node-name">2D architecture</span>
+                        <span class="badge badge-cyan">XYFLOW</span>
                     </div>
-                    <div class="flow-node-desc">Spatial node orbits, live request packet pulses, and camera controls.</div>
-                    <div class="flow-node-footer">
-                        <span>24-client-frontend</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">XYFlow: flat cards, links coloured by trouble, width by reliance, pulses by rate.</div>
+                    <div class="flow-node-footer"><span>33-visual-language</span><span>Open &rarr;</span></div>
                 </a>
-
-                <a href="10-websocket.html" class="flow-node-card flow-node" data-tags="telemetry,rca">
+                <a href="33-visual-language.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">⚡ WebSocket Broadcaster</span>
-                        <span class="badge badge-green">WS PUSH</span>
+                        <span class="flow-node-name">3D islands</span>
+                        <span class="badge badge-purple">R3F</span>
                     </div>
-                    <div class="flow-node-desc">Sub-second delta broadcasting and SSH terminal multiplexing.</div>
-                    <div class="flow-node-footer">
-                        <span>10-websocket</span>
-                        <span>Explore →</span>
-                    </div>
+                    <div class="flow-node-desc">react-three-fiber: a district per project, a platform per role, the same link language.</div>
+                    <div class="flow-node-footer"><span>33-visual-language</span><span>Open &rarr;</span></div>
                 </a>
-
                 <a href="20-traffic-experiments.html" class="flow-node-card flow-node" data-tags="telemetry">
                     <div class="flow-node-header">
-                        <span class="flow-node-name">🚦 Traffic Generator (Port 4400)</span>
-                        <span class="badge badge-orange">LOAD GEN</span>
+                        <span class="flow-node-name">Traffic generator :4400</span>
+                        <span class="badge badge-orange">LOAD</span>
                     </div>
-                    <div class="flow-node-desc">Simulates real user workflows to generate runtime telemetry.</div>
-                    <div class="flow-node-footer">
-                        <span>20-traffic-experiments</span>
-                        <span>Explore →</span>
-                    </div>
-                </a>
-            </div>
+                    <div class="flow-node-desc">Drives real workflows so there is something to observe.</div>
+                    <div class="flow-node-footer"><span>20-traffic-experiments</span><span>Open &rarr;</span></div>
+                </a></div>
         </div>
     </div>
     
         </section>
-
-        <!-- Master Multi-Mode Topology Simulator matching Screenshots -->
-        <section id="interactive-topology-lab">
-            <h2><span class="id">02</span> Master Multi-Mode Topology Simulator & Sandbox</h2>
-            <p class="lead">Interactive simulator reproducing the 2D XYFlow graph, 2D Circular Ring, and 3D Spatial Canvas layouts with live packet animators and failure injection:</p>
-
-            <div class="interactive-lab">
-                <div class="lab-title">🎮 Live Multi-Mode Topology Sandbox</div>
-                <p style="color: var(--ink-2); font-size: 0.88rem; margin-bottom: 1rem;">
-                    Watch live request packet pulses travel between services. Click fault injection to watch status halos, CPU meters, and RCA propagation respond in real time:
-                </p>
-
-                <div style="background: var(--panel-2); border-radius: 8px; padding: 1rem; border: 1px solid var(--rule); margin-bottom: 1.2rem; position: relative;">
-                    <canvas id="topo-canvas" style="width: 100%; display: block;"></canvas>
-                </div>
-
-                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                    <button id="topo-btn-fault" class="lab-btn" style="background: var(--err); color: #fff;">⚡ Inject Payment CPU Spike (98.4%)</button>
-                    <button id="topo-btn-reset" class="lab-btn" style="background: var(--ok); color: #fff;">✓ Reset Healthy Baseline</button>
-                    <div id="topo-status-text" style="font-size: 0.88rem; color: var(--ink-2); margin-left: 10px;">
-                        <span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chronological Step-by-Step Architecture Guide -->
-        <section id="chronological-architecture-guide">
-            <h2><span class="id">03</span> The Engineering Progression: "First We Did This, Then We Did This"</h2>
-            <p class="lead">
-                Understanding the architecture as a logical chronological progression from raw target discovery to automated root-cause intelligence:
-            </p>
-
-            <div class="chrono-timeline">
-                <div class="chrono-step">
-                    <div class="step-num">Step 1 &bull; Infrastructure & Connection Layer</div>
-                    <div class="step-title">Zero-Touch SSH Discovery & Docker Compose Parsing</div>
-                    <p>
-                        <strong>First:</strong> We connect to the target EC2 instance via SSH (<a href="21-connection-layer.html">21-connection-layer.html</a>). The system scans the remote filesystem, locates <code>docker-compose.yml</code>, and extracts the <em>declared</em> microservice architecture without installing any agent packages beforehand.
-                    </p>
-                </div>
-
-                <div class="chrono-step">
-                    <div class="step-num">Step 2 &bull; Data Plane & Daemon Runtime</div>
-                    <div class="step-title">Deploy Remote Collector & Extract Host Telemetry</div>
-                    <p>
-                        <strong>Then:</strong> We spin up the lightweight <code>remote-collector</code> daemon (<a href="07-remote-collector.html">07-remote-collector.html</a>). It hooks into <code>/var/run/docker.sock</code> for live CPU/memory stats, demuxes the Docker 8-byte log framing to stream HTTP access logs, and reads <code>/proc/net/tcp</code> to detect live ESTABLISHED socket connections.
-                    </p>
-                </div>
-
-                <div class="chrono-step">
-                    <div class="step-num">Step 3 &bull; Ingestion Pipeline & Canonical GraphStore</div>
-                    <div class="step-title">Ingest Telemetry, Normalize Canonical IDs & Prune Ghosts</div>
-                    <p>
-                        <strong>Next:</strong> The telemetry envelope streams back via reverse SSH tunnel to the central server (<a href="05-telemetry-ingestion.html">05-telemetry-ingestion.html</a>). The <code>GraphStore</code> executes <code>normalizeId()</code> (<a href="04-id-system.html">04-id-system.html</a>) to eliminate ghost duplicates, merges declared vs observed dependencies, and buffers metrics in circular ring buffers.
-                    </p>
-                </div>
-
-                <div class="chrono-step">
-                    <div class="step-num">Step 4 &bull; Real-Time Frontend & 3D Visualization</div>
-                    <div class="step-title">Stream Live Graph State to 2D (XYFlow) & 3D (Three.js) UI</div>
-                    <p>
-                        <strong>After That:</strong> The server broadcasts updates over WebSockets (<a href="10-websocket.html">10-websocket.html</a>). The React 19 client (<a href="09-frontend.html">09-frontend.html</a>, <a href="24-client-frontend.html">24-client-frontend.html</a>) renders interactive 2D graphs and a Three.js 3D spatial view, animating live packet pulses across active edges.
-                    </p>
-                </div>
-
-                <div class="chrono-step">
-                    <div class="step-num">Step 5 &bull; Intelligence, RCA & Risk Scoring</div>
-                    <div class="step-title">Compute Blast Radius & Trace Root Cause Cascades via BFS</div>
-                    <p>
-                        <strong>Then:</strong> When performance drops, the <code>RiskEngine</code> (<a href="22-risk-engine.html">22-risk-engine.html</a>) computes vulnerability blast radius, and the <code>RCAEngine</code> (<a href="08-rca-engine.html">08-rca-engine.html</a>) evaluates 4-factor scoring across anomalous services, performing BFS propagation to isolate the root cause.
-                    </p>
-                </div>
-
-                <div class="chrono-step">
-                    <div class="step-num">Step 6 &bull; Traffic Generation & Python ML Sidecar</div>
-                    <div class="step-title">Automate Traffic Sweeps & Train Unsupervised Anomaly Detectors</div>
-                    <p>
-                        <strong>Finally:</strong> The <code>TrafficController</code> (<a href="20-traffic-experiments.html">20-traffic-experiments.html</a>) sweeps endpoints to generate synthetic load, while the Python ML sidecar (<a href="11-ml-pipeline.html">11-ml-pipeline.html</a>, <a href="26-ml-pipeline-deep-dive.html">26-ml-pipeline-deep-dive.html</a>) fits IsolationForest models on baseline metrics to uncover subtle metric drift.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <section id="documentation-directory">
-            <h2><span class="id">04</span> Comprehensive Documentation Directory</h2>
-            <p class="lead">Explore all 36 numbered documentation modules, complete specifications, and operational manuals:</p>
-
-            <h2 id="1-master-hub-foundations">1. Master Hub & Foundations</h2>
-<div class="grid-cards">
-<a href="19-how-it-all-works.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">FOUNDATION</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">19-how-it-all-works.html</span>
-                    </div>
-                    <div class="feature-card-title">19 — How It All Works (Plain &amp; Detailed)</div>
-                    <div class="feature-card-desc">Plain English and detailed technical walkthrough of the entire platform.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="01-overview.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">FOUNDATION</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">01-overview.html</span>
-                    </div>
-                    <div class="feature-card-title">01 — Overview &amp; Design Philosophy</div>
-                    <div class="feature-card-desc">Autonomous zero-instrumentation topology discovery and RCA for Docker microservices.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="02-architecture.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">CORE ARCH</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">02-architecture.html</span>
-                    </div>
-                    <div class="feature-card-title">02 — System Layers &amp; Data Flow</div>
-                    <div class="feature-card-desc">The 4-layer architecture: Collection, Server Processing, Intelligence, and Frontend UI.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="readme.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">QUICKSTART</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">readme.html</span>
-                    </div>
-                    <div class="feature-card-title">Project README &amp; Quickstart</div>
-                    <div class="feature-card-desc">Microservice Mapper primary overview, prerequisites, target setup, and installation runbook.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="wiki-deep-dive.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">MONOLITH WIKI</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">wiki-deep-dive.html</span>
-                    </div>
-                    <div class="feature-card-title">Complete System Wiki (30 Sections)</div>
-                    <div class="feature-card-desc">The comprehensive 30-section deep dive covering every subsystem, data structure, and operational detail.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="wiki-index.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">INDEX</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">wiki-index.html</span>
-                    </div>
-                    <div class="feature-card-title">Wiki Table of Contents</div>
-                    <div class="feature-card-desc">Numbered index and logical reading orders for developers, SREs, and architects.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="2-core-graph-engine">2. Core Graph Engine</h2>
-<div class="grid-cards">
-<a href="03-graphstore.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">GRAPH ENGINE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">03-graphstore.html</span>
-                    </div>
-                    <div class="feature-card-title">03 — GraphStore Central Nervous System</div>
-                    <div class="feature-card-desc">In-memory topology graph, ring buffers, and state mutations.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="04-id-system.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">GRAPH ENGINE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">04-id-system.html</span>
-                    </div>
-                    <div class="feature-card-title">04 — Node &amp; Edge ID System</div>
-                    <div class="feature-card-desc">Canonical ID formats (target:service), normalization rules, and avoiding ghost duplicates.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="05-telemetry-ingestion.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">INGESTION</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">05-telemetry-ingestion.html</span>
-                    </div>
-                    <div class="feature-card-title">05 — Telemetry Ingestion Pipeline</div>
-                    <div class="feature-card-desc">8-stage ingestion pipeline processing remote collector envelopes.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="06-node-edge-lifecycle.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">LIFECYCLE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">06-node-edge-lifecycle.html</span>
-                    </div>
-                    <div class="feature-card-title">06 — Node &amp; Edge Lifecycle</div>
-                    <div class="feature-card-desc">Heartbeat tracking, stale node pruning, exponential edge heat decay, and reconnection handling.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="3-connection-discovery">3. Connection & Discovery</h2>
-<div class="grid-cards">
-<a href="21-connection-layer.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">SSH2 / AGENT</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">21-connection-layer.html</span>
-                    </div>
-                    <div class="feature-card-title">21 — Connection Layer &amp; Target Agent</div>
-                    <div class="feature-card-desc">TargetAgent lifecycle, SSH connection pooling, reverse tunnel, and Docker Compose parsing.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="23-endpoint-discovery.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">DISCOVERY</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">23-endpoint-discovery.html</span>
-                    </div>
-                    <div class="feature-card-title">23 — Endpoint Discovery Engine</div>
-                    <div class="feature-card-desc">Automated discovery of HTTP endpoints, Swagger extraction, and dynamic probe ranking.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="4-remote-collection">4. Remote Collection</h2>
-<div class="grid-cards">
-<a href="07-remote-collector.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">DATA PLANE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">07-remote-collector.html</span>
-                    </div>
-                    <div class="feature-card-title">07 — Remote Collector Daemon</div>
-                    <div class="feature-card-desc">Lightweight daemon on target EC2 extracting /proc/net/tcp, docker.sock stats, and proxy logs.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="25-telemetry-sources.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">DATA PLANE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">25-telemetry-sources.html</span>
-                    </div>
-                    <div class="feature-card-title">25 — Telemetry Sources &amp; Ingestion</div>
-                    <div class="feature-card-desc">Deep dive into kernel socket tables, docker 8-byte framing, and Prometheus metrics.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="18-telemetry-tiers-plan.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">TIER SPEC</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">18-telemetry-tiers-plan.html</span>
-                    </div>
-                    <div class="feature-card-title">18 — Telemetry Tiers Plan (0, 1, 2)</div>
-                    <div class="feature-card-desc">Tier 0 (Zero-instrumentation), Tier 1 (Proxy access logs), Tier 2 (Prometheus/OTLP).</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="telemetry-platform-readme.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">DAEMON SPEC</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">telemetry-platform-readme.html</span>
-                    </div>
-                    <div class="feature-card-title">Telemetry Platform Daemon Readme</div>
-                    <div class="feature-card-desc">Autonomous target agent runtime, socket sniffer, and docker event streamer documentation.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="5-rca-risk">5. RCA & Risk</h2>
-<div class="grid-cards">
-<a href="08-rca-engine.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-red">RCA CORE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">08-rca-engine.html</span>
-                    </div>
-                    <div class="feature-card-title">08 — RCA Engine &amp; Incident Manager</div>
-                    <div class="feature-card-desc">4-factor scoring algorithm, topological BFS cascade traversal, and root cause classification.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="22-risk-engine.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-red">RISK SCORING</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">22-risk-engine.html</span>
-                    </div>
-                    <div class="feature-card-title">22 — Risk Engine &amp; Centrality Scoring</div>
-                    <div class="feature-card-desc">Betweenness centrality, single point of failure (SPOF) detection, and blast radius calculation.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="17-findings-vs-incidents.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">INTELLIGENCE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">17-findings-vs-incidents.html</span>
-                    </div>
-                    <div class="feature-card-title">17 — Findings vs Incidents Architecture</div>
-                    <div class="feature-card-desc">Separation of static structural findings from dynamic runtime telemetry incidents.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="6-frontend-ui">6. Frontend & UI</h2>
-<div class="grid-cards">
-<a href="09-frontend.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">FRONTEND</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">09-frontend.html</span>
-                    </div>
-                    <div class="feature-card-title">09 — Frontend Architecture &amp; 2D/3D Graph</div>
-                    <div class="feature-card-desc">React 19, Vite, @xyflow/react 2D topology, Three.js 3D spatial view, and state sync.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="24-client-frontend.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">FRONTEND</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">24-client-frontend.html</span>
-                    </div>
-                    <div class="feature-card-title">24 — Client Frontend &amp; 3D Spatial Canvas</div>
-                    <div class="feature-card-desc">Custom node components, particle packet animations, camera controls, and CSS design system.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="10-websocket.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">REAL-TIME</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">10-websocket.html</span>
-                    </div>
-                    <div class="feature-card-title">10 — WebSocket &amp; Real-Time Streaming</div>
-                    <div class="feature-card-desc">Heartbeat, graph diff broadcasts, metrics delta streaming, and reconnect logic.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="traces-section-prompt.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">SPECIFICATION</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">traces-section-prompt.html</span>
-                    </div>
-                    <div class="feature-card-title">Traces Section Specification</div>
-                    <div class="feature-card-desc">Design prompt and architecture specification for live trace views and waterfall timelines.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="7-traffic-ml-pipeline">7. Traffic & ML Pipeline</h2>
-<div class="grid-cards">
-<a href="20-traffic-experiments.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">LOAD GEN</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">20-traffic-experiments.html</span>
-                    </div>
-                    <div class="feature-card-title">20 — Traffic Controller &amp; Load Generation</div>
-                    <div class="feature-card-desc">Virtual user profiles (LIGHT, MODERATE, HEAVY, SPIKE, STRESS) and adaptive probes.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="traffic-gen-readme.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">LOAD GEN</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">traffic-gen-readme.html</span>
-                    </div>
-                    <div class="feature-card-title">Traffic Generator Readme</div>
-                    <div class="feature-card-desc">Autonomous load simulation engine, user scenario scripting, and load profiles.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="11-ml-pipeline.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">ML CORE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">11-ml-pipeline.html</span>
-                    </div>
-                    <div class="feature-card-title">11 — ML Anomaly Detection Pipeline</div>
-                    <div class="feature-card-desc">Python sidecar, IsolationForest, LOF, OCSVM, Z-Score, feature engineering, and tail CSV.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="26-ml-pipeline-deep-dive.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">ML DEEP DIVE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">26-ml-pipeline-deep-dive.html</span>
-                    </div>
-                    <div class="feature-card-title">26 — ML Pipeline Deep Dive (Code-Level)</div>
-                    <div class="feature-card-desc">Code-level walkthrough of collector.py, preprocess.py, train.py, and score.py.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="ml-readme.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">ML README</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">ml-readme.html</span>
-                    </div>
-                    <div class="feature-card-title">ML Subsystem Readme</div>
-                    <div class="feature-card-desc">Python dependencies, training workflows, hyperparameter tuning, and export schema.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-<h2 id="8-reference-operations">8. Reference & Operations</h2>
-<div class="grid-cards">
-<a href="27-project-technical-reference.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">ENGINEERING MANUAL</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">27-project-technical-reference.html</span>
-                    </div>
-                    <div class="feature-card-title">27 — Engineering Manual &amp; Technical Reference</div>
-                    <div class="feature-card-desc">Exhaustive project reference manual containing architectural diagrams and design rationale.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="28-mapper-technical-reference.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-cyan">TECH REFERENCE</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">28-mapper-technical-reference.html</span>
-                    </div>
-                    <div class="feature-card-title">28 — Mapper Technical Reference (11 Subsystems)</div>
-                    <div class="feature-card-desc">The 11 core subsystems as visual vector schematics, measured telemetry tables, and operational limits.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="12-data-models.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-blue">SCHEMAS</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">12-data-models.html</span>
-                    </div>
-                    <div class="feature-card-title">12 — Data Models &amp; Schemas</div>
-                    <div class="feature-card-desc">TypeScript interfaces and schemas for Node, Edge, MetricEnvelope, and Incident.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="13-api-reference.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-green">REST API</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">13-api-reference.html</span>
-                    </div>
-                    <div class="feature-card-title">13 — API Reference</div>
-                    <div class="feature-card-desc">Complete REST API documentation: 54 endpoints across 8 resource controllers.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="14-configuration.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">CONFIG</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">14-configuration.html</span>
-                    </div>
-                    <div class="feature-card-title">14 — Configuration Reference</div>
-                    <div class="feature-card-desc">Environment variables, remote_config.json, ml/config.json, and data locations.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="15-troubleshooting.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-orange">RUNBOOK</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">15-troubleshooting.html</span>
-                    </div>
-                    <div class="feature-card-title">15 — Troubleshooting Runbook</div>
-                    <div class="feature-card-desc">Diagnosis steps for NO DATA, missing metrics, ghost edges, SSH locks, and traffic bugs.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-<a href="16-change-log-and-rationale.html" class="feature-card">
-                <div>
-                    <div class="feature-card-header">
-                        <span class="badge badge-purple">DECISION LOG</span>
-                        <span style="font-size: 0.72rem; color: var(--muted); font-family: var(--mono);">16-change-log-and-rationale.html</span>
-                    </div>
-                    <div class="feature-card-title">16 — Change Log &amp; Design Rationale</div>
-                    <div class="feature-card-desc">Record of what was changed, why, and where — architectural decisions and fixes.</div>
-                </div>
-                <div class="feature-card-footer">
-                    <span>Explore Document</span>
-                    <span>→</span>
-                </div>
-            </a>
-</div>
-        </section>
-
-        <div class="page-nav-footer">
-<div></div>
-<a href="architecture-map.html" class="page-nav-btn next">
-            <span class="page-nav-label">Next Document →</span>
-            <span class="page-nav-title">Master Architecture Flowchart Map</span>
-        </a>
-</div>
-
-        <footer>
-            Microservice Mapper &mdash; technical reference. Figures measured on live targets, September 2026.
-        </footer>
+    
+        <footer>Microservice Mapper &mdash; built from <code>wiki/*.md</code> by <code>scripts/build_wiki_visualizer.py</code>. Every formula, threshold and worked example is checked against the code.</footer>
     </div>
+    <script src="assets/search-index.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Theme Switcher matching Mapper Technical Reference
@@ -1500,69 +1138,461 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 5. Interactive Lab Helpers
-    window.testCanonicalId = function() {
-        const input = document.getElementById('canon-input');
-        const target = document.getElementById('canon-target');
-        const output = document.getElementById('canon-output');
-        if (input && output) {
-            const raw = input.value.trim() || 'sockshop_orders_1';
-            const tgt = target ? target.value.trim() || 'ec2-target-prod' : 'ec2-target-prod';
-            const clean = raw.toLowerCase().replace(/_\d+$/, '').replace(/^[\/_]+/, '');
-            const canonical = `${tgt}:${clean}`;
-            output.innerHTML = `<span style="color: var(--ok); font-weight: bold;">✓ Canonical ID Resolved:</span> <code style="font-size: 1rem; color: var(--sig);">${canonical}</code><br><span style="color: var(--ink-2); font-size: 0.8rem; margin-top: 4px; display: inline-block;">Stripped instance suffix <code>_1</code> &bull; Lowercased &bull; Prefixed with Target Namespace</span>`;
+    // 5. Interactive labs.
+    //
+    // Each re-implements a real function from the repository with the same
+    // constants and branch order. If one of them disagrees with its source
+    // file, the lab is the thing that is wrong.
+
+    const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
+    const labNum = (id) => {
+        const v = labVal(id).toLowerCase();
+        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        const n = parseFloat(v);
+        return isFinite(n) ? n : null;
+    };
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const r3 = (n) => Math.round(n * 1000) / 1000;
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const out = (fn, htmlText) => { const el = document.getElementById(fn + '-out'); if (el) el.innerHTML = htmlText; };
+    const row = (name, value, frac, colour, why) =>
+        '<div class="lab-row"><code>' + esc(name) + '</code>' +
+        '<div class="lab-bar"><div style="width:' + Math.max(0, Math.min(100, frac * 100)) + '%;background:' + colour + ';"></div></div>' +
+        '<strong style="font-family:var(--mono);min-width:52px;text-align:right;color:var(--ink);">' + value + '</strong></div>' +
+        (why ? '<div class="lab-why">' + why + '</div>' : '');
+    const big = (value, label, colour) =>
+        '<span class="lab-big" style="color:' + (colour || 'var(--ink)') + ';">' + value + '</span> ' +
+        '<span style="color:var(--muted);font-size:12px;margin-right:22px;">' + label + '</span>';
+
+    // normalizeId() in server/graph/GraphStore.ts
+    window.labCanonicalId = function () {
+        const raw = labVal('canon-input');
+        const tgt = labVal('canon-target') || 'sock-shop';
+        if (!raw || raw === 'external' || raw === 'unknown-upstream') {
+            out('labCanonicalId', big(esc(raw || '(empty)'), 'passed through unchanged') +
+                '<div class="lab-foot">Sentinel ids are exempt: prefixing them would invent a service that does not exist.</div>');
+            return;
         }
+        let clean = raw;
+        for (const sep of ['-', ':', '/']) {
+            if (raw.indexOf(tgt + sep) === 0) { clean = raw.slice(tgt.length + 1); break; }
+        }
+        out('labCanonicalId', big(esc(tgt + ':' + clean), 'canonical id', 'var(--sig)') +
+            '<div class="lab-foot">' + (clean !== raw
+                ? 'An existing <code>' + esc(tgt) + '</code> prefix was stripped and re-applied, which is what makes this idempotent.'
+                : 'No existing prefix, so the target id was simply prepended.') + '</div>');
     };
 
-    window.calculateHeatDecay = function() {
-        const h0Input = document.getElementById('heat-h0');
-        const lambdaInput = document.getElementById('heat-lambda');
-        const tInput = document.getElementById('heat-t');
-        const output = document.getElementById('heat-output');
-        const bar = document.getElementById('heat-bar');
-        if (h0Input && lambdaInput && tInput && output) {
-            const h0 = parseFloat(h0Input.value) || 100;
-            const lambda = parseFloat(lambdaInput.value) || 0.05;
-            const t = parseFloat(tInput.value) || 10;
-            const ht = h0 * Math.exp(-lambda * t);
-            const pct = Math.min(100, Math.max(0, (ht / h0) * 100));
-            output.innerHTML = `<span style="color: var(--sig); font-weight: bold;">Residual Heat H(${t}s):</span> <strong>${ht.toFixed(2)}</strong> / ${h0.toFixed(0)} (${pct.toFixed(1)}% remaining)`;
-            if (bar) bar.style.width = `${pct}%`;
+    // The candidate loop in server/rca/RCAEngine.ts
+    window.labRca = function () {
+        const parts = [];
+        const t = labVal('rca-time'), st = labVal('rca-status'), ev = labVal('rca-evidence');
+        if (t === 'earliest') parts.push(['temporal_precedence', 0.30, 'earliest detected anomaly']);
+        else if (t === 'anomaly') parts.push(['anomaly_presence', 0.10, 'metric anomaly detected']);
+        if (st === 'critical') parts.push(['critical_status', 0.35, 'container down or crash-looping']);
+        else if (st === 'degraded') parts.push(['degraded_status', 0.15, 'degraded']);
+        const observed = ev === 'observed';
+        if (observed) parts.push(['observed_dependency', 0.20, 'observed runtime TCP/HTTP traffic confirmed']);
+        else if (ev === 'declared') parts.push(['declared_dependency', 0.05, 'declared dependency only']);
+
+        const others = Math.max(0, Math.round(labNum('rca-others') ?? 0));
+        const k = Math.min(others, Math.max(0, Math.round(labNum('rca-explained') ?? 0)));
+        const reach = Math.min(1, Math.max(0, labNum('rca-reach') ?? 0));
+        const material = reach >= 0.1 ? reach : 0;           // MATERIAL_REACH
+        const explained = material > 0 ? k : 0;
+        if (others > 0) {
+            const coverage = (explained * material) / others;
+            const pts = Math.round(0.25 * coverage * 100) / 100; // EXPLAINS_WEIGHT
+            if (pts >= 0.01) parts.push(['explains_failures', pts, 'explains ' + explained + ' of ' + others + ' other affected service(s): weighted coverage ' + Math.round(coverage * 100) + '%']);
         }
+        const victim = Math.min(1, Math.max(0, labNum('rca-victim') ?? 0));
+        if (victim > 0) {
+            const pts = Math.round(0.25 * victim * 100) / 100;   // VICTIM_WEIGHT
+            parts.push(['dependency_failing', -pts, 'its own callees are failing (weighted share ' + Math.round(victim * 100) + '%): likely a victim, not the cause']);
+        }
+        const total = parts.reduce((a, p) => a + p[1], 0);
+        const score = Math.min(Math.max(Math.round(total * 100) / 100, 0), 1);
+        let conf = score >= 0.75 && observed ? 'HIGH' : score >= 0.5 ? 'MEDIUM' : score >= 0.25 ? 'LOW' : 'UNKNOWN';
+        const independent = others > 0 && explained === 0 && conf !== 'UNKNOWN';
+        const colour = conf === 'HIGH' ? 'var(--err)' : conf === 'MEDIUM' ? 'var(--warn)' : 'var(--muted)';
+        const rows = parts.map((p) => row(p[0], (p[1] >= 0 ? '+' : '−') + Math.abs(p[1]).toFixed(2), Math.abs(p[1]) / 0.35,
+            p[1] >= 0 ? 'var(--sig)' : 'var(--err)', p[2])).join('');
+        out('labRca', big(score.toFixed(2), 'score') + big(conf, 'confidence', colour) +
+            (rows || '<div class="lab-foot">No factor matched: this candidate scores 0.</div>') +
+            '<div class="lab-foot">' +
+            (total > 1 ? 'The raw sum was ' + r2(total).toFixed(2) + '; it is clamped to 1. ' : '') +
+            'HIGH needs 0.75+ <em>and</em> an observed edge. ' +
+            (independent ? '<strong>If this is the top candidate</strong>, it explains none of the others, so the incident is treated as independent failures and confidence is forced to LOW.' : '') +
+            '</div>');
     };
 
-    window.calculateRcaScore = function() {
-        const cpuInput = document.getElementById('rca-cpu');
-        const memInput = document.getElementById('rca-mem');
-        const errInput = document.getElementById('rca-err');
-        const degInput = document.getElementById('rca-deg');
-        const output = document.getElementById('rca-output');
-        if (cpuInput && memInput && errInput && degInput && output) {
-            const cpuZ = parseFloat(cpuInput.value) || 3.2;
-            const memZ = parseFloat(memInput.value) || 1.1;
-            const errRate = parseFloat(errInput.value) || 0.15;
-            const deg = parseFloat(degInput.value) || 4;
-            
-            const cpuNorm = Math.min(1, cpuZ / 4.0);
-            const memNorm = Math.min(1, memZ / 4.0);
-            const errNorm = Math.min(1, errRate / 0.20);
-            const degNorm = Math.min(1, deg / 8.0);
-            
-            const totalScore = (0.35 * cpuNorm + 0.25 * memNorm + 0.30 * errNorm + 0.10 * degNorm);
-            const isRoot = totalScore > 0.65;
-            const badgeCol = isRoot ? 'var(--err)' : (totalScore > 0.4 ? 'var(--warn)' : 'var(--ok)');
-            const badgeText = isRoot ? '🚨 PRIMARY ROOT CAUSE (P1)' : (totalScore > 0.4 ? '⚠ SECONDARY SYMPTOM' : '✓ HEALTHY / NORMAL');
-            
-            output.innerHTML = `
-                <div style="font-size: 1.1rem; font-weight: 700; color: ${badgeCol}; margin-bottom: 6px;">${badgeText}</div>
-                <div>Root Cause Probability Score: <strong style="font-size: 1.2rem; color: #fff;">${totalScore.toFixed(3)}</strong> (Threshold: 0.650)</div>
-                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">
-                    CPU Contribution: ${(0.35 * cpuNorm).toFixed(3)} &bull; Mem: ${(0.25 * memNorm).toFixed(3)} &bull; Err: ${(0.30 * errNorm).toFixed(3)} &bull; Degree: ${(0.10 * degNorm).toFixed(3)}
-                </div>
-            `;
-        }
+    // computeHealth() and the risk composite in server/graph/RiskEngine.ts
+    window.labHealth = function () {
+        const status = labVal('risk-status');
+        const parts = [];
+        const sv = status === 'healthy' ? 1 : status === 'degraded' ? 0.5 : status === 'critical' ? 0 : 0.5;
+        parts.push(['status', 0.60, sv, 'container status is ' + status]);
+        const a = labNum('risk-anomaly');
+        if (a !== null) { const c = Math.min(Math.max(a, 0), 1); parts.push(['anomaly', 0.25, 1 - c, 'model anomaly score ' + r2(c)]); }
+        const inc = labVal('risk-incident');
+        parts.push(['incident', 0.15, inc === 'root' ? 0 : inc === 'affected' ? 0.3 : 1,
+            inc === 'root' ? 'named as the root cause of an open incident' : inc === 'affected' ? 'among the affected services of an open incident' : 'not part of any open incident']);
+        const tw = parts.reduce((s, p) => s + p[1], 0);
+        const br = parts.map((p) => ({ f: p[0], w: p[1], score: r2((p[2] * p[1]) / tw), why: p[3] }));
+        const health = r2(br.reduce((s, b) => s + b.score, 0));
+        const crit = labNum('risk-crit');
+        const risk = crit !== null ? r2(0.5 * (1 - health) + 0.5 * Math.min(Math.max(crit, 0), 1)) : r2(1 - health);
+        const rc = risk > 0.8 ? 'var(--err)' : risk > 0.6 ? 'var(--warn)' : 'var(--ok)';
+        out('labHealth', big(health.toFixed(2), 'health') + big(risk.toFixed(2), 'risk', rc) +
+            br.map((b) => row(b.f + '  w ' + b.w.toFixed(2) + '→' + r2(b.w / tw).toFixed(2), b.score.toFixed(2), b.score, 'var(--ok)', b.why)).join('') +
+            '<div class="lab-foot">' + (parts.length === 2 ? 'No anomaly score, so status and incident renormalise from .60/.15 to .80/.20. ' : '') +
+            'The parts sum to exactly ' + health.toFixed(2) + '. ' +
+            (crit !== null ? 'Risk = 0.5 × (1 − health) + 0.5 × criticality.' : 'Criticality is null, so risk falls back to 1 − health.') + '</div>');
     };
+
+    // intrinsicProbability() and one step of solve()/describe() in server/graph/CascadeEngine.ts
+    window.labCascade = function () {
+        const tau = labNum('cas-tau') ?? 0.7;
+        const status = labVal('cas-status');
+        const reasons = [];
+        let survive = 1;
+        const s = status === 'critical' ? 1 : status === 'degraded' ? 0.5 : 0;
+        if (s > 0) { survive *= 1 - s; reasons.push('status ' + status + ' (' + s + ')'); }
+        const a = labNum('cas-anom');
+        const persistent = labVal('cas-persist') === 'yes';
+        if (a !== null && a > 0) {
+            const c = Math.min(Math.max(a, 0), 1) * (persistent ? 0.8 : 0.3);
+            survive *= 1 - c;
+            reasons.push('anomaly ' + a + ' × ' + (persistent ? '0.8' : '0.3') + ' = ' + r3(c));
+        }
+        const p0 = 1 - survive;
+        let inhSurvive = 1, best = null;
+        const callees = [['A', labNum('cas-w1') ?? 0, labNum('cas-p1') ?? 0], ['B', labNum('cas-w2') ?? 0, labNum('cas-p2') ?? 0]];
+        const lines = [];
+        for (const [name, w, p] of callees) {
+            const contrib = tau * Math.min(Math.max(w, 0), 1) * Math.min(Math.max(p, 0), 1);
+            inhSurvive *= 1 - contrib;
+            if (contrib > 0 && (!best || contrib > best[1])) best = [name, contrib];
+            lines.push(row('via callee ' + name, r3(contrib).toFixed(3), contrib, 'var(--warn)', 'τ ' + tau + ' × w ' + w + ' × P ' + p));
+        }
+        const inherited = 1 - inhSurvive;
+        const P = 1 - (1 - p0) * inhSurvive;
+        const band = P >= 0.7 ? 'high' : P >= 0.4 ? 'elevated' : P >= 0.15 ? 'low' : 'minimal';
+        const bc = band === 'high' ? 'var(--err)' : band === 'elevated' ? 'var(--warn)' : 'var(--muted)';
+        const routed = (inherited >= 0.15 || inherited > p0) && best;
+        out('labCascade', big(r3(P).toFixed(3), 'P(failure)', bc) + big(band, 'band', bc) +
+            row('p0 (its own state)', r3(p0).toFixed(3), p0, 'var(--sig)', reasons.join(' · ') || 'no evidence of its own') +
+            lines.join('') +
+            '<div class="lab-foot">inherited = ' + r3(inherited).toFixed(3) + ' · P = 1 − (1 − ' + r3(p0) + ') × ' + r3(inhSurvive) +
+            (routed ? ' · <strong>via callee ' + best[0] + '</strong>' : ' · no via shown (inherited risk too small to name a route)') +
+            (p0 < 0.15 && P >= 0.15 ? ' · <strong>at risk</strong>: fine on its own, pulled down by its dependencies.' : '') + '</div>');
+    };
+
+    // cpuShareOfAllowance() + statusFromSample() in containerHealth.ts
+    window.labCpu = function () {
+        const cpu = labNum('cpu-raw');
+        const limit = labNum('cpu-limit');
+        const host = labNum('cpu-host');
+        const mem = labNum('cpu-mem') ?? 0;
+        const allowance = limit && limit > 0 ? limit : host && host > 0 ? host : null;
+        const share = cpu === null ? null : !allowance ? cpu : Math.min(100, cpu / allowance);
+        const c = share ?? 0;
+        let status = 'healthy', reason = 'running normally';
+        if (c > 80 || mem > 80) {
+            status = 'degraded';
+            reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
+        }
+        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+            big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
+            '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
+            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+    };
+
+    // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
+    window.labShares = function () {
+        const CONF = { listen: 1.0, ephemeral: 0.85, legacy: 0.7, unresolved: 0.5, declared: 0.4, candidate: 0 };
+        const edges = [];
+        for (let i = 1; i <= 4; i++) {
+            const name = labVal('sh-n' + i);
+            if (!name) continue;
+            edges.push({ name, conf: CONF[labVal('sh-e' + i)] ?? 0, ref: Math.max(0, labNum('sh-a' + i) ?? 0), kind: labVal('sh-k' + i) });
+        }
+        const groups = {};
+        for (const e of edges) if (e.conf > 0) (groups[e.kind] = groups[e.kind] || []).push(e);
+        const sums = {};
+        for (const e of edges) {
+            const sib = e.conf > 0 ? groups[e.kind] : [];
+            let dep = 0, basis = 'none (candidate)';
+            if (sib.length) {
+                const total = sib.reduce((s, x) => s + x.ref, 0);
+                const unmeasured = sib.filter((x) => !(x.ref > 0)).length;
+                const pool = 1 - unmeasured / sib.length;
+                if (total > 0 && e.ref > 0) { dep = (e.ref / total) * pool; basis = 'activity'; }
+                else { dep = 1 / sib.length; basis = 'uniform'; }
+                sums[e.kind] = (sums[e.kind] || 0) + dep;
+            }
+            e.dep = dep; e.basis = basis;
+            e.weight = r3(Math.min(Math.max(e.conf * dep * (e.kind === 'telemetry' ? 0.1 : 1), 0), 1));
+        }
+        out('labShares', edges.map((e) => row(e.name, e.weight.toFixed(3), e.weight, e.kind === 'telemetry' ? 'var(--muted)' : 'var(--sig)',
+            'share ' + Math.round(e.dep * 1000) / 10 + '% (' + e.basis + ') × confidence ' + e.conf + (e.kind === 'telemetry' ? ' × 0.1' : ''))).join('') +
+            '<div class="lab-foot">Shares per kind: ' + Object.entries(sums).map(([k, v]) => k + ' ' + Math.round(v * 1000) / 10 + '%').join(' · ') +
+            '. Each must be 100%: that is the consistency rule <code>reliance-sums-to-one</code>.</div>');
+    };
+
+    // edgeAppearance() + edgeLook() + linkFlow()/pulsesFor()/svgPulses()
+    window.labLink = function () {
+        const RED = ['#ff3d5e', 1], ORANGE = ['#ff9a3c', 0.95];
+        const status = labVal('lk-status'), observed = labVal('lk-obs') === 'observed', callee = labVal('lk-callee');
+        const errPct = labNum('lk-err'), latency = labNum('lk-lat'), req = labNum('lk-req'), perMin = labNum('lk-act'), w = labNum('lk-weight');
+        const telemetry = labVal('lk-kind') === 'telemetry';
+        const err = errPct === null ? null : errPct / 100;
+        const measured = err !== null || latency !== null;
+        const msf = (v) => v >= 1000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms';
+        let a;
+        if (status === 'failed') a = { heat: 'failed', c: RED, label: 'failing', reason: 'marked failed' };
+        else if (err !== null && err >= 0.05) a = { heat: 'failed', c: RED, label: 'failing', reason: (err * 100).toFixed(1) + '% of requests failing' };
+        else if (latency !== null && latency >= 1000) a = { heat: 'failed', c: RED, label: 'very slow', reason: 'latency ' + msf(latency) };
+        else if (observed && !measured && callee === 'critical') a = { heat: 'failed', c: RED, label: 'failing', reason: 'calls a service that is down' };
+        else if (status === 'degraded') a = { heat: 'degraded', c: ORANGE, label: 'degraded', reason: 'marked degraded' };
+        else if (err !== null && err >= 0.01) a = { heat: 'degraded', c: ORANGE, label: 'erroring', reason: (err * 100).toFixed(1) + '% of requests failing' };
+        else if (latency !== null && latency >= 300) a = { heat: 'degraded', c: ORANGE, label: 'slow', reason: 'latency ' + msf(latency) };
+        else if (observed && !measured && callee === 'degraded') a = { heat: 'degraded', c: ORANGE, label: 'degraded', reason: 'calls a degraded service' };
+        else if (!observed) a = { heat: 'idle', c: ['#5b6aa0', 0.5], label: 'declared, not observed' };
+        else if (perMin === null) a = { heat: 'calm', c: ['#4f7dff', 0.85], label: 'observed' };
+        else if (perMin > 1200) a = { heat: 'saturated', c: ['#9cf4ff', 1], label: perMin + '/min, very heavy' };
+        else if (perMin > 250) a = { heat: 'heavy', c: ['#1fd1ff', 0.95], label: perMin + '/min, heavy' };
+        else if (perMin > 60) a = { heat: 'busy', c: ['#2f9bff', 0.9], label: perMin + '/min, busy' };
+        else a = { heat: 'calm', c: ['#4f7dff', 0.85], label: perMin + '/min' };
+
+        const width = telemetry ? 1 : w !== null ? 1.2 + 4.3 * Math.min(Math.max(w, 0), 1)
+            : !observed ? 1 : (a.heat === 'saturated' || a.heat === 'failed') ? 3.4 : (a.heat === 'heavy' || a.heat === 'busy' || a.heat === 'degraded') ? 2.6 : 2;
+        const pulsesFor = (x) => Math.min(5, Math.max(0.25, 0.3 + 1.6 * Math.log10(1 + Math.max(0, x))));
+        let flow = null;
+        if (req !== null && req > 0) flow = { basis: 'requests', rate: req, pulses: pulsesFor(req) };
+        else if (perMin !== null && perMin > 0) flow = { basis: 'activity', rate: perMin / 60, pulses: pulsesFor(perMin / 60) };
+
+        const len = 300;
+        let svg = '<svg viewBox="0 0 340 40" width="340" style="max-width:100%;margin:6px 0 4px;">' +
+            '<path id="lk-path" d="M14 20 H 314" stroke="' + a.c[0] + '" stroke-opacity="' + a.c[1] + '" stroke-width="' + width.toFixed(1) + '" fill="none" stroke-linecap="round"/>' +
+            '<path d="M306 14 L316 20 L306 26 z" fill="' + a.c[0] + '"/>';
+        let timing = '';
+        if (flow) {
+            const trip = Math.max(0.4, len / 110);
+            const count = Math.min(8, Math.max(1, Math.round(flow.pulses * trip)));
+            const dur = count / flow.pulses;
+            for (let i = 0; i < count; i++) {
+                svg += '<circle r="3" fill="#fff" fill-opacity="0.85"><animateMotion dur="' + dur.toFixed(2) + 's" begin="' + (-i * dur / count).toFixed(2) + 's" repeatCount="indefinite"><mpath href="#lk-path"/></animateMotion></circle>';
+            }
+            timing = count + ' on the path, one trip ' + dur.toFixed(2) + ' s → exactly ' + flow.pulses.toFixed(2) + ' arrive per second';
+        }
+        svg += '</svg>';
+        out('labLink', '<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">' +
+            big(a.heat, esc(a.label), a.c[0]) + big(width.toFixed(1) + ' px', 'width') +
+            big(flow ? flow.pulses.toFixed(2) : '0', 'pulses / s') + '</div>' + svg +
+            '<div class="lab-foot">' + (a.reason ? '<strong>Why:</strong> ' + esc(a.reason) + '. ' : '') +
+            (flow ? 'Pulse rate from ' + (flow.basis === 'requests' ? flow.rate + ' req/s (measured requests)' : 'the activity index ÷ 60 = ' + r2(flow.rate) + ' (not a request count)') + '; ' + timing + '.'
+                  : 'No rate measured, so no pulses.') + '</div>');
+    };
+
+    // detector_score() + combine() in ml/ensemble.py, persistence in score.py
+    window.labEnsemble = function () {
+        const names = ['iforest', 'lof', 'ocsvm', 'zscore'];
+        const used = [];
+        const lines = [];
+        for (const n of names) {
+            const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
+            if (raw === null || c === null || t === null || t - c <= 1e-9) {
+                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                continue;
+            }
+            const r = (raw - c) / (t - c);
+            const score = Math.max(0, Math.min(1, r / 2));
+            const above = raw >= t;
+            used.push({ score, above });
+            lines.push(row(n, score.toFixed(2), score, above ? 'var(--warn)' : 'var(--sig)', 'r = ' + r2(r) + (above ? ' · above its threshold (votes yes)' : ' · below its threshold')));
+        }
+        if (!used.length) { out('labEnsemble', lines.join('') + '<div class="lab-foot">No usable detector: the service is left out of latest_scores.json, never given a made-up score.</div>'); return; }
+        const sorted = used.map((u) => u.score).sort((x, y) => x - y);
+        const n = sorted.length;
+        const median = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+        const votes = used.filter((u) => u.above).length;
+        const needed = Math.ceil(n / 2);
+        const anomalous = votes >= needed;
+        const prev = Math.max(0, Math.round(labNum('ml-prev') ?? 0));
+        const need = Math.max(1, Math.round(labNum('ml-need') ?? 3));
+        const consecutive = anomalous ? prev + 1 : 0;
+        const persistent = consecutive >= need;
+        out('labEnsemble', big(median.toFixed(2), 'anomaly_score (median)') +
+            big(votes + '/' + n, 'votes (need ' + needed + ')', anomalous ? 'var(--warn)' : 'var(--ok)') +
+            big(persistent ? 'persistent' : anomalous ? 'anomalous' : 'normal', consecutive + ' window(s) in a row', persistent ? 'var(--err)' : anomalous ? 'var(--warn)' : 'var(--ok)') +
+            lines.join('') +
+            '<div class="lab-foot">Only a persistent anomaly gets the ANOMALY badge, and it weighs 0.8 (not 0.3) in the cascade model.</div>');
+    };
+
+    // Run every lab once, then again on each edit.
+    document.querySelectorAll('.interactive-lab[data-lab]').forEach((lab) => {
+        const fn = window[lab.getAttribute('data-lab')];
+        if (typeof fn !== 'function') return;
+        lab.addEventListener('input', fn);
+        lab.addEventListener('change', fn);
+        try { fn(); } catch (e) { console.error(e); }
+    });
+
+    // 6. Reading progress, along the top edge.
+    const bar = document.createElement('div');
+    bar.className = 'read-progress';
+    document.body.appendChild(bar);
+    const onScroll = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, h.scrollTop / max) : 0) + ')';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // 7. "On this page": the chapter's sections, following the scroll.
+    const aside = document.querySelector('.side-toc');
+    const article = document.querySelector('.doc-body');
+    if (aside && article) {
+        const heads = Array.from(article.querySelectorAll('h2[id]'));
+        if (heads.length >= 3) {
+            aside.innerHTML = '<div class="side-toc-title">On this page</div>' + heads.map((h) =>
+                '<a href="#' + h.id + '" data-for="' + h.id + '">' + h.textContent.replace(/^\d+(\.\d+)?\s*/, '') + '</a>').join('') +
+                (document.getElementById('try-it') ? '<a href="#try-it" data-for="try-it" class="try">Try it</a>' : '');
+            const links = new Map(Array.from(aside.querySelectorAll('a')).map((a) => [a.getAttribute('data-for'), a]));
+            const targets = heads.concat(document.getElementById('try-it') ? [document.getElementById('try-it')] : []);
+            // The section you are in is the last heading above a line a third
+            // of the way down the screen, so a sub-section still lights its parent.
+            let current = null;
+            const spy = () => {
+                const line = window.innerHeight * 0.33;
+                let id = targets[0].id;
+                for (const t of targets) if (t.getBoundingClientRect().top <= line) id = t.id;
+                if (id === current) return;
+                current = id;
+                links.forEach((a) => a.classList.toggle('on', a.getAttribute('data-for') === id));
+            };
+            window.addEventListener('scroll', spy, { passive: true });
+            spy();
+            document.body.classList.add('has-side-toc');
+        } else {
+            aside.remove();
+        }
+    }
+
+    // 8. Search everything: Ctrl/Cmd+K or "/".
+    const INDEX = window.BOOK_INDEX || [];
+    const palette = document.createElement('div');
+    palette.className = 'palette';
+    palette.hidden = true;
+    palette.innerHTML = '<div class="palette-box" role="dialog" aria-label="Search the book">' +
+        '<input type="text" placeholder="Search chapters, sections, terms…" aria-label="Search" autocomplete="off" spellcheck="false">' +
+        '<div class="palette-results"></div>' +
+        '<div class="palette-foot"><span>↑↓ move</span><span>↵ open</span><span>esc close</span></div></div>';
+    document.body.appendChild(palette);
+    const pin = palette.querySelector('input');
+    const pres = palette.querySelector('.palette-results');
+    let hits = [], sel = 0;
+    const escHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const mark = (text, toks) => {
+        let out = escHtml(text);
+        for (const t of toks) if (t.length > 1) out = out.replace(new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>');
+        return out;
+    };
+    function search(q) {
+        const toks = q.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!toks.length) {
+            hits = INDEX.filter((d) => d.k === 'chapter').slice(0, 10).map((d) => ({ d, score: 0 }));
+        } else {
+            hits = [];
+            for (const d of INDEX) {
+                const hay = (d.t + ' ' + (d.s || '') + ' ' + (d.x || '')).toLowerCase();
+                if (!toks.every((t) => hay.includes(t))) continue;
+                let score = 0;
+                const tl = d.t.toLowerCase();
+                for (const t of toks) score += tl.startsWith(t) ? 6 : tl.includes(t) ? 4 : (d.s || '').toLowerCase().includes(t) ? 2 : 1;
+                if (d.k === 'chapter') score += 2;
+                hits.push({ d, score });
+            }
+            hits.sort((a, b) => b.score - a.score);
+            hits = hits.slice(0, 14);
+        }
+        sel = 0;
+        pres.innerHTML = hits.length ? hits.map((h, i) =>
+            '<a href="' + h.d.u + '" class="hit' + (i === 0 ? ' sel' : '') + '"><span class="hit-k k-' + h.d.k + '">' + h.d.k + '</span>' +
+            '<span class="hit-t">' + mark(h.d.t, toks) + '</span><span class="hit-s">' + mark(h.d.s || '', toks) + '</span></a>').join('')
+            : '<div class="palette-none">Nothing matches. Try a function name, a term or a number like 0.7.</div>';
+    }
+    const openPalette = () => { palette.hidden = false; pin.value = ''; search(''); setTimeout(() => pin.focus(), 0); };
+    const closePalette = () => { palette.hidden = true; };
+    pin.addEventListener('input', () => search(pin.value));
+    pin.addEventListener('keydown', (e) => {
+        const items = pres.querySelectorAll('.hit');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!items.length) return;
+            items[sel].classList.remove('sel');
+            sel = (sel + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+            items[sel].classList.add('sel');
+            items[sel].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && items[sel]) {
+            window.location.href = items[sel].getAttribute('href');
+        } else if (e.key === 'Escape') {
+            closePalette();
+        }
+    });
+    palette.addEventListener('click', (e) => { if (e.target === palette) closePalette(); });
+    document.addEventListener('keydown', (e) => {
+        const typing = /input|textarea|select/i.test((e.target && e.target.tagName) || '');
+        if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); palette.hidden ? openPalette() : closePalette(); }
+        else if (e.key === '/' && !typing && palette.hidden) { e.preventDefault(); openPalette(); }
+        else if (e.key === 'Escape' && !palette.hidden) closePalette();
+    });
+    document.querySelectorAll('[data-open-search]').forEach((b) => b.addEventListener('click', openPalette));
+
+    // 9. Sections arrive as you reach them. Off for reduced motion; anything
+    //    already on screen is shown at once.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+        const items = document.querySelectorAll('.doc-body > h2, .doc-body > .scroll, .doc-body > .box, .chapter-figure, .interactive-lab, .part-block, .path, .stat, .feature-card, .flow-layer');
+        const io = new IntersectionObserver((entries) => {
+            for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        }, { rootMargin: '0px 0px -6% 0px' });
+        items.forEach((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.top < window.innerHeight) return;
+            el.classList.add('reveal');
+            io.observe(el);
+        });
+    }
+
+    // 10. Where you have been. Kept in this browser only; the page works the
+    //     same without it.
+    const store = {
+        get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (_) { return d; } },
+        set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* private mode */ } },
+    };
+    const here = (location.pathname.split('/').pop() || 'index.html');
+    const visited = new Set(store.get('mm.book.visited', []));
+    if (here !== 'index.html' && document.querySelector('.chapter-rail')) {
+        visited.add(here);
+        store.set('mm.book.visited', Array.from(visited));
+        store.set('mm.book.last', { u: here, t: document.title.split(' | ')[0] });
+    }
+    document.querySelectorAll('.chapter-row').forEach((row) => {
+        if (visited.has(row.getAttribute('href'))) row.classList.add('visited');
+    });
+    const last = store.get('mm.book.last', null);
+    const cont = document.querySelector('[data-continue]');
+    if (cont && last && last.u) {
+        cont.href = last.u;
+        cont.textContent = 'Continue: ' + last.t + ' →';
+        cont.hidden = false;
+    }
+    const done = document.querySelector('[data-progress-count]');
+    if (done) done.textContent = String(document.querySelectorAll('.chapter-row.visited').length);
 });
 </script>
+    <script src="assets/live-system.js"></script>
 </body>
 </html>
