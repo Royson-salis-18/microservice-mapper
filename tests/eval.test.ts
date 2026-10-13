@@ -222,3 +222,19 @@ test('stats helpers: seeded, and right on known values', () => {
   const f = kFold([1, 1, 0, 1, 0, 1, 1, 0, 1, 1], ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b'], 5, 1);
   assert.equal(f.folds.reduce((s, x) => s + x.n, 0), 10);
 });
+
+test('a soft fault that changed nothing users could feel is not ground truth for the confusion matrix', () => {
+  const calmUsers: ImpactSample[] = [];
+  for (let s = 0; s <= 400; s += 5) calmUsers.push({ ts: at(s), n: 20, p95: 10, err: 0 });
+  const faults = [fault('f1', 'brownout', 'cache', 250, 270, []), fault('f2', 'crash', 'db', 100, 200, ['api', 'web'])];
+  const r = score(faults, scenario(), {}, calmUsers);
+  assert.equal(r.faults.find((f) => f.id === 'f1')!.effect, 'none');
+  assert.equal(r.faults.find((f) => f.id === 'f2')!.effect, 'felt');
+  assert.deepEqual(r.confusion.truth, ['db']);
+  assert.equal(r.noEffect.n, 1);
+  assert.equal(r.noEffect.detected, 0);
+  // without a traffic log nothing can be ruled out, so it stays in
+  const r2 = score(faults, scenario());
+  assert.equal(r2.faults.find((f) => f.id === 'f1')!.effect, 'unknown');
+  assert.deepEqual(r2.confusion.truth, ['cache', 'db']);
+});

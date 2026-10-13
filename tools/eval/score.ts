@@ -99,6 +99,8 @@ export interface FaultResult {
   /** True when no other fault overlapped this one (nor its 30 s tail): only then can user impact be attributed to it. */
   isolated: boolean;
   /** What kind of fault the mapper's own evidence on its named root suggests, and whether it is the family that was injected. Null when nothing was detected. */
+  /** Did the fault change anything measurable? 'felt': container state changed (crash, stop, crash-loop, pause) or users saw errors/slowness. 'none': a soft fault (brownout, flap, memory, partition) that ran alone, with traffic measured, and users saw nothing. 'unknown': cannot be told (overlapping faults or no traffic log). 'none' faults are not ground truth for the confusion matrices. */
+  effect: 'felt' | 'none' | 'unknown';
   inferredFamily: string | null; trueFamily: string; familyMatch: boolean | null; chance: number | null;
   /** What users experienced during the fault, from the traffic generator. Null when no traffic log was supplied OR the fault was
    *  not isolated (with another fault running, any impact could be that one's). */
@@ -110,6 +112,7 @@ export interface Score {
   overall: any; byClass: Record<string, any>; falseAlarm: { episodes: number; minutes: number; perHour: number; spanHours: number };
   calibration: { n: number; brier: number; ece: number; auc: number; bins: { lo: number; hi: number; n: number; meanRisk: number; rate: number }[] } | null;
   confusion: { truth: string[]; predicted: string[]; counts: number[][] };
+  noEffect: { n: number; detected: number; items: { id: string; class: string; target: string; detected: boolean }[] };
   kindConfusion: { truth: string[]; predicted: string[]; counts: number[][]; accuracy: any; kappa: number };
   research: any;
 }
@@ -181,8 +184,10 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
     const evidence = [...new Set(inFault.flatMap((s) => s.incidents.filter((i) => localised(i) && i.root === f.truth.rootCause).flatMap((i) => i.rootEvidence ?? [])))];
     const inferredFamily = first ? inferFamily(evidence) : null;
     const trueFamily = FAMILY_OF[f.class] ?? f.class;
+    const hardFamily = ['down', 'frozen'].includes(FAMILY_OF[f.class] ?? '');
+    const effect: FaultResult['effect'] = hardFamily ? 'felt' : userImpact ? (userImpact.visible ? 'felt' : 'none') : 'unknown';
     results.push({
-      inferredFamily, trueFamily, familyMatch: inferredFamily ? inferredFamily === trueFamily : null,
+      effect, inferredFamily, trueFamily, familyMatch: inferredFamily ? inferredFamily === trueFamily : null,
       chance: sIn && sIn.candidates.length ? 1 / sIn.candidates.length : null,
       id: f.id, class: f.class, target: f.target, concurrent: concurrentFaults.length, a: f.a, b: f.b,
       detected: !!first, anyIncident, preexisting, delaySec, rankSettled, rankInitial,
@@ -256,17 +261,20 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
   }
 
   // ---- confusion of true root vs predicted top-1 (detected faults)
-  const truthNames = [...new Set(results.map((r) => r.target))].sort();
-  const predNames = [...new Set([...results.map((r) => r.predictedRoot).filter((x): x is string => !!x), ...truthNames])].sort();
+  const real = results.filter((r) => r.effect !== 'none');
+  const truthNames = [...new Set(real.map((r) => r.target))].sort();
+  const predNames = [...new Set([...real.map((r) => r.predictedRoot).filter((x): x is string => !!x), ...truthNames])].sort();
   const cols = [...predNames, '(missed)'];
   const counts = truthNames.map((t) => cols.map(() => 0));
-  for (const r of results) { const i = truthNames.indexOf(r.target); const j = r.detected && r.predictedRoot ? cols.indexOf(r.predictedRoot) : cols.length - 1; counts[i][j]++; }
+  for (const r of real) { const i = truthNames.indexOf(r.target); const j = r.detected && r.predictedRoot ? cols.indexOf(r.predictedRoot) : cols.length - 1; counts[i][j]++; }
 
   // ---- what kind of fault: injected family vs the family the mapper's evidence points to
   const kRows = FAMILIES, kCols = [...FAMILIES, '(unclear)', '(missed)'];
   const kCounts = kRows.map(() => kCols.map(() => 0));
-  for (const r of results) { const i = kRows.indexOf(r.trueFamily); if (i < 0) continue; const j = !r.detected ? kCols.length - 1 : r.inferredFamily ? kCols.indexOf(r.inferredFamily) : kCols.length - 2; kCounts[i][j]++; }
-  const withKind = results.filter((r) => r.familyMatch !== null);
+  for (const r of real) { const i = kRows.indexOf(r.trueFamily); if (i < 0) continue; const j = !r.detected ? kCols.length - 1 : r.inferredFamily ? kCols.indexOf(r.inferredFamily) : kCols.length - 2; kCounts[i][j]++; }
+  const withKind = real.filter((r) => r.familyMatch !== null);
+  const noEffectList = results.filter((r) => r.effect === 'none');
+  const noEffect = { n: noEffectList.length, detected: noEffectList.filter((r) => r.detected).length, items: noEffectList.map((r) => ({ id: r.id, class: r.class, target: r.target, detected: r.detected })) };
   const sq = kRows.map((_, i) => kRows.map((__, j) => kCounts[i][j]));
   const kindConfusion = { truth: kRows, predicted: kCols, counts: kCounts, accuracy: wilson(withKind.filter((r) => r.familyMatch).length, withKind.length), kappa: kappa(sq) };
 
@@ -285,5 +293,5 @@ export function score(faultsIn: LedgerFault[], snaps: Snapshot[], opts: { graceS
     chance: { meanCandidates: chances.length ? 1 / meanChance : NaN, top1Chance: meanChance, top1: det.length ? t1.reduce((a, b) => a + b, 0) / det.length : NaN, pValue: binomUpper(t1.reduce((a, b) => a + b, 0), det.length, meanChance) },
   };
 
-  return { options: { graceSec, atRiskHorizonSec: horizon }, faults: results, excluded, overall, byClass, falseAlarm, calibration, confusion: { truth: truthNames, predicted: cols, counts }, kindConfusion, research };
+  return { options: { graceSec, atRiskHorizonSec: horizon }, faults: results, excluded, overall, byClass, falseAlarm, calibration, confusion: { truth: truthNames, predicted: cols, counts }, noEffect, kindConfusion, research };
 }

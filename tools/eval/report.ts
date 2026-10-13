@@ -103,6 +103,11 @@ function felt(score: Score): string {
 <p class="note">"Felt" is measured from the traffic generator's own log (error rate at least 1 point above its baseline, or p95 at least 3 times and 50 ms worse), independent of the mapper. A fault that nobody could feel (a throttle on an idle service, a cache that is never missed) is not a failure to detect; the second row shows how often the mapper noticed anyway.</p></figure></div>`;
 }
 
+function noEffectNote(score: Score): string {
+  const ne = score.noEffect; if (!ne?.n) return '';
+  return `<p class="note" style="margin:0 0 12px">${ne.n} of ${score.faults.length} injected fault${ne.n === 1 ? '' : 's'} had no measurable effect (ran alone, traffic measured, users saw nothing; ${esc(ne.items.map((i) => `${i.class} on ${i.target}`).join(', '))}). They are not ground truth: a service cannot be blamed for something that changed nothing, so they are left out of the matrices below. The mapper reported ${ne.detected} of them anyway.</p>`;
+}
+
 function kindSection(score: Score): string {
   const k = score.kindConfusion, n = k.counts.flat().reduce((a, b) => a + b, 0);
   if (!n) return '';
@@ -168,7 +173,7 @@ ${felt(score)}
 <h2>Detection and root-cause accuracy by fault class</h2><div class="grid2">
 ${barChart('Detected', rows('detected'))}${barChart('Root cause Top-1 (of detected)', rows('top1'), 'Settled ranking: the last one before the fault was healed.')}${barChart('Root cause Top-3 (of detected)', rows('top3'))}
 ${histogram(o.delaySec.values, o.delaySec.median, o.delaySec.p90)}</div>
-<h2>Which service was blamed</h2><div class="grid2">${heat('True root cause against the mapper\'s first choice', score.confusion.truth, score.confusion.predicted, score.confusion.counts)}${cal}</div>
+<h2>Which service was blamed</h2>${noEffectNote(score)}<div class="grid2">${heat('True root cause against the mapper\'s first choice', score.confusion.truth, score.confusion.predicted, score.confusion.counts)}${cal}</div>
 <h2>Cascade quality</h2><div class="grid2"><figure><figcaption>Affected-set quality (mean over detected faults)</figcaption><table><thead><tr><th></th><th>precision</th><th>recall</th><th>F1</th></tr></thead><tbody>
 <tr><td>vs structural truth (everything that depends on the root)</td><td>${pct(o.structural.precision)}</td><td>${pct(o.structural.recall)}</td><td>${pct(o.structural.f1)}</td></tr>
 <tr><td>vs observed impact (what actually went unhealthy)</td><td>${pct(o.observed.precision)}</td><td>${pct(o.observed.recall)}</td><td>${pct(o.observed.f1)}</td></tr></tbody></table>

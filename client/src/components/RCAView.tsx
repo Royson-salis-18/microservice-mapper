@@ -79,6 +79,26 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
     return cols.filter(Boolean);
   }, [activeIncident, nodes]);
 
+  // Cascade: the root, who is already hit (observed trouble among its callers), and who is next in line (predicted).
+  const cascade = useMemo(() => {
+    if (!activeIncident) return null;
+    const byId = new Map(nodes.map(n => [n.id, n.data as any]));
+    const nameOf = (id: string) => getCleanName(String(byId.get(id)?.name ?? id.replace(/^[^:]+:/, '')));
+    const rootId = activeIncident.rootCauseServiceId;
+    const stateOf = (id: string) => String(byId.get(id)?.status ?? 'unknown');
+    const hit = (activeIncident.affectedServices ?? []).filter(id => id !== rootId)
+      .map(id => ({ id, name: nameOf(id), status: stateOf(id) }));
+    const hitIds = new Set(hit.map(h => h.id));
+    // predicted: the incident's at-risk list plus any healthy service the cascade model gives a real failure probability
+    const next = new Map<string, { id: string; name: string; risk: number; via: string }>();
+    for (const r of activeIncident.atRisk ?? []) if (!hitIds.has(r.serviceId) && r.serviceId !== rootId) next.set(r.serviceId, { id: r.serviceId, name: getCleanName(r.serviceName), risk: r.risk, via: r.via.map(getCleanName).join(', ') });
+    for (const n of nodes) {
+      const a = (n.data as any)?.analytics, p = Number(a?.failureProbability ?? 0);
+      if (p >= 0.25 && n.id !== rootId && !hitIds.has(n.id) && !next.has(n.id)) next.set(n.id, { id: n.id, name: nameOf(n.id), risk: p, via: a?.cascadeVia ? nameOf(String(a.cascadeVia)) : '' });
+    }
+    return { rootName: rootId ? nameOf(rootId) : null, hit, next: [...next.values()].sort((x, y) => y.risk - x.risk).slice(0, 8) };
+  }, [activeIncident, nodes]);
+
   const Command = ({ cmd }: { cmd: string }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0c0d10', border: '1px solid var(--color-border)', borderRadius: 8, padding: '0 6px 0 12px', height: 34 }}>
       <span style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>$</span>
@@ -148,6 +168,54 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
           <div>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>All clear</h2>
             <div style={sub}>No active incident on <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b>. Every service is within its learned baseline.</div>
+          </div>
+        </section>
+      )}
+
+      {activeIncident && cascade && cascade.rootName && (
+        <section className="mm-card" style={{ padding: 20, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <h3 style={h3}>Cascade</h3>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              {cascade.hit.length} already affected · {cascade.next.length} next in line
+            </span>
+          </div>
+          <div style={sub}>How the failure travels. It moves against the call arrows: when a service breaks, the services that call it feel it first, then their callers.</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 22px minmax(0,1.3fr) 22px minmax(0,1.3fr)', gap: 8, marginTop: 16, alignItems: 'start' }}>
+            <div>
+              <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Source</div>
+              <span className="mm-chip" style={{ height: 28, padding: '0 12px', fontSize: 13, background: 'rgba(239,95,103,0.12)', color: '#ffb3b7', border: '1px solid rgba(239,95,103,0.3)' }}>
+                <i className="mm-dot" style={{ background: 'var(--color-critical)' }} />{cascade.rootName}
+              </span>
+            </div>
+            <ArrowRight size={14} color="var(--color-text-dim)" style={{ marginTop: 28 }} />
+            <div>
+              <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Already affected (observed)</div>
+              {cascade.hit.length === 0
+                ? <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>Nothing else is unhealthy yet. The failure is contained.</div>
+                : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{cascade.hit.map(h => (
+                    <span key={h.id} className="mm-chip" style={{ height: 26, padding: '0 10px', fontSize: 12.5,
+                      background: h.status === 'critical' ? 'rgba(239,95,103,0.1)' : 'rgba(232,163,61,0.1)',
+                      border: `1px solid ${h.status === 'critical' ? 'rgba(239,95,103,0.3)' : 'rgba(232,163,61,0.3)'}` }}>
+                      <i className="mm-dot" style={{ background: h.status === 'critical' ? 'var(--color-critical)' : 'var(--color-degraded)' }} />{h.name}
+                    </span>))}</div>}
+            </div>
+            <ArrowRight size={14} color="var(--color-text-dim)" style={{ marginTop: 28 }} />
+            <div>
+              <div className="mm-eyebrow" style={{ marginBottom: 8 }}>Next in line (predicted)</div>
+              {cascade.next.length === 0
+                ? <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>No healthy service is currently expected to be pulled in.</div>
+                : <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{cascade.next.map(r => (
+                    <div key={r.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 70px 36px', gap: 10, alignItems: 'center', fontSize: 12.5 }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <b style={{ fontWeight: 550 }}>{r.name}</b>{r.via && <span style={{ color: 'var(--color-text-dim)' }}> via {r.via}</span>}
+                      </span>
+                      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.round(r.risk * 100)}%`, height: '100%', background: '#8ab4ff', borderRadius: 2 }} />
+                      </div>
+                      <span style={{ textAlign: 'right', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(r.risk * 100)}%</span>
+                    </div>))}</div>}
+            </div>
           </div>
         </section>
       )}
