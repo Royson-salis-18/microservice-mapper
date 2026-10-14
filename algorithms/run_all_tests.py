@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 here = pathlib.Path(__file__).resolve().parent
-tests = sorted(here.glob("*/test_*.py"))
+tests = sorted(list(here.glob("test_*.py")) + list(here.glob("*/test_*.py")))
 failed = []
 for t in tests:
     result = subprocess.run([sys.executable, str(t)], capture_output=True, text=True)

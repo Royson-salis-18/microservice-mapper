@@ -29,7 +29,7 @@ If you only have time for the core logic, these are the files (everything else i
 | **Preprocessing** (raw readings into clean numbers) | `detection/request_stats.py` (log lines into request rate, error share, latency), `detection/features.py` (the 18 numbers per service) | `detection/container_facts.py`, `detection/thresholds.py` |
 | **Anomaly detection** (is it abnormal?) | `detection/anomaly_detector.py` | `model/target_model.py` (per-project baseline and alarm line) |
 | **Root cause analysis (RCA)** | `rca/rca_engine.py` | `rca/temporal_analyzer.py`, `rca/explanation_engine.py` |
-| **Cascading failure** | [`cascading_failure.md`](cascading_failure.md) (one page), then `graph/cascade_engine.py` | `graph/edge_weights.py` (how strongly a service depends on another) |
+| **Cascading failure** | [`cascading_failure.py`](cascading_failure.py) (about 60 lines) and [`cascading_failure.md`](cascading_failure.md), then `graph/cascade_engine.py` (full version) | `graph/edge_weights.py` (how strongly a service depends on another) |
 | **Machine learning** | `learning/logreg.py`, `learning/experiment.py` | `learning/dataset.py`, `learning/evaluate.py` |
 
 Supporting only: `evaluation/` (how we scored the mapper), `graph/consistency.py`, `graph/link_thresholds.py`, `graph/service_roles.py`, `detection/scoring.py`.
