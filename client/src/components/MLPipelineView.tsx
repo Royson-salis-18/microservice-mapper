@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { MLExecutionPanel } from './MLExecutionPanel';
+import { MLLivePanel } from './MLLivePanel';
 import { InfoTip, PageHeader, Panel, Stat as KitStat, StatRow } from './ui/Panel';
 import { createContext, useContext } from 'react';
 
@@ -1378,6 +1379,8 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           ? 'How the pipeline is configured and how far each service has got through it. Model outputs live under Findings.'
           : `Configuration and per-service progress across ${projectNames.join(', ') || 'no projects yet'} - pick one in the top bar to scope this page.`}
       </PageHeader>
+
+      <MLLivePanel selectedProject={scoped ? selectedProject : null} />
 
       <ScopeSummary rows={rows} models={scopedModels} training={training} />
 
