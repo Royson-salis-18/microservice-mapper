@@ -378,7 +378,10 @@ async function discoverAndCollect() {
       } catch (e) {}
     }
     
-    let status = isRunning ? 'healthy' : 'critical';
+    // A job that finished cleanly ("Exited (0)") or a container that was created but never started is not a failure.
+    const exitHit = /Exited \((\d+)\)/i.exec(containerInfo.Status ?? '');
+    const exitCode = exitHit ? Number(exitHit[1]) : undefined;
+    let status = isRunning ? 'healthy' : (exitCode === 0 || containerInfo.State === 'created') ? 'unknown' : 'critical';
     if (cpu !== undefined && cpu > 80) status = 'degraded';
     if (memoryPercent !== undefined && memoryPercent > 80) status = 'degraded';
     if (containerInfo.State.includes('restart')) status = 'critical';
@@ -394,7 +397,8 @@ async function discoverAndCollect() {
         containerName: (containerInfo.Names?.[0] ?? '').replace(/^\//, '') || undefined,
         image,
         state: containerInfo.State,
-        status: containerInfo.Status
+        status: containerInfo.Status,
+        ...(exitCode !== undefined ? { exitCode } : {}),
       }
     });
     

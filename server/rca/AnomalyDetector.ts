@@ -2,6 +2,7 @@ import type { MetricStore } from '../telemetry/MetricStore.js';
 import type { AnomalyRecord, IncidentSeverity } from '../models/Incident.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
+import { containerFact } from './containerFacts.js';
 import { DEFAULT_THRESHOLDS, type IncidentThresholds } from './thresholds.js';
 
 /**
@@ -130,11 +131,13 @@ export class AnomalyDetector {
       const state = node.metadata?.state as string | undefined;
 
       // 1. HARD evidence: container state. A stopped or paused container is a fact, not a degree.
-      if (node.status === 'critical' || state === 'exited' || state === 'dead' || state === 'paused') {
+      const fact = containerFact(node);
+      if (fact === 'benign') continue;                                 // finished job, never started, or a load generator switched off
+      if (fact === 'down' || fact === 'paused' || fact === 'detached') {
         anomalies.push(this.record(node.id, targetId, 'container-health', now, 0, 1, 0, null,
-          state === 'paused' ? 'container-paused' : node.metadata?.networkDetached ? 'container-network-detached' : node.metadata?.vanished ? 'container-vanished' : 'container-exited-or-critical',
+          fact === 'paused' ? 'container-paused' : fact === 'detached' ? 'container-network-detached' : node.metadata?.vanished ? 'container-vanished' : 'container-exited-or-critical',
           'CRITICAL', 'container-runtime', 'hard'));
-      } else if (state === 'restarting') {
+      } else if (fact === 'restarting') {
         anomalies.push(this.record(node.id, targetId, 'container-health', now, 0, 1, 0, null, 'container-restarting', 'HIGH', 'container-runtime', 'hard'));
       }
 

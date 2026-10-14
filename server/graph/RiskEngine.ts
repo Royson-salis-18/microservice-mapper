@@ -172,17 +172,17 @@ function shareOfDependenciesInSet(
 function computeHealth(node: ServiceNode, incidents: Incident[]): { score: number; breakdown: ScoreContribution[] } {
   const parts: { factor: string; weight: number; value: number; reason: string }[] = [];
 
-  const statusValue =
-    node.status === 'healthy' ? 1
-    : node.status === 'degraded' ? 0.5
-    : node.status === 'critical' ? 0
-    : 0.5; // 'unknown' — never observed is not a clean bill of health, nor a fault
-  parts.push({
-    factor: 'status',
-    weight: HEALTH_WEIGHTS.status,
-    value: statusValue,
-    reason: `container status is ${node.status}`,
-  });
+  // 'unknown' (never measured, or a job that finished) is no evidence either way, so it is left out and the other factors
+  // are renormalised. Scoring it 0.5 made every service without data look half broken and pushed it up the risk ranking.
+  if (node.status !== 'unknown') {
+    const statusValue = node.status === 'healthy' ? 1 : node.status === 'degraded' ? 0.5 : 0;
+    parts.push({
+      factor: 'status',
+      weight: HEALTH_WEIGHTS.status,
+      value: statusValue,
+      reason: `container status is ${node.status}`,
+    });
+  }
 
   const anomaly = node.analytics?.anomalyScore;
   if (typeof anomaly === 'number' && Number.isFinite(anomaly)) {

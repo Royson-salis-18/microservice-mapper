@@ -1,5 +1,6 @@
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
+import { containerFact } from './containerFacts.js';
 import type { AnomalyRecord, AtRiskService, CandidateCause, EvidenceItem, PropagationStep, RCAConfidence, ScoreContribution } from '../models/Incident.js';
 import { TemporalAnalyzer } from './TemporalAnalyzer.js';
 import { ExplanationEngine } from './ExplanationEngine.js';
@@ -70,6 +71,8 @@ export interface RCAParameters {
   thresholds?: IncidentThresholds;
   /** The root cause of the incident already open, if any. Keeps the verdict from flipping between near-equal candidates. */
   incumbent?: string | null;
+  /** The host itself stopped sending telemetry (target STALE or OFFLINE): judge nothing on frozen readings, blame no service. */
+  hostSilent?: boolean;
 }
 
 /**
@@ -108,9 +111,8 @@ export class RCAEngine {
     const state = (n: ServiceNode) => String(n.metadata?.state ?? '');
     // A FACT about the container (stopped, paused, crash-looping, vanished). A 'critical' status on a container that is
     // still running is not a fact about it, so it counts as a strong symptom instead (it can be inherited).
-    const isHard = (n: ServiceNode) => ['exited', 'dead', 'paused', 'restarting'].includes(state(n)) || !!n.metadata?.vanished
-      || (byNode.get(n.id) ?? []).some(a => kindOf(a) === 'hard' && a.reason !== 'container-exited-or-critical')
-      || (n.status === 'critical' && !state(n));
+    const isHard = (n: ServiceNode) => { const f = containerFact(n); return f === 'down' || f === 'paused' || f === 'restarting' || f === 'detached'
+      || (f !== 'benign' && (byNode.get(n.id) ?? []).some(a => kindOf(a) === 'hard')); };
 
     // Datastores and queues answer calls; they do not make them. Edges inferred from TCP connections are seen from both
     // ends (cart -> cart-store AND cart-store -> cart), so an edge whose caller is a datastore is the reverse view of a
@@ -157,7 +159,7 @@ export class RCAEngine {
 
     // ---- monitoring outage: most services silent or vanished together
     const quietIds = targetNodes.filter(n => n.metadata?.vanished || (byNode.get(n.id) ?? []).some(a => a.metric === 'silence')).map(n => n.id);
-    const monitoringGap = targetNodes.length >= 3 && quietIds.length >= Math.max(3, Math.ceil(t.monitoringGapShare * targetNodes.length));
+    const monitoringGap = !!params.hostSilent || (targetNodes.length >= 3 && quietIds.length >= Math.max(3, Math.ceil(t.monitoringGapShare * targetNodes.length)));
 
     const nothing = targetAnomalies.length === 0 && !targetNodes.some(n => hard.get(n.id) || n.status === 'degraded');
     if (nothing || monitoringGap) {
@@ -165,14 +167,19 @@ export class RCAEngine {
         targetId, incidentStartedAt: new Date().toISOString(), primaryRootCause: null, alternativeCandidates: [],
         affectedServices: [], propagationPath: [], evidence: [], confidence: 'UNKNOWN',
       });
-      if (monitoringGap) {
+      if (monitoringGap && params.hostSilent) {
+        explanation.whatHappened = 'No telemetry has arrived from this host for over two minutes. The readings on screen are the last ones received.';
+        explanation.likelyRootCause = 'The host is unreachable (SSH, network, stopped instance, changed public IP) or its collector stopped. Not a fault in the services.';
+        explanation.why = 'Without new data there is nothing to judge; blaming a service on frozen readings would be a guess.';
+        explanation.recommendedInvestigation = ['npm run hosts  (is port 22 open, is the IP current?)', 'Check the instance in the EC2 console', 'Edit project: update the public IP if the instance was restarted'];
+      } else if (monitoringGap) {
         explanation.whatHappened = `${quietIds.length} of ${targetNodes.length} services stopped reporting at the same moment.`;
         explanation.likelyRootCause = 'Monitoring outage (collector, SSH session or Docker daemon), not a fault in the services.';
         explanation.why = 'Independent services do not all freeze in the same few seconds; a broken telemetry path does. No service is blamed.';
         explanation.recommendedInvestigation = ['Check the SSH connection and the remote collector log', 'Run `docker ps` and `docker stats --no-stream` on the host'];
       }
       return { incidentDetected: monitoringGap, primaryRootCause: null, candidateCauses: [] as CandidateCause[], propagation: [] as PropagationStep[],
-        affectedServices: monitoringGap ? targetNodes.filter(n => quietIds.includes(n.id)).map(n => n.name) : [],
+        affectedServices: monitoringGap && !params.hostSilent ? targetNodes.filter(n => quietIds.includes(n.id)).map(n => n.name) : [],
         evidence: [] as EvidenceItem[], confidence: 'UNKNOWN' as RCAConfidence, explanation, atRisk: [] as AtRiskService[], monitoringGap };
     }
 
@@ -190,8 +197,12 @@ export class RCAEngine {
     for (const n of targetNodes) {
       const noData = !n.metrics || Object.values(n.metrics).every(v => v === undefined || v === null);
       if (!noData || (raw.get(n.id) ?? 0) > 0) continue;
+      // Inferring a fault where nothing is measured needs corroboration: at least two callers with unexplained symptoms past
+      // the anomaly threshold, or one caller past the HIGH threshold. One noisy caller is not enough to blame a silent node.
       const ups = (callers.get(n.id) ?? []).map(c => Math.max(0, (sym.get(c) ?? 0) - (parts.get(c)?.x ?? 0)));
-      const guess = 0.9 * Math.max(0, ...ups);
+      const strong = ups.filter(u => u >= t.zScoreAnomaly);
+      const corroborated = strong.length >= 2 || ups.some(u => u >= t.zScoreHigh);
+      const guess = corroborated ? 0.9 * Math.max(0, ...ups) : 0;
       if (guess > 0) { raw.set(n.id, guess); parts.set(n.id, { ...(parts.get(n.id)!), blind: true }); }
     }
 
