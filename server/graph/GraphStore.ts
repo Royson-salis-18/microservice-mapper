@@ -593,6 +593,15 @@ export class GraphStore {
   /** Reads ml/score.py's output file, re-reading only when it changes on
    * disk. Missing file (no models trained yet) is not an error - just no
    * scores to attach. */
+  /** Per-service anomaly from the ML engine (Isolation Forest), set each cycle while the ML engine is selected. The cascade
+   *  model reads it as part of a service's starting failure chance, the same way it reads the research scorer's output. */
+  private engineScores = new Map<string, { score: number; persistent: boolean; at: number }>();
+  public setEngineScores(scores: Map<string, { score: number; persistent: boolean }>): void {
+    const now = Date.now();
+    for (const [id, v] of scores) this.engineScores.set(id, { ...v, at: now });
+  }
+  public clearEngineScores(): void { this.engineScores.clear(); }
+
   private readAnomalyScores(): Record<string, any> {
     const scoresPath = path.resolve(process.cwd(), '..', 'ml', 'data', 'latest_scores.json');
     try {
@@ -626,7 +635,8 @@ export class GraphStore {
     const scores = process.env.MAPPER_ML === '1' ? this.readAnomalyScores() : {};
     const now = Date.now();
     for (const node of allNodes) {
-      const fresh = freshAnomalyScore(scores[node.id], now);
+      const eng = this.engineScores.get(node.id);
+      const fresh = freshAnomalyScore(scores[node.id], now) ?? (eng && now - eng.at < 60_000 ? { score: eng.score, persistent: eng.persistent } : null);
       if (fresh) {
         node.analytics = { ...node.analytics, anomalyScore: fresh.score, anomalyPersistent: fresh.persistent };
       } else if (node.analytics && ('anomalyScore' in node.analytics || 'anomalyPersistent' in node.analytics)) {

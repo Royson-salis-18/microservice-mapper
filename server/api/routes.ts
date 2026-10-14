@@ -15,6 +15,7 @@ import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import type { RiskEngine } from '../graph/RiskEngine.js';
 import { thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../algorithms/detection/thresholds.js';
 import { loadThresholds, saveThresholds } from '../rca/thresholdsStore.js';
+import { getEngineMode, setEngineMode } from '../rca/engineMode.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 import { config } from '../config.js';
 
@@ -281,6 +282,20 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
    * target whose models were never trained, while the scorer is stopped.
    * Model output is a separate question and lives under Findings.
    */
+  // Which engine decides incidents: rules (statistical detector + ranking) or ml (Isolation Forest + random walk).
+  router.get('/engine', (_req, res) => {
+    res.json({ mode: getEngineMode(), status: incidentManager?.engineStatus() ?? null });
+  });
+  router.post('/engine', (req, res) => {
+    const mode = req.body?.mode;
+    if (mode !== 'rules' && mode !== 'ml') return res.status(400).json({ error: "mode must be 'rules' or 'ml'" });
+    const prev = getEngineMode();
+    const next = setEngineMode(mode);
+    // a different engine judges differently: close the open incidents so the new one starts clean
+    if (prev !== next) incidentManager?.resetIncidents();
+    res.json({ mode: next, status: incidentManager?.engineStatus() ?? null });
+  });
+
   router.get('/incidents/thresholds', (_req, res) => {
     res.json({
       values: loadThresholds(),

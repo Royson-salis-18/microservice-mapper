@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { RotateCw, Search, Gauge, TerminalSquare, Settings2, ChevronDown } from 'lucide-react';
 import type { GlobalStatus, Target } from '../types';
 import { useModelStatus, learningText } from '../hooks/useModelStatus';
+import { useEngineMode } from '../hooks/useEngineMode';
 
 interface TopBarProps {
   status: GlobalStatus | null;
@@ -33,6 +34,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
   const [isReloading, setIsReloading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const model = useModelStatus(selectedProject);
+  const engine = useEngineMode();
 
   // Cmd/Ctrl+K or "/" focuses search, as in most tools people already use.
   useEffect(() => {
@@ -137,6 +139,16 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
           </button>
         )}
       </div>
+
+      {engine.mode && (
+        <div className="mm-engine" role="group" aria-label="Detection engine" title="Which engine decides incidents: Rules (statistical detector) or ML (Isolation Forest on each service's learned baseline + random walk on the call graph)">
+          {(['rules', 'ml'] as const).map((m) => (
+            <button key={m} className={engine.mode === m ? 'on' : ''} disabled={engine.busy} onClick={() => engine.change(m)} aria-pressed={engine.mode === m}>
+              {m === 'rules' ? 'Rules' : 'ML'}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mm-live" title={seen ? `Last sample ${new Date(seen).toLocaleString()}` : undefined}>
         <i className={`mm-dot${feed === 'LIVE' ? ' on' : ''}`} style={{ background: feedColor, color: feedColor }} />
