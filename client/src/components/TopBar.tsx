@@ -22,7 +22,7 @@ interface TopBarProps {
 
 const SECTION: Record<string, string> = {
   '3D Vision': 'Spatial view', Architecture: 'Architecture', Dependencies: 'Dependencies', Telemetry: 'Telemetry',
-  TRACES: 'Traces', Analytics: 'Analytics', 'RCA / INCIDENTS': 'Incidents', RCA: 'Incidents', FINDINGS: 'Findings',
+  TRACES: 'Traces', Analytics: 'Analytics', 'RCA / INCIDENTS': 'Incidents & cascade', RCA: 'Incidents & cascade', RELIABILITY: 'Cascade risk', FINDINGS: 'Findings',
   'ML PIPELINE': 'ML pipeline', EXPERIMENTS: 'Experiments',
 };
 

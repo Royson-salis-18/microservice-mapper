@@ -199,7 +199,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
 
   return (
     <PageShell>
-      <PageHeader title="Reliability" scope={selectedProject}>
+      <PageHeader title="Cascade risk" scope={selectedProject}>
         What is likely to fail next, what is exposed right now, and what would happen if a given
         service went down — computed from live measurements and the weighted dependency graph.
       </PageHeader>
