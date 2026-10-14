@@ -100,3 +100,26 @@ test('engine: a quiet, healthy system raises nothing once learned', () => {
   assert.ok(r.ready);
   assert.equal(r.services.get('web').hard, false);
 });
+
+test('engine: docker stop (exit code 0) of a service that was running counts as down', () => {
+  const e = new MLEngine(ENGINE_DEFAULTS);
+  const run = { id: 'db', name: 'db', metadata: { state: 'running' } };
+  for (let i = 0; i < 15; i++) e.step([{ id: 'web', name: 'web' }, run], [{ source: 'web', target: 'db' }], new Map());
+  const r = e.step([{ id: 'web', name: 'web' }, { id: 'db', name: 'db', metadata: { state: 'exited', exitCode: 0 } }], [{ source: 'web', target: 'db' }], new Map());
+  assert.equal(r.ranked[0], 'db');
+  assert.equal(r.services.get('db')!.fact, 'stopped');
+  // a one-shot job that exits 0 without ever having run for long is still benign
+  const job = new MLEngine(ENGINE_DEFAULTS).step([{ id: 'migrate', name: 'migrate', metadata: { state: 'exited', exitCode: 0 } }], [], new Map());
+  assert.equal(job.services.get('migrate')!.hard, false);
+});
+
+test('engine: a crash loop stays the prime suspect between kills', () => {
+  const e = new MLEngine(ENGINE_DEFAULTS);
+  const nodes = (state: string) => [{ id: 'web', name: 'web', metadata: { state: 'running' } }, { id: 'api', name: 'api', metadata: { state, exitCode: 137 } }];
+  const edges = [{ source: 'web', target: 'api' }];
+  for (const s of ['running', 'exited', 'running', 'running', 'exited', 'running']) e.step(nodes(s), edges, new Map());
+  const r = e.step(nodes('running'), edges, new Map());
+  assert.equal(r.ranked[0], 'api');
+  assert.equal(r.services.get('api')!.fact, 'crash loop');
+  assert.ok(r.hot);
+});

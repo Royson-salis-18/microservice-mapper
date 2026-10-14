@@ -27,7 +27,7 @@ export class IncidentManager {
   /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
   private learnedHot = new Map<string, boolean>();
   /** ML engine state per target: the learned baselines, the newest reading already fed in, last cycle's alarm. */
-  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean }[] }>();
+  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
@@ -89,7 +89,7 @@ export class IncidentManager {
     const r = st.engine.step(nodes, edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight?.value ?? 1 })), hostSilent ? new Map() : fresh);
     const alarm = r.hot && st.hot;
     st.hot = r.hot; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
-    st.detail = [...r.services].map(([id, v]) => ({ id, level: +v.level.toFixed(2), own: +v.ownLevel.toFixed(2), symptom: +v.symptomLevel.toFixed(2), anomaly: +v.anomaly.toFixed(2), walk: +(r.rank.get(id) ?? 0).toFixed(3), hard: v.hard, ready: v.ready }))
+    st.detail = [...r.services].map(([id, v]) => ({ id, level: +v.level.toFixed(2), own: +v.ownLevel.toFixed(2), symptom: +v.symptomLevel.toFixed(2), anomaly: +v.anomaly.toFixed(2), walk: +(r.rank.get(id) ?? 0).toFixed(3), hard: v.hard, ready: v.ready, fact: v.fact }))
       .sort((a, b) => b.walk - a.walk || b.level - a.level);
     this.graphStore.setEngineScores?.(new Map([...r.services].map(([id, v]) => [id, { score: v.anomaly, persistent: v.level >= 1 }])));
 

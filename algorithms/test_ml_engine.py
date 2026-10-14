@@ -3,7 +3,7 @@ import math
 import random
 import unittest
 
-from ml_engine import Forest, ServiceBaseline, c, root_cause_walk
+from ml_engine import ContainerFacts, Forest, ServiceBaseline, c, root_cause_walk
 
 
 class MlEngineTests(unittest.TestCase):
@@ -29,6 +29,21 @@ class MlEngineTests(unittest.TestCase):
     def test_walk_finds_the_source_of_a_chain(self):
         r = root_cause_walk({"web": 0.6, "orders": 0.7, "db": 0.9}, [("web", "orders"), ("orders", "db")])
         self.assertEqual(max(r, key=r.get), "db")
+
+    def test_docker_stop_counts_as_down(self):
+        f = ContainerFacts()
+        for _ in range(15):
+            f.tick(); f.judge("db", "running")
+        f.tick()
+        self.assertEqual(f.judge("db", "exited", exit_code=0), "stopped")
+        g = ContainerFacts(); g.tick()
+        self.assertIsNone(g.judge("migrate", "exited", exit_code=0))     # a one-shot job that finished
+
+    def test_crash_loop_between_kills(self):
+        f = ContainerFacts()
+        for state in ["running", "exited", "running", "exited", "running"]:
+            f.tick(); last = f.judge("api", state, exit_code=137)
+        self.assertEqual(last, "crash loop")
 
 
 if __name__ == "__main__":

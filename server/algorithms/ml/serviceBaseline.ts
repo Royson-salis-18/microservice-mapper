@@ -27,18 +27,20 @@ export interface BaselineParams {
   seed: number;            // added to every forest's random seed (repeat experiments with different seeds)
   lineK: number;           // alarm line = typical + lineK robust spreads of the training scores (0: use the quantile)
   rangeK: number;          // range guard: this many floors beyond the training range counts as level 1 (0: off)
+  gate: number;            // a reading is learned only if its level is under this (1 = the alarm line)
+  floors: number[];        // smallest meaningful change per feature (see FEATURE_FLOOR)
 }
-export const BASELINE_DEFAULTS: BaselineParams = {
-  window: 120, minTrain: 30, retrainEvery: 10, quantile: 0.97, driftAfter: 360, trees: 100, sampleSize: 64, minRequests: 5, jitter: 0.5, seed: 0, lineK: 3, rangeK: 5,
-};
-
 /** The numbers the forest sees for one reading. Positive quantities on a log scale (ratios matter, not differences). */
 export const ML_FEATURES = ['cpu', 'memory', 'netIn', 'netOut', 'requests', 'errors', 'latency', 'throttle'] as const;
 /** Smallest spread worth noticing for each feature (log units, except error share and throttling %). A feature that never
  *  moved in the window would otherwise give the trees nothing to cut on, and a later jump in it would go unseen. */
-export const FEATURE_FLOOR = [0.15, 0.15, 0.15, 0.15, 0.15, 0.02, 0.15, 3];
+export const FEATURE_FLOOR = [0.15, 0.05, 0.15, 0.15, 0.15, 0.02, 0.15, 3];
 /** Two forests per service: its OWN signals (resources: a dependency cannot cause these) and its SYMPTOMS (traffic,
  *  errors, latency, network: these can be inherited from a broken dependency). Indices into ML_FEATURES. */
+export const BASELINE_DEFAULTS: BaselineParams = {
+  window: 120, minTrain: 30, retrainEvery: 10, quantile: 0.97, driftAfter: 360, trees: 100, sampleSize: 64, minRequests: 5, jitter: 0.5, seed: 0, lineK: 3, rangeK: 5, gate: 1, floors: FEATURE_FLOOR,
+};
+
 export const GROUPS = { own: [0, 1, 7], symptom: [2, 3, 4, 5, 6] } as const;
 
 export function readingVector(h: MetricSnapshot, minRequests = BASELINE_DEFAULTS.minRequests): (number | null)[] {
@@ -93,7 +95,7 @@ class GroupModel {
     const raw = window.map((v) => this.project(v));
     this.lo = this.cols.map((_, k) => Math.min(...raw.map((x) => x[k])));
     this.hi = this.cols.map((_, k) => Math.max(...raw.map((x) => x[k])));
-    const X = raw.map((x) => x.map((v, k) => v + gauss() * FEATURE_FLOOR[this.cols[k]] * this.p.jitter));
+    const X = raw.map((x) => x.map((v, k) => v + gauss() * this.p.floors[this.cols[k]] * this.p.jitter));
     this.forest = fitForest(X, { trees: this.p.trees, sampleSize: this.p.sampleSize, seed: this.seed + fits });
     const s = X.map((x) => scoreForest(this.forest!, x));
     this.typical = median(s);
@@ -113,7 +115,7 @@ class GroupModel {
     let rangeLevel = 0;
     if (this.p.rangeK > 0) x.forEach((val, k) => {
       const excess = Math.max(0, val - this.hi[k], this.lo[k] - val);
-      rangeLevel = Math.max(rangeLevel, excess / (FEATURE_FLOOR[this.cols[k]] * this.p.rangeK));
+      rangeLevel = Math.max(rangeLevel, excess / (this.p.floors[this.cols[k]] * this.p.rangeK));
     });
     return { score, level: Math.max(forestLevel, rangeLevel) };
   }
@@ -125,6 +127,7 @@ export class ServiceBaseline {
   private symptom: GroupModel;
   private sinceFit = 0;
   private rejectedRun = 0;
+  private quietRun = 0;      // readings between the gate and the alarm line in a row (only when gate < 1)
   private fits = 0;
   private fitted = false;
 
@@ -148,9 +151,10 @@ export class ServiceBaseline {
   observe(v: (number | null)[]): Verdict {
     const o = this.own.judge(v), sy = this.symptom.judge(v);
     const level = Math.max(o.level, sy.level), score = o.level >= sy.level ? o.score : sy.score;
-    const normal = !this.ready || level < 1;
-    this.rejectedRun = normal ? 0 : this.rejectedRun + 1;
-    const accepted = normal || this.rejectedRun >= this.p.driftAfter;
+    const normal = !this.ready || level < this.p.gate;
+    this.rejectedRun = level < 1 || !this.ready ? 0 : this.rejectedRun + 1;
+    const accepted = normal || this.rejectedRun >= this.p.driftAfter || (level < 1 && this.quietRun >= this.p.driftAfter);
+    this.quietRun = normal ? 0 : level < 1 ? this.quietRun + 1 : 0;
     if (accepted) {
       this.window.push(v);
       if (this.window.length > this.p.window) this.window.shift();

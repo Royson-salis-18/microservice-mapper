@@ -140,7 +140,8 @@ The same three questions can be answered by a learned engine instead of the rule
 
 1. **Learn normal.** Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency). They are trained on a sliding window of the last 120 *normal* readings. A new reading is scored by the forest built before it arrived; only readings under the alarm line are learned, so a fault never becomes "normal".
 2. **Find the source.** A random walk (personalised PageRank, as in MonitorRank) moves over the call graph towards the sickest dependency; the service where the walker spends most time is the root cause.
-3. **Result on the same 34 faults** (mean over 5 seeds): detected 99%, right service first 57%, 7.8 false alarms per hour. The rules: 97%, 58%, 12.4. So it finds as many faults with about half the false alarms, and names the right service about as often (less often on one of the two benches).
+3. **Facts first.** A container that is down, stopped (`docker stop` exits with code 0, which used to be ignored) or crash-looping (two outages within 3 minutes) is ranked first.
+4. **Result on the same 34 faults** (mean over 5 seeds): detected 95%, right service first 77%, 2.6 false alarms per hour. The live rules: 97%, 58%, 12.4. On a synthetic bench with 178 held-out faults: 75% caught and named first, against 53% for the rules. ML is the default engine; the rules are one click away.
 
 ## 5. How the Python maps to the real code
 
