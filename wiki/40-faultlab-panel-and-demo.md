@@ -4,7 +4,7 @@ Two ways to drive a bench without touching the mapper. The mapper is never told 
 
 ## Fault and traffic panel
 
-Runs on the bench host (`lab/faultlab/panel.mjs`, in each bench repo, branch `faultlab`). Listens on `127.0.0.1:8099`; on EC2 reach it through an SSH tunnel (`ssh-tools/panel-tunnel.sh`).
+Runs on the bench host (`lab/faultlab/panel.mjs`, in each bench repo, branch `faultlab`). Listens on `127.0.0.1:8099`; on EC2 reach it through an SSH tunnel (`run/ssh/panel-tunnel.sh`).
 
 ```mermaid
 flowchart LR
@@ -32,7 +32,7 @@ POST requests need a header the page sets, and the panel binds to localhost, so 
 2. Traffic: organic load raised so request rates rise.
 3. Calm: random faults, one at a time.
 4. Storm: faults more often, up to two at once.
-5. Score the mapper's answers against the ledger and write the report to `wiki visualizer/experiment-report.html`.
+5. Score the mapper's answers against the ledger and write the report to wiki/visualizer/experiment-report.html`.
 
 ## What the collector now measures from each service
 

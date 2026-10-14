@@ -25,9 +25,9 @@ const MAX_TERMINAL_LINES = 500;
 
 /**
  * Numeric fields compared at the precision they are shown at. On live data
- * nearly every node and edge differs from the previous push in some digit —
+ * nearly every node and edge differs from the previous push in some digit -
  * CPU jitter, ever-growing byte counters, an activity rate recomputed over a
- * slightly longer window — so comparing raw values found everything changed
+ * slightly longer window - so comparing raw values found everything changed
  * every time and nothing was ever reused. A node whose CPU still reads 12.3%
  * has not changed in any way anyone can see.
  */
@@ -76,7 +76,7 @@ export function useGraphData(): UseGraphDataReturn {
   // Arrangement is owned by the view (App picks a layout from layouts2d,
   // the 3D scene has its own), so this only wraps the raw nodes for React
   // Flow. Positions here are placeholders that the selected layout
-  // overwrites — computing a second layout in here would just fight it.
+  // overwrites - computing a second layout in here would just fight it.
   const calculateLayout = (backendNodes: ServiceNode[]): Node[] =>
     backendNodes.map((node, i) => ({
       id: node.id,
@@ -95,7 +95,7 @@ export function useGraphData(): UseGraphDataReturn {
       // Not React Flow's `animated`: that runs a dash animation on every path
       // of the edge. Our edge draws its own flow packet, and sets
       // strokeDasharray itself (dashed = declared only), so the animation was
-      // invisible — but it still repainted every filtered path every frame,
+      // invisible - but it still repainted every filtered path every frame,
       // which on 75 services held the 2D canvas at ~9 fps.
       animated: false,
     }));
@@ -164,8 +164,8 @@ export function useGraphData(): UseGraphDataReturn {
           setNodes(prevNodes => shareById(prevNodes, nodeIds, nodeKeysById, contentKeys.current, (id, i, prev) => {
             const n = incomingNodes.get(id)!;
             // Spread the previous object rather than building a new one:
-            // React Flow keeps its own state on it — measured size, position,
-            // selection — and dropping `measured` made it re-measure the node
+            // React Flow keeps its own state on it - measured size, position,
+            // selection - and dropping `measured` made it re-measure the node
             // and withhold every edge touching it until it had. With pushes
             // arriving every second, links vanished from the canvas.
             if (prev) return { ...prev, data: n as ServiceNode & Record<string, unknown> };

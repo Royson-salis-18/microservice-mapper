@@ -1,4 +1,4 @@
-# 17 — Findings vs Incidents: two detectors, deliberately separate
+# 17 - Findings vs Incidents: two detectors, deliberately separate
 
 This page explains why the app has two places that both say "something is
 wrong", what each one is allowed to use, and where every piece of the ML
@@ -11,7 +11,7 @@ output moved to.
 | | **Findings** | **Incidents** |
 |---|---|---|
 | Nav | Findings (microscope) | Incidents (warning triangle) |
-| Source | Trained detectors — Isolation Forest, LOF, One-Class SVM, z-score | Fixed rules on live metrics |
+| Source | Trained detectors - Isolation Forest, LOF, One-Class SVM, z-score | Fixed rules on live metrics |
 | Needs | features.csv, a fitted artefact per service, `score.py` running | Nothing but a metric history |
 | Claim | "this service is behaving unlike its own learned history" | "this metric broke a stated rule" |
 | Works on a target trained 0 times? | No | Yes |
@@ -26,13 +26,13 @@ returns nothing. That is the design, not an accident of history.
 
 **Incidents have to work when the models cannot.** An incident must fire on a
 service discovered a minute ago, on a target whose models were never trained,
-while `score.py` is stopped — which, in practice, is most of the time. A model
+while `score.py` is stopped - which, in practice, is most of the time. A model
 cannot do that: it needs enough training rows, a fitted artefact and a running
 scorer. A fixed rule on a live metric needs none of those.
 
 **The research needs it.** The models are the object of study. If incidents
 were raised by the models, every evaluation of those models would be scored
-against alerts the models themselves produced — the detector grading its own
+against alerts the models themselves produced - the detector grading its own
 homework. Keeping the rule-based path independent means it can act as a
 reference the model output is compared *against*.
 
@@ -45,7 +45,7 @@ information; one signal wearing two hats is not.
 
 ## 2. Incidents: the rules
 
-Defined in `server/rca/thresholds.ts`, overridable via
+Defined in `algorithms/detection/thresholds.ts`, overridable via
 `server/data/incident_thresholds.json`, and editable in the UI under
 **Incidents → Detection rules**.
 
@@ -68,7 +68,7 @@ the only way to answer "why did this fire?" was to read the source.
 ### The flat-baseline rule exists for a real reason
 
 A z-score divides by the standard deviation. Most services here sit perfectly
-still — `sock-shop:front-end` records 6 distinct values across 1568 samples —
+still - `sock-shop:front-end` records 6 distinct values across 1568 samples -
 so the deviation approaches zero and the z-score explodes, making every tiny
 movement look infinitely anomalous. Below `flatlineStdDev` the baseline is
 treated as flat and judged on absolute movement instead. This is the rule that
@@ -77,8 +77,8 @@ catches an idle service suddenly doing work.
 ### Editing
 
 `POST /api/incidents/thresholds` with any subset of the keys, or
-`{"reset": true}`. Every value is clamped to a stated range — posting
-`absoluteCriticalPercent: 999` stores `100` — so a bad edit cannot silently
+`{"reset": true}`. Every value is clamped to a stated range - posting
+`absoluteCriticalPercent: 999` stores `100` - so a bad edit cannot silently
 disable detection. Thresholds are re-read on each detection pass, so a change
 takes effect on the next cycle with no restart.
 
@@ -90,28 +90,28 @@ rather than tuned once and hardcoded.
 
 ## 3. Findings: what the models say
 
-**Current findings** — services above their model's own p99 training
+**Current findings** - services above their model's own p99 training
 threshold, split by whether the breach is *persistent* (has held for the
 configured number of consecutive scoring cycles) or a single cycle. Persistent
 ones sort first; a single cycle above threshold is very often one noisy sample.
 
-**Live anomaly scores / Anomaly score trend** — current score per service, and
+**Live anomaly scores / Anomaly score trend** - current score per service, and
 its history once a service is selected.
 
-**Anomaly score distribution** — where scored services sit, bucketed.
+**Anomaly score distribution** - where scored services sit, bucketed.
 
-**Model check — holdout firing rate** — how often each model fires on the
+**Model check - holdout firing rate** - how often each model fires on the
 chronological tail it never saw. The tail is unlabelled, so this is a *firing
 rate*, not accuracy, and the honest comparison is against contamination.
 
-**Detectors by project** — per detector: fitted, refused, mean firing rate.
+**Detectors by project** - per detector: fitted, refused, mean firing rate.
 Four detectors only earn their cost if they can disagree; if agreement is 1.0
 everywhere they are adding cost and no information.
 
-**Distinct signal per service** — distinct vs total training rows. The first
+**Distinct signal per service** - distinct vs total training rows. The first
 number to check when every detector fires on 0%.
 
-**Feature explorer** — the actual rows the models were fitted on.
+**Feature explorer** - the actual rows the models were fitted on.
 
 ### Findings can be empty and that is not a bug
 
@@ -124,7 +124,7 @@ because nothing measured it.
 
 ## 4. What moved, and what ML Pipeline is now
 
-**ML Pipeline** is the machine — how the pipeline is configured and how far
+**ML Pipeline** is the machine - how the pipeline is configured and how far
 each service has got through it:
 
 - Pipeline processes (collector, scorer) with start/stop
@@ -153,7 +153,7 @@ reasons:
 1. *Results* is ambiguous in a repo that also has experiment results, traffic
    results and RCA results. Findings is unclaimed.
 2. It is the right strength of claim. These are things the models *found*,
-   which may be artefacts of thin training data — not conclusions.
+   which may be artefacts of thin training data - not conclusions.
 3. It sits naturally beside Incidents: findings are observations, incidents
    are events with a severity that demand a response.
 
@@ -163,9 +163,9 @@ reasons:
 
 | What | Where |
 |---|---|
-| Threshold definitions, defaults, limits, docs | `server/rca/thresholds.ts` |
+| Threshold definitions, defaults, limits, docs | `algorithms/detection/thresholds.ts` |
 | Threshold overrides (gitignored) | `server/data/incident_thresholds.json` |
-| Rule evaluation | `server/rca/AnomalyDetector.ts` |
+| Rule evaluation | `algorithms/detection/AnomalyDetector.ts` |
 | Incident severity from rule output | `server/rca/IncidentManager.ts` |
 | Threshold API | `GET`/`POST /api/incidents/thresholds` |
 | Rules UI | `client/src/components/IncidentRulesPanel.tsx` |

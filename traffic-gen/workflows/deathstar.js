@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * DeathStarBench social-network workflows — VERIFIED 2026-09-17.
+ * DeathStarBench social-network workflows - VERIFIED 2026-09-17.
  *
  * Entrypoint: nginx-thrift on :8080.
  *
@@ -18,7 +18,7 @@
  *
  * composePost sends form fields, not JSON. nginx-thrift reads the post with
  * ngx.req.get_post_args, so a JSON body came back 400 "Incomplete
- * arguments" — which is why it was once switched off (the note blaming an
+ * arguments" - which is why it was once switched off (the note blaming an
  * unseeded social graph was wrong; with form fields it returns 200
  * "Successfully upload post", verified 2026-10-01). Composing is what drives
  * most of the graph: text, user-mention, url-shorten, unique-id, media,

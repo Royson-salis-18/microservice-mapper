@@ -92,7 +92,7 @@ export function formatBytes(bytes: number): string {
 }
 
 export function formatRate(perMin: number | undefined): string {
-  if (perMin === undefined || !Number.isFinite(perMin)) return '—';
+  if (perMin === undefined || !Number.isFinite(perMin)) return '-';
   if (perMin >= 10_000) return `${(perMin / 1000).toFixed(0)}k`;
   if (perMin >= 1000) return `${(perMin / 1000).toFixed(1)}k`;
   return String(Math.round(perMin));

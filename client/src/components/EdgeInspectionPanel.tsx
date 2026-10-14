@@ -42,7 +42,7 @@ export function EdgeInspectionPanel({ edge, onClose }: EdgeInspectionPanelProps)
   const statusTint = isCritical ? 'rgba(239,95,103,0.1)' : isDegraded ? 'rgba(232,163,61,0.1)' : edge.observed ? 'rgba(62,207,142,0.1)' : 'rgba(107,112,121,0.14)';
   const typeLabel = edge.type ? edge.type.charAt(0).toUpperCase() + edge.type.slice(1) : edge.type;
 
-  const latency = (v: number | null | undefined) => (v !== undefined && v !== null ? <>{v}<span style={kpiUnit}>ms</span></> : '—');
+  const latency = (v: number | null | undefined) => (v !== undefined && v !== null ? <>{v}<span style={kpiUnit}>ms</span></> : '-');
 
   return (
     <div style={{
@@ -124,13 +124,13 @@ export function EdgeInspectionPanel({ edge, onClose }: EdgeInspectionPanelProps)
                   <div style={kpiValue}>
                     {edge.metrics?.requestRate !== undefined && edge.metrics?.requestRate !== null
                       ? <>{edge.metrics.requestRate.toFixed(2)}<span style={kpiUnit}>req/s</span></>
-                      : '—'}
+                      : '-'}
                   </div>
                 </div>
                 <div>
                   <div style={kpiLabel}>Error rate</div>
                   <div style={{ ...kpiValue, color: errRate > 0.05 ? 'var(--color-critical)' : kpiValue.color }}>
-                    {edge.metrics?.errorRate !== undefined && edge.metrics?.errorRate !== null ? `${(errRate * 100).toFixed(2)}%` : '—'}
+                    {edge.metrics?.errorRate !== undefined && edge.metrics?.errorRate !== null ? `${(errRate * 100).toFixed(2)}%` : '-'}
                   </div>
                 </div>
               </div>

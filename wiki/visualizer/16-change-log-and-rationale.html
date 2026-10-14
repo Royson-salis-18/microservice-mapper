@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -654,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="meta-item">4,535 words</span>
             </div>
             <nav class="toc">
-  <a href="#2026-10-08-rca-and-target-status-correctness-fixes-commit-e66d261">2026-10-08: RCA and target...</a>
+  <a href="#2026-10-08-rca-and-target-status-correctness-fixes-commit-e66d261">status correctness fixes (...</a>
   <a href="#1-discovery-and-the-graph">1. Discovery and the graph</a>
   <a href="#11-discovery-ran-once-and-never-again">1.1 Discovery ran once and...</a>
   <a href="#12-a-failed-rescan-wiped-a-good-service-list">1.2 A failed rescan wiped ...</a>
@@ -690,8 +691,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Symptoms.</strong> (1) In an incident, the service that called the broken one was named as root cause. (2) Incidents raised by CPU/memory anomalies on running services showed no root cause. (3) The propagation path pointed from the cause to its dependencies. (4) A <code>docker pause</code>d container never appeared in incidents. (5) sock-shop and train-ticket showed <strong>LIVE</strong> with 0 services discovered.</p>
 <p><strong>Causes and fixes.</strong></p>
 <ul>
-  <li><code>server/rca/RCAEngine.ts</code>: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -&gt; 0.10; observed-edge bonus removed from the score.</li>
-  <li><code>server/rca/AnomalyDetector.ts</code>: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise <code>container-paused</code>.</li>
+  <li><code>algorithms/rca/RCAEngine.ts</code>: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -&gt; 0.10; observed-edge bonus removed from the score.</li>
+  <li><code>algorithms/detection/AnomalyDetector.ts</code>: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise <code>container-paused</code>.</li>
   <li><code>server/collectors/DockerCollector.ts</code>: <code>State === 'paused'</code> -&gt; status critical (was <code>unknown</code>).</li>
   <li><code>server/graph/GraphStore.ts</code>: an HTTP ping of the app's website no longer refreshes <code>lastSeen</code> (it said nothing about telemetry), and a discovery that found zero services no longer marks the target LIVE.</li>
 </ul>
@@ -702,8 +703,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h3 id="11-discovery-ran-once-and-never-again">1.1 Discovery ran once and never again</h3>
 <p><strong>Symptom:</strong> containers showed as <code>unknown-&lt;12 hex&gt;</code> with no type, no edges, and no way to fix it short of restarting the app.</p>
 <p><strong>Cause:</strong> <code>runCycle()</code> ran <code>DiscoveryEngine.discover()</code> once per SSH connection, cached the result, and handed that static snapshot to the 5-second metric poll forever. A container that restarted onto a new container id no longer matched anything in the snapshot, so <code>MetricCollector</code> fell back to an ad-hoc <code>unknown-&lt;hash&gt;</code> id. Discovery only re-ran if the connection dropped.</p>
-<p><strong>Fix:</strong> a periodic re-discovery timer. <strong>Where:</strong> <code>server/discovery/EndpointDiscoveryEngine.ts</code> — <code>refreshDiscovery()</code>, <code>rediscoveryTimer</code>.</p>
-<p><strong>Interval is 180s, deliberately.</strong> A rescan is one <code>docker ps</code> plus one <code>docker inspect</code> per container in a burst — far heavier than the ambient polling. At 60s it pushed SSH channel usage over the edge on a loaded host and produced <code>Channel open failure</code> across the <em>whole</em> connection, not just rediscovery.</p>
+<p><strong>Fix:</strong> a periodic re-discovery timer. <strong>Where:</strong> <code>server/discovery/EndpointDiscoveryEngine.ts</code> - <code>refreshDiscovery()</code>, <code>rediscoveryTimer</code>.</p>
+<p><strong>Interval is 180s, deliberately.</strong> A rescan is one <code>docker ps</code> plus one <code>docker inspect</code> per container in a burst - far heavier than the ambient polling. At 60s it pushed SSH channel usage over the edge on a loaded host and produced <code>Channel open failure</code> across the <em>whole</em> connection, not just rediscovery.</p>
 <h3 id="12-a-failed-rescan-wiped-a-good-service-list">1.2 A failed rescan wiped a good service list</h3>
 <p><strong>Symptom:</strong> after a transient SSH hiccup, every matched service reverted to <code>unknown-&lt;hash&gt;</code> until the next reconnect.</p>
 <p><strong>Cause:</strong> <code>discover()</code> returns an empty list on failure <strong>without throwing</strong>, and the refresh assigned that empty result unconditionally.</p>
@@ -711,7 +712,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h3 id="13-docker-command-timeouts-were-sized-for-a-healthy-host">1.3 Docker command timeouts were sized for a healthy host</h3>
 <p><strong>Symptom:</strong> a target silently showed zero services.</p>
 <p><strong>Cause:</strong> discovery returns all-or-nothing on a <code>docker ps</code> failure. On a swap-thrashing 2GB box running ~18 JVM services, <code>docker ps</code> was <strong>measured at 45.6s</strong> against a 15s timeout, so discovery failed every cycle.</p>
-<p><strong>Fix:</strong> timeouts raised to match reality — <code>docker ps</code> 90s, <code>inspect</code> and <code>version</code> 20s, <code>stats</code> 30s, container TCP read 10s. <strong>Where:</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code>.</p>
+<p><strong>Fix:</strong> timeouts raised to match reality - <code>docker ps</code> 90s, <code>inspect</code> and <code>version</code> 20s, <code>stats</code> 30s, container TCP read 10s. <strong>Where:</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code>.</p>
 <p><strong>No timeout value fixes an out-of-RAM host.</strong> If a target is slow or absent, check <code>uptime</code> and <code>free -m</code> on the box before touching code.</p>
 <h3 id="14-nodes-were-never-removed">1.4 Nodes were never removed</h3>
 <p><strong>Symptom:</strong> the graph accumulated ghosts. <code>/api/graph</code> reported 76 nodes across three projects when far fewer existed.</p>
@@ -721,7 +722,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h3 id="15-dependencies-from-applicationyml">1.5 Dependencies from <code>application.yml</code></h3>
 <p><strong>Symptom:</strong> a 17-service Train Ticket stack showed 17 nodes and <strong>zero</strong> edges.</p>
 <p><strong>Cause:</strong> the only declared-edge source was compose <code>depends_on</code>, and that deployment declares none.</p>
-<p><strong>Fix:</strong> a generic parser that walks any YAML tree and extracts hostnames from <code>scheme://host[:port]</code> values, resolving <code>${VAR:default}</code> placeholders (the default is what applies when the env var is unset, the normal case in a compose deployment). An edge is emitted <strong>only</strong> when the hostname exactly matches a discovered service — a hostname matching nothing is discarded rather than becoming a phantom node. <strong>Where:</strong> <code>server/telemetry-platform/src/discovery/parsers/applicationConfig.ts</code>.</p>
+<p><strong>Fix:</strong> a generic parser that walks any YAML tree and extracts hostnames from <code>scheme://host[:port]</code> values, resolving <code>${VAR:default}</code> placeholders (the default is what applies when the env var is unset, the normal case in a compose deployment). An edge is emitted <strong>only</strong> when the hostname exactly matches a discovered service - a hostname matching nothing is discarded rather than becoming a phantom node. <strong>Where:</strong> <code>server/telemetry-platform/src/discovery/parsers/applicationConfig.ts</code>.</p>
 <p>Result on that stack: 19 real edges where <code>depends_on</code> parsing found none.</p>
 <hr class="rule">
 <h2 id="2-edges-what-the-colours-mean"><span class="id">2</span> Edges: what the colours mean</h2>
@@ -729,7 +730,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Symptom wanted:</strong> busy links should grade yellow → orange → red.</p>
 <p><strong>Constraint found:</strong> <code>edge.metrics</code> is <code>null</code> on <strong>every</strong> edge in a Docker/SSH deployment. There is no per-edge latency, error rate, or request count anywhere in the data. Grading by "load" in the HTTP sense would have meant inventing numbers.</p>
 <p><strong>What is real:</strong> the per-container <code>/proc/net/tcp</code> sweeps. These are rolled into a per-minute rate per edge. <strong>Where:</strong> <code>GraphStore.applyEdgeActivity()</code>, <code>DependencyEdge.activity</code>.</p>
-<p><strong>Named <code>samplesPerMin</code>, not <code>connectionsPerMin</code>.</strong> The collector re-counts every <code>ESTABLISHED</code>/<code>TIME_WAIT</code> socket on each sweep, so one long-lived connection contributes repeatedly. It is a concurrency proxy, not a count of new connections — the first name implied a precision the measurement does not have.</p>
+<p><strong>Named <code>samplesPerMin</code>, not <code>connectionsPerMin</code>.</strong> The collector re-counts every <code>ESTABLISHED</code>/<code>TIME_WAIT</code> socket on each sweep, so one long-lived connection contributes repeatedly. It is a concurrency proxy, not a count of new connections - the first name implied a precision the measurement does not have.</p>
 <p><strong>Thresholds are calibrated against the real spread</strong> (median 112, p75 256, p90 1774, max 5571 across 47 measured links), not picked arbitrarily. An initial guess of 200 for "saturated" would have painted almost everything red.</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -760,7 +761,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>An explicit <code>failed</code>/<code>degraded</code> status still outranks volume: a broken link matters more than a busy one. Links never observed stay inert grey, and links observed but not yet rated say so rather than reporting <code>0/min</code>. <strong>Where:</strong> <code>client/src/components/shared/edgeHeat.ts</code> — shared by both views, so a link cannot look calm in one and hot in the other.</p>
+<p>An explicit <code>failed</code>/<code>degraded</code> status still outranks volume: a broken link matters more than a busy one. Links never observed stay inert grey, and links observed but not yet rated say so rather than reporting <code>0/min</code>. <strong>Where:</strong> <code>client/src/components/shared/edgeHeat.ts</code> - shared by both views, so a link cannot look calm in one and hot in the other.</p>
 <h3 id="22-colour-vocabulary">2.2 Colour vocabulary</h3>
 <p>Warm colours mean trouble, everywhere. Category colours are all cool (cyan/blue/green/violet/teal); amber and red are reserved for degraded, critical, failed, and persistent anomalies. Inactive (declared-but-never- observed) links are dark grey so they recede behind links doing real work.</p>
 <h3 id="23-edge-status-is-never-inherited-from-nodes">2.3 Edge status is never inherited from nodes</h3>
@@ -770,13 +771,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Eight layouts in each view, selectable, persisted to <code>localStorage</code>. <strong>Where:</strong> <code>client/src/components/3d/layouts.ts</code> (3D), <code>client/src/components/layouts2d.ts</code> (2D).</p>
 <h3 id="31-hierarchy-hung-the-browser-on-cyclic-graphs">3.1 Hierarchy hung the browser on cyclic graphs</h3>
 <p><strong>Symptom:</strong> selecting Hierarchy froze the tab. Found by a unit test, which hung with zero output.</p>
-<p><strong>Cause:</strong> the BFS re-queued a node whenever a longer path to it was found, to get "deepest depender wins". On a cycle — <code>A → B → A</code>, which real meshes have whenever a service and its database are each observed calling the other — depth grows without bound and the loop never terminates.</p>
-<p><strong>Fix:</strong> breadth-first with first-visit depth, each node assigned once. Terminates always, still reads left-to-right. Nodes in pure-cycle components unreachable from any root are placed after the deepest reached node rather than at zero, where they would sit on top of the entry points. <strong>Where:</strong> <code>layouts2d.ts</code> — <code>hierarchyDepths()</code>.</p>
+<p><strong>Cause:</strong> the BFS re-queued a node whenever a longer path to it was found, to get "deepest depender wins". On a cycle - <code>A → B → A</code>, which real meshes have whenever a service and its database are each observed calling the other - depth grows without bound and the loop never terminates.</p>
+<p><strong>Fix:</strong> breadth-first with first-visit depth, each node assigned once. Terminates always, still reads left-to-right. Nodes in pure-cycle components unreachable from any root are placed after the deepest reached node rather than at zero, where they would sit on top of the entry points. <strong>Where:</strong> <code>layouts2d.ts</code> - <code>hierarchyDepths()</code>.</p>
 <p>Verified against 200 nodes / 400 edges of pure bidirectional cycles: all eight layouts complete in ≤1ms.</p>
 <h3 id="32-layouts-wrap">3.2 Layouts wrap</h3>
-<p>Tiers put every service of one role in a single row — 9,620px of horizontal pan in 2D, and in 3D a flat line that reads as a wall from any normal camera angle. Hierarchy did the same vertically (7,030px). Both now wrap into sub-rows/sub-columns.</p>
+<p>Tiers put every service of one role in a single row - 9,620px of horizontal pan in 2D, and in 3D a flat line that reads as a wall from any normal camera angle. Hierarchy did the same vertically (7,030px). Both now wrap into sub-rows/sub-columns.</p>
 <h3 id="33-camera-fitting-3d">3.3 Camera fitting (3D)</h3>
-<p>Each arrangement has a completely different footprint, so one fixed camera either buries the scene or leaves it a speck. <strong>Where:</strong> <code>Scene3D.tsx</code> — <code>FitCamera</code>.</p>
+<p>Each arrangement has a completely different footprint, so one fixed camera either buries the scene or leaves it a speck. <strong>Where:</strong> <code>Scene3D.tsx</code> - <code>FitCamera</code>.</p>
 <p>Three things that each caused a blank screen while getting this right, all now handled:</p>
 <ul>
   <li><strong>Width and height are fitted separately.</strong> Judging by a single "max dimension" against the vertical FOV lets a wide flat ring run off both sides.</li>
@@ -786,43 +787,43 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <hr class="rule">
 <h2 id="4-3d-scene"><span class="id">4</span> 3D scene</h2>
 <h3 id="41-positions-are-driven-imperatively-not-through-react-state">4.1 Positions are driven imperatively, not through React state</h3>
-<p><strong>Symptom:</strong> the entire canvas rendered nothing — no grid, no nodes.</p>
+<p><strong>Symptom:</strong> the entire canvas rendered nothing - no grid, no nodes.</p>
 <p><strong>Cause:</strong> the layout animator called <code>setState</code> every frame. That re-rendered the scene, which rebuilt the layout, which restarted the animation. The loop starved the render loop badly enough that nothing inside the <code>Canvas</code> ever drew.</p>
-<p><strong>Fix:</strong> a shared mutable <code>Map&lt;string, THREE.Vector3&gt;</code> written by a <code>useFrame</code> driver and read by nodes, edges, and labels. No React state in the frame loop. <strong>Where:</strong> <code>Scene3D.tsx</code> — <code>LayoutDriver</code>, <code>PositionMap</code>.</p>
+<p><strong>Fix:</strong> a shared mutable <code>Map&lt;string, THREE.Vector3&gt;</code> written by a <code>useFrame</code> driver and read by nodes, edges, and labels. No React state in the frame loop. <strong>Where:</strong> <code>Scene3D.tsx</code> - <code>LayoutDriver</code>, <code>PositionMap</code>.</p>
 <h3 id="42-text-can-blank-the-whole-canvas">4.2 Text can blank the whole canvas</h3>
 <p><strong>Symptom:</strong> the same total blank, after the above was fixed.</p>
 <p><strong>Cause:</strong> drei's <code>&lt;Text&gt;</code> suspends while troika fetches a font. Sharing one Suspense boundary with the rest of the scene means a slow or hanging font request takes the grid and every node down with it.</p>
 <p><strong>Fix:</strong> every <code>&lt;Text&gt;</code> block sits in its own <code>&lt;Suspense fallback={null}&gt;</code>. <strong>Where:</strong> <code>Node3D.tsx</code>, <code>Scene3D.tsx</code>.</p>
 <h3 id="43-links-were-buried-inside-the-hardware">4.3 Links were buried inside the hardware</h3>
-<p><strong>Symptom:</strong> Architecture showed many blue links; 3D appeared to show far fewer. Both views had <strong>identical</strong> data — 50 edges, 17 observed.</p>
+<p><strong>Symptom:</strong> Architecture showed many blue links; 3D appeared to show far fewer. Both views had <strong>identical</strong> data - 50 edges, 17 observed.</p>
 <p><strong>Cause:</strong> links attached at mid-chassis height while chassis tops are taller, so a link entered one unit, passed through its body, and came out the far side. 2D always draws edges on top.</p>
-<p><strong>Fix:</strong> links leave from above the hardware and arc enough to clear what they pass over. <strong>Where:</strong> <code>Edge3D.tsx</code> — <code>NODE_HEIGHT</code>, arc height.</p>
+<p><strong>Fix:</strong> links leave from above the hardware and arc enough to clear what they pass over. <strong>Where:</strong> <code>Edge3D.tsx</code> - <code>NODE_HEIGHT</code>, arc height.</p>
 <p>Declared-only links had a second problem: they were drawn at 25% opacity in near-black, so 33 of 50 edges were effectively invisible. They now match the 2D canvas's weighting.</p>
 <h3 id="44-edges-failed-to-build-geometry-at-the-origin">4.4 Edges failed to build geometry at the origin</h3>
-<p>An edge only rebuilt its tube when an endpoint <em>moved</em>, compared against a starting position of <code>(0,0,0)</code>. Any edge touching a node genuinely at the origin — exactly where the Radial layout puts its most-connected service — measured zero movement on the first frame and <strong>never built geometry at all</strong>. Now tracked with an explicit <code>built</code> flag. <strong>Where:</strong> <code>Edge3D.tsx</code>.</p>
+<p>An edge only rebuilt its tube when an endpoint <em>moved</em>, compared against a starting position of <code>(0,0,0)</code>. Any edge touching a node genuinely at the origin - exactly where the Radial layout puts its most-connected service - measured zero movement on the first frame and <strong>never built geometry at all</strong>. Now tracked with an explicit <code>built</code> flag. <strong>Where:</strong> <code>Edge3D.tsx</code>.</p>
 <h3 id="45-selection-focus">4.5 Selection focus</h3>
 <p>Selecting a unit keeps it and its direct neighbours lit and labelled; everything else drops to ~15% and stops animating. Deselect works three ways: click empty space, click the selected unit again, or press Escape.</p>
-<p><code>onPointerMissed</code> can fire in the same gesture as a node click, which would select and instantly deselect — the details panel would flash and vanish. A 150ms guard ignores a "missed" that lands right after a real hit. <strong>Where:</strong> <code>Scene3D.tsx</code>.</p>
+<p><code>onPointerMissed</code> can fire in the same gesture as a node click, which would select and instantly deselect - the details panel would flash and vanish. A 150ms guard ignores a "missed" that lands right after a real hit. <strong>Where:</strong> <code>Scene3D.tsx</code>.</p>
 <hr class="rule">
 <h2 id="5-traffic"><span class="id">5</span> Traffic</h2>
 <h3 id="51-stop-all-did-not-stop-all">5.1 "Stop all" did not stop all</h3>
 <p><strong>Symptom:</strong> traffic kept hitting a target after Stop All reported success.</p>
-<p><strong>Cause:</strong> <code>stopAll()</code> iterated only runs <em>this server instance</em> started. A run launched directly against traffic-gen, or one that outlived a server restart, was invisible to it — and after a restart that map is empty, so Stop All stopped <strong>nothing</strong>.</p>
+<p><strong>Cause:</strong> <code>stopAll()</code> iterated only runs <em>this server instance</em> started. A run launched directly against traffic-gen, or one that outlived a server restart, was invisible to it - and after a restart that map is empty, so Stop All stopped <strong>nothing</strong>.</p>
 <p><strong>Fix:</strong> query traffic-gen for the authoritative list of running projects and stop every one. Also removed a hardcoded target allowlist in <code>stopTarget()</code> that let project ids like <code>vertikal-prod</code> slip through. <strong>Where:</strong> <code>server/traffic/TrafficController.ts</code>.</p>
 <h3 id="52-entry-points-can-be-pinned">5.2 Entry points can be pinned</h3>
 <p>See <a href="14-configuration.html#target-ssh-config-dataremote-configjson">14-configuration</a>. Short version: discovery reports what a container <em>publishes</em>, which is not what is <em>reachable</em>. One box resolved to Jaeger's OTLP <code>:4318</code> instead of the app; another published <code>:8080</code> that was closed in the security group.</p>
 <p><code>POST /api/config/remote</code> merges rather than replaces, because replacing erased the pin whenever someone updated an IP.</p>
 <h3 id="53-traffic-only-exercises-what-you-point-it-at">5.3 Traffic only exercises what you point it at</h3>
-<p>Sock Shop showed nodes but <strong>zero</strong> edges. Its compose file declares no <code>depends_on</code> and it is not Spring, so neither declared-edge source produces anything — every edge must come from observed TCP. But traffic-gen was running in discovered-endpoints mode against <code>/</code> only, hammering a static homepage that never calls a backend: 6,365 requests, zero edges.</p>
+<p>Sock Shop showed nodes but <strong>zero</strong> edges. Its compose file declares no <code>depends_on</code> and it is not Spring, so neither declared-edge source produces anything - every edge must come from observed TCP. But traffic-gen was running in discovered-endpoints mode against <code>/</code> only, hammering a static homepage that never calls a backend: 6,365 requests, zero edges.</p>
 <p>Running the real <code>sockshop.js</code> browse/cart workflows produced real edges within a minute.</p>
 <p><strong>Caveat recorded in <code>sockshop.js</code>:</strong> the <code>cart</code> workflow crash-loops that deployment's front-end (an unhandled error callback at <code>/usr/src/app/api/cart/index.js:79</code> when the carts service errors), turning everything into 502s. On a box where carts is slow enough to error, run <code>browse</code> only.</p>
-<h3 id="55-start-experiment-does-nothing-five-separate-causes">5.5 "Start experiment does nothing" — five separate causes</h3>
+<h3 id="55-start-experiment-does-nothing-five-separate-causes">5.5 "Start experiment does nothing" - five separate causes</h3>
 <p>Reported as a single symptom on the OpenTelemetry target. Each of these was independently capable of producing it.</p>
-<p><strong>a) traffic-gen could never be restarted once it died.</strong> <code>ensureTrafficGenRunning()</code> cached its in-flight promise in <code>ensureStartingPromise</code> and <strong>never cleared it</strong>. traffic-gen is spawned as a child of the mapper, so it dies whenever the parent restarts — after which every later call returned the stale resolved promise, skipped the respawn, and every proxied request failed with <code>fetch failed</code>. The promise is now released in a <code>finally</code>, and a reachability check short-circuits when it is already up. <strong>Where:</strong> <code>server/traffic/TrafficController.ts</code>.</p>
-<p><strong>b) The start was fire-and-forget.</strong> <code>startTarget()</code> returned <code>isRunning: true</code> immediately, before traffic-gen had accepted or refused. A refusal (STUB target, 409, process down) was logged to the server console while the API — and therefore the UI — reported success. It is now <code>async</code> and returns the real outcome; <code>/api/experiments/start</code> returns <strong>502</strong> with the reason and closes the experiment record instead of leaving it RUNNING against a workload that never ran.</p>
-<p><strong>c) The default entry point was Grafana.</strong> Endpoint ranking sorted PUBLIC endpoints by lowest port, so an OpenTelemetry Demo resolved to Grafana <code>:3000</code> ahead of the app frontend on <code>:8080</code> — and <code>:3000</code> was not reachable from outside, so the reachability gate failed. Observability components are now ranked last, identified by service name rather than port (ports collide: <code>:3000</code> is Grafana here and an ordinary frontend elsewhere). <strong>Where:</strong> <code>server/registry/EndpointRegistry.ts</code>.</p>
+<p><strong>a) traffic-gen could never be restarted once it died.</strong> <code>ensureTrafficGenRunning()</code> cached its in-flight promise in <code>ensureStartingPromise</code> and <strong>never cleared it</strong>. traffic-gen is spawned as a child of the mapper, so it dies whenever the parent restarts - after which every later call returned the stale resolved promise, skipped the respawn, and every proxied request failed with <code>fetch failed</code>. The promise is now released in a <code>finally</code>, and a reachability check short-circuits when it is already up. <strong>Where:</strong> <code>server/traffic/TrafficController.ts</code>.</p>
+<p><strong>b) The start was fire-and-forget.</strong> <code>startTarget()</code> returned <code>isRunning: true</code> immediately, before traffic-gen had accepted or refused. A refusal (STUB target, 409, process down) was logged to the server console while the API - and therefore the UI - reported success. It is now <code>async</code> and returns the real outcome; <code>/api/experiments/start</code> returns <strong>502</strong> with the reason and closes the experiment record instead of leaving it RUNNING against a workload that never ran.</p>
+<p><strong>c) The default entry point was Grafana.</strong> Endpoint ranking sorted PUBLIC endpoints by lowest port, so an OpenTelemetry Demo resolved to Grafana <code>:3000</code> ahead of the app frontend on <code>:8080</code> - and <code>:3000</code> was not reachable from outside, so the reachability gate failed. Observability components are now ranked last, identified by service name rather than port (ports collide: <code>:3000</code> is Grafana here and an ordinary frontend elsewhere). <strong>Where:</strong> <code>server/registry/EndpointRegistry.ts</code>.</p>
 <p><strong>d) The button failed silently.</strong> <code>handleStart()</code> began with <code>if (!isEndpointReady || !isSelectedServiceCapable) return;</code> while the button was only disabled by <code>isLoading || isCurrentRunning</code>. Clicking an enabled-looking button did nothing and said nothing. The button is now disabled when blocked, and the panel states which precondition failed. <strong>Where:</strong> <code>client/src/components/TrafficControlPanel.tsx</code>.</p>
-<p><strong>e) Endpoint selection leaked across targets.</strong> Switching the target kept the previously selected endpoint/service/route ids, which are namespaced per target — visible in the log as a death-star experiment resolving an open-telemetry endpoint id, i.e. traffic aimed at the wrong project's URL. Switching target now clears them.</p>
+<p><strong>e) Endpoint selection leaked across targets.</strong> Switching the target kept the previously selected endpoint/service/route ids, which are namespaced per target - visible in the log as a death-star experiment resolving an open-telemetry endpoint id, i.e. traffic aimed at the wrong project's URL. Switching target now clears them.</p>
 <p>Verified after the fixes: 104 requests, 104×HTTP 200, 2.53 req/s, p50 33ms against <code>http://…:8080</code>.</p>
 <h3 id="54-stub-targets-are-rejected-by-design">5.4 Stub targets are rejected by design</h3>
 <p>A workflow module exporting <code>STUB: true</code> is refused by <code>/api/start</code> unless the request supplies confirmed endpoints. This is why a newly added target can fail with HTTP 400 while looking correctly configured. <code>opentelemetry.js</code> sets <code>STUB: false</code> because its paths are the demo's own frontend routes, with the reasoning recorded in the file header.</p>
@@ -843,7 +844,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>60 identical canvas textures</td>
       <td><code>Node3D.tsx</code></td>
-      <td>Each node built its own halo texture — byte-identical, and tinted at draw time anyway. Now one shared texture.</td>
+      <td>Each node built its own halo texture - byte-identical, and tinted at draw time anyway. Now one shared texture.</td>
     </tr>
     <tr>
       <td><code>edgeActivity</code> never pruned</td>
@@ -853,7 +854,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td><code>MetricStore</code> never released nodes</td>
       <td><code>MetricStore.deleteNode()</code></td>
-      <td>History is capped <em>per node</em>, but nodes were never removed — every container restarting onto a new id left a full history behind forever.</td>
+      <td>History is capped <em>per node</em>, but nodes were never removed - every container restarting onto a new id left a full history behind forever.</td>
     </tr>
     <tr>
       <td>2D layout recomputed every poll</td>
@@ -878,15 +879,15 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">cd client &amp;&amp; npx tsc -p tsconfig.app.json --noEmit</code></pre>
                     </div>
-<p><code>npx tsc --noEmit</code> at the client root <strong>checks nothing</strong> — that directory uses a solution-style config that only references <code>tsconfig.app.json</code>. It exits 0 regardless, which produced several false "clean" results before it was noticed.</p>
+<p><code>npx tsc --noEmit</code> at the client root <strong>checks nothing</strong> - that directory uses a solution-style config that only references <code>tsconfig.app.json</code>. It exits 0 regardless, which produced several false "clean" results before it was noticed.</p>
 <hr class="rule">
 <h2 id="9-codebase-audit-correctness-pass"><span class="id">9</span> Codebase audit (correctness pass)</h2>
 <p>A sweep over the whole tree, not just the parts under active change. Each of these was verified against the code, not assumed.</p>
-<h3 id="91-command-injection-in-sanitizeiso-fixed">9.1 Command injection in <code>sanitizeIso</code> — fixed</h3>
+<h3 id="91-command-injection-in-sanitizeiso-fixed">9.1 Command injection in <code>sanitizeIso</code> - fixed</h3>
 <p><code>sanitizeIso()</code> validated with <code>Date.parse()</code>, which V8 accepts far more loosely than ISO-8601. <code>Date.parse("Jan 1 2026 $(whoami)")</code> <strong>succeeds</strong>, so the payload reached the remote shell through <code>docker logs --timestamps --since …</code>.</p>
-<p>Not reachable from user input today — <code>since</code> is computed server-side — but a sanitizer whose only job is blocking injection must not depend on every caller staying trustworthy. Now validated against a strict ISO-8601 regex. <strong>Where:</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code>. Regression covered in <code>tests/security.test.ts</code>.</p>
+<p>Not reachable from user input today - <code>since</code> is computed server-side - but a sanitizer whose only job is blocking injection must not depend on every caller staying trustworthy. Now validated against a strict ISO-8601 regex. <strong>Where:</strong> <code>server/telemetry-platform/src/connection/RemoteCommand.ts</code>. Regression covered in <code>tests/security.test.ts</code>.</p>
 <p>The other sanitizers (container id, path, tail) were already allowlist-based and throw rather than escape, which is the right shape.</p>
-<h3 id="92-spawn-sites-without-error-handlers-fixed">9.2 <code>spawn</code> sites without <code>error</code> handlers — fixed</h3>
+<h3 id="92-spawn-sites-without-error-handlers-fixed">9.2 <code>spawn</code> sites without <code>error</code> handlers - fixed</h3>
 <p>Three places spawned a child process and handled only <code>close</code>/<code>exit</code>. When the binary is missing (<code>python3</code>, <code>node</code>, <code>ssh</code> not on PATH), <code>spawn</code> emits <code>error</code>; unhandled, that event <strong>throws</strong>, and state was left wrong:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -909,13 +910,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <p>Also in the same area: <code>runStep()</code> in the retrain route never settled its promise if <code>spawn</code> failed, leaving the retrain permanently "running" and blocking every future retrain via the 409 guard.</p>
-<h3 id="93-no-process-level-crash-guards-fixed">9.3 No process-level crash guards — fixed</h3>
+<h3 id="93-no-process-level-crash-guards-fixed">9.3 No process-level crash guards - fixed</h3>
 <p>An unhandled rejection <strong>terminates the process</strong> in Node 18+. This server polls hosts that are routinely unreachable, so one stray rejection took every healthy target down with it. Two floating promises in <code>GraphStore</code> (<code>discoverAll().then(…)</code>, <code>refreshTarget().then(…)</code>) had no <code>.catch</code>.</p>
 <p>Both now handled, plus <code>process.on('unhandledRejection')</code> and <code>process.on('uncaughtException')</code> that log loudly and keep serving. A crash loop is strictly worse than a degraded target. <strong>Where:</strong> <code>server/index.ts</code>, <code>server/graph/GraphStore.ts</code>.</p>
-<div class="box why"><p>Express version matters here: this project is on <strong>Express 5</strong>, which forwards async handler rejections to the error handler automatically. Async routes without <code>try/catch</code> return 500 rather than crashing. That is not true on Express 4 — if this is ever downgraded, those routes need wrapping.</p></div>
-<h3 id="94-unbounded-retrain-log-fixed">9.4 Unbounded retrain log — fixed</h3>
+<div class="box why"><p>Express version matters here: this project is on <strong>Express 5</strong>, which forwards async handler rejections to the error handler automatically. Async routes without <code>try/catch</code> return 500 rather than crashing. That is not true on Express 4 - if this is ever downgraded, those routes need wrapping.</p></div>
+<h3 id="94-unbounded-retrain-log-fixed">9.4 Unbounded retrain log - fixed</h3>
 <p><code>retrainState.log</code> grew for the whole run and was returned <strong>in full</strong> by <code>GET /api/ml/retrain</code>, which the UI polls every 2 seconds. <code>train.py</code> prints a line per trained and per skipped service, so on a 76-service deployment every poll re-sent the entire accumulated log. Capped at 500 lines; the UI only renders the tail.</p>
-<h3 id="95-silently-swallowed-config-errors-fixed">9.5 Silently swallowed config errors — fixed</h3>
+<h3 id="95-silently-swallowed-config-errors-fixed">9.5 Silently swallowed config errors - fixed</h3>
 <p>Two <code>catch {}</code> blocks hid failures to parse <code>remote_config.json</code>, in code paths that decide <strong>which host to SSH into</strong>. A JSON syntax error silently fell back to defaults, so the terminal connected somewhere nobody asked for and discovery looked broken rather than misconfigured. Both now log.</p>
 <p>Three other empty catches were confirmed genuinely ignorable (best-effort LAN IP detection, recursive <code>mkdir</code>, unlinking a file that may not exist) and are now annotated as deliberate rather than looking like oversights.</p>
 <h3 id="96-checked-and-found-sound">9.6 Checked and found sound</h3>
@@ -929,13 +930,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </ul>
 <h3 id="97-known-not-fixed">9.7 Known, not fixed</h3>
 <ul>
-  <li><strong>Two dead duplicate trees</strong>: <code>telemetry-platform (2)/</code> and <code>traffic-generator/</code> (508K combined) have <strong>zero references</strong> from live code. They are confusing because they hold the only other test files, which look authoritative but test stale copies. They are tracked in git, so deleting them is recoverable — left in place pending a decision.</li>
+  <li><strong>Two dead duplicate trees</strong>: <code>telemetry-platform (2)/</code> and <code>traffic-generator/</code> (508K combined) have <strong>zero references</strong> from live code. They are confusing because they hold the only other test files, which look authoritative but test stale copies. They are tracked in git, so deleting them is recoverable - left in place pending a decision.</li>
   <li><strong>No linter</strong> is configured for either <code>client</code> or <code>server</code>. Everything above was found by reading and targeted greps; a linter would catch the next one earlier.</li>
   <li><strong>Log files are tracked in git</strong> (<code>traffic.log</code>, <code>server.log</code>, <code>ml/logs/*.log</code>).</li>
 </ul>
 <hr class="rule">
 <h2 id="10-accuracy-audit-october-2026"><span class="id">10</span> Accuracy audit (October 2026)</h2>
-<p>A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (<code>scripts/simulate-target.ts</code>) against an isolated server, and a new self-check (<code>server/graph/consistency.ts</code>, <code>GET /api/diagnostics/consistency</code>). Full write-up: <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a> and <a href="31-measurement-precision.html">Measuring precisely</a>.</p>
+<p>A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (<code>scripts/simulate-target.ts</code>) against an isolated server, and a new self-check (<code>algorithms/graph/consistency.ts</code>, <code>GET /api/diagnostics/consistency</code>). Full write-up: <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a> and <a href="31-measurement-precision.html">Measuring precisely</a>.</p>
 <h3 id="101-dependency-shares-summed-to-183">10.1 Dependency shares summed to 183%</h3>
 <p>Unmeasured edges were given <code>1/N</code> <em>on top of</em> a full split of the measured traffic. Now unmeasured edges get <code>1/N</code> each and the measured ones share the remainder, so every caller sums to exactly 1 per kind. Enforced by the <code>reliance-sums-to-one</code> rule.</p>
 <h3 id="102-rca-credited-explanations-through-negligible-paths">10.2 RCA credited explanations through negligible paths</h3>
@@ -951,21 +952,21 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h3 id="107-ipv4-mapped-addresses-in-tcp6">10.7 IPv4-mapped addresses in tcp6</h3>
 <p>Dual-stack servers list IPv4 clients in <code>/proc/net/tcp6</code> as <code>::ffff:a.b.c.d</code>. They were decoded as IPv6, matched no container, and the link vanished. <code>decodeProcNetIp()</code> now recognises them.</p>
 <h3 id="108-one-set-of-link-thresholds">10.8 One set of link thresholds</h3>
-<p>Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in <code>server/graph/linkThresholds.ts</code> and the client's <code>edgeHeat.ts</code>, and a test asserts they match.</p>
+<p>Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in <code>algorithms/graph/linkThresholds.ts</code> and the client's <code>edgeHeat.ts</code>, and a test asserts they match.</p>
 <h3 id="109-smaller-ones">10.9 Smaller ones</h3>
 <p>The anomaly baseline no longer treats missing samples as 0 (<code>|| 0</code>). Metrics are built with <code>num()</code> so missing means <code>null</code>. Evidence text says "not measured" instead of "0%". The connection sweep waits for itself like the poll loop.</p>
 <h2 id="11-visual-redesign"><span class="id">11</span> Visual redesign</h2>
 <ul>
   <li><strong>Palette:</strong> dark navy to black with indigo. Warm colours only for trouble; volume is a cool blue ramp. Bright bloom was tried and rejected as glare, so it is now opt-in and off by default.</li>
   <li><strong>Links:</strong> colour by severity (red ≥ 5% errors, ≥ 1 s, or a down callee; orange ≥ 1%, ≥ 300 ms, or a degraded callee), thickness by dependency weight, and <strong>pulses whose rate follows the link's traffic</strong> (<code>pulsesFor = 0.3 + 1.6·log10(1+rate)</code>), exact in both 2D and 3D.</li>
-  <li><strong>2D cards</strong> are flat and matte (gloss competed with the status colours); meters show <code>—</code> when unmeasured.</li>
+  <li><strong>2D cards</strong> are flat and matte (gloss competed with the status colours); meters show <code>-</code> when unmeasured.</li>
   <li><strong>3D islands:</strong> a district per project and a raised platform per role (edge, services, data, messaging, infrastructure, observability), tracks only between sections that call each other, and scenery around them. A "server room" and a "building" layout were built and dropped. The right-angle cable option now applies in every layout.</li>
   <li><strong>Inspector:</strong> CPU against its allowance, network per second, de-duplicated ports, incident role, what-if.</li>
   <li><strong>Reference:</strong> <a href="33-visual-language.html">Reading the picture</a>.</li>
 </ul>
 <h2 id="12-standing-rules-these-changes-follow"><span class="id">12</span> Standing rules these changes follow</h2>
 <ul>
-  <li><strong>Never fabricate a measurement.</strong> Absent data is absent — no defaulting to zero, no deriving an edge metric from a node metric, no inferring a dependency from a name.</li>
+  <li><strong>Never fabricate a measurement.</strong> Absent data is absent - no defaulting to zero, no deriving an edge metric from a node metric, no inferring a dependency from a name.</li>
   <li><strong>Label things as what they are.</strong> <code>samplesPerMin</code>, not <code>connectionsPerMin</code>. "SSH-sampled", not "distributed tracing". A firing rate, not accuracy.</li>
   <li><strong>Warm colours mean trouble</strong>, and nothing else.</li>
   <li><strong>One definition per idea.</strong> Thresholds, ids and link appearance are defined once and shared, with a test where client and server must agree.</li>
@@ -1253,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1408,10 +1409,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1509,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

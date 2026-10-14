@@ -6,7 +6,7 @@ Hand-tuned thresholds are guesses. This page describes how the mapper stops gues
 flowchart LR
   A[Bench with the blind injector] -->|ledger: what was broken, when| D[Dataset]
   B[Mapper API, recorded by the observer] -->|readings and container state per service| D
-  D --> F[Features<br/>server/rca/features.ts]
+  D --> F[Features<br/>algorithms/detection/features.ts]
   F --> L[Learner<br/>tools/ml]
   L --> M[learned.json<br/>weights + threshold]
   M --> S[Live server<br/>LearnedScorer]
@@ -30,7 +30,7 @@ Every architecture is a different system, so each target (a bench, a project) ge
 
 | Step | What happens | Where |
 |---|---|---|
-| Train | Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems | `server/rca/TargetModel.ts` (pure) |
+| Train | Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems | `algorithms/model/TargetModel.ts` (pure) |
 | Learning period | Until the baseline spans `MAPPER_BASELINE_MIN` minutes (default 30) the project shows **Learning baseline, N of 30 min**, and only stopped, paused, restarting or network-less containers raise an incident | `IncidentManager`, the top bar, the Incidents page |
 | Keep it honest | Moments while an incident was open (plus a minute of recovery) are left out of every retraining, so a fault is never learned as normal | `server/rca/TargetModels.ts` |
 | Inspect | `GET /api/models` and `server/data/models/<target>.json`: state, minutes of baseline, scorer, threshold, noise ceiling | |
@@ -70,6 +70,15 @@ The server reloads `learned.json` when the file changes. Without the file, or wi
 
 ## Results
 
-Filled in from the real runs below once they finish (a 60-minute calm campaign and a 25-minute storm on each bench, recorded with the current mapper).
+Recorded runs are in `run/recorded-runs` (two benches, 217 minutes, 34 injected faults of six kinds). Blocked five-fold cross-validation by time, plus training on one bench and testing on the other. Reproduce with `npm run ml`.
 
-RESULTS_PLACEHOLDER
+| Method | Faults detected | Right service first (of detected) | False alarms per hour |
+|---|---|---|---|
+| Live mapper (rules, as recorded) | 97% (33/34) | 58% (19/33) | 0.0 |
+| Rules, fixed threshold | 97% | 55% | 8.9 |
+| Rules, tuned threshold | 82% | 46% | 4.4 |
+| Learned model | 50% | 53% | 3.0 |
+
+Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour against 9 for the re-scored rules and 0 for the live mapper).
+
+**Decision.** The learned model is not clearly better, so the rules stay and `learned.json` is not installed. With 34 faults the learned weights were unstable (strongly related features such as `own` and `cpu` receive large opposite weights), and lambda was pushed to the top of its grid. More labelled faults are needed before the comparison is worth repeating.

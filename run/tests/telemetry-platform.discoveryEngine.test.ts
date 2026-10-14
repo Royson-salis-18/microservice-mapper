@@ -47,7 +47,7 @@ describe("DiscoveryEngine", () => {
     conn.setResponse("docker.ps", [orders.ps, ordersDb.ps, payment.ps].join("\n"));
 
     // docker.inspect is keyed only by command *name* in FakeConnection, but
-    // each call targets a different container id — wrap execute() to pick
+    // each call targets a different container id - wrap execute() to pick
     // the right canned inspect payload based on the actual command string.
     const inspectByContainer: Record<string, string> = {
       c1: orders.inspect,

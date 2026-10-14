@@ -174,7 +174,7 @@ export class DiscoveryEngine {
   /**
    * Best-effort: if a compose project label points at a config file we
    * can read, parse its depends_on into declared=true dependencies.
-   * Silently yields nothing if the file isn't found/readable — this
+   * Silently yields nothing if the file isn't found/readable - this
    * must never block discovery of everything else.
    */
   private async discoverComposeDependencies(
@@ -238,14 +238,14 @@ export class DiscoveryEngine {
    * and turns URL host references that match another *real, discovered*
    * service name into declared=true edges. This is the source most
    * microservice-in-a-monorepo stacks actually use instead of Compose
-   * `depends_on` (Train Ticket declares none at all — see spec section 9/61
+   * `depends_on` (Train Ticket declares none at all - see spec section 9/61
    * on why we don't fabricate edges from that absence).
    *
    * The repo root is derived from the compose file's own real path
    * (never guessed): walk its ancestor directories until one is found
    * containing "<service>/src/main/resources/application.y*ml" for a real
    * service, cache that ancestor, reuse it for the rest. If nothing is
-   * found nearby, this silently contributes zero edges — never blocks the
+   * found nearby, this silently contributes zero edges - never blocks the
    * rest of discovery, same tolerance policy as discoverComposeDependencies.
    */
   private async discoverApplicationConfigDependencies(
@@ -284,7 +284,7 @@ export class DiscoveryEngine {
         const res = await this.connection.execute(REMOTE_COMMANDS.catFile(candidatePath));
         if (res.exitCode === 0 && !res.error && res.stdout.trim().length > 0) return res.stdout;
       } catch {
-        // fall through — try the next candidate
+        // fall through - try the next candidate
       }
       return null;
     };
@@ -306,7 +306,7 @@ export class DiscoveryEngine {
 
     if (!repoRoot) {
       warnings.push(
-        "application-config: no <service>/src/main/resources/application.y*ml found near the compose file — skipping this evidence source",
+        "application-config: no <service>/src/main/resources/application.y*ml found near the compose file - skipping this evidence source",
       );
       return dependencies;
     }
@@ -325,7 +325,7 @@ export class DiscoveryEngine {
       for (const ref of refs) {
         if (ref.targetHostname === service.name) continue; // no self-edges
         const target = byName.get(ref.targetHostname);
-        if (!target) continue; // only edges to real, discovered services — never fabricated
+        if (!target) continue; // only edges to real, discovered services - never fabricated
         console.log(`[DEPENDENCY] ${service.name} -> ${target.name} source=application.yml (${ref.yamlPath})`);
         dependencies.push({
           targetId: this.targetId,

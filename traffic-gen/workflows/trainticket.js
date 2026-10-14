@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * Train Ticket workflows — STILL A STUB, but for a different reason than
+ * Train Ticket workflows - STILL A STUB, but for a different reason than
  * before. Updated 2026-09-17 after investigating the live box.
  *
- * What is now known (discovery resolves this target correctly — 18 real
+ * What is now known (discovery resolves this target correctly - 18 real
  * ts-* services, not "unknown-<containerid>" as when this file was written):
  *   - ts-ui-dashboard      published on :8080
  *   - ts-gateway-service   published on :18888
@@ -22,7 +22,7 @@
  *
  * So writing workflows now would mean shipping paths nobody has seen
  * return a 200. Once the instance is resized and a request completes,
- * curl the real routes, put them here, and drop the STUB flag — the same
+ * curl the real routes, put them here, and drop the STUB flag - the same
  * way deathstar.js was verified.
  */
 

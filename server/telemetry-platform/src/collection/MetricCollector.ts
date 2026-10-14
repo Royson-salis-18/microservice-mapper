@@ -58,7 +58,7 @@ export function parseNetDev(text: string): { rxBytes: number; txBytes: number } 
 
 /**
  * Collects one round of container-level telemetry. Network/restart rates
- * are only derived once a second, later sample exists for that service —
+ * are only derived once a second, later sample exists for that service -
  * the first poll after start always has `null` rates, never a guessed 0
  * (spec section 13, section 32).
  */
@@ -125,7 +125,7 @@ export class MetricCollector {
       const serviceId = service?.serviceId ?? `${this.targetId}:unknown-${entry.containerId.slice(0, 12)}`;
       if (!service) {
         warnings.push(
-          `Container ${entry.containerId} (${entry.name}) has no matching discovered service — using ad-hoc serviceId`,
+          `Container ${entry.containerId} (${entry.name}) has no matching discovered service - using ad-hoc serviceId`,
         );
       }
 
@@ -151,7 +151,7 @@ export class MetricCollector {
         containerId: entry.containerId,
 
         cpuPercent: entry.cpuPercent,
-        cpuRaw: null, // not available over CLI — see collection/cpu.ts header note
+        cpuRaw: null, // not available over CLI - see collection/cpu.ts header note
 
         memoryBytes: entry.memoryBytes,
         memoryLimitBytes: entry.memoryLimitBytes,
@@ -311,7 +311,7 @@ export class MetricCollector {
     const connectionEvents: any[] = [];
     const timestamp = new Date().toISOString();
 
-    // count TIME_WAIT (06) too, not just ESTABLISHED (01) — it's the ~60s
+    // count TIME_WAIT (06) too, not just ESTABLISHED (01) - it's the ~60s
     // post-close linger state, so it catches fast request/response cycles
     // that finish between two sweeps (currently 5s apart) and would
     // otherwise never show up. We still record which state we actually
@@ -319,7 +319,7 @@ export class MetricCollector {
     const RELEVANT_TCP_STATES: Record<string, string> = { '01': 'ESTABLISHED', '06': 'TIME_WAIT' };
     const LISTEN_STATE = '0A';
 
-    // Every container is scanned, so each connection is seen twice — once
+    // Every container is scanned, so each connection is seen twice - once
     // from each end. Recording `scanned -> peer` both times (which is what
     // this did before) produced a reverse duplicate for every real link, so
     // the graph was effectively undirected: A->B and B->A for one dependency.
@@ -330,7 +330,7 @@ export class MetricCollector {
     // Direction is recovered from listening ports. A TCP connection has a
     // server side (the socket is on its listening port) and a client side (an
     // ephemeral port), so whichever end owns the listening port is the callee
-    // — the arrow points at it. LISTEN rows are already in the output this
+    // - the arrow points at it. LISTEN rows are already in the output this
     // command fetches; they were simply being filtered out and discarded.
     const rawByService = new Map<string, string>();
     const listenPortsByService = new Map<string, Set<number>>();
@@ -342,13 +342,13 @@ export class MetricCollector {
         // This used to `continue` in silence, which is how a permanent,
         // 100%-reproducible failure stayed invisible: the frontend's scan
         // failed on every single sweep for weeks (no shell in a distroless
-        // image — see dockerContainerTcp) and nothing anywhere said so. A
+        // image - see dockerContainerTcp) and nothing anywhere said so. A
         // service that can never be scanned produces no edges and no
         // activity, so the graph quietly under-reports instead of
         // reporting that it could not look.
         warnings.push(
           `TCP scan failed for ${service.serviceId}: ${tcpRes.error ?? `exit ${tcpRes.exitCode}`}` +
-          `${tcpRes.stdout ? ` — ${tcpRes.stdout.trim().slice(0, 120)}` : ''}`,
+          `${tcpRes.stdout ? ` - ${tcpRes.stdout.trim().slice(0, 120)}` : ''}`,
         );
         continue;
       }

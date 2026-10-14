@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -660,9 +661,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#the-problem">The Problem</a>
   <a href="#the-solution">The Solution</a>
   <a href="#why-15-minutes">Why 15 Minutes?</a>
-  <a href="#load-time-grace-period">Load-Time Grace Period</a>
+  <a href="#load-time-grace-period">Time Grace Period</a>
   <a href="#memory-leak-fix-edgeactivity-cleanup">Memory Leak Fix: edgeActiv...</a>
-  <a href="#edge-status-per-edge-evidence-only">Per-Edge Evidence Only</a>
+  <a href="#edge-status-per-edge-evidence-only">Edge Evidence Only</a>
   <a href="#design-decision">Design Decision</a>
   <a href="#thresholds">Thresholds</a>
   <a href="#stale-status-reset">Stale Status Reset</a>
@@ -742,7 +743,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="doc-main">
                 <article class="doc-body">
                     <h2 id="target-status-lifecycle">Target Status Lifecycle</h2>
-<p>Targets move through states based on <code>lastSeen</code> — the ISO timestamp updated by any successful telemetry ingestion or HTTP ping.</p>
+<p>Targets move through states based on <code>lastSeen</code> - the ISO timestamp updated by any successful telemetry ingestion or HTTP ping.</p>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">(no lastSeen set)
      │
@@ -775,8 +776,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 }</code></pre>
                     </div>
 <h3 id="two-independent-liveness-signals">Two Independent Liveness Signals</h3>
-<p><strong>Signal 1 — Telemetry:</strong> <code>ingestRemote()</code> calls <code>upsertTarget({ status: 'LIVE', lastSeen: now })</code>.</p>
-<p><strong>Signal 2 — HTTP Ping:</strong> <code>pingTargetEndpoints()</code> (every 10s) sends <code>HEAD</code> (fallback <code>GET</code>) to <code>target.baseUrl</code> with 3s timeout:</p>
+<p><strong>Signal 1 - Telemetry:</strong> <code>ingestRemote()</code> calls <code>upsertTarget({ status: 'LIVE', lastSeen: now })</code>.</p>
+<p><strong>Signal 2 - HTTP Ping:</strong> <code>pingTargetEndpoints()</code> (every 10s) sends <code>HEAD</code> (fallback <code>GET</code>) to <code>target.baseUrl</code> with 3s timeout:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -803,9 +804,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                     </div>
 <p><strong>Why two signals?</strong> SSH channel exhaustion on resource-constrained EC2 instances can block all SSH commands for several minutes. Without the HTTP ping fallback, a healthy target with a reachable HTTP endpoint would transition to STALE/OFFLINE just because the SSH pipeline stalled.</p>
 <hr class="rule">
-<h2 id="node-pruning-ghost-prevention">Node Pruning — Ghost Prevention</h2>
+<h2 id="node-pruning-ghost-prevention">Node Pruning - Ghost Prevention</h2>
 <h3 id="the-problem">The Problem</h3>
-<p>A container restart creates a new container ID. The old node (with the old container ID in <code>metadata.containerId</code>) has no more telemetry coming in — but it stays in the graph forever since nodes were previously only upserted, never deleted.</p>
+<p>A container restart creates a new container ID. The old node (with the old container ID in <code>metadata.containerId</code>) has no more telemetry coming in - but it stays in the graph forever since nodes were previously only upserted, never deleted.</p>
 <p>Result: dead "ghost" nodes that show stale CPU/memory and make the graph misleading.</p>
 <h3 id="the-solution">The Solution</h3>
 <p><code>pruneStaleNodes()</code> runs every 10 seconds. Any node with <code>lastSeen</code> older than <strong>15 minutes</strong> is removed.</p>
@@ -844,7 +845,7 @@ private pruneStaleNodes() {
 }</code></pre>
                     </div>
 <h3 id="why-15-minutes">Why 15 Minutes?</h3>
-<p><strong>SSH channel exhaustion</strong> on <code>t2.micro</code>/<code>t3.micro</code> instances has been observed to stall all SSH commands for 3–8 minute windows. If pruning used the same 5-minute threshold as <code>OFFLINE</code>, every target's nodes would be wiped the moment it went <code>OFFLINE</code> — even though the target typically self-recovers.</p>
+<p><strong>SSH channel exhaustion</strong> on <code>t2.micro</code>/<code>t3.micro</code> instances has been observed to stall all SSH commands for 3–8 minute windows. If pruning used the same 5-minute threshold as <code>OFFLINE</code>, every target's nodes would be wiped the moment it went <code>OFFLINE</code> - even though the target typically self-recovers.</p>
 <p>The 15-minute grace window means:</p>
 <ul>
   <li>A target can go <code>OFFLINE</code> (5 min) and recover → nodes are still there, re-confirmed on next discovery</li>
@@ -863,10 +864,10 @@ private pruneStaleNodes() {
 <p>Before the fix: <code>pruneStaleNodes()</code> deleted nodes and edges from their Maps, but never cleaned up the corresponding <code>edgeActivity</code> entries. Over time (days of uptime), <code>edgeActivity</code> accumulated entries for edges that had been deleted months ago.</p>
 <p>After the fix: <code>this.edgeActivity.delete(edgeId)</code> is called for every edge whose source or target node was pruned.</p>
 <hr class="rule">
-<h2 id="edge-status-per-edge-evidence-only">Edge Status — Per-Edge Evidence Only</h2>
+<h2 id="edge-status-per-edge-evidence-only">Edge Status - Per-Edge Evidence Only</h2>
 <h3 id="design-decision">Design Decision</h3>
 <p>Edge status is computed <strong>only</strong> from HTTP metrics measured on that specific edge. A node with 90% CPU does <strong>not</strong> make all connected edges show as <code>degraded</code>.</p>
-<p><strong>Why?</strong> We only have latency/error data for edges where gateway or service logs are parseable. Applying a node's resource pressure to its edges would be speculation — the node might be stressed from a batch job with nothing to do with HTTP traffic.</p>
+<p><strong>Why?</strong> We only have latency/error data for edges where gateway or service logs are parseable. Applying a node's resource pressure to its edges would be speculation - the node might be stressed from a batch job with nothing to do with HTTP traffic.</p>
 <h3 id="thresholds">Thresholds</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -1197,7 +1198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1352,10 +1353,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1453,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -661,7 +662,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#edge-ids">Edge IDs</a>
   <a href="#route-ids-endpointregistry">Route IDs (EndpointRegistry)</a>
   <a href="#sentinel-values">Sentinel Values</a>
-  <a href="#service-name-derivation-remote-collector">Service Name Derivation (r...</a>
+  <a href="#service-name-derivation-remote-collector">collector)</a>
 </nav>
         </header>
 
@@ -721,7 +722,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </table></div>
 <p>Without normalization: <code>GraphStore</code> receives a <code>MetricSnapshot</code> for <code>sockshop_catalogue_1</code> but the node was created with ID <code>sock-shop:catalogue</code>. The metric doesn't attach. The node shows no CPU. The edge for <code>sock-shop:front-end-&gt;sock-shop:catalogue</code> can't be matched against an event tagged <code>sockshop_front-end_1-&gt;sockshop_catalogue_1</code>. Result: ghost nodes, missing metrics, broken graph.</p>
 <h2 id="the-solution">The Solution</h2>
-<p><strong>Canonical format:</strong> <code>${targetId}:${serviceName}</code> — colon separator, no project prefix repetition in the service name.</p>
+<p><strong>Canonical format:</strong> <code>${targetId}:${serviceName}</code> - colon separator, no project prefix repetition in the service name.</p>
 <p>Examples:</p>
 <ul>
   <li><code>sock-shop:catalogue</code></li>
@@ -737,10 +738,10 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">const normalizeId = (rawId: string): string =&gt; {
   if (!rawId) return rawId;
-  // Sentinel values — never normalize these
+  // Sentinel values - never normalize these
   if (rawId === &#x27;external&#x27; || rawId === &#x27;unknown-upstream&#x27;) return rawId;
 
-  // Already in canonical form — fast path
+  // Already in canonical form - fast path
   if (rawId.startsWith(`${targetId}:`)) return rawId;
 
   // Strip any existing targetId prefix with any separator
@@ -768,7 +769,7 @@ const edgeId = `${sourceNodeId}-&gt;${targetNodeId}`;
 // Example:
 &quot;sock-shop:front-end-&gt;sock-shop:catalogue&quot;</code></pre>
                     </div>
-<p>Edge IDs are deterministic and stable — given the same source and target, you always get the same edge ID. This means:</p>
+<p>Edge IDs are deterministic and stable - given the same source and target, you always get the same edge ID. This means:</p>
 <ul>
   <li>Merge operations are O(1) (just check <code>edgesMap.has(edgeId)</code>)</li>
   <li>No UUID generation needed for edges</li>
@@ -806,7 +807,7 @@ const edgeId = `${sourceNodeId}-&gt;${targetNodeId}`;
     </tr>
   </tbody>
 </table></div>
-<p>These are intentionally not normalized — they represent "the traffic exists but we can't attribute it to a specific service."</p>
+<p>These are intentionally not normalized - they represent "the traffic exists but we can't attribute it to a specific service."</p>
 <h2 id="service-name-derivation-remote-collector">Service Name Derivation (remote-collector)</h2>
 <p>The collector derives canonical service names before the normalization step is even needed:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -814,7 +815,7 @@ const edgeId = `${sourceNodeId}-&gt;${targetNodeId}`;
                             <span>TYPESCRIPT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">function deriveServiceName(containerInfo: any): string {
-  // Priority 1: Docker Compose label — always set by `docker-compose up`
+  // Priority 1: Docker Compose label - always set by `docker-compose up`
   const composeService = containerInfo.Labels?.[&#x27;com.docker.compose.service&#x27;];
   if (composeService) return composeService;
 
@@ -829,7 +830,7 @@ const edgeId = `${sourceNodeId}-&gt;${targetNodeId}`;
   return rawName;
 }</code></pre>
                     </div>
-<p><strong>Why Priority 1?</strong> Docker Compose always sets <code>com.docker.compose.service</code> to the key name in the <code>services:</code> block of the Compose file. This is exactly the canonical service name — no parsing needed. The name-splitting logic in Priority 2 handles non-Compose containers (manually started with <code>docker run</code>).</p>
+<p><strong>Why Priority 1?</strong> Docker Compose always sets <code>com.docker.compose.service</code> to the key name in the <code>services:</code> block of the Compose file. This is exactly the canonical service name - no parsing needed. The name-splitting logic in Priority 2 handles non-Compose containers (manually started with <code>docker run</code>).</p>
                 </article>
                 
         <section id="try-it">
@@ -1124,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1279,10 +1280,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1380,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

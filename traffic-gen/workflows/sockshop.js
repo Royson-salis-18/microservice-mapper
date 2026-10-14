@@ -10,7 +10,7 @@
 // carts service errors or times out, which takes the whole node process
 // down (exit 1, docker restarts it) and turns every request into a 502
 // until it comes back. It is a fragility in the weaveworks front-end
-// image, not in this file — but on a box where carts is slow enough to
+// image, not in this file - but on a box where carts is slow enough to
 // error, keep cart/account/checkout at weight 0 and run `browse` only.
 // `browse` alone still exercises front-end -> catalogue -> catalogue-db.
 

@@ -1,4 +1,4 @@
-# ID System — Canonical Node & Edge IDs
+# ID System - Canonical Node & Edge IDs
 
 ## The Problem
 
@@ -16,7 +16,7 @@ Without normalization: `GraphStore` receives a `MetricSnapshot` for `sockshop_ca
 
 ## The Solution
 
-**Canonical format:** `${targetId}:${serviceName}` — colon separator, no project prefix repetition in the service name.
+**Canonical format:** `${targetId}:${serviceName}` - colon separator, no project prefix repetition in the service name.
 
 Examples:
 - `sock-shop:catalogue`
@@ -31,10 +31,10 @@ The function is defined inline inside `ingestRemote()` so it closes over `target
 ```typescript
 const normalizeId = (rawId: string): string => {
   if (!rawId) return rawId;
-  // Sentinel values — never normalize these
+  // Sentinel values - never normalize these
   if (rawId === 'external' || rawId === 'unknown-upstream') return rawId;
 
-  // Already in canonical form — fast path
+  // Already in canonical form - fast path
   if (rawId.startsWith(`${targetId}:`)) return rawId;
 
   // Strip any existing targetId prefix with any separator
@@ -61,7 +61,7 @@ const edgeId = `${sourceNodeId}->${targetNodeId}`;
 "sock-shop:front-end->sock-shop:catalogue"
 ```
 
-Edge IDs are deterministic and stable — given the same source and target, you always get the same edge ID. This means:
+Edge IDs are deterministic and stable - given the same source and target, you always get the same edge ID. This means:
 - Merge operations are O(1) (just check `edgesMap.has(edgeId)`)
 - No UUID generation needed for edges
 - Edge deduplication is automatic
@@ -85,7 +85,7 @@ Used internally by `EndpointRegistry` for per-route HTTP observability tracking.
 | `external` | Traffic from outside the cluster (no matching container IP) | Allowed in `source` of interactions; no edge created |
 | `unknown-upstream` | Service recognized but upstream can't be resolved | Allowed in `source`; no edge created |
 
-These are intentionally not normalized — they represent "the traffic exists but we can't attribute it to a specific service."
+These are intentionally not normalized - they represent "the traffic exists but we can't attribute it to a specific service."
 
 ## Service Name Derivation (remote-collector)
 
@@ -93,7 +93,7 @@ The collector derives canonical service names before the normalization step is e
 
 ```typescript
 function deriveServiceName(containerInfo: any): string {
-  // Priority 1: Docker Compose label — always set by `docker-compose up`
+  // Priority 1: Docker Compose label - always set by `docker-compose up`
   const composeService = containerInfo.Labels?.['com.docker.compose.service'];
   if (composeService) return composeService;
 
@@ -109,4 +109,4 @@ function deriveServiceName(containerInfo: any): string {
 }
 ```
 
-**Why Priority 1?** Docker Compose always sets `com.docker.compose.service` to the key name in the `services:` block of the Compose file. This is exactly the canonical service name — no parsing needed. The name-splitting logic in Priority 2 handles non-Compose containers (manually started with `docker run`).
+**Why Priority 1?** Docker Compose always sets `com.docker.compose.service` to the key name in the `services:` block of the Compose file. This is exactly the canonical service name - no parsing needed. The name-splitting logic in Priority 2 handles non-Compose containers (manually started with `docker run`).

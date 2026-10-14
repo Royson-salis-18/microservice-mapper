@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -697,9 +698,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">client/src/main.tsx   → renders &lt;App /&gt; into #root
 client/src/App.tsx    → root orchestrator (465 lines)</code></pre>
                     </div>
-<p><code>App.tsx</code> owns all UI state and consumes the <code>useGraphData</code> hook. It does not fetch data directly — all data flows through the hook.</p>
+<p><code>App.tsx</code> owns all UI state and consumes the <code>useGraphData</code> hook. It does not fetch data directly - all data flows through the hook.</p>
 <hr class="rule">
-<h2 id="usegraphdata-hook-the-data-layer"><code>useGraphData</code> Hook — The Data Layer</h2>
+<h2 id="usegraphdata-hook-the-data-layer"><code>useGraphData</code> Hook - The Data Layer</h2>
 <p><strong>File:</strong> <code>client/src/hooks/useGraphData.ts</code></p>
 <p>This hook is the <strong>single data source</strong> for the entire frontend. It manages:</p>
 <ul>
@@ -707,12 +708,12 @@ client/src/App.tsx    → root orchestrator (465 lines)</code></pre>
   <li>WebSocket connection + auto-reconnect</li>
   <li>All graph state (<code>nodes</code>, <code>edges</code>, <code>targets</code>, <code>isConnected</code>, <code>status</code>)</li>
   <li>Terminal state (<code>terminalLogs</code>, <code>sendTerminalCommand</code>)</li>
-  <li><code>reloadGraph(targetId)</code> — triggers server-side discovery refresh</li>
+  <li><code>reloadGraph(targetId)</code> - triggers server-side discovery refresh</li>
 </ul>
 <h3 id="position-preservation-logic">Position Preservation Logic</h3>
 <p>When a <code>graph-update</code> WebSocket message arrives, the hook must decide whether to:</p>
 <ol>
-  <li><strong>Keep existing positions</strong> (if topology is the same — just metrics changed)</li>
+  <li><strong>Keep existing positions</strong> (if topology is the same - just metrics changed)</li>
   <li><strong>Recalculate layout</strong> (if nodes were added or removed)</li>
 </ol>
 <p>Without position preservation: nodes jump to recalculated positions every 5 seconds, making the graph unusable.</p>
@@ -727,13 +728,13 @@ client/src/App.tsx    → root orchestrator (465 lines)</code></pre>
                   [...newIds].every(id =&gt; prevIds.has(id));
 
   if (sameSet &amp;&amp; prevNodes.length &gt; 0) {
-    // Same topology — preserve positions, update data only
+    // Same topology - preserve positions, update data only
     return prevNodes.map(prev =&gt; {
       const updated = newNodes.find(n =&gt; n.id === prev.id);
       return updated ? { ...prev, data: updated } : prev;
     });
   } else {
-    // Topology changed — new nodes need layout positions
+    // Topology changed - new nodes need layout positions
     // But keep positions for nodes that already existed
     return newNodes.map(newNode =&gt; {
       const existing = prevNodes.find(p =&gt; p.id === newNode.id);
@@ -849,7 +850,7 @@ useEffect(() =&gt; {
                     </div>
 <p><code>try/catch</code> around <code>localStorage.setItem</code> handles Safari private mode where storage is unavailable. Layout preference persists across browser refreshes.</p>
 <hr class="rule">
-<h2 id="app-state-what-lives-where">App State — What Lives Where</h2>
+<h2 id="app-state-what-lives-where">App State - What Lives Where</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -939,7 +940,7 @@ const filteredEdges = useMemo(() =&gt; {
     <tr>
       <td><code>GraphCanvas</code></td>
       <td><code>GraphCanvas.tsx</code></td>
-      <td>ReactFlow wrapper — registers <code>customServiceNode</code> + <code>customDependencyEdge</code> types</td>
+      <td>ReactFlow wrapper - registers <code>customServiceNode</code> + <code>customDependencyEdge</code> types</td>
     </tr>
     <tr>
       <td><code>ServiceNode</code></td>
@@ -959,7 +960,7 @@ const filteredEdges = useMemo(() =&gt; {
     <tr>
       <td><code>Node3D</code></td>
       <td><code>3d/Node3D.tsx</code></td>
-      <td>Sphere per service — glow/pulse based on health status</td>
+      <td>Sphere per service - glow/pulse based on health status</td>
     </tr>
     <tr>
       <td><code>Edge3D</code></td>
@@ -1063,14 +1064,14 @@ const filteredEdges = useMemo(() =&gt; {
 </table></div>
 <p>The same <code>edgeAppearance()</code> and <code>linkFlow()</code> drive the 3D scene, so a link never looks different in the two views.</p>
 <hr class="rule">
-<h2 id="tracesview-what-it-actually-is"><code>TracesView</code> — What It Actually Is</h2>
+<h2 id="tracesview-what-it-actually-is"><code>TracesView</code> - What It Actually Is</h2>
 <p><code>client/src/components/TracesView.tsx</code> has a prominent comment at the top:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">/**
- * Connection Traces View — SSH-sampled TCP connection events.
+ * Connection Traces View - SSH-sampled TCP connection events.
  *
  * This is NOT distributed tracing (no OpenTelemetry/Zipkin spans).
  * It shows raw TCP connections between containers, captured by reading
@@ -1084,8 +1085,8 @@ const filteredEdges = useMemo(() =&gt; {
                     </div>
 <p>The view has two modes:</p>
 <ol>
-  <li><strong>Live feed</strong> — real-time <code>ConnectionEvent</code> objects arriving via WebSocket <code>trace-events</code></li>
-  <li><strong>Historical graph</strong> — aggregated call graph from <code>GET /api/traces/:targetId/graph?windowSec=300</code></li>
+  <li><strong>Live feed</strong> - real-time <code>ConnectionEvent</code> objects arriving via WebSocket <code>trace-events</code></li>
+  <li><strong>Historical graph</strong> - aggregated call graph from <code>GET /api/traces/:targetId/graph?windowSec=300</code></li>
 </ol>
 <p>The <code>shortName(serviceId)</code> helper strips the <code>targetId:</code> prefix for display: <code>"sock-shop:catalogue"</code> → <code>"catalogue"</code>.</p>
                 </article>
@@ -1369,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1524,10 +1525,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1625,7 +1626,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

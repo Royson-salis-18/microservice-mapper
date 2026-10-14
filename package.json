@@ -14,7 +14,7 @@
     "test": "node server/node_modules/tsx/dist/cli.mjs --test \"run/tests/*.test.ts\"",
     "setup": "npm run install:all && npm run doctor",
     "doctor": "node run/scripts/doctor.mjs",
-    "start": "npm run dev",
+    "start": "node run/scripts/local.mjs --no-collect",
     "eval": "node server/node_modules/tsx/dist/cli.mjs run/cli/eval/run.ts",
     "local": "node run/scripts/local.mjs",
     "demo": "node run/scripts/demo.mjs",

@@ -1,7 +1,7 @@
 /**
  * Parses `docker ps --no-trunc --format '{{json .}}'` output, which is
  * one JSON object per line (NOT a JSON array). Malformed lines are
- * skipped, not fatal — one bad line must not lose every other container
+ * skipped, not fatal - one bad line must not lose every other container
  * (spec section 48).
  */
 

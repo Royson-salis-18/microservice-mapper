@@ -149,7 +149,7 @@ class VirtualUser {
       // referenced from a step path as /product/${productSlug}.
       //
       // `extract` only works when a step answers JSON, and plenty of real
-      // entry points are server-rendered HTML — the Vertikal storefront's
+      // entry points are server-rendered HTML - the Vertikal storefront's
       // /catalog is a Next.js page, so there is nothing to extract a slug
       // from. Without this every virtual user would have to hammer one
       // hard-coded product, which measures that product's cache rather than

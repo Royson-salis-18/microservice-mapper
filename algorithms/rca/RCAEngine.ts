@@ -40,7 +40,7 @@ export function describeAnomaly(a: AnomalyRecord): string {
  * Edges read "caller -> callee", so a service depends on `rootId` if there is
  * a chain of calls from it down to `rootId`. The strength of that chain is how
  * much of a failure at `rootId` would plausibly reach it. Max-product path,
- * solved by relaxation — graphs here are tens of nodes, so this is trivial.
+ * solved by relaxation - graphs here are tens of nodes, so this is trivial.
  */
 export function dependencyReach(rootId: string, edges: DependencyEdge[], weightOf: (e: DependencyEdge) => number): Map<string, number> {
   const reach = new Map<string, number>([[rootId, 1]]);
@@ -302,7 +302,7 @@ export class RCAEngine {
         afterValue: strongest ? `${oneDecimal(strongest.observedValue)}` : (state(n) ? `${n.status} (${state(n)})` : n.status),
         source: strongest?.evidenceSource ?? 'container-runtime',
         description: strongest
-          ? `${describeAnomaly(strongest)}${strongest.reason ? ` — ${strongest.reason}` : ''}`
+          ? `${describeAnomaly(strongest)}${strongest.reason ? ` - ${strongest.reason}` : ''}`
           : `'${n.name}': ${n.status}${state(n) ? ` (${state(n)})` : ''}`,
       });
     }

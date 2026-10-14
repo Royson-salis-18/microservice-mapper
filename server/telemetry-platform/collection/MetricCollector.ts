@@ -19,7 +19,7 @@ interface PreviousSample {
 
 /**
  * Collects one round of container-level telemetry. Network/restart rates
- * are only derived once a second, later sample exists for that service —
+ * are only derived once a second, later sample exists for that service -
  * the first poll after start always has `null` rates, never a guessed 0
  * (spec section 13, section 32).
  */
@@ -64,7 +64,7 @@ export class MetricCollector {
       const serviceId = service?.serviceId ?? `${this.targetId}:unknown-${entry.containerId.slice(0, 12)}`;
       if (!service) {
         warnings.push(
-          `Container ${entry.containerId} (${entry.name}) has no matching discovered service — using ad-hoc serviceId`,
+          `Container ${entry.containerId} (${entry.name}) has no matching discovered service - using ad-hoc serviceId`,
         );
       }
 
@@ -90,7 +90,7 @@ export class MetricCollector {
         containerId: entry.containerId,
 
         cpuPercent: entry.cpuPercent,
-        cpuRaw: null, // not available over CLI — see collection/cpu.ts header note
+        cpuRaw: null, // not available over CLI - see collection/cpu.ts header note
 
         memoryBytes: entry.memoryBytes,
         memoryLimitBytes: entry.memoryLimitBytes,

@@ -274,8 +274,8 @@ app.post('/api/probe', async (req, res) => {
  * an entry point, and generic guesses are worthless on a system that does
  * not follow e-commerce conventions: probing DeathStarBench produced 49
  * 404s out of 53, because its API is /wrk2-api/* and nothing resembles
- * /api/cart or /health. These paths are the opposite of a guess — they were
- * written against the real system — so the sweep should start from them.
+ * /api/cart or /health. These paths are the opposite of a guess - they were
+ * written against the real system - so the sweep should start from them.
  *
  * Only GET, and only fully-resolved paths: anything else is unsafe to fire
  * blindly at a target nobody has mapped yet. A ${var} is resolved from the

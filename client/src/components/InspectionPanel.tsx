@@ -57,7 +57,7 @@ function Kpi({ label, value, unit, meter, icon: Icon }: { label: string; value: 
       </div>
       <div style={kpiValue}>
         {value}
-        {unit && value !== '—' && <span style={kpiUnit}>{unit}</span>}
+        {unit && value !== '-' && <span style={kpiUnit}>{unit}</span>}
       </div>
       {meter !== undefined && (
         <div style={{ marginTop: '10px', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
@@ -206,7 +206,7 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
           <div style={row}><span style={rowLabel}>Uptime</span><span style={rowValue}>{node.metadata?.uptime || 'Not available'}</span></div>
         </div>
 
-        {/* Request-level metrics — present only when a Tier 1/2 source
+        {/* Request-level metrics - present only when a Tier 1/2 source
             supplied them. Rendered as its own block, labelled with where it
             came from, rather than mixed in with the cgroup numbers: CPU is
             measured by the kernel and latency is measured by whatever the
@@ -254,10 +254,10 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
             <span style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>Tier 0 · cgroup</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 16px' }}>
-            <Kpi label="CPU" value={node.metrics?.cpu !== undefined ? `${node.metrics.cpu}` : '—'} unit="%" meter={node.metrics?.cpu || 0} />
-            <Kpi label="Memory" value={node.metrics?.memoryPercent !== undefined ? `${node.metrics.memoryPercent}` : '—'} unit="%" meter={node.metrics?.memoryPercent || 0} />
-            <Kpi label="Network RX" icon={ArrowDown} value={node.metrics?.networkRx !== undefined ? formatBytes(node.metrics.networkRx).split(' ')[0] : '—'} unit={node.metrics?.networkRx !== undefined ? `${formatBytes(node.metrics.networkRx).split(' ')[1]}/s` : undefined} />
-            <Kpi label="Network TX" icon={ArrowUp} value={node.metrics?.networkTx !== undefined ? formatBytes(node.metrics.networkTx).split(' ')[0] : '—'} unit={node.metrics?.networkTx !== undefined ? `${formatBytes(node.metrics.networkTx).split(' ')[1]}/s` : undefined} />
+            <Kpi label="CPU" value={node.metrics?.cpu !== undefined ? `${node.metrics.cpu}` : '-'} unit="%" meter={node.metrics?.cpu || 0} />
+            <Kpi label="Memory" value={node.metrics?.memoryPercent !== undefined ? `${node.metrics.memoryPercent}` : '-'} unit="%" meter={node.metrics?.memoryPercent || 0} />
+            <Kpi label="Network RX" icon={ArrowDown} value={node.metrics?.networkRx !== undefined ? formatBytes(node.metrics.networkRx).split(' ')[0] : '-'} unit={node.metrics?.networkRx !== undefined ? `${formatBytes(node.metrics.networkRx).split(' ')[1]}/s` : undefined} />
+            <Kpi label="Network TX" icon={ArrowUp} value={node.metrics?.networkTx !== undefined ? formatBytes(node.metrics.networkTx).split(' ')[0] : '-'} unit={node.metrics?.networkTx !== undefined ? `${formatBytes(node.metrics.networkTx).split(' ')[1]}/s` : undefined} />
           </div>
         </div>
 

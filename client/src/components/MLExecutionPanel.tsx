@@ -6,7 +6,7 @@ import { InfoTip } from './ui/Panel';
  * Notebook-style execution panel for the ML pipeline.
  *
  * The cells are the real pipeline steps, in the order they run, each showing
- * the actual source of the script it executes — fetched from the server, not
+ * the actual source of the script it executes - fetched from the server, not
  * transcribed here, so what is displayed cannot drift from what runs.
  *
  * What is editable is the part worth editing: the project to scope to and the
@@ -143,7 +143,7 @@ function CodeCell({ source, collapsed, onToggle }: { source: SourceDoc | null; c
 /**
  * The suggestion under a hyperparameter field.
  *
- * Shows the value, the sane range, and one click to take it — with the
+ * Shows the value, the sane range, and one click to take it - with the
  * reasoning behind it available rather than asking anyone to trust a bare
  * number. The reasons are computed from this project's own feature table,
  * so they say what will happen to these services rather than quoting a
@@ -323,7 +323,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
         <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' }}>Execution</h3>
         <InfoTip>
           The pipeline steps in the order they run, each showing the real source of the script it
-          executes — fetched from the server, so what is displayed cannot drift from what runs.
+          executes - fetched from the server, so what is displayed cannot drift from what runs.
           <br /><br />
           Hyperparameters are passed to <code>train.py</code> as CLI flags. Anything left blank keeps the
           default from <code>ml/config.json</code>, and the exact command is previewed before you run it.
@@ -344,7 +344,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
               <option value="ALL">All projects</option>
             </select>
             <div style={helper}>
-              One project at a time. Models are per service either way — this picks which get rebuilt.
+              One project at a time. Models are per service either way - this picks which get rebuilt.
             </div>
           </div>
           <div>
@@ -378,7 +378,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
         </div>
         <div style={{ marginTop: '6px' }}>
           <InfoTip label="What this step does">
-            Rebuilds the feature table for <em>every</em> service — it is not project-scoped, and it is
+            Rebuilds the feature table for <em>every</em> service - it is not project-scoped, and it is
             the slow step. Skip it when tuning hyperparameters against data that has not changed.
           </InfoTip>
         </div>
@@ -409,7 +409,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
               </span>
               <InfoTip label="Where these come from">
                 Every suggestion below is computed from this project's own feature table, not from a
-                textbook default — so they say what will happen to <em>these</em> services.
+                textbook default - so they say what will happen to <em>these</em> services.
                 {suggest.observed.thinnest.length > 0 && (
                   <>
                     <br /><br />

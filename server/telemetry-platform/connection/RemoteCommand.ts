@@ -17,7 +17,7 @@ export interface RemoteCommandResult<T = unknown> {
 }
 
 export interface RemoteCommand<T = unknown> {
-  /** Human-readable, logged name — e.g. "docker.ps" */
+  /** Human-readable, logged name - e.g. "docker.ps" */
   name: string;
   /** The literal command to execute. No string interpolation of raw user input. */
   command: string;

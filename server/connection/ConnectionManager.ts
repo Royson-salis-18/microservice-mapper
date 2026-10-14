@@ -9,7 +9,7 @@ export interface ConnectionManagerOptions {
 
 /**
  * Owns the lifecycle of a Connection for a given target. Does NOT
- * permanently depend on an interactive terminal — connect() can be
+ * permanently depend on an interactive terminal - connect() can be
  * called repeatedly by a background collection loop.
  */
 export class ConnectionManager {

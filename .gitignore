@@ -28,5 +28,5 @@ ml/logs/
 *.tar.gz
 *.tgz
 
-# Claude Code session worktrees: full checkouts, machine-specific paths
-.claude/worktrees/
+# Editor and tool folders
+.claude/

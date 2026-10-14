@@ -15,8 +15,8 @@ symptom is what you will be looking at when you come back to this.
 **Symptoms.** (1) In an incident, the service that called the broken one was named as root cause. (2) Incidents raised by CPU/memory anomalies on running services showed no root cause. (3) The propagation path pointed from the cause to its dependencies. (4) A `docker pause`d container never appeared in incidents. (5) sock-shop and train-ticket showed **LIVE** with 0 services discovered.
 
 **Causes and fixes.**
-* `server/rca/RCAEngine.ts`: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -> 0.10; observed-edge bonus removed from the score.
-* `server/rca/AnomalyDetector.ts`: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise `container-paused`.
+* `algorithms/rca/RCAEngine.ts`: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -> 0.10; observed-edge bonus removed from the score.
+* `algorithms/detection/AnomalyDetector.ts`: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise `container-paused`.
 * `server/collectors/DockerCollector.ts`: `State === 'paused'` -> status critical (was `unknown`).
 * `server/graph/GraphStore.ts`: an HTTP ping of the app's website no longer refreshes `lastSeen` (it said nothing about telemetry), and a discovery that found zero services no longer marks the target LIVE.
 
@@ -41,11 +41,11 @@ longer matched anything in the snapshot, so `MetricCollector` fell back to an
 ad-hoc `unknown-<hash>` id. Discovery only re-ran if the connection dropped.
 
 **Fix:** a periodic re-discovery timer.
-**Where:** `server/discovery/EndpointDiscoveryEngine.ts` — `refreshDiscovery()`,
+**Where:** `server/discovery/EndpointDiscoveryEngine.ts` - `refreshDiscovery()`,
 `rediscoveryTimer`.
 
 **Interval is 180s, deliberately.** A rescan is one `docker ps` plus one
-`docker inspect` per container in a burst — far heavier than the ambient
+`docker inspect` per container in a burst - far heavier than the ambient
 polling. At 60s it pushed SSH channel usage over the edge on a loaded host
 and produced `Channel open failure` across the *whole* connection, not just
 rediscovery.
@@ -70,7 +70,7 @@ known-good list already exists. Logged, and retried next cycle.
 swap-thrashing 2GB box running ~18 JVM services, `docker ps` was **measured at
 45.6s** against a 15s timeout, so discovery failed every cycle.
 
-**Fix:** timeouts raised to match reality — `docker ps` 90s, `inspect` and
+**Fix:** timeouts raised to match reality - `docker ps` 90s, `inspect` and
 `version` 20s, `stats` 30s, container TCP read 10s.
 **Where:** `server/telemetry-platform/src/connection/RemoteCommand.ts`.
 
@@ -110,7 +110,7 @@ deployment declares none.
 `scheme://host[:port]` values, resolving `${VAR:default}` placeholders (the
 default is what applies when the env var is unset, the normal case in a
 compose deployment). An edge is emitted **only** when the hostname exactly
-matches a discovered service — a hostname matching nothing is discarded
+matches a discovered service - a hostname matching nothing is discarded
 rather than becoming a phantom node.
 **Where:** `server/telemetry-platform/src/discovery/parsers/applicationConfig.ts`.
 
@@ -136,7 +136,7 @@ into a per-minute rate per edge.
 **Named `samplesPerMin`, not `connectionsPerMin`.** The collector re-counts
 every `ESTABLISHED`/`TIME_WAIT` socket on each sweep, so one long-lived
 connection contributes repeatedly. It is a concurrency proxy, not a count of
-new connections — the first name implied a precision the measurement does not
+new connections - the first name implied a precision the measurement does not
 have.
 
 **Thresholds are calibrated against the real spread** (median 112, p75 256,
@@ -153,7 +153,7 @@ initial guess of 200 for "saturated" would have painted almost everything red.
 An explicit `failed`/`degraded` status still outranks volume: a broken link
 matters more than a busy one. Links never observed stay inert grey, and links
 observed but not yet rated say so rather than reporting `0/min`.
-**Where:** `client/src/components/shared/edgeHeat.ts` — shared by both views,
+**Where:** `client/src/components/shared/edgeHeat.ts` - shared by both views,
 so a link cannot look calm in one and hot in the other.
 
 ### 2.2 Colour vocabulary
@@ -185,22 +185,22 @@ Eight layouts in each view, selectable, persisted to `localStorage`.
 hung with zero output.
 
 **Cause:** the BFS re-queued a node whenever a longer path to it was found, to
-get "deepest depender wins". On a cycle — `A → B → A`, which real meshes have
-whenever a service and its database are each observed calling the other —
+get "deepest depender wins". On a cycle - `A → B → A`, which real meshes have
+whenever a service and its database are each observed calling the other -
 depth grows without bound and the loop never terminates.
 
 **Fix:** breadth-first with first-visit depth, each node assigned once.
 Terminates always, still reads left-to-right. Nodes in pure-cycle components
 unreachable from any root are placed after the deepest reached node rather
 than at zero, where they would sit on top of the entry points.
-**Where:** `layouts2d.ts` — `hierarchyDepths()`.
+**Where:** `layouts2d.ts` - `hierarchyDepths()`.
 
 Verified against 200 nodes / 400 edges of pure bidirectional cycles: all
 eight layouts complete in ≤1ms.
 
 ### 3.2 Layouts wrap
 
-Tiers put every service of one role in a single row — 9,620px of horizontal
+Tiers put every service of one role in a single row - 9,620px of horizontal
 pan in 2D, and in 3D a flat line that reads as a wall from any normal camera
 angle. Hierarchy did the same vertically (7,030px). Both now wrap into
 sub-rows/sub-columns.
@@ -209,7 +209,7 @@ sub-rows/sub-columns.
 
 Each arrangement has a completely different footprint, so one fixed camera
 either buries the scene or leaves it a speck.
-**Where:** `Scene3D.tsx` — `FitCamera`.
+**Where:** `Scene3D.tsx` - `FitCamera`.
 
 Three things that each caused a blank screen while getting this right, all
 now handled:
@@ -229,7 +229,7 @@ now handled:
 
 ### 4.1 Positions are driven imperatively, not through React state
 
-**Symptom:** the entire canvas rendered nothing — no grid, no nodes.
+**Symptom:** the entire canvas rendered nothing - no grid, no nodes.
 
 **Cause:** the layout animator called `setState` every frame. That re-rendered
 the scene, which rebuilt the layout, which restarted the animation. The loop
@@ -239,7 +239,7 @@ drew.
 **Fix:** a shared mutable `Map<string, THREE.Vector3>` written by a
 `useFrame` driver and read by nodes, edges, and labels. No React state in the
 frame loop.
-**Where:** `Scene3D.tsx` — `LayoutDriver`, `PositionMap`.
+**Where:** `Scene3D.tsx` - `LayoutDriver`, `PositionMap`.
 
 ### 4.2 Text can blank the whole canvas
 
@@ -255,7 +255,7 @@ request takes the grid and every node down with it.
 ### 4.3 Links were buried inside the hardware
 
 **Symptom:** Architecture showed many blue links; 3D appeared to show far
-fewer. Both views had **identical** data — 50 edges, 17 observed.
+fewer. Both views had **identical** data - 50 edges, 17 observed.
 
 **Cause:** links attached at mid-chassis height while chassis tops are taller,
 so a link entered one unit, passed through its body, and came out the far
@@ -263,7 +263,7 @@ side. 2D always draws edges on top.
 
 **Fix:** links leave from above the hardware and arc enough to clear what they
 pass over.
-**Where:** `Edge3D.tsx` — `NODE_HEIGHT`, arc height.
+**Where:** `Edge3D.tsx` - `NODE_HEIGHT`, arc height.
 
 Declared-only links had a second problem: they were drawn at 25% opacity in
 near-black, so 33 of 50 edges were effectively invisible. They now match the
@@ -273,7 +273,7 @@ near-black, so 33 of 50 edges were effectively invisible. They now match the
 
 An edge only rebuilt its tube when an endpoint *moved*, compared against a
 starting position of `(0,0,0)`. Any edge touching a node genuinely at the
-origin — exactly where the Radial layout puts its most-connected service —
+origin - exactly where the Radial layout puts its most-connected service -
 measured zero movement on the first frame and **never built geometry at all**.
 Now tracked with an explicit `built` flag.
 **Where:** `Edge3D.tsx`.
@@ -285,7 +285,7 @@ everything else drops to ~15% and stops animating. Deselect works three ways:
 click empty space, click the selected unit again, or press Escape.
 
 `onPointerMissed` can fire in the same gesture as a node click, which would
-select and instantly deselect — the details panel would flash and vanish. A
+select and instantly deselect - the details panel would flash and vanish. A
 150ms guard ignores a "missed" that lands right after a real hit.
 **Where:** `Scene3D.tsx`.
 
@@ -299,7 +299,7 @@ select and instantly deselect — the details panel would flash and vanish. A
 
 **Cause:** `stopAll()` iterated only runs *this server instance* started. A
 run launched directly against traffic-gen, or one that outlived a server
-restart, was invisible to it — and after a restart that map is empty, so Stop
+restart, was invisible to it - and after a restart that map is empty, so Stop
 All stopped **nothing**.
 
 **Fix:** query traffic-gen for the authoritative list of running projects and
@@ -321,7 +321,7 @@ erased the pin whenever someone updated an IP.
 
 Sock Shop showed nodes but **zero** edges. Its compose file declares no
 `depends_on` and it is not Spring, so neither declared-edge source produces
-anything — every edge must come from observed TCP. But traffic-gen was running
+anything - every edge must come from observed TCP. But traffic-gen was running
 in discovered-endpoints mode against `/` only, hammering a static homepage
 that never calls a backend: 6,365 requests, zero edges.
 
@@ -334,7 +334,7 @@ deployment's front-end (an unhandled error callback at
 everything into 502s. On a box where carts is slow enough to error, run
 `browse` only.
 
-### 5.5 "Start experiment does nothing" — five separate causes
+### 5.5 "Start experiment does nothing" - five separate causes
 
 Reported as a single symptom on the OpenTelemetry target. Each of these was
 independently capable of producing it.
@@ -342,7 +342,7 @@ independently capable of producing it.
 **a) traffic-gen could never be restarted once it died.**
 `ensureTrafficGenRunning()` cached its in-flight promise in
 `ensureStartingPromise` and **never cleared it**. traffic-gen is spawned as a
-child of the mapper, so it dies whenever the parent restarts — after which
+child of the mapper, so it dies whenever the parent restarts - after which
 every later call returned the stale resolved promise, skipped the respawn,
 and every proxied request failed with `fetch failed`. The promise is now
 released in a `finally`, and a reachability check short-circuits when it is
@@ -352,14 +352,14 @@ already up.
 **b) The start was fire-and-forget.** `startTarget()` returned
 `isRunning: true` immediately, before traffic-gen had accepted or refused.
 A refusal (STUB target, 409, process down) was logged to the server console
-while the API — and therefore the UI — reported success. It is now `async`
+while the API - and therefore the UI - reported success. It is now `async`
 and returns the real outcome; `/api/experiments/start` returns **502** with
 the reason and closes the experiment record instead of leaving it RUNNING
 against a workload that never ran.
 
 **c) The default entry point was Grafana.** Endpoint ranking sorted PUBLIC
 endpoints by lowest port, so an OpenTelemetry Demo resolved to Grafana
-`:3000` ahead of the app frontend on `:8080` — and `:3000` was not reachable
+`:3000` ahead of the app frontend on `:8080` - and `:3000` was not reachable
 from outside, so the reachability gate failed. Observability components are
 now ranked last, identified by service name rather than port (ports collide:
 `:3000` is Grafana here and an ordinary frontend elsewhere).
@@ -374,7 +374,7 @@ disabled when blocked, and the panel states which precondition failed.
 
 **e) Endpoint selection leaked across targets.** Switching the target kept
 the previously selected endpoint/service/route ids, which are namespaced per
-target — visible in the log as a death-star experiment resolving an
+target - visible in the log as a death-star experiment resolving an
 open-telemetry endpoint id, i.e. traffic aimed at the wrong project's URL.
 Switching target now clears them.
 
@@ -412,9 +412,9 @@ stretched the section to ~7,000px.
 
 | Issue | Where | Why it mattered |
 |---|---|---|
-| 60 identical canvas textures | `Node3D.tsx` | Each node built its own halo texture — byte-identical, and tinted at draw time anyway. Now one shared texture. |
+| 60 identical canvas textures | `Node3D.tsx` | Each node built its own halo texture - byte-identical, and tinted at draw time anyway. Now one shared texture. |
 | `edgeActivity` never pruned | `GraphStore.ts` | Counters keyed by edge id grew for the process lifetime. Now deleted with their edge. |
-| `MetricStore` never released nodes | `MetricStore.deleteNode()` | History is capped *per node*, but nodes were never removed — every container restarting onto a new id left a full history behind forever. |
+| `MetricStore` never released nodes | `MetricStore.deleteNode()` | History is capped *per node*, but nodes were never removed - every container restarting onto a new id left a full history behind forever. |
 | 2D layout recomputed every poll | `App.tsx` | Keyed off node/edge arrays whose identity changes on every telemetry tick. Now keyed on a signature of which services and links exist. |
 | Tube geometry leaked per frame | `Edge3D.tsx` | Rebuilt on every position change during layout transitions without disposing the old buffers. |
 
@@ -436,7 +436,7 @@ a logic error.
 cd client && npx tsc -p tsconfig.app.json --noEmit
 ```
 
-`npx tsc --noEmit` at the client root **checks nothing** — that directory uses
+`npx tsc --noEmit` at the client root **checks nothing** - that directory uses
 a solution-style config that only references `tsconfig.app.json`. It exits 0
 regardless, which produced several false "clean" results before it was
 noticed.
@@ -448,14 +448,14 @@ noticed.
 A sweep over the whole tree, not just the parts under active change. Each of
 these was verified against the code, not assumed.
 
-### 9.1 Command injection in `sanitizeIso` — fixed
+### 9.1 Command injection in `sanitizeIso` - fixed
 
 `sanitizeIso()` validated with `Date.parse()`, which V8 accepts far more
 loosely than ISO-8601. `Date.parse("Jan 1 2026 $(whoami)")` **succeeds**, so
 the payload reached the remote shell through
 `docker logs --timestamps --since …`.
 
-Not reachable from user input today — `since` is computed server-side — but a
+Not reachable from user input today - `since` is computed server-side - but a
 sanitizer whose only job is blocking injection must not depend on every
 caller staying trustworthy. Now validated against a strict ISO-8601 regex.
 **Where:** `server/telemetry-platform/src/connection/RemoteCommand.ts`.
@@ -464,7 +464,7 @@ Regression covered in `tests/security.test.ts`.
 The other sanitizers (container id, path, tail) were already allowlist-based
 and throw rather than escape, which is the right shape.
 
-### 9.2 `spawn` sites without `error` handlers — fixed
+### 9.2 `spawn` sites without `error` handlers - fixed
 
 Three places spawned a child process and handled only `close`/`exit`. When
 the binary is missing (`python3`, `node`, `ssh` not on PATH), `spawn` emits
@@ -480,7 +480,7 @@ Also in the same area: `runStep()` in the retrain route never settled its
 promise if `spawn` failed, leaving the retrain permanently "running" and
 blocking every future retrain via the 409 guard.
 
-### 9.3 No process-level crash guards — fixed
+### 9.3 No process-level crash guards - fixed
 
 An unhandled rejection **terminates the process** in Node 18+. This server
 polls hosts that are routinely unreachable, so one stray rejection took every
@@ -495,9 +495,9 @@ loop is strictly worse than a degraded target.
 > Express version matters here: this project is on **Express 5**, which
 > forwards async handler rejections to the error handler automatically. Async
 > routes without `try/catch` return 500 rather than crashing. That is not
-> true on Express 4 — if this is ever downgraded, those routes need wrapping.
+> true on Express 4 - if this is ever downgraded, those routes need wrapping.
 
-### 9.4 Unbounded retrain log — fixed
+### 9.4 Unbounded retrain log - fixed
 
 `retrainState.log` grew for the whole run and was returned **in full** by
 `GET /api/ml/retrain`, which the UI polls every 2 seconds. `train.py` prints
@@ -505,7 +505,7 @@ a line per trained and per skipped service, so on a 76-service deployment
 every poll re-sent the entire accumulated log. Capped at 500 lines; the UI
 only renders the tail.
 
-### 9.5 Silently swallowed config errors — fixed
+### 9.5 Silently swallowed config errors - fixed
 
 Two `catch {}` blocks hid failures to parse `remote_config.json`, in code
 paths that decide **which host to SSH into**. A JSON syntax error silently
@@ -531,7 +531,7 @@ now annotated as deliberate rather than looking like oversights.
   `traffic-generator/` (508K combined) have **zero references** from live
   code. They are confusing because they hold the only other test files, which
   look authoritative but test stale copies. They are tracked in git, so
-  deleting them is recoverable — left in place pending a decision.
+  deleting them is recoverable - left in place pending a decision.
 - **No linter** is configured for either `client` or `server`. Everything
   above was found by reading and targeted greps; a linter would catch the
   next one earlier.
@@ -542,7 +542,7 @@ now annotated as deliberate rather than looking like oversights.
 
 ## 10. Accuracy audit (October 2026)
 
-A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (`scripts/simulate-target.ts`) against an isolated server, and a new self-check (`server/graph/consistency.ts`, `GET /api/diagnostics/consistency`). Full write-up: [Keeping the numbers honest](32-accuracy-and-self-check.md) and [Measuring precisely](31-measurement-precision.md).
+A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (`scripts/simulate-target.ts`) against an isolated server, and a new self-check (`algorithms/graph/consistency.ts`, `GET /api/diagnostics/consistency`). Full write-up: [Keeping the numbers honest](32-accuracy-and-self-check.md) and [Measuring precisely](31-measurement-precision.md).
 
 ### 10.1 Dependency shares summed to 183%
 Unmeasured edges were given `1/N` *on top of* a full split of the measured traffic. Now unmeasured edges get `1/N` each and the measured ones share the remainder, so every caller sums to exactly 1 per kind. Enforced by the `reliance-sums-to-one` rule.
@@ -566,7 +566,7 @@ Socket rows per minute say more about sweep frequency than about traffic. Each s
 Dual-stack servers list IPv4 clients in `/proc/net/tcp6` as `::ffff:a.b.c.d`. They were decoded as IPv6, matched no container, and the link vanished. `decodeProcNetIp()` now recognises them.
 
 ### 10.8 One set of link thresholds
-Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in `server/graph/linkThresholds.ts` and the client's `edgeHeat.ts`, and a test asserts they match.
+Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in `algorithms/graph/linkThresholds.ts` and the client's `edgeHeat.ts`, and a test asserts they match.
 
 ### 10.9 Smaller ones
 The anomaly baseline no longer treats missing samples as 0 (`|| 0`). Metrics are built with `num()` so missing means `null`. Evidence text says "not measured" instead of "0%". The connection sweep waits for itself like the poll loop.
@@ -575,14 +575,14 @@ The anomaly baseline no longer treats missing samples as 0 (`|| 0`). Metrics are
 
 - **Palette:** dark navy to black with indigo. Warm colours only for trouble; volume is a cool blue ramp. Bright bloom was tried and rejected as glare, so it is now opt-in and off by default.
 - **Links:** colour by severity (red ≥ 5% errors, ≥ 1 s, or a down callee; orange ≥ 1%, ≥ 300 ms, or a degraded callee), thickness by dependency weight, and **pulses whose rate follows the link's traffic** (`pulsesFor = 0.3 + 1.6·log10(1+rate)`), exact in both 2D and 3D.
-- **2D cards** are flat and matte (gloss competed with the status colours); meters show `—` when unmeasured.
+- **2D cards** are flat and matte (gloss competed with the status colours); meters show `-` when unmeasured.
 - **3D islands:** a district per project and a raised platform per role (edge, services, data, messaging, infrastructure, observability), tracks only between sections that call each other, and scenery around them. A "server room" and a "building" layout were built and dropped. The right-angle cable option now applies in every layout.
 - **Inspector:** CPU against its allowance, network per second, de-duplicated ports, incident role, what-if.
 - **Reference:** [Reading the picture](33-visual-language.md).
 
 ## 12. Standing rules these changes follow
 
-- **Never fabricate a measurement.** Absent data is absent — no defaulting to
+- **Never fabricate a measurement.** Absent data is absent - no defaulting to
   zero, no deriving an edge metric from a node metric, no inferring a
   dependency from a name.
 - **Label things as what they are.** `samplesPerMin`, not

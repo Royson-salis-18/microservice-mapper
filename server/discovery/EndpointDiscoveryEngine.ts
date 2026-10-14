@@ -27,7 +27,7 @@ import {
  *  persistent outage costs one extra command every 15s, not every poll. */
 const PS_ALL_CACHE_MS = 15_000;
 /** A service whose container no longer exists at all is dropped from tracking
- *  after this long — matching GraphStore's stale-node pruning window. */
+ *  after this long - matching GraphStore's stale-node pruning window. */
 const REMOVED_SERVICE_GRACE_MS = 900_000;
 
 /**
@@ -208,17 +208,17 @@ class TargetAgent {
     // empty service list without throwing. On the *initial* cycle that's the
     // real state and we take it as-is; on a periodic rescan, overwriting a
     // known-good service list with an empty one would wipe every already-
-    // matched service back to "unknown-<hash>" until the next reconnect —
+    // matched service back to "unknown-<hash>" until the next reconnect -
     // so keep the last known-good list and let the next rescan retry.
     if (result.services.length === 0 && this.discoveredServices.length > 0) {
-      this.log(`[Agent:${this.targetId}] Re-discovery returned 0 services — keeping previous ${this.discoveredServices.length} (likely a transient SSH hiccup, will retry).`);
+      this.log(`[Agent:${this.targetId}] Re-discovery returned 0 services - keeping previous ${this.discoveredServices.length} (likely a transient SSH hiccup, will retry).`);
       return this.discoveredServices.length;
     }
 
     // `docker ps` lists running containers only, so a service that crashed
     // since the last scan is simply absent here. Replacing the list outright
     // (which this did before) made a crashed service vanish from tracking at
-    // the next rescan — the poll stopped checking it, its node stopped being
+    // the next rescan - the poll stopped checking it, its node stopped being
     // refreshed, and it was eventually pruned as if it had never existed. A
     // dead dependency is the most important thing on the graph, not something
     // to forget. So previously known services carry over; the poll's
@@ -295,7 +295,7 @@ class TargetAgent {
       if (this.onTopologyDiscovered) {
         this.onTopologyDiscovered(this.targetId, formattedServices, formattedDeps);
       }
-      this.log(`[Agent:${this.targetId}] Discovery done — ${result.services.length} services found.`);
+      this.log(`[Agent:${this.targetId}] Discovery done - ${result.services.length} services found.`);
       return result.services.length;
   }
 
@@ -325,13 +325,13 @@ class TargetAgent {
    *
    * Stress runs kill services on these small hosts and they stay dead, so
    * the next session maps a system with holes in it. This restarts them on
-   * reconnect — deliberately on reconnect only, never mid-run: an
+   * reconnect - deliberately on reconnect only, never mid-run: an
    * experiment that silently repaired what it was measuring would destroy
    * the failure the RCA pipeline exists to observe.
    *
    * Four things are never restarted:
    *
-   *   - Exit code 0. That is a job that finished, not a crash — sock-shop's
+   *   - Exit code 0. That is a job that finished, not a crash - sock-shop's
    *     `sock-shop-stress-1` has sat at "Exited (0)" for six days and
    *     restarting it would re-run a stress job nobody asked for.
    *   - Anything that generates load (see LOAD_GENERATOR_NAMES). Reviving
@@ -369,20 +369,20 @@ class TargetAgent {
       const name = String(row.Names ?? '').split(',')[0].trim();
       if (!name) continue;
 
-      // "Exited (137) 6 days ago" — the code is the whole signal here, and
+      // "Exited (137) 6 days ago" - the code is the whole signal here, and
       // it is already in the listing, so this needs no extra inspect call.
       const match = /Exited \((\d+)\)/.exec(String(row.Status ?? ''));
       const code = match ? Number(match[1]) : -1;
       if (code === 0) continue;
 
       if (LOAD_GENERATOR_NAMES.test(name)) {
-        this.log(`[Agent:${this.targetId}] Not restarting ${name} (exit ${code}) — it generates load, and traffic must only ever start from the traffic controller.`);
+        this.log(`[Agent:${this.targetId}] Not restarting ${name} (exit ${code}) - it generates load, and traffic must only ever start from the traffic controller.`);
         continue;
       }
 
       const attempts = this.restartAttempts.get(name) ?? 0;
       if (attempts >= MAX_RESTART_ATTEMPTS) {
-        this.log(`[Agent:${this.targetId}] Not restarting ${name} again — already tried ${attempts}x this session; it is crash-looping and needs a look.`);
+        this.log(`[Agent:${this.targetId}] Not restarting ${name} again - already tried ${attempts}x this session; it is crash-looping and needs a look.`);
         continue;
       }
 
@@ -410,7 +410,7 @@ class TargetAgent {
    *
    * Everything here is best-effort and wrapped: an optional source that is
    * slow, broken or lying must never cost us the Tier 0 metrics already in
-   * hand. The agentless path is the one that has to keep working — this only
+   * hand. The agentless path is the one that has to keep working - this only
    * ever adds fields to it.
    *
    * Opt-in per target via `telemetrySources.prometheus` in
@@ -449,7 +449,7 @@ class TargetAgent {
           this.log(`[Agent:${this.targetId}] Tier 2 (Prometheus) unavailable: ${this.prometheusUnavailableReason}`);
           return empty;
         }
-        this.log(`[Agent:${this.targetId}] Tier 2 (Prometheus) available — per-request latency and error rates enabled.`);
+        this.log(`[Agent:${this.targetId}] Tier 2 (Prometheus) available - per-request latency and error rates enabled.`);
       }
       if (this.prometheusUnavailableReason) return empty;
 
@@ -509,13 +509,13 @@ class TargetAgent {
       try {
         collector.setConnection(currentConn);
         const metricsRes = await collector.collectOnce(this.discoveredServices);
-        // These used to be dropped on the floor here — the block was an
+        // These used to be dropped on the floor here - the block was an
         // empty `// Log warnings but continue`. That is the other half of
         // why a permanent TCP-scan failure went unnoticed for so long: the
         // collector dutifully reported it every 5s and nothing ever printed
         // it. Deduplicated because a genuinely broken service fails on
         // every single sweep, and an unthrottled warning would bury the log
-        // rather than inform it — so each distinct message is announced
+        // rather than inform it - so each distinct message is announced
         // once, then again only if it stops and recurs.
         for (const warn of metricsRes.warnings) {
           if (this.seenWarnings.has(warn)) continue;
@@ -528,7 +528,7 @@ class TargetAgent {
 
         // Tier 2, if this target has a source configured and it is usable.
         // Wrapped so that a failing optional source can never cost us the
-        // Tier 0 metrics we already have in hand — the agentless path is the
+        // Tier 0 metrics we already have in hand - the agentless path is the
         // one that has to keep working.
         const requestMetrics = await this.collectRequestMetrics(currentConn);
         const missing = await this.classifyMissingServices(currentConn, metricsRes.samples);
@@ -559,7 +559,7 @@ class TargetAgent {
      * concurrently. Each overlapping cycle holds its own SSH channels, and
      * once they exceed the server's MaxSessions (OpenSSH default 10) every
      * further exec is refused with "(SSH) Channel open failure: open
-     * failed" — measured at ~2.6 refused scans per cycle across all three
+     * failed" - measured at ~2.6 refused scans per cycle across all three
      * targets, i.e. a steady fraction of every sweep's services silently
      * going unscanned, which is exactly the coverage gap that made the
      * graph look patchy.
@@ -578,7 +578,7 @@ class TargetAgent {
     // Containers that start after the initial scan (e.g. a compose stack
     // still coming up, or a service that restarted onto a new container id)
     // would otherwise sit forever as unmatched "unknown-<hash>" metric
-    // samples with no type/edges — rescan periodically so they get named,
+    // samples with no type/edges - rescan periodically so they get named,
     // classified, and connected properly. A full rescan is a docker-ps
     // plus one docker-inspect per container, much heavier than the 1s/5s
     // polling commands, so on an already resource-constrained host this
@@ -627,7 +627,7 @@ class TargetAgent {
    * `docker stats` only lists running containers, so a missing sample is the
    * first sign a container died. The answer comes from `docker ps -a`, which
    * says whether it crashed, finished cleanly, is crash-looping, or no longer
-   * exists — run only when something is actually missing, and cached briefly
+   * exists - run only when something is actually missing, and cached briefly
    * so a lasting outage does not add a command to every poll.
    *
    * Skipped when stats returned nothing at all: that means the stats command
@@ -662,7 +662,7 @@ class TargetAgent {
     for (const svc of missing) {
       const row = this.psAllCache.byService.get(svc.serviceId);
       const health = statusFromPsRow(row);
-      if (!health) continue; // running per ps — a race between two commands, not a failure
+      if (!health) continue; // running per ps - a race between two commands, not a failure
       if (health.state === 'not found') {
         if (!this.notFoundSince.has(svc.serviceId)) this.notFoundSince.set(svc.serviceId, Date.now());
       } else {
@@ -689,8 +689,8 @@ class TargetAgent {
     // an untyped node raising anomalies of its own about being a collector.
     samples = samples.filter(s => !String(s.serviceId).includes('mapper-collector'));
     const nodes = samples.map(s => {
-      // Status from the full container picture — state, restarts, and
-      // resources — rather than CPU and memory alone. A crash-restart between
+      // Status from the full container picture - state, restarts, and
+      // resources - rather than CPU and memory alone. A crash-restart between
       // polls used to be measured (restartDelta) and then thrown away here.
       const health = statusFromSample({
         cpuPercent: s.cpuPercent ?? null,
@@ -877,7 +877,7 @@ export class EndpointDiscoveryEngine {
     }
 
     if (!tConf?.ec2PublicIp || !tConf?.sshKeyPath) {
-      console.log(`[EndpointDiscovery] No ec2PublicIp/sshKeyPath for target ${targetId} — skipping`);
+      console.log(`[EndpointDiscovery] No ec2PublicIp/sshKeyPath for target ${targetId} - skipping`);
       return;
     }
 

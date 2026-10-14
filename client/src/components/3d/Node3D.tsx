@@ -12,7 +12,7 @@ interface Node3DProps {
   node: { id: string; data: ServiceNode };
   live: PositionMap;
   /** Current load (0..1) per node id, read every frame. Passed as a shared
-   *  map rather than a prop so a change in CPU does not re-render the node —
+   *  map rather than a prop so a change in CPU does not re-render the node -
    *  it only changes how fast its lights flicker. */
   loads: Map<string, number>;
   isSelected: boolean;

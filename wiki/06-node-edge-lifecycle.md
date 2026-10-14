@@ -1,8 +1,8 @@
-# Node & Edge Lifecycle — Pruning, Status, Staleness
+# Node & Edge Lifecycle - Pruning, Status, Staleness
 
 ## Target Status Lifecycle
 
-Targets move through states based on `lastSeen` — the ISO timestamp updated by any successful telemetry ingestion or HTTP ping.
+Targets move through states based on `lastSeen` - the ISO timestamp updated by any successful telemetry ingestion or HTTP ping.
 
 ```
 (no lastSeen set)
@@ -36,9 +36,9 @@ private checkTargetStaleness() {
 
 ### Two Independent Liveness Signals
 
-**Signal 1 — Telemetry:** `ingestRemote()` calls `upsertTarget({ status: 'LIVE', lastSeen: now })`.
+**Signal 1 - Telemetry:** `ingestRemote()` calls `upsertTarget({ status: 'LIVE', lastSeen: now })`.
 
-**Signal 2 — HTTP Ping:** `pingTargetEndpoints()` (every 10s) sends `HEAD` (fallback `GET`) to `target.baseUrl` with 3s timeout:
+**Signal 2 - HTTP Ping:** `pingTargetEndpoints()` (every 10s) sends `HEAD` (fallback `GET`) to `target.baseUrl` with 3s timeout:
 
 ```typescript
 private async pingTargetEndpoints() {
@@ -66,11 +66,11 @@ private async pingTargetEndpoints() {
 
 ---
 
-## Node Pruning — Ghost Prevention
+## Node Pruning - Ghost Prevention
 
 ### The Problem
 
-A container restart creates a new container ID. The old node (with the old container ID in `metadata.containerId`) has no more telemetry coming in — but it stays in the graph forever since nodes were previously only upserted, never deleted.
+A container restart creates a new container ID. The old node (with the old container ID in `metadata.containerId`) has no more telemetry coming in - but it stays in the graph forever since nodes were previously only upserted, never deleted.
 
 Result: dead "ghost" nodes that show stale CPU/memory and make the graph misleading.
 
@@ -112,7 +112,7 @@ private pruneStaleNodes() {
 
 ### Why 15 Minutes?
 
-**SSH channel exhaustion** on `t2.micro`/`t3.micro` instances has been observed to stall all SSH commands for 3–8 minute windows. If pruning used the same 5-minute threshold as `OFFLINE`, every target's nodes would be wiped the moment it went `OFFLINE` — even though the target typically self-recovers.
+**SSH channel exhaustion** on `t2.micro`/`t3.micro` instances has been observed to stall all SSH commands for 3–8 minute windows. If pruning used the same 5-minute threshold as `OFFLINE`, every target's nodes would be wiped the moment it went `OFFLINE` - even though the target typically self-recovers.
 
 The 15-minute grace window means:
 - A target can go `OFFLINE` (5 min) and recover → nodes are still there, re-confirmed on next discovery
@@ -136,13 +136,13 @@ After the fix: `this.edgeActivity.delete(edgeId)` is called for every edge whose
 
 ---
 
-## Edge Status — Per-Edge Evidence Only
+## Edge Status - Per-Edge Evidence Only
 
 ### Design Decision
 
 Edge status is computed **only** from HTTP metrics measured on that specific edge. A node with 90% CPU does **not** make all connected edges show as `degraded`.
 
-**Why?** We only have latency/error data for edges where gateway or service logs are parseable. Applying a node's resource pressure to its edges would be speculation — the node might be stressed from a batch job with nothing to do with HTTP traffic.
+**Why?** We only have latency/error data for edges where gateway or service logs are parseable. Applying a node's resource pressure to its edges would be speculation - the node might be stressed from a batch job with nothing to do with HTTP traffic.
 
 ### Thresholds
 

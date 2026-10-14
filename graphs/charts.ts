@@ -125,16 +125,7 @@ export function table(headers: string[], rows: (string | number)[][], cls = '') 
   return `<div class="tablewrap ${cls}"><table><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${typeof c === 'string' && c.startsWith('<') ? c : esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
-/** A left-to-right pipeline diagram: boxes (label, sub-label, where it is stored) joined by arrows. */
+/** The pipeline as a row of cards (wraps on any screen): label, what happens, where the result is stored. */
 export function flow(stages: { label: string; sub: string; store: string }[]) {
-  const bw = 184, gap = 24, H = 124, W = stages.length * (bw + gap) + 10;
-  const body = stages.map((s, i) => {
-    const x = 6 + i * (bw + gap);
-    const wrap = (t: string, n: number) => { const out: string[] = []; let cur = ''; for (const w of t.split(' ')) { if ((cur + ' ' + w).trim().length > n) { out.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); } if (cur) out.push(cur); return out; };
-    return `<g><rect x="${x}" y="6" width="${bw}" height="${H - 12}" rx="8" class="box"/><text x="${x + 10}" y="24" class="val" style="font-weight:600">${esc(s.label)}</text>`
-      + wrap(s.sub, 30).slice(0, 3).map((l, k) => `<text x="${x + 10}" y="${40 + k * 12}" class="tick">${esc(l)}</text>`).join('')
-      + wrap(s.store, 30).slice(0, 2).map((l, k) => `<text x="${x + 10}" y="${H - 30 + k * 11}" class="path">${esc(l)}</text>`).join('')
-      + (i < stages.length - 1 ? `<path d="M${x + bw + 4},${H / 2} h${gap - 10} m-5,-4 l5,4 l-5,4" class="arrow"/>` : '') + '</g>';
-  }).join('');
-  return `<figure class="wide"><div style="overflow:auto"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 1500)}px" role="img" aria-label="Data flow">${body}</svg></div></figure>`;
+  return `<div class="flowcards">${stages.map((s) => `<div><b>${esc(s.label)}</b>${esc(s.sub)}<code>${esc(s.store)}</code></div>`).join('')}</div>`;
 }

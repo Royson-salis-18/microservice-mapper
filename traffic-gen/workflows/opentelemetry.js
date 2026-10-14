@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * OpenTelemetry Demo workflows — NOT a stub (STUB: false at the bottom).
+ * OpenTelemetry Demo workflows - NOT a stub (STUB: false at the bottom).
  *
  * Why STUB is false: with STUB true, /api/start rejects the target unless the
  * request also supplies confirmed endpoints (useDiscoveredEndpoints plus a
@@ -12,7 +12,7 @@
  *
  * Entry point: the demo serves through frontend-proxy on :8080. If that port
  * is not open to you in the instance's security group, pin a tunnelled URL
- * instead of guessing — see wiki/15-troubleshooting.md.
+ * instead of guessing - see wiki/15-troubleshooting.md.
  */
 
 const browse = {

@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -674,14 +675,14 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p>Separate Python pipeline that trains a per-service Isolation Forest on the metrics the Node app collects, and feeds live anomaly scores back into it. Runs standalone — the Node server just reads <code>data/latest_scores.json</code> off disk each time it builds the graph; nothing here is a hard dependency of the mapper itself.</p>
+                    <p>Separate Python pipeline that trains a per-service Isolation Forest on the metrics the Node app collects, and feeds live anomaly scores back into it. Runs standalone - the Node server just reads <code>data/latest_scores.json</code> off disk each time it builds the graph; nothing here is a hard dependency of the mapper itself.</p>
 <h2 id="pipeline">Pipeline</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TEXT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">collector.py   polls /api/graph every 10s, appends to data/metrics_raw.csv
-      |        (append-only, growing dataset — the mapper&#x27;s own MetricStore
+      |        (append-only, growing dataset - the mapper&#x27;s own MetricStore
       |         only keeps a rolling ~1h window, not useful for training)
       v
 preprocess.py  batch job: cumulative network counters -&gt; rates, per-service
@@ -702,11 +703,11 @@ score.py       live loop: scores each new sample with its service&#x27;s model,
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">pip install -r requirements.txt
 
-# start collecting now — the sooner this runs, the more baseline data you have
+# start collecting now - the sooner this runs, the more baseline data you have
 python3 collector.py &amp;
 
 # once you have a reasonable baseline window (a few hundred samples/service,
-# collected during NORMAL operation — not mid stress-test):
+# collected during NORMAL operation - not mid stress-test):
 python3 preprocess.py
 python3 train.py                                    # or:
 python3 train.py --since 2026-09-17T00:00:00Z --until 2026-09-17T02:00:00Z
@@ -714,12 +715,12 @@ python3 train.py --since 2026-09-17T00:00:00Z --until 2026-09-17T02:00:00Z
 # start live scoring
 python3 score.py &amp;</code></pre>
                     </div>
-<p>Re-run <code>preprocess.py</code> + <code>train.py</code> periodically as more baseline data accumulates — nothing here auto-retrains.</p>
+<p>Re-run <code>preprocess.py</code> + <code>train.py</code> periodically as more baseline data accumulates - nothing here auto-retrains.</p>
 <h2 id="known-limitations-stated-not-hidden">Known limitations (stated, not hidden)</h2>
 <ul>
-  <li><strong>Unsupervised, not "trained on confirmed-normal data"</strong>: there's no labeled normal/anomaly split. <code>train.py --since/--until</code> is how you exclude a known stress-test window from training — point it at a range you know was quiet. If you train on data that includes an injected failure, the model learns that failure as normal.</li>
-  <li>A service needs <code>MIN_TRAINING_SAMPLES</code> (30, in <code>train.py</code>) after preprocessing before it gets a model at all — new targets (e.g. a freshly-discovered project) won't have anomaly scores until they've been collected for a while.</li>
-  <li>CPU/memory/network-rate are the only features right now — no HTTP latency/error-rate features yet (that data is <code>errorRate: null</code> / <code>latency: null</code> almost everywhere in the current telemetry; adding it as a feature before it's actually populated would mean training on fabricated zeros).</li>
+  <li><strong>Unsupervised, not "trained on confirmed-normal data"</strong>: there's no labeled normal/anomaly split. <code>train.py --since/--until</code> is how you exclude a known stress-test window from training - point it at a range you know was quiet. If you train on data that includes an injected failure, the model learns that failure as normal.</li>
+  <li>A service needs <code>MIN_TRAINING_SAMPLES</code> (30, in <code>train.py</code>) after preprocessing before it gets a model at all - new targets (e.g. a freshly-discovered project) won't have anomaly scores until they've been collected for a while.</li>
+  <li>CPU/memory/network-rate are the only features right now - no HTTP latency/error-rate features yet (that data is <code>errorRate: null</code> / <code>latency: null</code> almost everywhere in the current telemetry; adding it as a feature before it's actually populated would mean training on fabricated zeros).</li>
 </ul>
                 </article>
                 
@@ -999,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1154,10 +1155,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1255,7 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

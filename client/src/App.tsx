@@ -201,7 +201,7 @@ export default function App() {
 
   // Positions come from the selected arrangement rather than from the data
   // fetch, so switching layout rearranges the canvas without waiting for the
-  // next poll — and a poll can't silently snap nodes back to a different shape.
+  // next poll - and a poll can't silently snap nodes back to a different shape.
   const arrangedNodes = useMemo(() => {
     return filteredNodes.map((n) => {
       const p = layoutPositions2d[n.id];
@@ -233,7 +233,7 @@ export default function App() {
    * The sidebar docks against the right edge and takes real layout width
    * (main-content is a flex row, so the canvas shrinks to make room). The
    * terminal floats above everything at z-index 1000 and defaults to
-   * `window.innerWidth - 340`, which is inside that same column — so it
+   * `window.innerWidth - 340`, which is inside that same column - so it
    * landed squarely on top of the sidebar, opaque, every time. Clicking a
    * node did open the sidebar; it was just behind the terminal, which is
    * indistinguishable from nothing happening.

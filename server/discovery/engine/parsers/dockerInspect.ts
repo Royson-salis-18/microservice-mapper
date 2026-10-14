@@ -1,5 +1,5 @@
 /**
- * Parses `docker inspect <id>` output — a JSON array with exactly one
+ * Parses `docker inspect <id>` output - a JSON array with exactly one
  * object for a single-container inspect call.
  */
 

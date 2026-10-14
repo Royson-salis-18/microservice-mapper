@@ -3,10 +3,10 @@
 Live anomaly scoring loop. For each service with trained models:
   1. Pull its latest sample from the Node app's API.
   2. Normalize it using the SAME per-service mean/std saved at training time
-     (never recomputed from live data — that would silently drift the
+     (never recomputed from live data - that would silently drift the
      definition of "normal" every cycle).
-  3. Score it with every detector trained for that service — Isolation
-     Forest, LOF, one-class SVM and z-score — and combine them by vote
+  3. Score it with every detector trained for that service - Isolation
+     Forest, LOF, one-class SVM and z-score - and combine them by vote
      (see ensemble.py). This used to use the Isolation Forest alone; the
      other three were trained and then never consulted.
   4. Track consecutive windows the ensemble calls anomalous; only declare a
@@ -23,7 +23,7 @@ Writes data/latest_scores.json every cycle:
       "scored_at": iso timestamp
   }, ... }
 
-Node reads this file directly — no second HTTP server to run/coordinate.
+Node reads this file directly - no second HTTP server to run/coordinate.
 A service with no model yet (not enough training data) is simply absent
 from the output, not defaulted to a fake score.
 """
@@ -72,7 +72,7 @@ def load_models():
 
     A detector is included only if its metadata says it trained successfully
     and (except for z-score) its artifact is on disk. One that train.py
-    refused — LOF on data with too few distinct rows, for instance — is left
+    refused - LOF on data with too few distinct rows, for instance - is left
     out rather than scored with a stale artifact.
     """
     models = {}
@@ -150,7 +150,7 @@ def append_history(results: dict):
 
 def main():
     if not os.path.exists(STATS_PATH):
-        print(f"[score] no normalization stats at {STATS_PATH} — run preprocess.py + train.py first", file=sys.stderr)
+        print(f"[score] no normalization stats at {STATS_PATH} - run preprocess.py + train.py first", file=sys.stderr)
         sys.exit(1)
 
     with open(STATS_PATH) as f:
@@ -158,7 +158,7 @@ def main():
 
     models = load_models()
     if not models:
-        print(f"[score] no trained models in {MODELS_DIR} — run train.py first", file=sys.stderr)
+        print(f"[score] no trained models in {MODELS_DIR} - run train.py first", file=sys.stderr)
         sys.exit(1)
 
     cfg = load_config()
@@ -221,7 +221,7 @@ def main():
 
             meta = entry["meta"]
 
-            # Follow this model's own recorded feature list and order —
+            # Follow this model's own recorded feature list and order -
             # training can be configured to use a subset, and scoring a
             # model with a different vector than it was fitted on would be
             # silently wrong rather than an error.
@@ -250,7 +250,7 @@ def main():
 
             verdict = combine(per_detector)
             if verdict is None:
-                continue  # no usable detector for this service — absent, not a fake score
+                continue  # no usable detector for this service - absent, not a fake score
 
             above = verdict["above"]
             consecutive_above[service_id] = consecutive_above.get(service_id, 0) + 1 if above else 0

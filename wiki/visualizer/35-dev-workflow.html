@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -651,7 +652,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-orange">WORKFLOW</span>
                 <span class="meta-item"><code>wiki/35-dev-workflow.md</code></span>
                 <span class="meta-item">~4 min read</span>
-                <span class="meta-item">797 words</span>
+                <span class="meta-item">796 words</span>
             </div>
             <nav class="toc">
   <a href="#run-it">Run it</a>
@@ -797,7 +798,7 @@ ss -ltnp | grep &#x27;:3099 &#x27;          # the listener&#x27;s PID, if it is 
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>BASH</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">python3 scripts/build_wiki_visualizer.py      # wiki/*.md → &quot;wiki visualizer/*.html&quot;</code></pre>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">python3 wiki/build_visualizer.py      # wiki/*.md → &quot;wiki/visualizer/*.html&quot;</code></pre>
                     </div>
 <p>The chapter list, part structure, diagrams and interactive labs all live in that script. Each lab re-implements a real function with the same constants. When you change an RCA weight, a risk weight, a threshold or a colour band, change the lab in the same commit. A lab that disagrees with its source teaches the wrong thing.</p>
 <hr class="rule">
@@ -1091,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1246,10 +1247,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1347,7 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

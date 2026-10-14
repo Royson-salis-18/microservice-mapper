@@ -4,7 +4,7 @@ import { join } from "node:path";
 /**
  * Layered dataset storage: raw / normalized / cleaned / features / graph / analytics.
  * Each logical dataset (services, dependencies, metrics, logs, interactions, ...)
- * is kept in its own JSONL file — never immediately flattened into one table
+ * is kept in its own JSONL file - never immediately flattened into one table
  * (spec section 23).
  */
 export type StorageLayer =

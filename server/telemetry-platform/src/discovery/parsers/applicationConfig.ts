@@ -14,11 +14,11 @@ import { load as parseYaml } from "js-yaml";
  * (the default is what actually resolves at runtime when the env var
  * isn't set, which is the common case in a docker-compose deployment).
  * Not specific to any one key name ("url", "server-addr", etc.) or to any
- * one project — the caller decides what to do with the extracted hostname
+ * one project - the caller decides what to do with the extracted hostname
  * (e.g. only keep it if it matches a real discovered service).
  */
 export interface ApplicationConfigReference {
-  /** Dotted path to the value in the YAML tree, e.g. "train-service.url" — for evidence/logging. */
+  /** Dotted path to the value in the YAML tree, e.g. "train-service.url" - for evidence/logging. */
   yamlPath: string;
   /** The hostname extracted from the URL (literal, or the placeholder's default). */
   targetHostname: string;

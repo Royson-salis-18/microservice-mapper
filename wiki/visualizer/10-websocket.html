@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -664,7 +665,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#sentinel-pattern">Sentinel Pattern</a>
   <a href="#ssh-config-lookup">SSH Config Lookup</a>
   <a href="#key-path-resolution">Key Path Resolution</a>
-  <a href="#client-side-websocket-handling">Client-Side WebSocket Hand...</a>
+  <a href="#client-side-websocket-handling">Side WebSocket Handling</a>
 </nav>
         </header>
 
@@ -689,8 +690,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                     <p><strong>File:</strong> <code>server/api/websocket.ts</code></p>
 <hr class="rule">
 <h2 id="design-one-port-for-everything">Design: One Port for Everything</h2>
-<p>Both the REST API and WebSocket live on the same HTTP server on port <strong>3001</strong>. The <code>WebSocketServer</code> is attached with <code>{ server }</code> — it intercepts HTTP upgrade requests rather than binding its own port.</p>
-<p><strong>Why not separate ports?</strong> Simpler deployment — one port to open, one NGINX <code>location</code> block, one firewall rule. The tradeoff (slightly more complex URL routing) is negligible for this use case.</p>
+<p>Both the REST API and WebSocket live on the same HTTP server on port <strong>3001</strong>. The <code>WebSocketServer</code> is attached with <code>{ server }</code> - it intercepts HTTP upgrade requests rather than binding its own port.</p>
+<p><strong>Why not separate ports?</strong> Simpler deployment - one port to open, one NGINX <code>location</code> block, one firewall rule. The tradeoff (slightly more complex URL routing) is negligible for this use case.</p>
 <p><strong>Why <code>ws</code> and not Socket.io?</strong> Zero overhead. Socket.io adds a custom protocol layer, reconnection logic, namespaces, and rooms on top of raw WebSocket. All of those features are implemented manually here in a much simpler way. The total <code>ws</code> package size is ~65KB vs Socket.io's ~300KB.</p>
 <hr class="rule">
 <h2 id="message-format">Message Format</h2>
@@ -752,7 +753,7 @@ ws.send(JSON.stringify({ type, data }));</code></pre>
     </tr>
   </tbody>
 </table></div>
-<p><strong>No backpressure:</strong> Clients that are too slow to consume messages will fall behind. Acceptable here — the UI is monitoring display, not transactional processing. Stale data is preferable to blocking the server.</p>
+<p><strong>No backpressure:</strong> Clients that are too slow to consume messages will fall behind. Acceptable here - the UI is monitoring display, not transactional processing. Stale data is preferable to blocking the server.</p>
 <hr class="rule">
 <h2 id="role-2-terminal-multiplexer">Role 2: Terminal Multiplexer</h2>
 <h3 id="architecture">Architecture</h3>
@@ -781,7 +782,7 @@ WebSocketManager.handleTerminalExec(ws, { cmd, targetId })
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">private sessions = new Map&lt;WebSocket, ChildProcess&gt;();</code></pre>
                     </div>
-<p><strong>Session reuse:</strong> Subsequent commands from the same browser tab are written to the same bash/SSH process — preserving working directory, environment variables, and shell state between commands.</p>
+<p><strong>Session reuse:</strong> Subsequent commands from the same browser tab are written to the same bash/SSH process - preserving working directory, environment variables, and shell state between commands.</p>
 <p><strong>Session cleanup:</strong></p>
 <ul>
   <li>On WS disconnect: <code>session.kill()</code> is called</li>
@@ -844,7 +845,7 @@ session.stdout.on(&#x27;data&#x27;, (out) =&gt; {
     : keyPath;
 }</code></pre>
                     </div>
-<p>The <code>~</code> prefix is expanded using <code>os.homedir()</code> — same behavior as a shell would provide but without spawning a shell just for path resolution.</p>
+<p>The <code>~</code> prefix is expanded using <code>os.homedir()</code> - same behavior as a shell would provide but without spawning a shell just for path resolution.</p>
 <hr class="rule">
 <h2 id="client-side-websocket-handling">Client-Side WebSocket Handling</h2>
 <p><strong>File:</strong> <code>client/src/hooks/useGraphData.ts</code></p>
@@ -1162,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1317,10 +1318,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1418,7 +1419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

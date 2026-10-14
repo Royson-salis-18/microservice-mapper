@@ -3,10 +3,10 @@ import { load as parseYaml } from "js-yaml";
 /**
  * Parses a docker-compose file's `depends_on` relationships into
  * service-name pairs. This is the ONLY source Phase 2 treats as
- * `declared: true` — shared network membership alone is not a
+ * `declared: true` - shared network membership alone is not a
  * declaration, just a candidate (spec section 9, 61).
  *
- * Returns an empty array (never throws) if the file can't be parsed —
+ * Returns an empty array (never throws) if the file can't be parsed -
  * a missing/unreadable compose file must not stop discovery of
  * everything else (spec section 48).
  */

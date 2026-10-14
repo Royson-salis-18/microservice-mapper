@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -650,8 +651,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-green">SETUP</span>
                 <span class="meta-item"><code>README.md</code></span>
-                <span class="meta-item">~9 min read</span>
-                <span class="meta-item">1,872 words</span>
+                <span class="meta-item">~10 min read</span>
+                <span class="meta-item">2,032 words</span>
             </div>
             <nav class="toc">
   <a href="#what-it-does">What It Does</a>
@@ -689,7 +690,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <article class="doc-body">
                     <p>&lt;div align="left"&gt; &lt;a href="https://github.com/Royson-salis-18"&gt;&lt;img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&amp;logo=github&amp;logoColor=white" /&gt;&lt;/a&gt; &lt;a href="https://www.linkedin.com/in/royson-salis-3ab32628a/"&gt;&lt;img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&amp;logo=linkedin&amp;logoColor=white" /&gt;&lt;/a&gt; &lt;a href="https://www.instagram.com/royson._/"&gt;&lt;img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&amp;logo=instagram&amp;logoColor=white" /&gt;&lt;/a&gt; &lt;a href="mailto:roysonsalis2005@gmail.com"&gt;&lt;img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&amp;logo=gmail&amp;logoColor=white" /&gt;&lt;/a&gt; &lt;/div&gt;</p>
 <hr class="rule">
-<p><strong>Real-time observability for Docker-based microservices — zero code changes required.</strong></p>
+<p><strong>Real-time observability for Docker-based microservices - zero code changes required.</strong></p>
 <p>Microservice Mapper connects to your EC2 instances over SSH, discovers your service topology from Docker Compose files and running containers, collects live telemetry, and renders an interactive 2D/3D dependency graph. Point it at a running stack and see your architecture come alive within seconds.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -700,17 +701,17 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <hr class="rule">
 <h2 id="what-it-does">What It Does</h2>
 <ul>
-  <li><strong>Topology discovery</strong> — reads your Compose file over SSH; discovers declared <code>depends_on</code> relationships</li>
-  <li><strong>Runtime observation</strong> — reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)</li>
-  <li><strong>Live metrics</strong> — CPU (against the container's own allowance), memory, and exact network counters from <code>docker stats</code> and <code>/proc</code>, refreshed every 5 seconds</li>
-  <li><strong>Root cause analysis</strong> — when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path</li>
-  <li><strong>Cascade risk</strong> — per-service health, criticality and risk; what-if failure simulation and blast radius</li>
-  <li><strong>Anomaly detection</strong> — optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents</li>
-  <li><strong>Traffic experiments</strong> — built-in load test runner with experiment tracking</li>
-  <li><strong>Embedded terminal</strong> — SSH terminal into any target directly from the UI</li>
+  <li><strong>Topology discovery</strong> - reads your Compose file over SSH; discovers declared <code>depends_on</code> relationships</li>
+  <li><strong>Runtime observation</strong> - reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)</li>
+  <li><strong>Live metrics</strong> - CPU (against the container's own allowance), memory, and exact network counters from <code>docker stats</code> and <code>/proc</code>, refreshed every 5 seconds</li>
+  <li><strong>Root cause analysis</strong> - when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path</li>
+  <li><strong>Cascade risk</strong> - per-service health, criticality and risk; what-if failure simulation and blast radius</li>
+  <li><strong>Anomaly detection</strong> - optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents</li>
+  <li><strong>Traffic experiments</strong> - built-in load test runner with experiment tracking</li>
+  <li><strong>Embedded terminal</strong> - SSH terminal into any target directly from the UI</li>
 </ul>
 <h2 id="what-it-is-not">What It Is NOT</h2>
-<p>This is not a distributed tracing tool. There are no OpenTelemetry spans or request IDs. The "Traces" view shows SSH-sampled TCP connection snapshots from <code>/proc/net/tcp</code> — sampled at 5-second intervals, not per-request. No code changes are required in your applications.</p>
+<p>This is not a distributed tracing tool. There are no OpenTelemetry spans or request IDs. The "Traces" view shows SSH-sampled TCP connection snapshots from <code>/proc/net/tcp</code> - sampled at 5-second intervals, not per-request. No code changes are required in your applications.</p>
 <hr class="rule">
 <h2 id="technology-stack">Technology Stack</h2>
 <div class="scroll"><table class="t">
@@ -745,11 +746,11 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
     <tr>
       <td>WebSocket</td>
-      <td><code>ws</code> v8 (raw — no Socket.io)</td>
+      <td><code>ws</code> v8 (raw - no Socket.io)</td>
     </tr>
     <tr>
       <td>SSH</td>
-      <td><code>ssh2</code> v1 — Docker is read over SSH (<code>docker ps/inspect/stats</code>), nothing is installed on the target</td>
+      <td><code>ssh2</code> v1 - Docker is read over SSH (<code>docker ps/inspect/stats</code>), nothing is installed on the target</td>
     </tr>
     <tr>
       <td>ML Pipeline</td>
@@ -759,13 +760,22 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </table></div>
 <hr class="rule">
 <h2 id="quick-start">Quick Start</h2>
-<p><strong>Fastest way to see it working on your own machine</strong> (macOS, Linux or Windows, with Docker running): <code>npm run setup &amp;&amp; npm run local</code>, then open http://localhost:5173. Step by step, including starting a test bench, injecting faults and scoring the mapper: <a href="run-local.html">docs/RUN_LOCAL.md</a>. How the algorithms work: <a href="mapper-algorithms.html">docs/MAPPER_ALGORITHMS.md</a>.</p>
+<div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
+                            <span>BASH</span>
+                        </div>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">git clone https://github.com/Royson-salis-18/microservice-mapper.git
+cd microservice-mapper
+npm start            # installs whatever is missing, then starts the server (:3001) and the dashboard (:5173)</code></pre>
+                    </div>
+<p>Open http://localhost:5173. Nothing else has to be installed or configured. With Docker running, <code>npm run local</code> also starts a collector for every Docker Compose project on your machine.</p>
+<p>Short on time? Read <a href="00-evaluation-guide.html">wiki/00-evaluation-guide.md</a> (one hour) and run <code>python3 core_logic/demo.py</code>. Step by step, including starting a test bench and injecting faults: <a href="run-local.html">wiki/RUN_LOCAL.md</a>. How the algorithms work: <a href="mapper-algorithms.html">wiki/MAPPER_ALGORITHMS.md</a>.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
   <li>Node.js ^20.19 or ≥ 22.12 (what Vite 8 requires), npm ≥ 9</li>
   <li>Docker ≥ 20.10 on target EC2 instances</li>
   <li>SSH key (<code>.pem</code>) with access to your EC2 instance. Keep it outside the repository; <code>*.pem</code> is git-ignored as a backstop</li>
-  <li>Python 3.9+ (optional — only for the ML anomaly pipeline). The server runs it as <code>python3</code>, or <code>python</code> on Windows; set <code>PYTHON</code> to override</li>
+  <li>Python 3.9+ (optional - only for the ML anomaly pipeline). The server runs it as <code>python3</code>, or <code>python</code> on Windows; set <code>PYTHON</code> to override</li>
 </ul>
 <h3 id="install-run">Install &amp; Run</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -776,7 +786,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 git clone https://github.com/Royson-salis-18/microservice-mapper.git
 cd microservice-mapper
 
-# Install all sub-projects
+# Install all sub-projects (npm start does this for you when something is missing)
 npm run install:all
 
 # Start server + client
@@ -791,6 +801,10 @@ npm run dev</code></pre>
     <th>Description</th>
   </tr></thead>
   <tbody>
+    <tr>
+      <td><code>npm start</code></td>
+      <td>Install what is missing, then start server + client</td>
+    </tr>
     <tr>
       <td><code>npm run dev</code></td>
       <td>Start server + client concurrently</td>
@@ -822,6 +836,18 @@ npm run dev</code></pre>
     <tr>
       <td><code>npm run traffic-gen</code></td>
       <td>Run traffic generator</td>
+    </tr>
+    <tr>
+      <td><code>npm run ml</code></td>
+      <td>Compare the rules with a learned model on the recorded runs in <code>run/recorded-runs</code></td>
+    </tr>
+    <tr>
+      <td><code>npm run ml:report</code></td>
+      <td>Rebuild the model lab page, <code>graphs/output/model-lab.html</code></td>
+    </tr>
+    <tr>
+      <td><code>python3 core_logic/demo.py</code></td>
+      <td>The detection, root-cause and cascade logic in plain Python</td>
     </tr>
     <tr>
       <td><code>npm test</code></td>
@@ -899,12 +925,12 @@ npm run dev</code></pre>
 </ul>
 <p>What each colour, width and pulse on the graph means is in <a href="33-visual-language.html">wiki/33</a>.</p>
 <h3 id="node-id-format">Node ID Format</h3>
-<p>All nodes use a canonical format: <code>${targetId}:${serviceName}</code> — e.g., <code>sock-shop:catalogue</code>. This prevents ID mismatches between subsystems. See <a href="04-id-system.html">wiki/04-id-system.md</a>.</p>
+<p>All nodes use a canonical format: <code>${targetId}:${serviceName}</code> - e.g., <code>sock-shop:catalogue</code>. This prevents ID mismatches between subsystems. See <a href="04-id-system.html">wiki/04-id-system.md</a>.</p>
 <h3 id="persistence">Persistence</h3>
 <p>State persists to <code>server/data/graph_db.json</code> (debounced 2-second write). Nodes not updated for 15 minutes are pruned (ghost prevention); a link not seen carrying traffic for 10 minutes is dropped, or kept as declared-only if config still claims it. Targets go <code>STALE</code> after 2 minutes and <code>OFFLINE</code> after 5 minutes without telemetry.</p>
 <hr class="rule">
 <h2 id="root-cause-analysis">Root Cause Analysis</h2>
-<p>Every service that is failing or shows a metric anomaly is scored on additive factors (<code>server/rca/RCAEngine.ts</code>):</p>
+<p>Every service that is failing or shows a metric anomaly is scored on additive factors (<code>algorithms/rca/RCAEngine.ts</code>):</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Factor</th>
@@ -968,7 +994,7 @@ python3 score.py &amp;
 # Check the detector combination
 python3 test_ensemble.py</code></pre>
                     </div>
-<p>The server reads <code>ml/data/latest_scores.json</code> on each graph request using a mtime cache. No Python API calls at runtime — just a file read. Results appear under <strong>Findings</strong>, separate from rule-based incidents (<a href="17-findings-vs-incidents.html">wiki/17</a>).</p>
+<p>The server reads <code>ml/data/latest_scores.json</code> on each graph request using a mtime cache. No Python API calls at runtime - just a file read. Results appear under <strong>Findings</strong>, separate from rule-based incidents (<a href="17-findings-vs-incidents.html">wiki/17</a>).</p>
 <hr class="rule">
 <h2 id="deployment">Deployment</h2>
 <h3 id="environment">Environment</h3>
@@ -1032,7 +1058,7 @@ WantedBy=multi-user.target</code></pre>
 │   ├── discovery/       # Discovery loop per target
 │   ├── telemetry-platform/src/  # SSH connection, Docker parsing, metric collection
 │   ├── telemetry-sources/       # Optional higher-tier sources (Prometheus)
-│   ├── rca/             # Anomaly detection, root cause, incidents
+│   ├── rca/             # Incident manager, learned scorer, per-target models (the logic itself is in ../algorithms)
 │   ├── traces/          # TCP connection event storage
 │   ├── telemetry/       # MetricStore ring buffer
 │   ├── traffic/         # Load test execution + experiments
@@ -1042,28 +1068,31 @@ WantedBy=multi-user.target</code></pre>
 ├── client/              # React 19 + Vite frontend (:5173)
 │   └── src/
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
-│       ├── hooks/       # useGraphData — WebSocket + HTTP data hook
+│       ├── hooks/       # useGraphData - WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── ml/                  # Python anomaly detection pipeline
+├── algorithms/          # The decision logic: detection, rca, graph (cascade), model, learning, evaluation
+├── core_logic/          # The same logic as short, readable Python (+ demo and tests)
+├── graphs/              # Report builders; generated pages in graphs/output
+├── run/                 # scripts, tests, command line tools, recorded sample runs, ssh helpers
+├── ml/                  # Python anomaly detection pipeline (optional, research)
 ├── traffic-gen/         # HTTP traffic scenario runner
-├── remote-collector/    # Optional push agent (not the default path)
-├── scripts/             # Ground-truth simulator, wiki builder, exports
-├── tests/               # npm test
-├── wiki/                # Technical documentation (Markdown)
-└── wiki visualizer/     # The same wiki as an illustrated HTML book (generated)</pre>
+├── remote-collector/    # Push agent that reads Docker and posts to the server
+├── unused/              # Old material, not part of the running system
+├── wiki/                # Documentation (Markdown); start with 00-evaluation-guide.md
+└── wiki/visualizer/     # The same wiki as an illustrated HTML book (generated)</pre>
                     </div></figure>
 <hr class="rule">
 <h2 id="documentation">Documentation</h2>
-<p>Full technical documentation lives in <strong><a href="readme.html">wiki/</a></strong>: start at its index, which has reading paths by goal and every page. The same pages are published as an illustrated book with diagrams: open <code>wiki visualizer/index.html</code> (rebuild with <code>python3 scripts/build_wiki_visualizer.py</code>).</p>
+<p>Full technical documentation lives in <strong><a href="readme.html">wiki/</a></strong>: start at its index, which has reading paths by goal and every page. The same pages are published as an illustrated book with diagrams: open wiki/visualizer/index.html<code> (rebuild with </code>python3 wiki/build_visualizer.py`).</p>
 <hr class="rule">
 <h2 id="known-limitations">Known Limitations</h2>
 <ul>
-  <li><strong>Connection sampling, not per-request tracing</strong> — the sweep counts sockets in <code>ESTABLISHED</code> and <code>TIME_WAIT</code>. <code>TIME_WAIT</code> lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record</li>
-  <li><strong>No per-edge latency or error rate by default</strong> — <code>edge.metrics</code> is <code>null</code> in a plain Docker/SSH deployment, and only a configured request-level source (access logs, Prometheus) fills it. Otherwise edge heat is graded on observed connection volume (<code>activity.samplesPerMin</code>), which is a concurrency proxy, not HTTP load</li>
-  <li><strong>HTTP/1.1 log parsing only</strong> — no HTTP/2 or gRPC log parsing</li>
-  <li><strong>Linux targets only</strong> — <code>/proc/net/tcp</code> is Linux-specific</li>
-  <li><strong>No auto-retraining</strong> — ML models must be retrained (from the ML page or by hand) as data accumulates</li>
-  <li><strong>Single backend instance</strong> — no built-in clustering</li>
+  <li><strong>Connection sampling, not per-request tracing</strong> - the sweep counts sockets in <code>ESTABLISHED</code> and <code>TIME_WAIT</code>. <code>TIME_WAIT</code> lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record</li>
+  <li><strong>No per-edge latency or error rate by default</strong> - <code>edge.metrics</code> is <code>null</code> in a plain Docker/SSH deployment, and only a configured request-level source (access logs, Prometheus) fills it. Otherwise edge heat is graded on observed connection volume (<code>activity.samplesPerMin</code>), which is a concurrency proxy, not HTTP load</li>
+  <li><strong>HTTP/1.1 log parsing only</strong> - no HTTP/2 or gRPC log parsing</li>
+  <li><strong>Linux targets only</strong> - <code>/proc/net/tcp</code> is Linux-specific</li>
+  <li><strong>No auto-retraining</strong> - ML models must be retrained (from the ML page or by hand) as data accumulates</li>
+  <li><strong>Single backend instance</strong> - no built-in clustering</li>
 </ul>
 <hr class="rule">
 <h2 id="contact">Contact</h2>
@@ -1072,7 +1101,7 @@ WantedBy=multi-user.target</code></pre>
   <li><strong>Email</strong>: roysonsalis2005@gmail.com</li>
 </ul>
 <hr class="rule">
-<p><em>Royson Salis — September 2026</em></p>
+<p><em>Royson Salis - September 2026</em></p>
                 </article>
                 
             </div>
@@ -1354,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1509,10 +1538,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1610,7 +1639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

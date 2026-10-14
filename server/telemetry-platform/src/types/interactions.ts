@@ -1,6 +1,6 @@
 /**
  * Runtime interaction evidence. These are ONLY created when a real
- * log/trace/network observation exists — never synthesized defaults.
+ * log/trace/network observation exists - never synthesized defaults.
  */
 
 import type { DependencyEvidenceSource } from "./service.js";

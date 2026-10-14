@@ -22,7 +22,7 @@ Most of the code in this repository follows from a short list of rules. When the
 
 **Why.** Config drifts from reality. Services get re-pointed, sidecars appear, and declared dependencies go unused. Root cause and cascade prediction are only as good as the edges under them.
 
-**Where.** Each edge's confidence comes from its evidence (`server/graph/EdgeWeights.ts`):
+**Where.** Each edge's confidence comes from its evidence (`algorithms/graph/EdgeWeights.ts`):
 
 | Evidence | Confidence |
 |---|---|
@@ -50,10 +50,10 @@ RCA gives +0.20 for an observed edge and +0.05 for a declared-only one. Blast ra
 - An edge with no observations has no `activity` field at all (`GraphStore.applyEdgeActivity`).
 - `criticality` and `centrality` are `null` when the project has nothing to divide by (`RiskEngine.ts`).
 - A health factor with no data is dropped, and the remaining weights are renormalised. It is never filled with a middle value.
-- The 2D card meters show `—`, not `0.0%`.
+- The 2D card meters show `-`, not `0.0%`.
 - A service with no trained model is absent from `latest_scores.json`. It is never given a default score.
 
-**Broken once:** the anomaly baseline in `server/rca/AnomalyDetector.ts` used `value || 0`, so every missing sample pulled the average towards zero, and the next real reading looked like a spike. It now filters missing values out.
+**Broken once:** the anomaly baseline in `algorithms/detection/AnomalyDetector.ts` used `value || 0`, so every missing sample pulled the average towards zero, and the next real reading looked like a spike. It now filters missing values out.
 
 ---
 
@@ -93,7 +93,7 @@ RCA gives +0.20 for an observed edge and +0.05 for a declared-only one. Blast ra
 **The rule.** When two places need the same idea, they share one definition. They do not keep two copies that drift apart.
 
 - **Service ids** are `project:name` everywhere. Incidents used to list bare names while `rootCauseServiceId` held an id, so any code matching one against the other silently found nothing. `cascadeVia` had the same bug.
-- **Link thresholds** (slow at 300 ms, very slow at 1 s, errors at 1% and 5%) are defined once on the server (`server/graph/linkThresholds.ts`) and once on the client (`edgeHeat.ts`). A test asserts the two are identical.
+- **Link thresholds** (slow at 300 ms, very slow at 1 s, errors at 1% and 5%) are defined once on the server (`algorithms/graph/linkThresholds.ts`) and once on the client (`edgeHeat.ts`). A test asserts the two are identical.
 - **Link appearance** comes from one function, `edgeAppearance()`, used by the 2D canvas, the 3D scene and the inspector. A link cannot look calm in one view and hot in another.
 - **CPU shown** comes from one helper, `cpuShown()` (share of allowance when known, raw otherwise), used by every view.
 
@@ -136,7 +136,7 @@ The mapper reads someone else's production host, so it costs as little as it can
 
 ## 11. The system checks itself
 
-Every relationship between published numbers that has been seen broken in live output becomes a rule in `server/graph/consistency.ts`. The rules are checked on demand at `GET /api/diagnostics/consistency`, by a chip in the 3D HUD, and in the test suite. See [Keeping the numbers honest](32-accuracy-and-self-check.md).
+Every relationship between published numbers that has been seen broken in live output becomes a rule in `algorithms/graph/consistency.ts`. The rules are checked on demand at `GET /api/diagnostics/consistency`, by a chip in the 3D HUD, and in the test suite. See [Keeping the numbers honest](32-accuracy-and-self-check.md).
 
 ---
 

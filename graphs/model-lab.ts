@@ -2,7 +2,7 @@
 // graphs/model-lab.ts: the model lab. ONE html file with every chart behind the mapper's detection and learning, built from recorded runs.
 //
 //   npm run ml:report -- <run-dir> [<run-dir> ...] [--out graphs/output/model-lab.html] [--k 5] [--quick] [--wiki]
-//   (--wiki also copies the file into `wiki visualizer/model-lab.html`)
+//   (--wiki also copies the file into `wiki/visualizer/model-lab.html`)
 //
 // Sections: 1 data (what was recorded, distributions, skewness, missing values, sampling), 2 features (how they separate
 // healthy from faulted, their correlation), 3 model (weights, threshold, ROC, calibration), 4 comparison (rules vs learned vs
@@ -192,7 +192,7 @@ const storage = table(['What', 'Path', 'Written by', 'How often / how long', 'Re
   ['Learned weights and threshold', 'server/rca/model/learned.json', 'npm run ml -- --install', 'when you install a trained model', 'LearnedScorer (reloaded on change)'],
   ['Incident rule overrides', 'server/data/incident_thresholds.json', 'POST /api/incidents/thresholds', 'on edit in the UI', 'AnomalyDetector (each cycle)'],
   ['Recorded run: what the mapper showed', `${home}/<run>/observed-<subject>.jsonl`, 'npm run eval -- observe', 'one JSON line per ~5 s: incidents, status, per-service readings, edges', 'algorithms/learning, run/cli/eval'],
-  ['Recorded run: what was injected', `${home}/<run>/ledger-<subject>.jsonl`, 'lab/faultlab (bench repos)', 'one line per campaign, fault start and fault end', 'algorithms/learning, run/cli/eval only (never the mapper)'],
+  ['Recorded run: what was injected', `${home}/<run>/ledger-<subject>.jsonl`, 'the fault injector (bench repos)', 'one line per campaign, fault start and fault end', 'algorithms/learning, run/cli/eval only (never the mapper)'],
   ['Evaluation report', `${home}/eval-<subject>.html`, 'npm run eval -- all', 'on demand', 'you'],
   ['This report', outFile, 'npm run ml:report', 'on demand', 'you'],
 ]);
@@ -210,7 +210,7 @@ const hyper = `
   ['connection memory / window', `${GraphStore.CONN_MEMORY_MS / 1000} s / ${GraphStore.CONN_WINDOW_MS / 1000} s`, 'distinct-connection counting (TIME_WAIT-safe) and its averaging window'],
   ['edge activity baseline', `rise ${GraphStore.BASELINE_RISE_MS / 1000} s, fall ${GraphStore.BASELINE_FALL_MS / 1000} s, min window ${GraphStore.BASELINE_MIN_WINDOW_MS / 1000} s`, 'asymmetric exponential average of link activity (quick to rise, slow to fall)'],
 ])}
-<h3>Detector (server/rca/AnomalyDetector.ts, DETECTOR_PARAMS)</h3>${hp([
+<h3>Detector (algorithms/detection/AnomalyDetector.ts, DETECTOR_PARAMS)</h3>${hp([
   ['history read', D.historyRange, 'sliding window of the baseline: the newest readings of each service'],
   ['judged samples', D.judgedSamples, 'the newest samples compared with the baseline; all must agree (persistence of the signal)'],
   ['min history samples', DEFAULT_THRESHOLDS.minHistorySamples, 'a signal with less past is not judged (cold start)'],
@@ -222,9 +222,9 @@ const hyper = `
   ['min requests', D.minRequests, 'a p95 or error share needs this many requests in each judged sample'],
   ['silence rule', `history ×${D.silenceHistoryFactor}, expected ≥ ${D.silenceMinExpected}, gap ×${D.silenceGapFactor}`, 'silence on a counted service needs a long past, enough expected requests, and a quiet stretch beyond its own longest gap'],
 ])}
-<h4>Signals (server/rca/features.ts, SIGNALS)</h4>${table(['Signal', 'Trouble direction', 'Scale', 'Unit (resolution)', 'Floor', 'Evidence', 'Min requests'], SIGNALS.map((s) => [s.name, s.direction === 1 ? 'up' : 'down', s.scale, s.unit, s.floor, s.own ? 'own' : 'symptom (inheritable)', s.minRequests ?? '–']))}
-<h4>Incident thresholds (editable in the UI; server/rca/thresholds.ts)</h4>${table(['Name', 'Default', 'Meaning'], Object.entries(DEFAULT_THRESHOLDS).map(([k, v]) => [k, String(v), (THRESHOLD_DOCS as Record<string, string>)[k] ?? '']))}
-<h3>Per-architecture model (server/rca/TargetModel.ts)</h3>${hp([
+<h4>Signals (algorithms/detection/features.ts, SIGNALS)</h4>${table(['Signal', 'Trouble direction', 'Scale', 'Unit (resolution)', 'Floor', 'Evidence', 'Min requests'], SIGNALS.map((s) => [s.name, s.direction === 1 ? 'up' : 'down', s.scale, s.unit, s.floor, s.own ? 'own' : 'symptom (inheritable)', s.minRequests ?? '–']))}
+<h4>Incident thresholds (editable in the UI; algorithms/detection/thresholds.ts)</h4>${table(['Name', 'Default', 'Meaning'], Object.entries(DEFAULT_THRESHOLDS).map(([k, v]) => [k, String(v), (THRESHOLD_DOCS as Record<string, string>)[k] ?? '']))}
+<h3>Per-architecture model (algorithms/model/TargetModel.ts)</h3>${hp([
   ['baseline needed', `${baselineNeededSec() / 60} min`, 'learning period; only container facts raise incidents until then (env MAPPER_BASELINE_MIN)'],
   ['retrain every', '5 min', 'moments inside an incident (plus 60 s) are left out of every retraining'],
   ['min history', TM.minHistory, 'samples a service needs before it contributes'],
@@ -279,21 +279,104 @@ const css = `
 @media (prefers-color-scheme:dark){:root{--bg:#121211;--panel:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#8a897f;--line:#2e2e2b;--grid:#262624;--accent:#3987e5;--c1:#3987e5;--c2:#d95926;--c3:#199e70;--c4:#c98500;--c5:#d55181;--c6:#008300;--c7:#9085e9;--c8:#8a897f;--band:rgba(217,89,38,.18)}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}h1{font-size:26px;letter-spacing:-.02em;margin:0 0 4px}h2{font-size:18px;margin:44px 0 6px;letter-spacing:-.01em;padding-top:10px;border-top:1px solid var(--line)}h3{font-size:15px;margin:28px 0 4px}h4{font-size:13px;margin:20px 0 6px;color:var(--ink2)}
-.sub{color:var(--ink2);margin:0 0 20px;max-width:900px}nav{position:sticky;top:0;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);z-index:5;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}nav a{color:var(--ink2);text-decoration:none}nav a:hover{color:var(--accent)}
+.sub{color:var(--ink2);margin:0 0 20px;max-width:900px}nav{background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}nav a{color:var(--ink2);text-decoration:none}nav a:hover{color:var(--accent)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
 figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}figure.wide{grid-column:1/-1}figcaption{font-weight:600;font-size:13px;margin-bottom:6px}svg{width:100%;height:auto;display:block}
 .note{color:var(--ink2);font-size:12px;margin:6px 0 0}.legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0 0 6px;font-size:12px;color:var(--ink2)}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .grid{stroke:var(--grid);stroke-width:1}.axis{stroke:var(--ink3);stroke-width:1}.tick{fill:var(--ink3);font-size:10px}.lab{fill:var(--ink2);font-size:11px}.val{fill:var(--ink2);font-size:11px}.ref{stroke:var(--ink3);stroke-width:1;stroke-dasharray:4 4}.whisker{stroke:var(--ink2);stroke-width:1.4}.band{fill:var(--band)}
 .hpos{fill:var(--c1);fill-opacity:calc(.1 + var(--t)*.85)}.hneg{fill:var(--c2);fill-opacity:calc(.1 + var(--t)*.85)}.cellv{fill:var(--ink);font-size:10px}
 .box{fill:var(--panel);stroke:var(--line)}.arrow{stroke:var(--ink3);fill:none;stroke-width:1.4}.path{fill:var(--accent);font-size:9.5px;font-family:ui-monospace,Menlo,monospace}
-.tablewrap{overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--ink2);font-weight:600;position:sticky;top:0;background:var(--panel)}td:first-child{white-space:nowrap}
+.tablewrap{overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:8px 0}table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--ink2);font-weight:600;background:var(--panel)}td:first-child{white-space:nowrap}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.kpi b{display:block;font-size:24px;letter-spacing:-.02em}.kpi span{font-size:12px;color:var(--ink2)}
+.how{margin:0 0 8px;font-size:12px;color:var(--ink2);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px}.how b{color:var(--ink)}
+.start{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:16px 0}.start h3{margin-top:0}.start li{margin:4px 0}
+.verdict{border-left:3px solid var(--c3);background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c3);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
+dl.gloss dt{font-weight:600;margin-top:8px}dl.gloss dd{margin:0 0 0 0;color:var(--ink2)}
+.flowcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:10px 0}.flowcards div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink2)}.flowcards b{display:block;color:var(--ink);font-size:13px}.flowcards code{display:block;margin-top:6px;font-size:11px;word-break:break-all}
 details{margin:10px 0}summary{cursor:pointer;font-weight:600}.warn{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c4);padding:10px 14px;border-radius:8px;font-size:13px;color:var(--ink2);margin:12px 0}`;
 
 const totalFaults = runs.reduce((s, r) => s + r.faults.length, 0);
+const totalFaultsAll = totalFaults;
+
+// ------------------------------------------------------------------ plain-language help under every chart
+/** [title starts with, X axis, Y axis, how to read it]. Matched on the chart title, so a new chart without an entry simply has no help box. */
+const HOW: [string, string, string, string][] = [
+  ['Skewness', 'each signal (CPU, memory, ...)', 'skewness: 0 = symmetric, high = a long tail of big values', 'Orange (raw) is lopsided, blue (log) is closer to symmetric. That is why the detector looks at ratios, not differences.'],
+  ['Excess kurtosis', 'each signal', 'how heavy the tails are (0 = bell curve)', 'High bars mean rare, very large readings. They would fool an average-based baseline, so the detector uses the median.'],
+  ['Missing readings', 'each signal', 'share of readings that were not available', 'Short bars are good. A tall bar means that signal often does not exist for a service (e.g. a database has no web requests).'],
+  ['Seconds between', 'seconds between two new readings', 'share of readings', 'Shows how often fresh data arrives. This turns "window of N samples" into minutes.'],
+  ['CPU: raw', 'CPU divided by that service\'s own typical CPU', 'share of readings', 'Most readings sit near 1 (normal) but a few are many times bigger: a long right tail.'],
+  ['CPU: log', 'log of CPU relative to normal (0 = typical)', 'share of readings', 'The same data after the log transform: the pile is balanced around 0, which is what the detector needs.'],
+  ['p95 latency: raw', 'latency divided by the service\'s typical latency', 'share of readings', 'Same story as CPU: a few readings are many times slower.'],
+  ['p95 latency: log', 'log of latency relative to normal', 'share of readings', 'Balanced around 0 after the transform.'],
+  ['Network in: raw', 'bytes received divided by typical', 'share of readings', 'Same story: a long tail.'],
+  ['Network in: log', 'log of bytes received relative to normal', 'share of readings', 'Balanced around 0 after the transform.'],
+  ['Injected faults', 'type of fault', 'number of faults', 'The answer key. Types with only one or two faults cannot be judged on their own.'],
+  ['Rows for learning', 'recorded run', 'number of rows', 'One row = one service at one moment. Healthy rows vastly outnumber faulty ones, which is why the learner balances them.'],
+  ['Feature', 'the feature value (bigger = more abnormal)', 'share of rows', 'Blue = healthy services, orange = the faulted service. The less they overlap, the more useful the feature is.'],
+  ['Separation', 'how far apart the faulty and healthy averages are', 'the features', 'Longer bar = that feature alone tells faulty from healthy better.'],
+  ['Correlation', 'features', 'features', 'Dark squares off the diagonal = two features say nearly the same thing. That makes learned weights unstable (see lambda).'],
+  ['Learned weights', 'how much a feature pushes the verdict (right = towards "this service is the cause")', 'the features', 'Big bars matter, small bars hardly matter. Orange = pushes against being the cause.'],
+  ['Threshold choice', 'alarm threshold (probability above which we raise an alarm)', 'score the training data gave that threshold (higher = better)', 'The dashed line is the threshold picked. A flat curve means the choice does not matter much.'],
+  ['Regularisation', 'lambda (how strongly weights are pulled to zero), log scale', 'score on the training data', 'Higher lambda = simpler model. We pick the best-scoring lambda but prefer the simpler one on a tie.'],
+  ['ROC', 'false alarm rate (healthy rows wrongly flagged)', 'catch rate (faulty rows correctly flagged)', 'Closer to the top-left is better. The dashed diagonal is a coin flip. The higher line wins.'],
+  ['Precision-recall', 'recall: share of faulty rows found', 'precision: share of flagged rows that were really faulty', 'Top-right is best. Because faulty rows are rare, this is the honest chart.'],
+  ['Calibration', 'probability the model gave', 'how often that was really right', 'On the dashed line = the model\'s percentages can be taken literally. Below it = overconfident.'],
+  ['Learned probability', 'minutes into the run', 'probability that the service is the cause', 'Orange bands are real faults. We want lines to rise inside a band and stay low outside it.'],
+  ['Rule-based score', 'minutes into the run', 'abnormality score (z)', 'Orange bands are real faults. A good detector rises inside the band and is flat outside it.'],
+  ['Learned: detected', 'threshold', 'share of faults', 'Strict thresholds miss faults; loose ones catch more but cause false alarms (next chart).'],
+  ['Learned: false alarms', 'threshold', 'false alarms per hour', 'Falls as the threshold gets stricter.'],
+  ['Rules: detected', 'threshold (z units)', 'share of faults', 'Same as the learned version, for the rule-based score.'],
+  ['Rules: false alarms', 'threshold (z units)', 'false alarms per hour', 'Falls as the threshold gets stricter.'],
+  ['Faults detected', 'method (or the setting being changed)', 'share of injected faults the method noticed', 'Taller = better. Whiskers show the uncertainty: overlapping whiskers mean we cannot say one is better.'],
+  ['Right service named first', 'method (or setting)', 'share where the first named service was the one actually faulted', 'Taller = better. Detecting a fault and pointing at the right service are different skills.'],
+  ['False alarms per hour', 'method (or setting)', 'alarms raised when nothing was wrong, per hour', 'Lower = better.'],
+  ['Median seconds', 'method', 'typical seconds from fault start to first alarm', 'Lower = faster.'],
+  ['Detected, by fault class', 'type of fault', 'share detected', 'Shows which kinds of fault each method is weak at.'],
+  ['Caught and named first, by fault class', 'type of fault', 'share detected AND correctly named', 'The strictest result: taller is better.'],
+  ['Which service the learned model named', 'service named first (last column = nothing named)', 'service that was really faulted', 'Numbers on the diagonal are correct answers. Anything else is a mix-up.'],
+];
+const GLOSSARY: [string, string][] = [
+  ['Baseline', 'What "normal" looks like for one service: its own recent past, not a fixed number.'],
+  ['z-score', 'How many "normal wobbles" a reading is away from normal. 0 = normal, 3.5+ = abnormal.'],
+  ['Median / MAD', 'The middle value and the typical distance from it. Unlike average and standard deviation, one huge spike barely moves them.'],
+  ['Log scale', 'Comparing by ratio (double, half) instead of difference. 100 ms to 200 ms is the same jump as 1 s to 2 s.'],
+  ['Persistence', 'Both of the last two readings must be abnormal before we say anything. Filters one-off noise.'],
+  ['Feature', 'One number describing a service at one moment (its CPU abnormality, how sick its callers are, whether its container is down...). The learner combines features.'],
+  ['Rules', 'The hand-built method: score = the service\'s own abnormality, minus what its dependencies explain. Fixed threshold = 3 everywhere; tuned = threshold chosen on training data.'],
+  ['Learned model', 'Logistic regression: finds weights for the features from labelled faults. Gives a probability for each service.'],
+  ['Live mapper', 'What the running server really displayed during the recording, with nothing re-scored.'],
+  ['Cross-validation (blocked)', 'Cut each run into consecutive time chunks. Train on some, test on the rest. Chunks are never shuffled, so the test is on the future, as in real use.'],
+  ['Detected', 'An alarm opened while a fault was active (or shortly after).'],
+  ['Named first', 'The service ranked top at that alarm was the one actually faulted.'],
+  ['False alarm', 'An alarm raised while nothing was injected.'],
+  ['Lambda', 'How strongly the learner is held back from extreme weights. Higher = simpler, steadier model.'],
+  ['ROC / AUC', 'ROC plots catch rate against false alarm rate. AUC is the area under it: 0.5 = coin flip, 1 = perfect.'],
+];
+const verdict = (() => {
+  const L = m.learned, R = m.rulesTuned, F = m.rulesFixed, V = m.live;
+  const best = [['learned model', L], ['rules (tuned)', R], ['rules (fixed threshold)', F], ['live mapper (the rules as the running system uses them)', V]].sort((a: any, b: any) => b[1].caughtAndNamed - a[1].caughtAndNamed)[0] as [string, typeof L];
+  const learnedWins = L.caughtAndNamed > Math.max(R.caughtAndNamed, F.caughtAndNamed, V.caughtAndNamed) + 0.1;
+  return `<div class="verdict"><b>Result in one line.</b> On this data the best method was the <b>${best[0]}</b> (${pct(best[1].caughtAndNamed)} of faults caught with the right service first). ${learnedWins ? 'The learned model beats the rules clearly, so it is worth installing.' : 'The learned model is not clearly better than the rules, so the mapper keeps using the rules and does not install the learned weights.'} With only ${totalFaultsAll} faults, treat differences of a few points as noise.</div>`;
+})();
+const injectHow = (h: string) => h.replace(/<figcaption>([^<]*)<\/figcaption>/g, (all, t: string) => {
+  const hit = HOW.find(([k]) => t.replace(/&amp;/g, '&').startsWith(k));
+  return hit ? `${all}<p class="how"><b>Horizontal:</b> ${esc(hit[1])}. <b>Vertical:</b> ${esc(hit[2])}. <b>Reading it:</b> ${esc(hit[3])}</p>` : all;
+});
+
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model lab</title><style>${css}</style></head><body><div class="wrap">
 <h1>Model lab</h1>
-<p class="sub">Every chart behind the mapper's detection and learning, built from ${runs.length} recorded run${runs.length === 1 ? '' : 's'} (${subjects.join(', ')}; ${totalFaults} injected faults; ${spans.reduce((s, x) => s + x.minutes, 0).toFixed(0)} minutes of telemetry). Generated ${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC by <code>graphs/model-lab.ts</code>. Regenerate: <code>npm run ml:report -- ~/.faultlab/&lt;run-dir&gt;</code>.</p>
+<p class="sub">Every chart behind the mapper's detection and learning, built from ${runs.length} recorded run${runs.length === 1 ? '' : 's'} (${subjects.join(', ')}; ${totalFaults} injected faults; ${spans.reduce((s, x) => s + x.minutes, 0).toFixed(0)} minutes of telemetry). Generated ${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC by <code>graphs/model-lab.ts</code>. Regenerate: <code>npm run ml:report</code> (uses the runs in <code>run/recorded-runs</code>; add folders of your own after it to include them).</p>
+<div class="start"><h3>Start here: what this page is</h3>
+<p class="sub">The mapper watches your services and must (a) notice that something is wrong and (b) say which service is the cause. This page checks how good it is. We broke services on purpose with a fault injector, which kept a private answer key. We then compare what each method said with that key. Every chart has a grey box under its title saying what the horizontal and vertical axes mean.</p>
+<ol><li><b>Section 1, Data:</b> what was recorded and why we use ratios (logs) instead of raw numbers.</li>
+<li><b>Section 2, Features:</b> the numbers we describe each service with.</li>
+<li><b>Section 3, Model:</b> the learned model: weights, thresholds and how trustworthy its probabilities are.</li>
+<li><b>Section 4, Comparison:</b> the four methods side by side. This is the section that answers "which is better".</li>
+<li><b>Section 5, Sensitivity:</b> what happens when we change settings such as the sliding window.</li>
+<li><b>Sections 6 and 7:</b> where each piece of data is stored, and every setting in use.</li></ol>
+<details><summary>Plain-language glossary</summary><dl class="gloss">${GLOSSARY.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl></details></div>
+${verdict}
 <nav><a href="#data">1 Data</a><a href="#features">2 Features</a><a href="#model">3 Model</a><a href="#compare">4 Comparison</a><a href="#sens">5 Sensitivity</a><a href="#lineage">6 Where the data lives</a><a href="#hyper">7 Hyperparameters</a></nav>
 ${totalFaults < 30 ? `<div class="warn"><b>Small sample.</b> ${totalFaults} faults is too few for confident conclusions: differences of one or two faults between methods are noise. Regenerate after a longer campaign.</div>` : ''}
 <div class="kpis">${METHODS.map((k) => `<div class="kpi"><span>${nameOf[k]}</span><b>${pct(m[k].caughtAndNamed)}</b><span>faults caught with the right service first · ${f2(m[k].falseAlarmsPerHour, 1)} false alarms/h</span></div>`).join('')}</div>
@@ -384,6 +467,7 @@ ${storage}
 ${hyper}
 </div></body></html>`;
 fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
-fs.writeFileSync(outFile, html);
-log(`wrote ${outFile} (${(html.length / 1024).toFixed(0)} kB)`);
-if (args.includes('--wiki')) { const w = path.resolve('wiki visualizer', 'model-lab.html'); fs.mkdirSync(path.dirname(w), { recursive: true }); fs.writeFileSync(w, html); log(`copied to ${w}`); }
+const finalHtml = injectHow(html);
+fs.writeFileSync(outFile, finalHtml);
+log(`wrote ${outFile} (${(finalHtml.length / 1024).toFixed(0)} kB)`);
+if (args.includes('--wiki')) { const w = path.resolve('wiki', 'visualizer', 'model-lab.html'); fs.mkdirSync(path.dirname(w), { recursive: true }); fs.writeFileSync(w, finalHtml); log(`copied to ${w}`); }

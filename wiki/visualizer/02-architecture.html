@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -658,13 +659,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#five-layers">Five Layers</a>
   <a href="#layer-1-frontend-client-client">Frontend Client (/client)</a>
   <a href="#layer-2-backend-server-server">Backend Server (/server)</a>
-  <a href="#layer-3-remote-collector-remote-collector">Remote Collector (/remote-...</a>
+  <a href="#layer-3-remote-collector-remote-collector">collector)</a>
   <a href="#layer-4-ml-pipeline-ml">ML Pipeline (/ml)</a>
   <a href="#layer-5-target-workloads">Target Workloads</a>
   <a href="#data-flow-step-by-step">Step by Step</a>
   <a href="#1-initial-discovery-ssh">1. Initial Discovery (SSH)</a>
-  <a href="#2-telemetry-collection-5-second-cycle">2. Telemetry Collection (5...</a>
-  <a href="#3-read-path-every-5-seconds-server-side-interval">Every 5 seconds (server-si...</a>
+  <a href="#2-telemetry-collection-5-second-cycle">second cycle)</a>
+  <a href="#3-read-path-every-5-seconds-server-side-interval">side interval)</a>
   <a href="#4-client-side-position-preservation">Position Preservation</a>
 </nav>
         </header>
@@ -771,43 +772,43 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 └───────────────────────────────────────────────────────────────────────────┘</pre>
                     </div></figure>
 <h2 id="five-layers">Five Layers</h2>
-<h3 id="layer-1-frontend-client-client">Layer 1 — Frontend Client (<code>/client</code>)</h3>
+<h3 id="layer-1-frontend-client-client">Layer 1 - Frontend Client (<code>/client</code>)</h3>
 <p><strong>Tech:</strong> React 19, Vite 8, TypeScript 6, <code>@xyflow/react</code> v12, Three.js v0.186, Recharts v3, Framer Motion v13, Lucide React</p>
 <p><strong>Entry point:</strong> <code>client/src/main.tsx</code> → <code>App.tsx</code></p>
-<p>The client renders graph state it receives over WebSocket. It does no polling — all data arrives pushed from the server. The main views are:</p>
+<p>The client renders graph state it receives over WebSocket. It does no polling - all data arrives pushed from the server. The main views are:</p>
 <ul>
-  <li><strong>Default / 2D Graph</strong> — ReactFlow canvas with custom node + edge components</li>
-  <li><strong>3D Vision</strong> — react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses</li>
-  <li><strong>Telemetry</strong> — Sortable metrics table</li>
-  <li><strong>TRACES</strong> — Live TCP connection stream + aggregated call graph</li>
-  <li><strong>RCA / INCIDENTS</strong> — Root cause analysis results and incident timeline</li>
-  <li><strong>ML PIPELINE</strong> — Anomaly detection status, model info</li>
-  <li><strong>EXPERIMENTS</strong> — Traffic experiment history</li>
-  <li><strong>Analytics</strong> — Graph-level stats (centrality, health scores)</li>
-  <li><strong>Reliability</strong> — health, risk, cascade prediction, what-if and blast radius</li>
-  <li><strong>Findings</strong> — ML ensemble anomalies, kept apart from incidents</li>
+  <li><strong>Default / 2D Graph</strong> - ReactFlow canvas with custom node + edge components</li>
+  <li><strong>3D Vision</strong> - react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses</li>
+  <li><strong>Telemetry</strong> - Sortable metrics table</li>
+  <li><strong>TRACES</strong> - Live TCP connection stream + aggregated call graph</li>
+  <li><strong>RCA / INCIDENTS</strong> - Root cause analysis results and incident timeline</li>
+  <li><strong>ML PIPELINE</strong> - Anomaly detection status, model info</li>
+  <li><strong>EXPERIMENTS</strong> - Traffic experiment history</li>
+  <li><strong>Analytics</strong> - Graph-level stats (centrality, health scores)</li>
+  <li><strong>Reliability</strong> - health, risk, cascade prediction, what-if and blast radius</li>
+  <li><strong>Findings</strong> - ML ensemble anomalies, kept apart from incidents</li>
 </ul>
-<h3 id="layer-2-backend-server-server">Layer 2 — Backend Server (<code>/server</code>)</h3>
+<h3 id="layer-2-backend-server-server">Layer 2 - Backend Server (<code>/server</code>)</h3>
 <p><strong>Tech:</strong> Node.js 18+, Express 5, TypeScript 5.7 (run with tsx), <code>ws</code> v8, <code>ssh2</code> v1. See <a href="30-tech-stack.html">Frameworks and why</a></p>
 <p><strong>Entry point:</strong> <code>server/index.ts</code></p>
 <p>The server is the brain. It owns all state and is the only component that writes to disk. Key subsystems:</p>
 <ul>
-  <li><code>GraphStore</code> — central state (nodes, edges, targets, metrics)</li>
-  <li><code>EndpointDiscoveryEngine</code> — SSH connection management + topology discovery</li>
-  <li><code>RCAEngine</code> / <code>IncidentManager</code> — failure analysis</li>
-  <li><code>WebSocketManager</code> — broadcast hub + embedded terminal</li>
-  <li><code>TrafficController</code> / <code>ExperimentManager</code> — load test execution</li>
+  <li><code>GraphStore</code> - central state (nodes, edges, targets, metrics)</li>
+  <li><code>EndpointDiscoveryEngine</code> - SSH connection management + topology discovery</li>
+  <li><code>RCAEngine</code> / <code>IncidentManager</code> - failure analysis</li>
+  <li><code>WebSocketManager</code> - broadcast hub + embedded terminal</li>
+  <li><code>TrafficController</code> / <code>ExperimentManager</code> - load test execution</li>
 </ul>
-<h3 id="layer-3-remote-collector-remote-collector">Layer 3 — Remote Collector (<code>/remote-collector</code>)</h3>
+<h3 id="layer-3-remote-collector-remote-collector">Layer 3 - Remote Collector (<code>/remote-collector</code>)</h3>
 <p><strong>Tech:</strong> Node.js, <code>dockerode</code>, <code>axios</code></p>
 <p><strong>Optional; not the default path.</strong> By default the server collects over SSH itself (<code>EndpointDiscoveryEngine</code> → <code>MetricCollector</code>) and installs nothing on the target. This standalone process is for hosts where you choose to run an agent: it reads the Docker socket and <code>/proc/net/tcp</code>, packages <code>TelemetryEnvelope</code> payloads, and POSTs them to <code>/api/ingest</code>, the same entry point the ground-truth simulator uses. It is stateless and restartable at any time.</p>
-<h3 id="layer-4-ml-pipeline-ml">Layer 4 — ML Pipeline (<code>/ml</code>)</h3>
+<h3 id="layer-4-ml-pipeline-ml">Layer 4 - ML Pipeline (<code>/ml</code>)</h3>
 <p><strong>Tech:</strong> Python 3, scikit-learn (Isolation Forest, LOF, one-class SVM) + a z-score detector, combined by majority vote; pandas</p>
-<p>A completely separate process. Reads from <code>/api/graph</code>, writes <code>ml/data/latest_scores.json</code>. The server reads this file; it never calls Python. Optional — the system works without it.</p>
-<h3 id="layer-5-target-workloads">Layer 5 — Target Workloads</h3>
+<p>A completely separate process. Reads from <code>/api/graph</code>, writes <code>ml/data/latest_scores.json</code>. The server reads this file; it never calls Python. Optional - the system works without it.</p>
+<h3 id="layer-5-target-workloads">Layer 5 - Target Workloads</h3>
 <p>Unmodified Docker Compose applications. No agents, no sidecars, no config changes required. The system works by observing from the outside.</p>
 <hr class="rule">
-<h2 id="data-flow-step-by-step">Data Flow — Step by Step</h2>
+<h2 id="data-flow-step-by-step">Data Flow - Step by Step</h2>
 <h3 id="1-initial-discovery-ssh">1. Initial Discovery (SSH)</h3>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">server/index.ts startup
@@ -841,7 +842,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
               ├── broadcast(&#x27;trace-events&#x27;) → TracesView live feed
               └── edgeActivity[id].count++</pre>
                     </div></figure>
-<h3 id="3-read-path-every-5-seconds-server-side-interval">3. Read Path — Every 5 seconds (server-side interval)</h3>
+<h3 id="3-read-path-every-5-seconds-server-side-interval">3. Read Path - Every 5 seconds (server-side interval)</h3>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">setInterval(5000):
   ├── broadcast(&#x27;graph-update&#x27;, graphStore.getGraph())
@@ -854,7 +855,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             └── RCAEngine.analyzeIncident(...)
                  └── broadcast(&#x27;incident.updated&#x27;, incident)</pre>
                     </div></figure>
-<h3 id="4-client-side-position-preservation">4. Client Side — Position Preservation</h3>
+<h3 id="4-client-side-position-preservation">4. Client Side - Position Preservation</h3>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">WebSocket onmessage(&#x27;graph-update&#x27;, { nodes, edges, targets })
   └── useGraphData hook
@@ -890,7 +891,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>The remote collector on EC2 talks to <code>http://127.0.0.1:3001</code> — this works because the backend opens a <strong>reverse SSH tunnel</strong> (<code>-R 3001:localhost:3001</code>) when connecting to EC2. So the collector reaches the backend through the tunnel without any inbound firewall rules.</p>
+<p>The remote collector on EC2 talks to <code>http://127.0.0.1:3001</code> - this works because the backend opens a <strong>reverse SSH tunnel</strong> (<code>-R 3001:localhost:3001</code>) when connecting to EC2. So the collector reaches the backend through the tunnel without any inbound firewall rules.</p>
 <hr class="rule">
 <h2 id="what-persists-across-restarts">What Persists Across Restarts</h2>
 <div class="scroll"><table class="t">
@@ -1209,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1364,10 +1365,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1465,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

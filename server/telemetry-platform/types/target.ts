@@ -2,7 +2,7 @@
  * Target-agnostic architecture model.
  *
  * A "Target" is any environment the collector can connect to and observe.
- * The collector must never be hard-coded around a specific target — new
+ * The collector must never be hard-coded around a specific target - new
  * targets are added by writing a config file (see examples/target.example.yaml),
  * not by copying code.
  */

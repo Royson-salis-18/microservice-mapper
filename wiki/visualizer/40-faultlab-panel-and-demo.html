@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -651,7 +652,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-blue">DEMO</span>
                 <span class="meta-item"><code>wiki/40-faultlab-panel-and-demo.md</code></span>
                 <span class="meta-item">~2 min read</span>
-                <span class="meta-item">405 words</span>
+                <span class="meta-item">404 words</span>
             </div>
             <nav class="toc">
   <a href="#fault-and-traffic-panel">Fault and traffic panel</a>
@@ -676,7 +677,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <article class="doc-body">
                     <p>Two ways to drive a bench without touching the mapper. The mapper is never told what is injected.</p>
 <h2 id="fault-and-traffic-panel">Fault and traffic panel</h2>
-<p>Runs on the bench host (<code>lab/faultlab/panel.mjs</code>, in each bench repo, branch <code>faultlab</code>). Listens on <code>127.0.0.1:8099</code>; on EC2 reach it through an SSH tunnel (<code>ssh-tools/panel-tunnel.sh</code>).</p>
+<p>Runs on the bench host (<code>lab/faultlab/panel.mjs</code>, in each bench repo, branch <code>faultlab</code>). Listens on <code>127.0.0.1:8099</code>; on EC2 reach it through an SSH tunnel (<code>run/ssh/panel-tunnel.sh</code>).</p>
 <figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">flowchart LR
   P[Panel page&lt;br/&gt;localhost:8099] --&gt; S[panel.mjs on the host]
   S --&gt; F[faultlab.mjs&lt;br/&gt;run / inject / heal]
@@ -718,7 +719,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li>Traffic: organic load raised so request rates rise.</li>
   <li>Calm: random faults, one at a time.</li>
   <li>Storm: faults more often, up to two at once.</li>
-  <li>Score the mapper's answers against the ledger and write the report to <code>wiki visualizer/experiment-report.html</code>.</li>
+  <li>Score the mapper's answers against the ledger and write the report to wiki/visualizer/experiment-report.html`.</li>
 </ol>
 <h2 id="what-the-collector-now-measures-from-each-service">What the collector now measures from each service</h2>
 <p>From the services' own request log lines (JSON <code>{"msg":"request","status","ms"}</code> and nginx JSON access lines): request rate, error rate (5xx share), mean and p50/p95/p99 latency. A window with no request lines is a real zero (traffic stopped), not unknown. The collector also sends network bytes per second and restart counts, so a pause, partition, brownout or crash loop each leaves a different fingerprint:</p>
@@ -1035,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1190,10 +1191,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1291,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

@@ -1,8 +1,8 @@
-# 23 — Endpoint Discovery & Registry System
+# 23 - Endpoint Discovery & Registry System
 
 ## Overview
 
-The Endpoint Discovery system (`server/discovery/EndpointDiscoveryEngine.ts` + `server/registry/EndpointRegistry.ts`) automatically discovers every service, endpoint, and HTTP route across monitored targets — without requiring any configuration from the target application. It populates the registry that drives traffic generation, health probing, and the discovery summary shown in the UI.
+The Endpoint Discovery system (`server/discovery/EndpointDiscoveryEngine.ts` + `server/registry/EndpointRegistry.ts`) automatically discovers every service, endpoint, and HTTP route across monitored targets - without requiring any configuration from the target application. It populates the registry that drives traffic generation, health probing, and the discovery summary shown in the UI.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ Central registry for all discovered services, endpoints, and routes.
 
 ### Deterministic ID Generation
 
-All IDs are stable and deterministic — they survive restarts and avoid duplicates:
+All IDs are stable and deterministic - they survive restarts and avoid duplicates:
 
 ```typescript
 // Service: targetId:cleanName
@@ -158,7 +158,7 @@ interface DiscoveredRoute {
 
 ## Integration Points
 
-1. **GraphStore** — creates the discovery engine at construction, triggers discovery on target registration
-2. **TrafficController** — queries the registry to find endpoints for SWEEP mode
-3. **Telemetry ingestion** — marks routes as observed when interactions arrive
-4. **UI** — shows discovery summary counts in target cards
+1. **GraphStore** - creates the discovery engine at construction, triggers discovery on target registration
+2. **TrafficController** - queries the registry to find endpoints for SWEEP mode
+3. **Telemetry ingestion** - marks routes as observed when interactions arrive
+4. **UI** - shows discovery summary counts in target cards

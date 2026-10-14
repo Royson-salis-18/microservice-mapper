@@ -113,7 +113,7 @@ export class ExperimentManager {
     this.monitorInterval = setInterval(() => this.checkSafetyLimits(), 2000);
   }
 
-  // Tracks peak CPU/memory. Does NOT abort on high usage/error rate anymore —
+  // Tracks peak CPU/memory. Does NOT abort on high usage/error rate anymore -
   // these are failure-injection experiments, services are supposed to break.
   private checkSafetyLimits() {
     for (const [targetId, expId] of this.activeExperiments.entries()) {

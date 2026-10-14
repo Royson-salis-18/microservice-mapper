@@ -10,8 +10,8 @@ import { predictCascade, simulateFailure, structuralCriticality, type CascadePre
  *
  * Everything the rest of the app does is backward-looking: RCAEngine only
  * speaks once a service is already critical or degraded. This scores services
- * that are still fine but structurally exposed — how much of the system's
- * live traffic is sitting behind them — and, through the cascade model,
+ * that are still fine but structurally exposed - how much of the system's
+ * live traffic is sitting behind them - and, through the cascade model,
  * which of them are likely to be pulled down next.
  *
  * Each cycle, per project:
@@ -27,7 +27,7 @@ import { predictCascade, simulateFailure, structuralCriticality, type CascadePre
  *
  * Edge direction is "source calls target": the collector recovers it from
  * listening ports (orientConnection in MetricCollector.ts), so failure travels
- * against the arrow — from a callee to the services that call it.
+ * against the arrow - from a callee to the services that call it.
  */
 
 export interface NodeRisk {
@@ -46,7 +46,7 @@ export interface BlastRadiusEntry {
   /** Hops back up the dependency chain from the failing node. 1 = calls it directly. */
   hopDistance: number;
   /** Total activity on this node's own outbound calls. Null when none of them
-   *  carry activity data — unmeasured, not idle. */
+   *  carry activity data - unmeasured, not idle. */
   outboundSamplesPerMin: number | null;
   /** How much of what this node depends on sits inside the blast radius.
    *  1 = everything it calls is down; 0.25 = it has other paths still up.
@@ -71,7 +71,7 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** A link's normal traffic level — the slow baseline, so a link that went
+/** A link's normal traffic level - the slow baseline, so a link that went
  *  silent because its callee died still counts for what it usually carries. */
 function activityOf(edge: DependencyEdge): number {
   return edge.activity?.baselinePerMin ?? edge.activity?.samplesPerMin ?? 0;
@@ -92,7 +92,7 @@ function projectOfEdge(edge: DependencyEdge, projectByNodeId: Map<string, string
  * calling it break, then whatever calls those. So this walks in-edges
  * (target -> source), not out-edges.
  *
- * Walking out-edges instead — which is what this did originally — answers
+ * Walking out-edges instead - which is what this did originally - answers
  * "what does X call", which is close to the opposite question and puts
  * databases at the far end of a blast radius they should be at the origin of.
  *
@@ -139,7 +139,7 @@ function reachDependents(
  * `failingSet`. 1 means everything it depends on is inside the blast radius;
  * 0.25 means it has three other paths still standing.
  *
- * Null when none of its out-edges carry activity data — unmeasured is not the
+ * Null when none of its out-edges carry activity data - unmeasured is not the
  * same claim as unaffected.
  */
 function shareOfDependenciesInSet(
@@ -200,7 +200,7 @@ function computeHealth(node: ServiceNode, incidents: Incident[]): { score: numbe
   // other silently never matched; names are still accepted so an incident
   // recorded before the change keeps counting.
   // RESOLVED incidents are excluded because IncidentManager keeps them in its
-  // map forever — it flips status rather than deleting, so an unfiltered read
+  // map forever - it flips status rather than deleting, so an unfiltered read
   // would hold a service down long after it recovered.
   const live = incidents.filter(i => i.status !== 'RESOLVED');
   const isRootCause = live.some(i => i.rootCauseServiceId === node.id);
@@ -224,7 +224,7 @@ function computeHealth(node: ServiceNode, incidents: Incident[]): { score: numbe
     reason: p.reason,
   }));
   // Built from the already-rounded breakdown, not rounded independently from
-  // the raw sum — summing two things separately rounded is how "the
+  // the raw sum - summing two things separately rounded is how "the
   // breakdown adds up to the total" quietly stops being true.
   const score = round2(breakdown.reduce((sum, b) => sum + b.score, 0));
 
@@ -239,7 +239,7 @@ function computeHealth(node: ServiceNode, incidents: Incident[]): { score: numbe
  * constructor loads from disk and starts a timer).
  *
  * Scoped per project because degree and traffic share are only meaningful
- * within one stack — ranking a sock-shop service against a death-star one
+ * within one stack - ranking a sock-shop service against a death-star one
  * would compare two unrelated systems.
  */
 export function computeProjectRisk(
@@ -303,7 +303,7 @@ export function computeProjectRisk(
  * What is downstream of `nodeId` right now, and how much of each dependent's
  * own inbound traffic arrives through it.
  *
- * This is a read over traffic already observed — it does not touch the target,
+ * This is a read over traffic already observed - it does not touch the target,
  * start anything, or stop anything. The share is computed against each
  * dependent's *total* inbound activity, because "40% of what reaches this
  * service comes through the failing one" is the answer that changes a
@@ -383,7 +383,7 @@ export class RiskEngine {
    * spreads existing analytics, so it preserves what is written here.
    *
    * Incidents arrive as an argument because GraphStore has no reference to
-   * IncidentManager — IncidentManager is constructed around the store, and
+   * IncidentManager - IncidentManager is constructed around the store, and
    * reversing that to satisfy this engine would be the wrong trade.
    */
   public recomputeAll(incidents: Incident[]): void {

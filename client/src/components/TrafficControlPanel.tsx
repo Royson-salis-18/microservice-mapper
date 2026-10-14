@@ -7,7 +7,7 @@ import { X, Play, Square, AlertTriangle, Info, Loader2, Radar, Pin } from 'lucid
 const MAX_USERS = 200;
 
 // Each workflow file declares its own per-profile user counts, so this is a
-// hint for the placeholder only — the server uses the real value.
+// hint for the placeholder only - the server uses the real value.
 const PROFILE_USER_HINT: Record<string, number> = {
   baseline: 5, moderate: 15, heavy: 40, stress: 80, ramp: 20,
 };
@@ -283,7 +283,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         : reachabilityStatus === 'CHECKING'
           ? 'Still checking whether the entry point responds…'
           : reachabilityStatus !== 'REACHABLE'
-            ? `Entry point ${activeUrl || ''} is ${reachabilityStatus.toLowerCase()}. Pick a different endpoint, or pin one that responds — telemetry UIs (Grafana, Jaeger) are often not reachable from here. Or switch traffic mode to Sweep to probe every endpoint.`
+            ? `Entry point ${activeUrl || ''} is ${reachabilityStatus.toLowerCase()}. Pick a different endpoint, or pin one that responds - telemetry UIs (Grafana, Jaeger) are often not reachable from here. Or switch traffic mode to Sweep to probe every endpoint.`
             : !isSelectedServiceCapable
               ? 'The selected service has no traffic-capable routes. Choose another service, or switch traffic mode to User journey.'
               : null;
@@ -295,7 +295,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     try {
       const durationSec = parseInt(duration, 10) || 0;
       // If the surface was already probed for this target, reuse that result
-      // rather than making the server probe again — the operator has seen
+      // rather than making the server probe again - the operator has seen
       // exactly which URLs it contains and is starting against those.
       const sweepPaths =
         mode === 'SWEEP' && surface?.targetId === selectedTargetId && surface.usable.length > 0
@@ -340,7 +340,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   /**
    * Probe every discovered endpoint and report which ones answer.
    *
-   * This is read-only — one GET per endpoint, no load generated. It exists
+   * This is read-only - one GET per endpoint, no load generated. It exists
    * because discovery can only report what a container publishes, which is
    * not the same as what is reachable from here.
    */
@@ -420,7 +420,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         body: JSON.stringify({ url }),
       });
       const d = await res.json();
-      setEntryMsg(d.reachable ? `OK — HTTP ${d.status} in ${d.ms}ms` : `Unreachable: ${d.error}`);
+      setEntryMsg(d.reachable ? `OK - HTTP ${d.status} in ${d.ms}ms` : `Unreachable: ${d.error}`);
     } catch (e: any) {
       setEntryMsg(`Probe failed: ${e.message}`);
     } finally {
@@ -439,7 +439,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `HTTP ${res.status}`);
-      setEntryMsg(d.pinned ? `OK — pinned to ${d.pinned}` : 'OK — pin cleared, using discovery');
+      setEntryMsg(d.pinned ? `OK - pinned to ${d.pinned}` : 'OK - pin cleared, using discovery');
       await fetchEntryPoints();
     } catch (e: any) {
       setEntryMsg(e.message);
@@ -503,7 +503,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
       </div>
 
       <div className="mm-tc-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        {/* Traffic-gen live status — makes it obvious whether the engine is
+        {/* Traffic-gen live status - makes it obvious whether the engine is
             actually up, since Node's own "isRunning" belief can go stale if
             traffic-gen crashes mid-run without Node finding out. */}
         <Section
@@ -541,7 +541,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
           )}
 
           {/* Global kill switch. Stops every run the system can reach, including
-              ones started outside this app or before the last server restart —
+              ones started outside this app or before the last server restart -
               not just whatever this panel happens to be showing. */}
           <button
             className={`mm-btn${anyProjectRunning ? ' danger' : ' ghost'}`}
@@ -707,7 +707,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
               )}
             </div>
             <div style={hintStyle}>
-              Concurrent simulated users. Hard ceiling {MAX_USERS} — these are small EC2 boxes.
+              Concurrent simulated users. Hard ceiling {MAX_USERS} - these are small EC2 boxes.
             </div>
           </div>
         </Section>
@@ -731,7 +731,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
                   value={mode} onChange={(e) => setMode(e.target.value as any)}
                 >
                   <option value="USER_JOURNEY">User journey scenario</option>
-                  <option value="SWEEP">Sweep — every working endpoint</option>
+                  <option value="SWEEP">Sweep - every working endpoint</option>
                   <option value="ENDPOINT">Specific discovered route</option>
                   <option value="SERVICE">Service public workflow</option>
                 </select>
@@ -742,7 +742,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
               <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px', background: 'rgba(255,255,255,0.015)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
                   Sweep drives one virtual-user loop across <span style={{ color: 'var(--color-text-main)' }}>every discovered HTTP endpoint that answers a live probe</span>,
-                  so every service emits telemetry in the same window — which is what the per-service Isolation Forest needs.
+                  so every service emits telemetry in the same window - which is what the per-service Isolation Forest needs.
                   Endpoints that do not respond are left out rather than counted as failures.
                 </div>
 
@@ -794,7 +794,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
 
                 {!surface && !probing && (
                   <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>
-                    Not probed yet — starting now will probe first and use whatever answers.
+                    Not probed yet - starting now will probe first and use whatever answers.
                   </div>
                 )}
               </div>
@@ -864,11 +864,11 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
             </Note>
           )}
 
-          {/* No auto-abort notice — these are failure-injection experiments;
+          {/* No auto-abort notice - these are failure-injection experiments;
               services are supposed to break, so nothing here auto-stops on
               high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
           <Note tone="info" icon={<Info size={14} strokeWidth={1.75} />}>
-            <span style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>No auto-abort.</span> Experiments run until you stop them, even under heavy CPU, memory or error rate — that's the point, for RCA and cascading-failure research.
+            <span style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>No auto-abort.</span> Experiments run until you stop them, even under heavy CPU, memory or error rate - that's the point, for RCA and cascading-failure research.
           </Note>
 
           {isCurrentRunning && runningDiag && runningDiag.trafficStatistics && (

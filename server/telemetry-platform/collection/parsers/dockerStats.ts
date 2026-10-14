@@ -2,7 +2,7 @@ import { parseByteSize, parseByteSizePair, parsePercent, parsePids } from "../un
 
 /**
  * Parses `docker stats --no-stream --no-trunc --format '{{json .}}'`
- * output — one JSON object per line, one line per running container.
+ * output - one JSON object per line, one line per running container.
  * Malformed lines are skipped and counted, never fatal (spec section 48).
  */
 export interface DockerStatsEntry {

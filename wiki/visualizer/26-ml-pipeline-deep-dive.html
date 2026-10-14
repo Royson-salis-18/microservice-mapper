@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -812,7 +813,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>Statistical</td>
       <td>No fitting; max</td>
       <td>z</td>
-      <td>— the interpretable baseline</td>
+      <td>- the interpretable baseline</td>
     </tr>
   </tbody>
 </table></div>
@@ -821,7 +822,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Cross-model agreement is meaningful because these are deliberately different families.</p>
 <h3 id="lof-deduplication">LOF Deduplication</h3>
 <p>A critical fix: LOF fits on <strong>distinct rows</strong> only.</p>
-<div class="box why"><p>"1568 rows with 6 distinct values — the collector polls every 10s while docker stats updates less often, so the same state is recorded over and over. A point's 20 nearest neighbours are then 20 copies of itself at distance 0."</p></div>
+<div class="box why"><p>"1568 rows with 6 distinct values - the collector polls every 10s while docker stats updates less often, so the same state is recorded over and over. A point's 20 nearest neighbours are then 20 copies of itself at distance 0."</p></div>
 <p>Without deduplication, LOF thresholds exploded to 3.37×10⁹.</p>
 <h3 id="holdout-evaluation">Holdout Evaluation</h3>
 <p>The chronological tail (default 20%) is held out from training and scored afterwards:</p>
@@ -831,10 +832,10 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-python">holdout_fraction = 0.2</code></pre>
                     </div>
-<p>The holdout flag rate is <strong>not</strong> an accuracy figure — it only says how often the model fires on data it never saw. Compare it to <code>contamination</code>: much higher means drift or a non-normal tail.</p>
+<p>The holdout flag rate is <strong>not</strong> an accuracy figure - it only says how often the model fires on data it never saw. Compare it to <code>contamination</code>: much higher means drift or a non-normal tail.</p>
 <h3 id="contamination">Contamination</h3>
 <p>Set explicitly at 0.01 (1%), never 'auto':</p>
-<div class="box why"><p>"Explicit, not 'auto' — must be reproducible for the paper."</p></div>
+<div class="box why"><p>"Explicit, not 'auto' - must be reproducible for the paper."</p></div>
 <h3 id="per-model-metadata">Per-Model Metadata</h3>
 <p>Each trained model saves:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -932,9 +933,9 @@ above = raw &gt;= stats[&quot;threshold_p99&quot;]</code></pre>
 <h2 id="communication-with-node-server">Communication with Node Server</h2>
 <p>The pipeline communicates via:</p>
 <ol>
-  <li><strong>HTTP</strong> — <code>collector.py</code> and <code>score.py</code> poll <code>/api/graph</code></li>
-  <li><strong>Filesystem</strong> — <code>score.py</code> writes <code>latest_scores.json</code>, Node reads it on each poll cycle</li>
-  <li><strong>REST</strong> — Node exposes <code>/api/ml/*</code> endpoints for the UI to trigger pipeline stages</li>
+  <li><strong>HTTP</strong> - <code>collector.py</code> and <code>score.py</code> poll <code>/api/graph</code></li>
+  <li><strong>Filesystem</strong> - <code>score.py</code> writes <code>latest_scores.json</code>, Node reads it on each poll cycle</li>
+  <li><strong>REST</strong> - Node exposes <code>/api/ml/*</code> endpoints for the UI to trigger pipeline stages</li>
 </ol>
                 </article>
                 
@@ -1217,7 +1218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1372,10 +1373,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1473,7 +1474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

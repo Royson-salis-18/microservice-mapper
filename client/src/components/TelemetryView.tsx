@@ -276,10 +276,10 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                     : evt.statusCode >= 400 ? 'var(--color-degraded)'
                     : 'var(--color-text-muted)',
                 }}>
-                  {evt.statusCode ?? '—'}
+                  {evt.statusCode ?? '-'}
                 </span>
                 <span style={{ color: 'var(--color-text-muted)', width: '52px', flexShrink: 0 }}>{evt.method || 'TCP'}</span>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '—'}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '-'}</span>
                 {evt.latency && <span style={{ color: 'var(--color-text-muted)', width: '60px', flexShrink: 0, textAlign: 'right' }}>{Math.round(evt.latency)}ms</span>}
                 {evt.bytesSent && <span style={{ color: 'var(--color-text-dim)', width: '70px', flexShrink: 0, textAlign: 'right' }}>{formatBytes(evt.bytesSent)}</span>}
               </div>

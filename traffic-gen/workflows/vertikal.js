@@ -3,7 +3,7 @@
 /**
  * Vertikal workflows.
  *
- * Vertikal is not a container stack like the other targets — it is a single
+ * Vertikal is not a container stack like the other targets - it is a single
  * Next.js storefront (app router) started from the project directory with
  *
  *     cd vertikal && bun run dev:lan     # next dev -H 0.0.0.0 -p 3000
@@ -11,7 +11,7 @@
  * so the entry point is that app on :3000, not an EC2 host on :80 and not
  * the Supabase gateway on :54321. Its Postgres/GoTrue/PostgREST containers
  * are supporting services, and driving them directly would bypass the
- * application and hammer the database — which is the mistake the previous
+ * application and hammer the database - which is the mistake the previous
  * version of this file warned about. Everything here goes through the app.
  *
  * Every path below was verified with curl against the running app rather
@@ -62,7 +62,7 @@ const browse = {
     { id: 'home', method: 'GET', path: '/', thinkTimeMs: [500, 3000] },
     { id: 'catalog', method: 'GET', path: '/catalog', thinkTimeMs: [800, 3000] },
     // The catalogue draws every tile through this route, so a real browse
-    // pulls it too. Deterministic renderer — same query, same picture.
+    // pulls it too. Deterministic renderer - same query, same picture.
     { id: 'plate', method: 'GET', path: '/api/plate?n=Vertikal&h=1B1B1B&c=Bitumen&i=0', thinkTimeMs: [200, 800] },
     { id: 'product', method: 'GET', path: '/product/${productSlug}', thinkTimeMs: [1000, 5000], abandonChance: 0.2 },
     { id: 'cart', method: 'GET', path: '/cart', thinkTimeMs: [800, 2500] },
@@ -84,7 +84,7 @@ const search = {
 // Hits the auth-gated surface deliberately. /account and /checkout answer
 // 307 to /auth/sign-in when signed out, and engine.js leaves fetch on its
 // default redirect:'follow', so these land on the sign-in page and record
-// 200 — the middleware and the sign-in render are genuinely exercised, but
+// 200 - the middleware and the sign-in render are genuinely exercised, but
 // the account and checkout pages behind them are not. Kept to a small share
 // of the mix for exactly that reason. A session-backed checkout workflow
 // needs a real GoTrue login and is not invented here.
@@ -107,7 +107,7 @@ const defaultWorkflowWeights = [
 ];
 
 // `next dev` compiles routes on first hit and is single-process, so it is far
-// slower than a production build — the first /product/<slug> took 3.5s
+// slower than a production build - the first /product/<slug> took 3.5s
 // against 0.07s once warm. These stay modest on purpose; they are sized for
 // a dev server on a laptop, not for an EC2 container stack.
 const profiles = {

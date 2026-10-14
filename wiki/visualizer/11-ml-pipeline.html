@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -797,7 +798,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Agreement between detectors only carries information when they <em>could</em> have disagreed. That is why they come from different families, and why the verdict is a vote.</p>
 <hr class="rule">
 <h2 id="pipeline-stages">Pipeline Stages</h2>
-<h3 id="stage-1-collectorpy">Stage 1 — <code>collector.py</code></h3>
+<h3 id="stage-1-collectorpy">Stage 1 - <code>collector.py</code></h3>
 <p>Polls <code>GET /api/graph</code> every 10 seconds. Extracts <code>node.metrics</code> for all nodes and appends rows to <code>data/metrics_raw.csv</code>.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -808,7 +809,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                     </div>
 <p><strong>Why not use MetricStore?</strong> <code>MetricStore</code> is a ring buffer that holds ~1 hour. Training requires days or weeks of baseline data to learn "normal" behavior. The collector writes an append-only CSV that grows with time.</p>
 <p><strong>When to start:</strong> As soon as possible, during <strong>normal operation</strong> (no active stress tests or incidents). The more baseline data before training, the better the models.</p>
-<h3 id="stage-2-preprocesspy">Stage 2 — <code>preprocess.py</code></h3>
+<h3 id="stage-2-preprocesspy">Stage 2 - <code>preprocess.py</code></h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>PYTHON</span>
@@ -822,13 +823,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                     </div>
 <p><strong>Why z-score normalization?</strong> <code>catalogue-db</code> might use 500MB of memory normally; <code>front-end</code> uses 80MB. Without per-service normalization, <code>catalogue-db</code> would always look "anomalous" relative to the fleet average.</p>
 <p><strong>Why convert to rates?</strong> <code>networkRx</code> as a cumulative counter always grows. An <code>IsolationForest</code> trained on cumulative values would flag new deployments (where counts reset) as anomalous. Rates (Δ per second) are stationary.</p>
-<h3 id="stage-3-trainpy">Stage 3 — <code>train.py</code></h3>
+<h3 id="stage-3-trainpy">Stage 3 - <code>train.py</code></h3>
 <p>For every service with at least <code>min_training_samples</code> (30) feature rows, all four detectors are fitted on the earlier part of its series (the chronological tail, 20% by default, is held out), and each is saved with its own score statistics in <code>models/&lt;service&gt;.meta.json</code>:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>PYTHON</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-python">CONTAMINATION = 0.01          # explicit, never &#x27;auto&#x27; — must be reproducible
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-python">CONTAMINATION = 0.01          # explicit, never &#x27;auto&#x27; - must be reproducible
 IsolationForest(n_estimators=200, contamination=0.01, ...)
 LocalOutlierFactor(n_neighbors=..., contamination=0.01, novelty=True)   # fitted on DISTINCT rows
 OneClassSVM(kernel=&quot;rbf&quot;, gamma=&quot;scale&quot;, nu=0.01)                         # nu ≈ expected outlier fraction
@@ -845,7 +846,7 @@ ZScoreDetector(feature_columns)                                           # max 
 python3 train.py --since 2026-09-17T00:00:00Z --until 2026-09-17T02:00:00Z</code></pre>
                     </div>
 <p>The <code>--since</code>/<code>--until</code> range is <strong>excluded</strong> from training. Data outside it is used.</p>
-<h3 id="stage-4-scorepy-ensemblepy">Stage 4 — <code>score.py</code> + <code>ensemble.py</code></h3>
+<h3 id="stage-4-scorepy-ensemblepy">Stage 4 - <code>score.py</code> + <code>ensemble.py</code></h3>
 <p>Every <code>score_interval_sec</code> (10 s), for each service with models:</p>
 <ol>
   <li>Read its latest metrics from <code>GET /api/graph</code>, and turn the cumulative network totals into bytes/s from the previous sample. A counter reset gives 0, not a fake spike.</li>
@@ -912,7 +913,7 @@ score = clamp(r / 2, 0, 1)        typical → 0 · at its threshold → 0.5 · t
 <p><strong>Externally-started processes are detected too.</strong> <code>GET /api/ml/processes</code> falls back to an anchored <code>pgrep</code> (<code>^python3 collector\.py$</code>), so a run launched from a terminal is reported honestly and can still be stopped from the UI. The anchor matters: without it the match also hits shell wrappers whose command line merely <em>contains</em> <code>python3 collector.py</code>, and stopping the wrapper would leave the interpreter running.</p>
 <hr class="rule">
 <h2 id="tuning-knobs">Tuning Knobs</h2>
-<p>All editable from the page, all genuinely wired into the Python — see <a href="14-configuration.html">14-configuration</a> for the full table.</p>
+<p>All editable from the page, all genuinely wired into the Python - see <a href="14-configuration.html">14-configuration</a> for the full table.</p>
 <ul>
   <li><code>contamination</code> → all four detectors (<code>nu</code> for the one-class SVM); must be below 0.5</li>
   <li><code>n_estimators</code>, <code>max_samples_fraction</code> → passed to <code>IsolationForest</code></li>
@@ -935,10 +936,10 @@ score = clamp(r / 2, 0, 1)        typical → 0 · at its threshold → 0.5 · t
   &quot;from&quot;: &quot;…&quot;, &quot;to&quot;: &quot;…&quot;
 }</code></pre>
                     </div>
-<p>The split is chronological, not random — a random split leaks adjacent samples across the boundary and flatters the result. The tail is unlabelled, so <code>flag_rate</code> is a <strong>firing rate, not an accuracy</strong>: how often the model fires on data it never saw. Compare it against <code>contamination</code>; much higher suggests drift or a tail that was not actually normal.</p>
+<p>The split is chronological, not random - a random split leaks adjacent samples across the boundary and flatters the result. The tail is unlabelled, so <code>flag_rate</code> is a <strong>firing rate, not an accuracy</strong>: how often the model fires on data it never saw. Compare it against <code>contamination</code>; much higher suggests drift or a tail that was not actually normal.</p>
 <hr class="rule">
 <h2 id="server-integration">Server Integration</h2>
-<p><code>GraphStore.readAnomalyScores()</code> — called inside <code>getGraph()</code> before each response:</p>
+<p><code>GraphStore.readAnomalyScores()</code> - called inside <code>getGraph()</code> before each response:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -948,7 +949,7 @@ score = clamp(r / 2, 0, 1)        typical → 0 · at its threshold → 0.5 · t
   try {
     const stat = fs.statSync(scoresPath);
     if (this.anomalyScoresCache?.mtimeMs === stat.mtimeMs) {
-      return this.anomalyScoresCache.data;  // Unchanged — return cache
+      return this.anomalyScoresCache.data;  // Unchanged - return cache
     }
     const data = JSON.parse(fs.readFileSync(scoresPath, &#x27;utf8&#x27;));
     this.anomalyScoresCache = { mtimeMs: stat.mtimeMs, data };
@@ -978,12 +979,12 @@ if (s) {
 <hr class="rule">
 <h2 id="known-limitations-honest">Known Limitations (Honest)</h2>
 <p>These are stated in the source code comments and <code>ml/README.md</code>, not hidden.</p>
-<p><strong>1. Unsupervised — no labeled data</strong> Training on data that includes an incident teaches the model that the incident is "normal." The <code>--since/--until</code> exclusion is the manual workaround. The system does not auto-detect incident windows.</p>
+<p><strong>1. Unsupervised - no labeled data</strong> Training on data that includes an incident teaches the model that the incident is "normal." The <code>--since/--until</code> exclusion is the manual workaround. The system does not auto-detect incident windows.</p>
 <p><strong>2. Minimum samples</strong> A service needs at least 30 samples after preprocessing (<code>MIN_TRAINING_SAMPLES</code> in <code>train.py</code>) before it gets a model. New targets won't have anomaly scores until they've been observed for several minutes.</p>
-<p><strong>3. Feature set is limited</strong> Only CPU (Docker's % of one core, as at training time), memory, and network rates are used. HTTP latency and error rate fields are <code>null</code> almost everywhere in current telemetry — Docker stats don't include HTTP metrics, and most services' logs aren't parsed. Adding these as features before they're populated would mean training on fabricated zeros.</p>
+<p><strong>3. Feature set is limited</strong> Only CPU (Docker's % of one core, as at training time), memory, and network rates are used. HTTP latency and error rate fields are <code>null</code> almost everywhere in current telemetry - Docker stats don't include HTTP metrics, and most services' logs aren't parsed. Adding these as features before they're populated would mean training on fabricated zeros.</p>
 <p><strong>4. No auto-retraining</strong> Must manually re-run <code>preprocess.py</code> + <code>train.py</code> as data accumulates. A cron job like <code>0 3 * * * cd /path/to/ml &amp;&amp; python3 preprocess.py &amp;&amp; python3 train.py</code> handles this.</p>
 <p><strong>5. The holdout is not accuracy</strong> <code>flag_rate</code> says how often a model fires on unseen data. Without labels there is no way to call those firings right or wrong. It is useful as a relative signal (compare to <code>contamination</code>, or across services), not as a score.</p>
-<p><strong>6. <code>collector.py</code> and MetricStore overlap</strong> Both read <code>/api/graph</code>. The collector is standalone — it doesn't hook into MetricStore. This means there's some redundant API polling. The separation exists because the ML pipeline needs to be independently deployable (possibly on a different machine).</p>
+<p><strong>6. <code>collector.py</code> and MetricStore overlap</strong> Both read <code>/api/graph</code>. The collector is standalone - it doesn't hook into MetricStore. This means there's some redundant API polling. The separation exists because the ML pipeline needs to be independently deployable (possibly on a different machine).</p>
                 </article>
                 
         <section id="try-it">
@@ -1278,7 +1279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1433,10 +1434,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1534,7 +1535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

@@ -5,9 +5,9 @@ Batch preprocessing: metrics_raw.csv -> features.csv + normalization_stats.json
 Steps, in order (mirrors the project's Phase 3 spec):
   1. Parse timestamps, sort per service.
   2. Convert the cumulative network counters into per-window rates. A
-     negative delta means the container restarted (counter reset) — that
+     negative delta means the container restarted (counter reset) - that
      window's rate is recorded as 0 and flagged, never a fake spike.
-  3. Per-service z-score normalization (never global — 40% CPU is normal
+  3. Per-service z-score normalization (never global - 40% CPU is normal
      for one service, anomalous for another).
   4. Persist normalization_stats.json (per-service mean/std) so score.py
      can normalize new live samples the same way.
@@ -64,7 +64,7 @@ def compute_rates(df: pd.DataFrame) -> pd.DataFrame:
 
 def main():
     if not os.path.exists(RAW_PATH):
-        print(f"[preprocess] no raw data at {RAW_PATH} yet — run collector.py first", file=sys.stderr)
+        print(f"[preprocess] no raw data at {RAW_PATH} yet - run collector.py first", file=sys.stderr)
         sys.exit(1)
 
     df = pd.read_csv(RAW_PATH)
@@ -104,7 +104,7 @@ def main():
             if std > 0:
                 norm[f"z_{col}"] = (group[col] - mean) / std
             else:
-                # zero variance (e.g. a service that never moved) — z-score
+                # zero variance (e.g. a service that never moved) - z-score
                 # is undefined, not "0 forever"; record it honestly as NaN
                 norm[f"z_{col}"] = np.nan
                 nan_cols.append(col)
@@ -140,7 +140,7 @@ def main():
 
     if not normalized_frames:
         write_summary("no_service_ready")
-        print("[preprocess] no service had enough samples to produce features — collect more data first", file=sys.stderr)
+        print("[preprocess] no service had enough samples to produce features - collect more data first", file=sys.stderr)
         sys.exit(1)
 
     result = pd.concat(normalized_frames, ignore_index=True)

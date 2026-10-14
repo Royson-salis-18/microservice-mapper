@@ -1,6 +1,6 @@
 # Reaching a host over SSH, and how the mapper does it
 
-Source folder: `ssh-tools/` in the repository (scripts and this text).
+Source folder: `run/ssh/` in the repository (scripts and this text).
 
 ```mermaid
 flowchart LR

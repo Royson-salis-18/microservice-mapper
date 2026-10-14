@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -664,7 +665,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#51-internal-state-maps">5.1 Internal State Maps</a>
   <a href="#52-the-ingestion-algorithm">5.2 The Ingestion Algorithm</a>
   <a href="#6-metricstore-aggregation">6. MetricStore &amp; Aggregation</a>
-  <a href="#61-time-series-buffering">6.1 Time-Series Buffering</a>
+  <a href="#61-time-series-buffering">Series Buffering</a>
   <a href="#62-edge-metric-aggregation">6.2 Edge Metric Aggregation</a>
 </nav>
         </header>
@@ -687,7 +688,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Internal Technical Reference 2026-09-15</p>
 <p>TypeScript / Node.js / React AWS EC2 / Docker Bearer Token (INGEST_TOKEN)</p>
 <h2 id="1-project-vision-scope"><span class="id">1</span> Project Vision &amp; Scope</h2>
-<p>Microservice Mapper is engineered to solve the "Visibility Gap"—the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).</p>
+<p>Microservice Mapper is engineered to solve the "Visibility Gap"-the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).</p>
 <p>Traditional observability relies on instrumentation (SDKs) or distributed tracing (OpenTelemetry). While powerful, these require significant developer effort to implement. Mapper takes a Zero-Touch approach, treating the network as the source of truth.</p>
 <div class="box why"><p>Core Value Proposition: Move from "I think Service A calls Service B" to "I can prove Service A called Service B 4,500 times in the last 5 minutes with a P95 latency of 120ms."</p></div>
 <h2 id="2-architecture-overview"><span class="id">2</span> Architecture Overview</h2>
@@ -1573,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1728,10 +1729,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1829,7 +1830,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

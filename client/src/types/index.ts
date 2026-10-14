@@ -40,7 +40,7 @@ export interface ServiceNode {
     [key: string]: any;
   };
   metrics: {
-    // Tier 0 — exact, from cgroup accounting.
+    // Tier 0 - exact, from cgroup accounting.
     cpu?: number;
     memory?: number;
     memoryPercent?: number;
@@ -76,14 +76,14 @@ export interface ServiceNode {
   } | null;
   analytics?: {
     // healthScore/riskScore/criticality/centrality/upstreamCount/downstreamCount
-    // are computed server-side every poll cycle by RiskEngine — see
+    // are computed server-side every poll cycle by RiskEngine - see
     // server/graph/RiskEngine.ts. healthBreakdown is the named factors behind
     // healthScore/riskScore, same style as CandidateCause.scoreBreakdown below.
     healthScore?: number | null;
-    /** Current exposure — half current health, half how much observed
+    /** Current exposure - half current health, half how much observed
      *  traffic structurally depends on this node. Not a predicted probability. */
     riskScore?: number | null;
-    /** Predicted probability of failure from the cascade model — an estimate
+    /** Predicted probability of failure from the cascade model - an estimate
      *  under a stated model, not an observed frequency. See
      *  server/graph/CascadeEngine.ts. */
     failureProbability?: number | null;
@@ -131,9 +131,9 @@ export interface DependencyEdge {
   } | null;
 
   statusCodeDistribution?: Record<string, number>;
-  /** Observed TCP connection activity — see server DependencyEdge model. */
+  /** Observed TCP connection activity - see server DependencyEdge model. */
   activity?: {
-    /** Socket observations/min — see server DependencyEdge for what this
+    /** Socket observations/min - see server DependencyEdge for what this
      * does and does not mean. */
     samplesPerMin: number;
     /** Slow-moving baseline of samplesPerMin (rises in ~1 min, falls over
@@ -151,7 +151,7 @@ export interface DependencyEdge {
     connectionSweeps?: number;
   };
   status: 'active' | 'degraded' | 'failed' | 'unknown';
-  /** How strongly the source depends on the target — see
+  /** How strongly the source depends on the target - see
    *  server/graph/EdgeWeights.ts. Absent until the first poll cycle. */
   weight?: EdgeWeight;
 }
@@ -162,7 +162,7 @@ export interface EdgeWeight {
   value: number;
   dependency: number;
   dependencyBasis: 'requests' | 'activity' | 'uniform';
-  /** telemetry = monitoring traffic, weighted at a tenth — see server EdgeWeights. */
+  /** telemetry = monitoring traffic, weighted at a tenth - see server EdgeWeights. */
   kind: 'request' | 'telemetry';
   volume: number | null;
   confidence: number;

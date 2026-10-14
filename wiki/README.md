@@ -1,10 +1,10 @@
-# Microservice Mapper — Wiki
+# Microservice Mapper - Wiki
 
 Microservice Mapper watches a running Docker microservice system **from the outside**: over one SSH connection, installing nothing. From the socket tables and container stats it builds a live dependency graph, judges what is wrong (root cause), and looks ahead (cascade risk), then shows the result in 2D and 3D.
 
 Every page here is checked against the code. Where a page gives a number, a formula or a threshold, it is the one the code uses. Several worked examples were produced by running the real engines.
 
-The same pages are published as an illustrated book with diagrams and interactive labs: run `python3 scripts/build_wiki_visualizer.py` and open `wiki visualizer/index.html`.
+The same pages are published as an illustrated book with diagrams and interactive labs: run `python3 wiki/build_visualizer.py` and open wiki/visualizer/index.html`.
 
 ---
 
@@ -42,7 +42,7 @@ The same pages are published as an illustrated book with diagrams and interactiv
 | 39 | [39-ssh-tools.md](39-ssh-tools.md) | Reaching a host over SSH; scripts and the discovery algorithm |
 | 40 | [40-faultlab-panel-and-demo.md](40-faultlab-panel-and-demo.md) | Fault and traffic panel, staged demo, what each fault looks like |
 | 41 | [41-learning-and-calibration.md](41-learning-and-calibration.md) | What is learned from labelled faults, how it is validated, results |
-| 42 | [42-model-lab.md](42-model-lab.md) | Every chart, every hyperparameter, where the data lives (`reports/model-lab.html`) |
+| 42 | [42-model-lab.md](42-model-lab.md) | Every chart, every hyperparameter, where the data lives (`graphs/output/model-lab.html`) |
 | 07 | [07-remote-collector.md](07-remote-collector.md) | The *optional* push agent (not the default path) |
 | **Building the graph** | | |
 | 03 | [03-graphstore.md](03-graphstore.md) | The in-memory model: ingest, activity, baselines, connections, broadcasts |
@@ -90,4 +90,4 @@ The same pages are published as an illustrated book with diagrams and interactiv
 8. **Make it readable.** One visual language for 2D and 3D: warm means trouble, pulses follow the traffic rate, thickness is reliance; flat 2D cards; the 3D islands. → 33
 
 ---
-Visual version: open `wiki visualizer/index.html`. Table of every doc: `docs/README.md`. Page-by-page app guide: `37-app-pages-guide.md`.
+Visual version: open wiki/visualizer/index.html`. Table of every doc: `docs/README.md`. Page-by-page app guide: `37-app-pages-guide.md`.

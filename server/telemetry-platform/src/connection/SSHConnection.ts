@@ -85,7 +85,7 @@ export class SSHConnection implements Connection {
        * Timing out used to resolve the promise and walk away, leaving the
        * channel open with the command still running on the other end. Each
        * one holds a slot against the server's MaxSessions (OpenSSH defaults
-       * to 10), so on a loaded host — where these commands time out often —
+       * to 10), so on a loaded host - where these commands time out often -
        * the slots fill up and then *every* subsequent exec fails with
        * "(SSH) Channel open failure: open failed", which is exactly what
        * the telemetry warnings were showing across all three targets.

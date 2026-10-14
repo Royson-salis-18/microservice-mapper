@@ -1,4 +1,4 @@
-# WebSocket — Broadcast Hub & Terminal Multiplexer
+# WebSocket - Broadcast Hub & Terminal Multiplexer
 
 **File:** `server/api/websocket.ts`
 
@@ -6,9 +6,9 @@
 
 ## Design: One Port for Everything
 
-Both the REST API and WebSocket live on the same HTTP server on port **3001**. The `WebSocketServer` is attached with `{ server }` — it intercepts HTTP upgrade requests rather than binding its own port.
+Both the REST API and WebSocket live on the same HTTP server on port **3001**. The `WebSocketServer` is attached with `{ server }` - it intercepts HTTP upgrade requests rather than binding its own port.
 
-**Why not separate ports?** Simpler deployment — one port to open, one NGINX `location` block, one firewall rule. The tradeoff (slightly more complex URL routing) is negligible for this use case.
+**Why not separate ports?** Simpler deployment - one port to open, one NGINX `location` block, one firewall rule. The tradeoff (slightly more complex URL routing) is negligible for this use case.
 
 **Why `ws` and not Socket.io?** Zero overhead. Socket.io adds a custom protocol layer, reconnection logic, namespaces, and rooms on top of raw WebSocket. All of those features are implemented manually here in a much simpler way. The total `ws` package size is ~65KB vs Socket.io's ~300KB.
 
@@ -52,7 +52,7 @@ broadcast(type: string, data: any) {
 | `trace-events` | `{ targetId, events: ConnectionEvent[] }` | Immediately when TCP events arrive in `ingestRemote()` |
 | `TERMINAL_LOG` | `string` | Stdout/stderr line from bash/SSH child process |
 
-**No backpressure:** Clients that are too slow to consume messages will fall behind. Acceptable here — the UI is monitoring display, not transactional processing. Stale data is preferable to blocking the server.
+**No backpressure:** Clients that are too slow to consume messages will fall behind. Acceptable here - the UI is monitoring display, not transactional processing. Stale data is preferable to blocking the server.
 
 ---
 
@@ -86,7 +86,7 @@ One session (`ChildProcess`) per WebSocket connection:
 private sessions = new Map<WebSocket, ChildProcess>();
 ```
 
-**Session reuse:** Subsequent commands from the same browser tab are written to the same bash/SSH process — preserving working directory, environment variables, and shell state between commands.
+**Session reuse:** Subsequent commands from the same browser tab are written to the same bash/SSH process - preserving working directory, environment variables, and shell state between commands.
 
 **Session cleanup:**
 - On WS disconnect: `session.kill()` is called
@@ -150,7 +150,7 @@ function resolveKeyPath(keyPath: string): string {
 }
 ```
 
-The `~` prefix is expanded using `os.homedir()` — same behavior as a shell would provide but without spawning a shell just for path resolution.
+The `~` prefix is expanded using `os.homedir()` - same behavior as a shell would provide but without spawning a shell just for path resolution.
 
 ---
 

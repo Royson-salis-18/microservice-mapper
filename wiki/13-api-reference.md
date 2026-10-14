@@ -15,13 +15,13 @@ from port `3001` by default.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/graph` | Whole graph: `{ nodes, edges, targets }`. Every project combined — filter client-side by `node.project`. |
+| GET | `/api/graph` | Whole graph: `{ nodes, edges, targets }`. Every project combined - filter client-side by `node.project`. |
 | GET | `/api/nodes/:id` | One service node. `:id` is the full `project:service` id, e.g. `sock-shop:catalogue`. |
 | GET | `/api/nodes/:id/metrics` | Metric history. Query: `range` (default `5m`). |
 | GET | `/api/nodes/:id/logs` | Container logs over SSH. Query: `tail` (default 200, max 2000). 404 if the node has no known container id. |
 | GET | `/api/analytics` | Derived graph analytics (centrality, criticality). |
 | GET | `/api/diagnostics` | Per-target node/edge counts. |
-| GET | `/api/diagnostics/consistency` | Runs the 12 invariants in `server/graph/consistency.ts` over the live graph and open incidents. Returns `{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }`. An empty `violations` list is the claim; anything in it is a named bug. See [32-accuracy-and-self-check](32-accuracy-and-self-check.md). |
+| GET | `/api/diagnostics/consistency` | Runs the 12 invariants in `algorithms/graph/consistency.ts` over the live graph and open incidents. Returns `{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }`. An empty `violations` list is the claim; anything in it is a named bug. See [32-accuracy-and-self-check](32-accuracy-and-self-check.md). |
 | GET | `/api/status` | Server status summary. |
 | GET | `/api/traffic` | Recent interaction events. Query: `limit` (default 100). |
 
@@ -94,7 +94,7 @@ Per-service health, risk, criticality and cascade fields ride on `/api/graph` no
 
 **Merge semantics matter here.** This handler merges onto the existing entry
 rather than replacing it, because the record also holds keys the edit form
-never sends — notably `trafficBaseUrl`. Replacing wholesale silently erased
+never sends - notably `trafficBaseUrl`. Replacing wholesale silently erased
 the pinned traffic entry point every time someone updated an IP.
 
 ---
@@ -134,7 +134,7 @@ fact discovery cannot observe.
 | POST | `/api/experiments/update_stats` | Push stats into a running experiment. |
 
 Records still marked `RUNNING` when the store loads are reconciled to
-`INTERRUPTED` — nothing survives a process restart, so a `RUNNING` record on
+`INTERRUPTED` - nothing survives a process restart, so a `RUNNING` record on
 load describes a run that is definitively over. They are marked, not deleted,
 so history stays intact.
 
@@ -159,7 +159,7 @@ so history stays intact.
 
 Config validation: all numeric keys must be positive; `contamination` must be
 `< 0.5` (an IsolationForest requirement); `holdout_fraction` must be `0 ≤ x <
-0.5` (0 is legal — train on everything); `feature_columns` must be a
+0.5` (0 is legal - train on everything); `feature_columns` must be a
 non-empty subset of the four `z_*` features.
 
 Process control reports instances started **outside** the app too, detected
@@ -216,5 +216,5 @@ Separate server on port `4400`, started alongside the app.
 A target whose workflow module exports `STUB: true` is **rejected** by
 `/api/start` unless the request supplies confirmed endpoints
 (`useDiscoveredEndpoints` plus a non-empty `endpointPaths`). This is why a
-new target can fail with HTTP 400 while looking correctly configured — see
+new target can fail with HTTP 400 while looking correctly configured - see
 [15-troubleshooting](15-troubleshooting.md).

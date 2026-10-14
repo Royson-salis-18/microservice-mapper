@@ -102,7 +102,7 @@ export class MetricStore {
   pushEvent(event: InteractionEvent): void {
     this.events.push(event);
     // Keep the last hour, capped at 10,000. Events arrive in time order, so
-    // expiry only ever trims the front — this used to re-filter the whole
+    // expiry only ever trims the front - this used to re-filter the whole
     // array, parsing up to 10,000 dates, on every single event, which is
     // quadratic in the size of each ingested batch.
     const cutoff = Date.now() - 60 * 60 * 1000;

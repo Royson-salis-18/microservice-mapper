@@ -6,7 +6,7 @@ import { isObservabilityService } from './serviceRoles.js';
  *
  * An edge `A -> B` means A calls B. Its weight answers "if B fails, how badly
  * is A hit?", which is what root-cause scoring and cascade prediction both
- * need and what the raw graph could not say — every edge used to count the
+ * need and what the raw graph could not say - every edge used to count the
  * same, so a service's rarely-used cache counted as much as the database that
  * serves all of its traffic.
  *
@@ -14,8 +14,8 @@ import { isObservabilityService } from './serviceRoles.js';
  *
  *   dependency   how much of A's outbound work goes to B. Measured from
  *                request rates when every one of A's edges has them, else
- *                from socket activity, else — when A has no traffic figure at
- *                all — split evenly across its dependencies and labelled so.
+ *                from socket activity, else - when A has no traffic figure at
+ *                all - split evenly across its dependencies and labelled so.
  *
  *   confidence   how sure we are the dependency exists and points this way,
  *                from the evidence behind the edge. A link recovered from a
@@ -40,7 +40,7 @@ export const CONFIDENCE = {
  *
  * Exporting traces, metrics or logs is fire-and-forget: when the collector
  * dies, the service keeps serving. Weighted at face value these edges were
- * the heaviest in the graph — on the OpenTelemetry demo, nine services send
+ * the heaviest in the graph - on the OpenTelemetry demo, nine services send
  * *all* their outbound traffic to otel-collector, so each weighed 1.00 on it
  * and a collector failure would have been predicted to take down the shop.
  * Not zero, because a blocked exporter can back up into a service; small,
@@ -48,7 +48,7 @@ export const CONFIDENCE = {
  */
 export const TELEMETRY_FACTOR = 0.1;
 
-/** Monitoring traffic in either direction — exporting to, or being scraped or
+/** Monitoring traffic in either direction - exporting to, or being scraped or
  *  health-checked by, an observability component. */
 export function isTelemetryEdge(edge: DependencyEdge): boolean {
   return isObservabilityService(edge.target) || isObservabilityService(edge.source);

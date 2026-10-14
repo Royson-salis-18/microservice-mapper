@@ -13,7 +13,7 @@ import path from "path";
  *
  * The 24-hour window lives in memory and is written out on a debounce.
  * saveEvents() used to read the whole file, parse it, append, re-filter,
- * pretty-print and rewrite it on every call — about twice every 5 seconds per
+ * pretty-print and rewrite it on every call - about twice every 5 seconds per
  * target, on files up to ~1.8 MB, all synchronous JSON work on the event
  * loop. Two concurrent calls (the metric poll and the connection scan both
  * save) also raced: each read the same old file, and whichever wrote last
@@ -39,7 +39,7 @@ export class TraceStore {
     this.filePath = path.join(process.cwd(), "data", `traces_${targetId}.json`);
   }
 
-  /** Loaded once, synchronously, on first use — after that memory is the truth. */
+  /** Loaded once, synchronously, on first use - after that memory is the truth. */
   private all(): ConnectionEvent[] {
     if (this.events === null) {
       try {

@@ -1,4 +1,4 @@
-# 20 — Traffic Controller & Experiment System
+# 20 - Traffic Controller & Experiment System
 
 ## Overview
 
@@ -28,16 +28,16 @@ The largest single file in the traffic subsystem (~37KB, 857 lines). It handles:
 | `USER_JOURNEY` | Follows real user paths through the frontend |
 | `ENDPOINT` | Targets a specific endpoint/route |
 | `SERVICE` | Targets all endpoints of a specific service |
-| `SWEEP` | **Exercises every discovered endpoint** — critical for ML training data coverage |
+| `SWEEP` | **Exercises every discovered endpoint** - critical for ML training data coverage |
 
-### SWEEP Mode — The ML Data Generator
+### SWEEP Mode - The ML Data Generator
 
 SWEEP mode is specifically designed to feed the per-service Isolation Forest:
 
 1. **Probes all discovered endpoints** via live HTTP checks
 2. **Builds a dynamic workflow** from endpoints that actually respond
 3. **Auto-discovers gateway paths** using `COMMON_GATEWAY_PATHS` (e.g., `/api/products`, `/catalogue`, `/health`)
-4. **Filters out observability UIs** — Grafana, Jaeger, Prometheus endpoints are excluded from traffic
+4. **Filters out observability UIs** - Grafana, Jaeger, Prometheus endpoints are excluded from traffic
 
 ```typescript
 const COMMON_GATEWAY_PATHS = [
@@ -69,7 +69,7 @@ interface ProbeResult {
 }
 ```
 
-- **Probe timeout**: 25 seconds (`MAX_PROBE_TIMEOUT_MS`) — sized from real measurements where sock-shop's `/catalogue?size=5` took 15.1s under load
+- **Probe timeout**: 25 seconds (`MAX_PROBE_TIMEOUT_MS`) - sized from real measurements where sock-shop's `/catalogue?size=5` took 15.1s under load
 - Unreachable endpoints are excluded, not assumed broken
 
 ### Traffic Profiles
@@ -111,9 +111,9 @@ Wraps traffic runs in a tracked experiment record:
 
 ### Key Design Decisions
 
-1. **Safety limits are tracked but NOT enforced** — these are failure-injection experiments, services are *supposed* to break
-2. **Peak metrics tracked** — CPU, memory, latency P95, error rate peaks are recorded per experiment
-3. **Auto-stop** — When traffic-gen reports a sweep stopped (duration reached), the experiment is auto-stopped
+1. **Safety limits are tracked but NOT enforced** - these are failure-injection experiments, services are *supposed* to break
+2. **Peak metrics tracked** - CPU, memory, latency P95, error rate peaks are recorded per experiment
+3. **Auto-stop** - When traffic-gen reports a sweep stopped (duration reached), the experiment is auto-stopped
 
 ### Experiment Lifecycle
 
