@@ -62,7 +62,7 @@ export function crossValidate(runs: Run[], K: number, opts: EvalOpts = {}, lambd
       learned: evaluatePrepared(learnedPrep, null, tr.threshold, opts),
       rulesFixed: evaluatePrepared(rulesPrep, null, RULES_FIXED_THRESHOLD, opts),
       rulesTuned: evaluatePrepared(rulesPrep, null, hTuned, opts),
-      live: evaluatePrepared('live', test, 0, opts),
+      live: evaluatePrepared('live', test, 0.5, opts),
     };
     for (const m of METHODS) { pooled[m].faults.push(...res[m].faults); pooled[m].falseAlarms += res[m].falseAlarms; pooled[m].fpHours += res[m].fpHours; }
     for (const r of test) {
@@ -96,7 +96,7 @@ export function crossSystem(runs: Run[], opts: EvalOpts = {}) {
     const hT = tuneThreshold(tr, scorer(tr, rulesScore), opts).threshold;
     const l = evaluatePrepared(prepare(te, scorer(te, (x) => predict(t.model, x))), null, t.threshold, opts);
     const r = evaluatePrepared(prepare(te, scorer(te, rulesScore)), null, hT, opts);
-    const v = evaluatePrepared('live', te, 0, opts);
+    const v = evaluatePrepared('live', te, 0.5, opts);
     const pool = (e: EventResult): Pooled => ({ faults: e.faults, falseAlarms: e.falseAlarms, fpHours: e.fpHours });
     out.push({ label: `train ${tr.map((x) => x.subject).filter((v2, i, a) => a.indexOf(v2) === i).join('+')} → test ${s}`, learned: summarise(pool(l)), rules: summarise(pool(r)), live: summarise(pool(v)) });
   }

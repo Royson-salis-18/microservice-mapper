@@ -747,7 +747,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h2 id="2-observed-beats-declared"><span class="id">2</span> Observed beats declared</h2>
 <p><strong>The rule.</strong> A <code>depends_on</code> line in a compose file is only a claim. A socket that is open between two containers is a fact. Both are kept, but they are never treated as equal.</p>
 <p><strong>Why.</strong> Config drifts from reality. Services get re-pointed, sidecars appear, and declared dependencies go unused. Root cause and cascade prediction are only as good as the edges under them.</p>
-<p><strong>Where.</strong> Each edge's confidence comes from its evidence (<code>algorithms/graph/EdgeWeights.ts</code>):</p>
+<p><strong>Where.</strong> Each edge's confidence comes from its evidence (<code>server/algorithms/graph/EdgeWeights.ts</code>):</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Evidence</th>
@@ -798,7 +798,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li>The 2D card meters show <code>-</code>, not <code>0.0%</code>.</li>
   <li>A service with no trained model is absent from <code>latest_scores.json</code>. It is never given a default score.</li>
 </ul>
-<p><strong>Broken once:</strong> the anomaly baseline in <code>algorithms/detection/AnomalyDetector.ts</code> used <code>value || 0</code>, so every missing sample pulled the average towards zero, and the next real reading looked like a spike. It now filters missing values out.</p>
+<p><strong>Broken once:</strong> the anomaly baseline in <code>server/algorithms/detection/AnomalyDetector.ts</code> used <code>value || 0</code>, so every missing sample pulled the average towards zero, and the next real reading looked like a spike. It now filters missing values out.</p>
 <hr class="rule">
 <h2 id="4-every-number-can-be-checked-by-hand"><span class="id">4</span> Every number can be checked by hand</h2>
 <p><strong>The rule.</strong> Every score is plain arithmetic over named inputs, and its parts are published next to it.</p>
@@ -858,7 +858,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>The rule.</strong> When two places need the same idea, they share one definition. They do not keep two copies that drift apart.</p>
 <ul>
   <li><strong>Service ids</strong> are <code>project:name</code> everywhere. Incidents used to list bare names while <code>rootCauseServiceId</code> held an id, so any code matching one against the other silently found nothing. <code>cascadeVia</code> had the same bug.</li>
-  <li><strong>Link thresholds</strong> (slow at 300 ms, very slow at 1 s, errors at 1% and 5%) are defined once on the server (<code>algorithms/graph/linkThresholds.ts</code>) and once on the client (<code>edgeHeat.ts</code>). A test asserts the two are identical.</li>
+  <li><strong>Link thresholds</strong> (slow at 300 ms, very slow at 1 s, errors at 1% and 5%) are defined once on the server (<code>server/algorithms/graph/linkThresholds.ts</code>) and once on the client (<code>edgeHeat.ts</code>). A test asserts the two are identical.</li>
   <li><strong>Link appearance</strong> comes from one function, <code>edgeAppearance()</code>, used by the 2D canvas, the 3D scene and the inspector. A link cannot look calm in one view and hot in another.</li>
   <li><strong>CPU shown</strong> comes from one helper, <code>cpuShown()</code> (share of allowance when known, raw otherwise), used by every view.</li>
 </ul>
@@ -888,7 +888,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </ul>
 <hr class="rule">
 <h2 id="11-the-system-checks-itself"><span class="id">11</span> The system checks itself</h2>
-<p>Every relationship between published numbers that has been seen broken in live output becomes a rule in <code>algorithms/graph/consistency.ts</code>. The rules are checked on demand at <code>GET /api/diagnostics/consistency</code>, by a chip in the 3D HUD, and in the test suite. See <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a>.</p>
+<p>Every relationship between published numbers that has been seen broken in live output becomes a rule in <code>server/algorithms/graph/consistency.ts</code>. The rules are checked on demand at <code>GET /api/diagnostics/consistency</code>, by a chip in the 3D HUD, and in the test suite. See <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a>.</p>
 <hr class="rule">
 <h2 id="12-calm-by-default-warm-colours-mean-trouble"><span class="id">12</span> Calm by default; warm colours mean trouble</h2>
 <p>The interface is dark navy and indigo with restrained light. Orange and red appear only when something is slow, erroring or down, never just because a link is busy. Busy links get brighter blues. Bloom is off by default and 2D cards are flat and matte; links are lit clearly (azure to ice cyan) without bloom, so the light comes from the data, not from post-processing. See <a href="33-visual-language.html">Reading the picture</a>.</p>

@@ -166,7 +166,7 @@ Evaluation is blocked by time (each run cut into 5 consecutive chunks, train on 
 
 | Method | Faults detected | Right service first (of detected) | False alarms per hour |
 |---|---|---|---|
-| **Live mapper (rules)** | **97%** (33/34) | **58%** (19/33) | **0.0** |
+| **Live mapper (rules)** | **97%** (33/34) | **58%** (19/33) | 5.9 |
 | Rules, fixed threshold | 97% | 55% | 8.9 |
 | Rules, tuned threshold | 82% | 46% | 4.4 |
 | Learned model | 50% | 53% | 3.0 |
@@ -219,7 +219,7 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 
 **How do you avoid false alarms?** Per-service baselines, persistence of two readings, noise control for jumpy series, minimum request counts, no judging in the first 30 minutes of a new project, and a learning period before soft evidence counts.
 
-**What is the false alarm rate?** 0.0 per hour for the live system on the recorded runs; 3 to 9 per hour for the re-scored variants. Mention the sample is small.
+**What is the false alarm rate?** About 6 per hour for the live system on the recorded runs (the fault injector keeps injecting, so many "false" alarms are right after a fault or during overlapping faults), 3 to 9 per hour for the re-scored variants. Mention the sample is small and that the learned model has the fewest (3.0) but misses half of the faults.
 
 **How is it different from Prometheus or Datadog?** Those show metrics and need alert rules written by a person. This learns normal per service, ranks the cause, and predicts spread from the call graph, with no code changes.
 

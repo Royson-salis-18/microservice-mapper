@@ -681,7 +681,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">flowchart LR
   A[Bench with the blind injector] --&gt;|ledger: what was broken, when| D[Dataset]
   B[Mapper API, recorded by the observer] --&gt;|readings and container state per service| D
-  D --&gt; F[Features&lt;br/&gt;algorithms/detection/features.ts]
+  D --&gt; F[Features&lt;br/&gt;server/algorithms/detection/features.ts]
   F --&gt; L[Learner&lt;br/&gt;tools/ml]
   L --&gt; M[learned.json&lt;br/&gt;weights + threshold]
   M --&gt; S[Live server&lt;br/&gt;LearnedScorer]
@@ -706,7 +706,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>Train</td>
       <td>Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems</td>
-      <td><code>algorithms/model/TargetModel.ts</code> (pure)</td>
+      <td><code>server/algorithms/model/TargetModel.ts</code> (pure)</td>
     </tr>
     <tr>
       <td>Learning period</td>
@@ -803,7 +803,7 @@ npm run ml -- &lt;run-dir&gt; [&lt;run-dir&gt; ...]                            #
       <td>Live mapper (rules, as recorded)</td>
       <td>97% (33/34)</td>
       <td>58% (19/33)</td>
-      <td>0.0</td>
+      <td>5.9</td>
     </tr>
     <tr>
       <td>Rules, fixed threshold</td>
@@ -825,7 +825,7 @@ npm run ml -- &lt;run-dir&gt; [&lt;run-dir&gt; ...]                            #
     </tr>
   </tbody>
 </table></div>
-<p>Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour against 9 for the re-scored rules and 0 for the live mapper).</p>
+<p>Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour, against 9 to 11 for the re-scored rules and the live mapper).</p>
 <p><strong>Decision.</strong> The learned model is not clearly better, so the rules stay and <code>learned.json</code> is not installed. With 34 faults the learned weights were unstable (strongly related features such as <code>own</code> and <code>cpu</code> receive large opposite weights), and lambda was pushed to the top of its grid. More labelled faults are needed before the comparison is worth repeating.</p>
                 </article>
                 

@@ -74,11 +74,11 @@ Recorded runs are in `run/recorded-runs` (two benches, 217 minutes, 34 injected 
 
 | Method | Faults detected | Right service first (of detected) | False alarms per hour |
 |---|---|---|---|
-| Live mapper (rules, as recorded) | 97% (33/34) | 58% (19/33) | 0.0 |
+| Live mapper (rules, as recorded) | 97% (33/34) | 58% (19/33) | 5.9 |
 | Rules, fixed threshold | 97% | 55% | 8.9 |
 | Rules, tuned threshold | 82% | 46% | 4.4 |
 | Learned model | 50% | 53% | 3.0 |
 
-Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour against 9 for the re-scored rules and 0 for the live mapper).
+Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour, against 9 to 11 for the re-scored rules and the live mapper).
 
 **Decision.** The learned model is not clearly better, so the rules stay and `learned.json` is not installed. With 34 faults the learned weights were unstable (strongly related features such as `own` and `cpu` receive large opposite weights), and lambda was pushed to the top of its grid. More labelled faults are needed before the comparison is worth repeating.

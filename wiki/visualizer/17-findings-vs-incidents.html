@@ -780,7 +780,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>They fail differently, and that is useful.</strong> A rule misses a slow drift that never crosses 70%. A model misses a failure mode that was present throughout training and so looks normal to it. Two independent signals disagreeing is information; one signal wearing two hats is not.</p>
 <hr class="rule">
 <h2 id="2-incidents-the-rules"><span class="id">2</span> Incidents: the rules</h2>
-<p>Defined in <code>algorithms/detection/thresholds.ts</code>, overridable via <code>server/data/incident_thresholds.json</code>, and editable in the UI under <strong>Incidents → Detection rules</strong>.</p>
+<p>Defined in <code>server/algorithms/detection/thresholds.ts</code>, overridable via <code>server/data/incident_thresholds.json</code>, and editable in the UI under <strong>Incidents → Detection rules</strong>.</p>
 <p>Every value below was previously a literal inside <code>AnomalyDetector.ts</code>, where the only way to answer "why did this fire?" was to read the source.</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -888,7 +888,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <tbody>
     <tr>
       <td>Threshold definitions, defaults, limits, docs</td>
-      <td><code>algorithms/detection/thresholds.ts</code></td>
+      <td><code>server/algorithms/detection/thresholds.ts</code></td>
     </tr>
     <tr>
       <td>Threshold overrides (gitignored)</td>
@@ -896,7 +896,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
     <tr>
       <td>Rule evaluation</td>
-      <td><code>algorithms/detection/AnomalyDetector.ts</code></td>
+      <td><code>server/algorithms/detection/AnomalyDetector.ts</code></td>
     </tr>
     <tr>
       <td>Incident severity from rule output</td>

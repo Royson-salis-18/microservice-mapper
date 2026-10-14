@@ -651,8 +651,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-cyan">START HERE</span>
                 <span class="meta-item"><code>wiki/00-evaluation-guide.md</code></span>
-                <span class="meta-item">~14 min read</span>
-                <span class="meta-item">2,774 words</span>
+                <span class="meta-item">~15 min read</span>
+                <span class="meta-item">2,986 words</span>
             </div>
             <nav class="toc">
   <a href="#1-the-project-in-one-minute">1. The project in one minute</a>
@@ -728,9 +728,15 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
     <tr>
       <td>Decision logic</td>
-      <td><code>algorithms/</code></td>
+      <td><code>server/algorithms/</code></td>
       <td>TypeScript</td>
       <td>The real detector, root cause, cascade (used by the server)</td>
+    </tr>
+    <tr>
+      <td><strong>Algorithms, every file in Python</strong></td>
+      <td><strong><code>algorithms/</code></strong></td>
+      <td><strong>Python</strong></td>
+      <td><strong>One simplified <code>.py</code> per TypeScript file, plus a Markdown page per area. Start with <code>algorithms/README.md</code></strong></td>
     </tr>
     <tr>
       <td><strong>Core logic (explain this)</strong></td>
@@ -870,19 +876,19 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <tbody>
     <tr>
       <td><code>detector.py</code> <code>abnormal_scores</code>, <code>detect_service</code></td>
-      <td><code>algorithms/detection/AnomalyDetector.ts</code></td>
+      <td><code>server/algorithms/detection/AnomalyDetector.ts</code></td>
     </tr>
     <tr>
       <td><code>settings.py</code></td>
-      <td><code>DETECTOR_PARAMS</code>, <code>algorithms/detection/thresholds.ts</code></td>
+      <td><code>DETECTOR_PARAMS</code>, <code>server/algorithms/detection/thresholds.ts</code></td>
     </tr>
     <tr>
       <td><code>root_cause.py</code> <code>rank_root_causes</code></td>
-      <td><code>algorithms/rca/RCAEngine.ts</code></td>
+      <td><code>server/algorithms/rca/RCAEngine.ts</code></td>
     </tr>
     <tr>
       <td><code>cascade.py</code> <code>predict_cascade</code>, <code>what_if</code></td>
-      <td><code>algorithms/graph/CascadeEngine.ts</code></td>
+      <td><code>server/algorithms/graph/CascadeEngine.ts</code></td>
     </tr>
   </tbody>
 </table></div>
@@ -929,7 +935,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td><strong>Live mapper (rules)</strong></td>
       <td><strong>97%</strong> (33/34)</td>
       <td><strong>58%</strong> (19/33)</td>
-      <td><strong>0.0</strong></td>
+      <td>5.9</td>
     </tr>
     <tr>
       <td>Rules, fixed threshold</td>
@@ -979,8 +985,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>How did you test it?</strong> A fault injector breaks services on purpose and keeps a private answer key; the mapper never sees it. Scores come from comparing the two.</p>
 <p><strong>Why isn't the machine-learning model used?</strong> We trained and tested it fairly, it was not better than the rules on our data (section 6), so we kept the simpler, explainable rules. The pipeline is there to retest when there is more data.</p>
 <p><strong>How do you avoid false alarms?</strong> Per-service baselines, persistence of two readings, noise control for jumpy series, minimum request counts, no judging in the first 30 minutes of a new project, and a learning period before soft evidence counts.</p>
-<p><strong>What is the false alarm rate?</strong> 0.0 per hour for the live system on the recorded runs; 3 to 9 per hour for the re-scored variants. Mention the sample is small.</p>
+<p><strong>What is the false alarm rate?</strong> About 6 per hour for the live system on the recorded runs (the fault injector keeps injecting, so many "false" alarms are right after a fault or during overlapping faults), 3 to 9 per hour for the re-scored variants. Mention the sample is small and that the learned model has the fewest (3.0) but misses half of the faults.</p>
 <p><strong>How is it different from Prometheus or Datadog?</strong> Those show metrics and need alert rules written by a person. This learns normal per service, ranks the cause, and predicts spread from the call graph, with no code changes.</p>
+<p><strong>Why is it written in TypeScript and not Python?</strong> The product is a web application: the dashboard must be JavaScript, so using TypeScript for the server and collector too gives one language and one set of data types (service, link, incident) that every part checks against. The logic runs every 5 seconds inside the live server, so keeping it in the same language avoids running a second program and passing data to it. Docker, SSH and WebSocket libraries are strong in Node. The same files are reused by the tests and the scoring tools. The maths itself is language independent, and every file has a simplified Python version in <code>algorithms/</code>. Python is used where it is the better tool: the machine learning experiments in <code>ml/</code>.</p>
 <p><strong>What are the limits?</strong> Only Docker so far, small test set, overlapping faults confuse the ranking, the cascade weights are assumptions.</p>
 <p><strong>What would you do next?</strong> Collect many more labelled faults, retest the learned model, calibrate the cascade against recorded cascades, support Kubernetes.</p>
 <hr class="rule">
@@ -993,6 +1000,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 npm start                          # installs what is missing, starts server (:3001) and dashboard (:5173)
 python3 core_logic/demo.py         # the logic on a small made-up shop
 python3 core_logic/test_core_logic.py
+python3 algorithms/run_all_tests.py   # tests for every Python algorithm file
 npm test                           # the TypeScript tests
 npm run ml                         # compares rules and learned model on the recorded runs
 npm run ml:report                  # rebuilds graphs/output/model-lab.html</code></pre>
@@ -1005,12 +1013,13 @@ npm run ml:report                  # rebuilds graphs/output/model-lab.html</code
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TEXT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">algorithms/   decision logic (detection, rca, graph, model, learning, evaluation)
-core_logic/   the same ideas in simple Python (explain this)
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">algorithms/   every algorithm as simple Python + a Markdown page per area (explain these)
+core_logic/   just the three core steps in Python, with a demo
 graphs/       report builders and the generated model lab page (graphs/output)
 run/          start scripts, tests (run/tests), CLIs (run/cli), sample recorded runs (run/recorded-runs)
 wiki/         documentation; this page is the short path
-server/ client/ remote-collector/ traffic-gen/ ml/    the applications
+server/       the backend; the real TypeScript logic is in server/algorithms/
+client/ remote-collector/ traffic-gen/ ml/    the other applications
 unused/       old material, not part of the running system</code></pre>
                     </div>
                 </article>

@@ -961,7 +961,7 @@ dockerContainerTcp: (containerId: string): RemoteCommand&lt;string&gt; =&gt; ({
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// algorithms/graph/EdgeWeights.ts
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// server/algorithms/graph/EdgeWeights.ts
 value: round3(Math.min(Math.max(confidence * dependency * factor, 0), 1)),</code></pre>
                     </div>
 <p><strong>A root cause has to explain something material:</strong></p>
@@ -969,7 +969,7 @@ value: round3(Math.min(Math.max(confidence * dependency * factor, 0), 1)),</code
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// algorithms/rca/RCAEngine.ts
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// server/algorithms/rca/RCAEngine.ts
 const material = (id: string) =&gt; { const r = reach.get(id) ?? 0; return r &gt;= MATERIAL_REACH ? r : 0; };</code></pre>
                     </div>
 <p><strong>The cascade is one line of probability</strong>, iterated to a fixed point:</p>
@@ -977,7 +977,7 @@ const material = (id: string) =&gt; { const r = reach.get(id) ?? 0; return r &gt
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// algorithms/graph/CascadeEngine.ts
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// server/algorithms/graph/CascadeEngine.ts
 survive *= 1 - tau * e.weight!.value * (P.get(e.target) ?? 0);</code></pre>
                     </div>
 <p><strong>One colour decision for every view:</strong></p>
@@ -1014,7 +1014,7 @@ if (errorRate != null &amp;&amp; errorRate &gt;= LINK_THRESHOLDS.errorCritical) 
     </tr>
     <tr>
       <td>link slow or error thresholds</td>
-      <td><code>algorithms/graph/linkThresholds.ts</code> <strong>and</strong> <code>client/.../edgeHeat.ts</code></td>
+      <td><code>server/algorithms/graph/linkThresholds.ts</code> <strong>and</strong> <code>client/.../edgeHeat.ts</code></td>
       <td>the equality test fails until both match</td>
     </tr>
     <tr>
@@ -1065,8 +1065,8 @@ if (errorRate != null &amp;&amp; errorRate &gt;= LINK_THRESHOLDS.errorCritical) 
   <li><code>server/models/ServiceNode.ts</code> and <code>DependencyEdge.ts</code>: the vocabulary.</li>
   <li><code>server/index.ts</code>: the heartbeat.</li>
   <li><code>server/graph/GraphStore.ts</code>, <code>ingestRemote()</code> and <code>getGraph()</code>: the centre.</li>
-  <li><code>algorithms/graph/EdgeWeights.ts</code>, then <code>RiskEngine.ts</code> and <code>CascadeEngine.ts</code>: the arithmetic.</li>
-  <li><code>algorithms/rca/RCAEngine.ts</code>: judgement.</li>
+  <li><code>server/algorithms/graph/EdgeWeights.ts</code>, then <code>RiskEngine.ts</code> and <code>CascadeEngine.ts</code>: the arithmetic.</li>
+  <li><code>server/algorithms/rca/RCAEngine.ts</code>: judgement.</li>
   <li><code>client/src/hooks/useGraphData.ts</code>, then <code>components/shared/*</code>: how it becomes pixels.</li>
   <li><code>tests/*.test.ts</code>: every claim above, pinned to a number.</li>
 </ol>

@@ -930,7 +930,7 @@ cat /proc/$PID/net/dev</code></pre>
 <p><strong>What is done now.</strong> <code>orientConnection()</code> uses each container's LISTEN rows. The end whose port is a listening port is the <strong>callee</strong>. If no listen table was readable, the ephemeral port range (32768–60999) marks the client end. If neither works, the scan's own orientation is kept and the edge is tagged <code>direction:unresolved</code>, with its confidence lowered to 0.5 so it counts for less. See <a href="06-node-edge-lifecycle.html">Lifecycle and direction</a>.</p>
 <hr class="rule">
 <h2 id="latency-and-errors-one-set-of-thresholds">Latency and errors: one set of thresholds</h2>
-<p>When a source provides request data (the gateway log at Tier 1, Prometheus at Tier 2), a link's status comes from <code>linkStatus()</code> in <code>algorithms/graph/linkThresholds.ts</code>:</p>
+<p>When a source provides request data (the gateway log at Tier 1, Prometheus at Tier 2), a link's status comes from <code>linkStatus()</code> in <code>server/algorithms/graph/linkThresholds.ts</code>:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th></th>

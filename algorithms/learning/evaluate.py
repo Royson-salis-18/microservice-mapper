@@ -16,8 +16,8 @@ Threshold choice: try quantiles of the observed top scores and keep the best F-s
 objective (training data only).
 
 Left out: TS types. 'live' mode (the rule-based mapper as recorded) is kept: it uses the
-recorded alarm flag instead of a score and has no persistence rule. Note the TS calls it with
-threshold 0, which makes every moment count as hot there; pass 0.5 for the intended meaning.
+recorded alarm flag (0 or 1) instead of a score and has no persistence rule, so call it with
+threshold 0.5.
 """
 import pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))

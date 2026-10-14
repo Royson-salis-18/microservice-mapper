@@ -691,8 +691,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Symptoms.</strong> (1) In an incident, the service that called the broken one was named as root cause. (2) Incidents raised by CPU/memory anomalies on running services showed no root cause. (3) The propagation path pointed from the cause to its dependencies. (4) A <code>docker pause</code>d container never appeared in incidents. (5) sock-shop and train-ticket showed <strong>LIVE</strong> with 0 services discovered.</p>
 <p><strong>Causes and fixes.</strong></p>
 <ul>
-  <li><code>algorithms/rca/RCAEngine.ts</code>: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -&gt; 0.10; observed-edge bonus removed from the score.</li>
-  <li><code>algorithms/detection/AnomalyDetector.ts</code>: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise <code>container-paused</code>.</li>
+  <li><code>server/algorithms/rca/RCAEngine.ts</code>: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -&gt; 0.10; observed-edge bonus removed from the score.</li>
+  <li><code>server/algorithms/detection/AnomalyDetector.ts</code>: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise <code>container-paused</code>.</li>
   <li><code>server/collectors/DockerCollector.ts</code>: <code>State === 'paused'</code> -&gt; status critical (was <code>unknown</code>).</li>
   <li><code>server/graph/GraphStore.ts</code>: an HTTP ping of the app's website no longer refreshes <code>lastSeen</code> (it said nothing about telemetry), and a discovery that found zero services no longer marks the target LIVE.</li>
 </ul>
@@ -936,7 +936,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </ul>
 <hr class="rule">
 <h2 id="10-accuracy-audit-october-2026"><span class="id">10</span> Accuracy audit (October 2026)</h2>
-<p>A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (<code>scripts/simulate-target.ts</code>) against an isolated server, and a new self-check (<code>algorithms/graph/consistency.ts</code>, <code>GET /api/diagnostics/consistency</code>). Full write-up: <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a> and <a href="31-measurement-precision.html">Measuring precisely</a>.</p>
+<p>A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (<code>scripts/simulate-target.ts</code>) against an isolated server, and a new self-check (<code>server/algorithms/graph/consistency.ts</code>, <code>GET /api/diagnostics/consistency</code>). Full write-up: <a href="32-accuracy-and-self-check.html">Keeping the numbers honest</a> and <a href="31-measurement-precision.html">Measuring precisely</a>.</p>
 <h3 id="101-dependency-shares-summed-to-183">10.1 Dependency shares summed to 183%</h3>
 <p>Unmeasured edges were given <code>1/N</code> <em>on top of</em> a full split of the measured traffic. Now unmeasured edges get <code>1/N</code> each and the measured ones share the remainder, so every caller sums to exactly 1 per kind. Enforced by the <code>reliance-sums-to-one</code> rule.</p>
 <h3 id="102-rca-credited-explanations-through-negligible-paths">10.2 RCA credited explanations through negligible paths</h3>
@@ -952,7 +952,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h3 id="107-ipv4-mapped-addresses-in-tcp6">10.7 IPv4-mapped addresses in tcp6</h3>
 <p>Dual-stack servers list IPv4 clients in <code>/proc/net/tcp6</code> as <code>::ffff:a.b.c.d</code>. They were decoded as IPv6, matched no container, and the link vanished. <code>decodeProcNetIp()</code> now recognises them.</p>
 <h3 id="108-one-set-of-link-thresholds">10.8 One set of link thresholds</h3>
-<p>Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in <code>algorithms/graph/linkThresholds.ts</code> and the client's <code>edgeHeat.ts</code>, and a test asserts they match.</p>
+<p>Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in <code>server/algorithms/graph/linkThresholds.ts</code> and the client's <code>edgeHeat.ts</code>, and a test asserts they match.</p>
 <h3 id="109-smaller-ones">10.9 Smaller ones</h3>
 <p>The anomaly baseline no longer treats missing samples as 0 (<code>|| 0</code>). Metrics are built with <code>num()</code> so missing means <code>null</code>. Evidence text says "not measured" instead of "0%". The connection sweep waits for itself like the poll loop.</p>
 <h2 id="11-visual-redesign"><span class="id">11</span> Visual redesign</h2>

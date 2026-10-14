@@ -186,8 +186,9 @@ fewer spurious pages, slower detection), `grace_sec` (how late after healing an 
 
 **Edge cases.** No faults gives `nan` proportions (Wilson with n = 0). Median of an empty list is
 `nan`. The "live" mode uses the recorded alarm flag, with no persistence rule, because the live
-mapper has its own timing logic. In the TS it is called with threshold 0, and since the flag is 0 or 1 that
-makes every moment "hot"; the Python keeps this behaviour for identical results but the demo passes 0.5.
+mapper has its own timing logic. It is called with threshold 0.5, because the flag is 0 or 1. (An earlier
+version of the TS passed 0, which made every moment "hot" and gave the live mapper 0 false alarms by accident;
+that was fixed and the numbers in this folder come from the fixed run.)
 
 **Mirrors:** `server/algorithms/learning/evaluate.ts`.
 
@@ -264,7 +265,7 @@ five-fold cross-validation by time plus train-on-one-bench-test-on-the-other (se
 
 | Method | Faults detected | Top-1 of detected | False alarms per hour |
 |---|---|---|---|
-| Live mapper (rules, as recorded) | 97% (33/34) | 58% (19/33) | 0.0 |
+| Live mapper (rules, as recorded) | 97% (33/34) | 58% (19/33) | 5.9 |
 | Rules, fixed threshold | 97% | 55% | 8.9 |
 | Learned model | 50% | 53% | 3.0 |
 

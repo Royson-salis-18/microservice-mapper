@@ -100,7 +100,7 @@ def cross_validate(runs, K, lambdas=LAMBDAS, **opts):
         res = {"learned": evaluate_prepared(learned_prep, tr["threshold"], **opts),
                "rulesFixed": evaluate_prepared(rules_prep, RULES_FIXED_THRESHOLD, **opts),
                "rulesTuned": evaluate_prepared(rules_prep, h_tuned, **opts),
-               "live": evaluate_prepared("live", 0, live_runs=test, **opts)}
+               "live": evaluate_prepared("live", 0.5, live_runs=test, **opts)}
         for m in METHODS:
             pooled[m]["faults"] += res[m]["faults"]
             pooled[m]["false_alarms"] += res[m]["false_alarms"]
@@ -135,7 +135,7 @@ def cross_system(runs, **opts):
         h = tune_threshold(tr, scorer(tr, rules_score), **opts)["threshold"]
         learned = evaluate_prepared(prepare(te, scorer(te, lambda x: predict(t["model"], x))), t["threshold"], **opts)
         rules = evaluate_prepared(prepare(te, scorer(te, rules_score)), h, **opts)
-        live = evaluate_prepared("live", 0, live_runs=te, **opts)
+        live = evaluate_prepared("live", 0.5, live_runs=te, **opts)
         out.append({"label": f"train on others -> test {s}", "learned": summarise(pool(learned)),
                     "rules": summarise(pool(rules)), "live": summarise(pool(live))})
     return out
