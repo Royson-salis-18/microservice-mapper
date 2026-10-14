@@ -74,6 +74,8 @@ async function main() {
 
   const graphStore = new GraphStore(wsManager);
   const incidentManager = new IncidentManager(graphStore);
+  // Every start: train one model per architecture on its own baseline (the persisted metric history), then keep it fresh.
+  incidentManager.models.start();
   const riskEngine = new RiskEngine(graphStore);
   const trafficController = new TrafficController(graphStore);
   const experimentManager = new ExperimentManager(graphStore, graphStore.metricStore, trafficController);

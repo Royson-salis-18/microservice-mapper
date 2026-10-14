@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCw, Search, Gauge, TerminalSquare, Settings2, ChevronDown } from 'lucide-react';
 import type { GlobalStatus, Target } from '../types';
+import { useModelStatus, learningText } from '../hooks/useModelStatus';
 
 interface TopBarProps {
   status: GlobalStatus | null;
@@ -31,6 +32,7 @@ const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigat
 export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph, activeTab }: TopBarProps) {
   const [isReloading, setIsReloading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const model = useModelStatus(selectedProject);
 
   // Cmd/Ctrl+K or "/" focuses search, as in most tools people already use.
   useEffect(() => {
@@ -101,6 +103,13 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
       )}
       {!showCounts && currentTarget && (
         <div className="mm-health"><span className="zero">No live data for this project yet</span></div>
+      )}
+
+      {model?.state === 'learning' && (
+        <span className="mm-chip" style={{ marginLeft: 12, height: 24, background: 'rgba(138,180,255,0.1)', color: '#b4c8ff' }}
+          title="The model for this project is learning what normal looks like from its own data. Until it has enough baseline, only stopped, paused or restarting containers raise an incident.">
+          Learning baseline · {learningText(model)}
+        </span>
       )}
 
       <div style={{ flex: 1 }} />

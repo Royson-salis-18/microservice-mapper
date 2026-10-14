@@ -3,6 +3,7 @@ import type { Node, Edge } from '@xyflow/react';
 import type { Incident } from '../types';
 import { pageRootStyle } from './ProjectSections';
 import { IncidentRulesPanel } from './IncidentRulesPanel';
+import { useModelStatus, learningText } from '../hooks/useModelStatus';
 import { ArrowRight, Check, CheckCircle2, CircleDot, Copy, RadioTower } from 'lucide-react';
 
 interface RCAViewProps {
@@ -16,6 +17,7 @@ interface RCAViewProps {
 export function RCAView({ nodes, edges: _edges, selectedProject, embedded = false }: RCAViewProps) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const model = useModelStatus(selectedProject === 'ALL' ? null : selectedProject.toLowerCase());
 
   const targetId = useMemo(() => {
     return selectedProject === 'ALL' ? 'sock-shop' : selectedProject.toLowerCase();
@@ -167,7 +169,9 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
           </div>
           <div>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>All clear</h2>
-            <div style={sub}>No active incident on <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b>. Every service is within its learned baseline.</div>
+            <div style={sub}>{model?.state === 'learning'
+              ? <>Learning what normal looks like for <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b> ({learningText(model)} of baseline). Until then only stopped, paused or restarting containers raise an incident.</>
+              : <>No active incident on <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b>. Every service is within its learned baseline{model ? ` (${model.scorer === 'learned' ? 'learned model' : 'rules'}, alarm threshold ${model.threshold.toFixed(2)} from this project's own baseline)` : ''}.</>}</div>
           </div>
         </section>
       )}

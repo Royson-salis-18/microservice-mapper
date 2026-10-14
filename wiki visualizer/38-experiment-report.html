@@ -597,6 +597,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="22-risk-engine.html">Risk, cascades and blast radius</option>
 <option value="11-ml-pipeline.html">The learning pipeline</option>
 <option value="26-ml-pipeline-deep-dive.html">The pipeline, at code level</option>
+<option value="41-learning-and-calibration.html">Learning from labelled faults</option>
 <option value="mapper-algorithms.html">Mapper algorithms</option>
 </optgroup>
 <optgroup label="Driving the system">
@@ -641,21 +642,22 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     
 
         <header class="hd">
-            <div class="bignum" aria-hidden="true">42</div>
+            <div class="bignum" aria-hidden="true">43</div>
             <div class="eye">Driving the system</div>
             <h1>Experiment report</h1>
             <p class="lead">The test protocol, every metric and statistic, and the latest scored run with charts.</p>
             <div class="metadata-strip">
                 <span class="badge badge-green">RESULTS</span>
                 <span class="meta-item"><code>wiki/38-experiment-report.md</code></span>
-                <span class="meta-item">~3 min read</span>
-                <span class="meta-item">575 words</span>
+                <span class="meta-item">~5 min read</span>
+                <span class="meta-item">945 words</span>
             </div>
             <nav class="toc">
   <a href="#the-experiment-in-seven-steps">The experiment in seven st...</a>
   <a href="#what-is-measured">What is measured</a>
   <a href="#which-faults-count-as-ground-truth">Which faults count as grou...</a>
   <a href="#statistics-reported">Statistics reported</a>
+  <a href="#runs-so-far-on-shopflow-one-fault-at-a-time-blind-injector">Runs so far on ShopFlow (o...</a>
   <a href="#honest-limits">Honest limits</a>
 </nav>
         </header>
@@ -663,7 +665,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         
     <div class="chapter-rail">
       <span class="chapter-part">Part V &middot; Driving the system</span>
-      <span class="chapter-count">Chapter 42 of 49</span>
+      <span class="chapter-count">Chapter 43 of 50</span>
     </div>
     
     
@@ -726,6 +728,64 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>A fault only counts as a root cause to find if it changed something. Crash, stop, crash-loop and pause change the container's state, which is a fact. A softer fault (brownout, flap, memory, partition) counts when users felt it, measured from the traffic generator's own log while the fault ran alone. A soft fault that ran alone, with traffic measured, and that users did not feel is labelled <strong>no measurable effect</strong>. It is left out of the confusion matrices and the report lists it separately, together with whether the mapper reported it anyway. When faults overlap, or no traffic log exists, an effect cannot be ruled out, so the fault stays in.</p>
 <h2 id="statistics-reported">Statistics reported</h2>
 <p>Wilson and bootstrap 95% intervals, 5-fold stratified cross-validation of the accuracy estimate (the rules are fixed, so this shows stability and is not model selection), a one-sided binomial test against picking a candidate at random, skewness and excess kurtosis of the detection delay, and Spearman correlation between fault duration and delay. Resampling is seeded, so the same inputs give the same numbers.</p>
+<h2 id="runs-so-far-on-shopflow-one-fault-at-a-time-blind-injector">Runs so far on ShopFlow (one fault at a time, blind injector)</h2>
+<p>Small samples: read the counts, not just the percentages. Every row is a different version of the mapper, so the rows show how the mapper changed, not noise.</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Run</th>
+    <th>Mapper version</th>
+    <th>Faults</th>
+    <th>Detected</th>
+    <th>Right service named first (of detected)</th>
+    <th>False alarms per hour</th>
+    <th>What the misses were</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Stormy (overlapping faults)</td>
+      <td>rules, first version</td>
+      <td>20</td>
+      <td>18 (90%)</td>
+      <td>14 of 18 (78%)</td>
+      <td>not measured</td>
+      <td>overlapping faults make one right answer ambiguous</td>
+    </tr>
+    <tr>
+      <td>A</td>
+      <td>rules, before the sparse-traffic and container-fact fixes</td>
+      <td>6</td>
+      <td>5 (83%)</td>
+      <td>3 of 5</td>
+      <td>7.6 (learning period included)</td>
+      <td>both partitions blamed on a caller; one fault never reported</td>
+    </tr>
+    <tr>
+      <td>B</td>
+      <td>rules, with the sparse-traffic and container-fact fixes</td>
+      <td>8</td>
+      <td>7 (88%)</td>
+      <td>4 of 7</td>
+      <td>2.2 (first 8 minutes left out)</td>
+      <td>brownouts on <code>inventory</code>, <code>catalog-db</code> and <code>psp-sandbox</code>, and a flap on <code>catalog</code>, blamed on callers or missed</td>
+    </tr>
+    <tr>
+      <td>C</td>
+      <td>learned model (see page 41)</td>
+      <td>in progress</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table></div>
+<p>What the runs showed, in order of how much each cost:</p>
+<ol>
+  <li><strong>Hard container facts are reliable.</strong> Crash, stop, crash-loop and pause were named correctly every time in runs A and B (crash on <code>api-gateway</code>, <code>catalog</code>, <code>orders</code>; pause on <code>inventory</code>; crash-loop on <code>cart</code>).</li>
+  <li><strong>Partitions looked like missing data.</strong> A container with no network reports nothing, and the hand-written rules treated that as "unknown", so a caller was blamed. Docker states it as a fact (no network attached), so it is now read as one.</li>
+  <li><strong>Soft faults on quiet services are the hard case.</strong> A brownout (CPU limit cut) on a service that gets a request every few seconds produces too few requests to see latency. The slowness showed first on a busier caller, which was blamed. The CPU throttling counter from the container runtime is the culprit's own evidence and does not need traffic.</li>
+  <li><strong>Quiet services were the main source of false alarms</strong>, because three quiet samples are normal for them. Fixed by judging silence against each service's own longest quiet gap.</li>
+</ol>
 <h2 id="honest-limits">Honest limits</h2>
 <ul>
   <li>Intervals are wide when the campaign is short. Read the whiskers.</li>

@@ -1276,6 +1276,13 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     }
   });
 
+  // The per-architecture models: state (learning or ready), how much baseline they have, the threshold learned from it.
+  router.get('/models', (_req, res) => {
+    if (!incidentManager) return res.json([]);
+    for (const id of graphStore.nodesByTarget.keys()) incidentManager.models.get(id);
+    res.json(incidentManager.models.all());
+  });
+
   // Remove a saved project: stop watching it, drop its config entry and everything recorded about it.
   router.delete('/config/remote/:targetId', (req, res) => {
     const targetId = req.params.targetId;

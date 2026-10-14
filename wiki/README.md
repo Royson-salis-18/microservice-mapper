@@ -41,6 +41,7 @@ The same pages are published as an illustrated book with diagrams and interactiv
 | 38 | [38-experiment-report.md](38-experiment-report.md) | Test protocol, metrics, statistics, latest results |
 | 39 | [39-ssh-tools.md](39-ssh-tools.md) | Reaching a host over SSH; scripts and the discovery algorithm |
 | 40 | [40-faultlab-panel-and-demo.md](40-faultlab-panel-and-demo.md) | Fault and traffic panel, staged demo, what each fault looks like |
+| 41 | [41-learning-and-calibration.md](41-learning-and-calibration.md) | What is learned from labelled faults, how it is validated, results |
 | 07 | [07-remote-collector.md](07-remote-collector.md) | The *optional* push agent (not the default path) |
 | **Building the graph** | | |
 | 03 | [03-graphstore.md](03-graphstore.md) | The in-memory model: ingest, activity, baselines, connections, broadcasts |
