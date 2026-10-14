@@ -29,7 +29,7 @@ export interface BaselineParams {
   rangeK: number;          // range guard: this many floors beyond the training range counts as level 1 (0: off)
 }
 export const BASELINE_DEFAULTS: BaselineParams = {
-  window: 120, minTrain: 30, retrainEvery: 10, quantile: 0.97, driftAfter: 360, trees: 100, sampleSize: 64, minRequests: 5, jitter: 0.5, seed: 0, lineK: 0, rangeK: 3,
+  window: 120, minTrain: 30, retrainEvery: 10, quantile: 0.97, driftAfter: 360, trees: 100, sampleSize: 64, minRequests: 5, jitter: 0.5, seed: 0, lineK: 3, rangeK: 5,
 };
 
 /** The numbers the forest sees for one reading. Positive quantities on a log scale (ratios matter, not differences). */
