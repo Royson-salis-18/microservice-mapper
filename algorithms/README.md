@@ -19,6 +19,7 @@ python3 algorithms/run_tests.py     # tests for the files below
 | 3 | `root_cause.py` | 110 | Which service started it? (own evidence, symptoms, what dependencies explain away) |
 | 4 | `cascading_failure.py` | 60 | Who fails next? (noisy-OR along the call graph, "what if X failed?") |
 | 5 | `ml_model.py` | 90 | Logistic regression with class balance, L2 and blocked cross-validation |
+| 6 | `ml_engine.py` | 170 | The ML engine behind the Rules/ML switch: Isolation Forest per service on a sliding window of normal readings, and a random walk (PageRank) on the call graph to find the source |
 
 Read in that order. One-page explanation of step 4: [cascading_failure.md](cascading_failure.md).
 
@@ -31,6 +32,7 @@ Read in that order. One-page explanation of step 4: [cascading_failure.md](casca
 | `root_cause.py` | `server/algorithms/rca/RCAEngine.ts` |
 | `cascading_failure.py` | `server/algorithms/graph/CascadeEngine.ts` |
 | `ml_model.py` | `server/algorithms/learning/logreg.ts`, `experiment.ts` |
+| `ml_engine.py` | `server/algorithms/ml/` (isolationForest, serviceBaseline, randomWalk, mlEngine) |
 
 ## detailed/ (optional)
 

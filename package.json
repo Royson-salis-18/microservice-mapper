@@ -20,7 +20,8 @@
     "demo": "node run/scripts/demo.mjs",
     "hosts": "node run/scripts/hosts.mjs",
     "ml": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/run.ts",
-    "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts"
+    "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts",
+    "ml:compare": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/compare.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
