@@ -1,6 +1,6 @@
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { DependencyEdge } from '../../server/models/DependencyEdge.js';
-import type { Incident } from '../../server/models/Incident.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { DependencyEdge } from '../../models/DependencyEdge.js';
+import type { Incident } from '../../models/Incident.js';
 import { TELEMETRY_FACTOR } from './EdgeWeights.js';
 
 /**

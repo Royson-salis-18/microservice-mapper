@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AnomalyDetector } from '../../algorithms/detection/AnomalyDetector.ts';
+import { AnomalyDetector } from '../../server/algorithms/detection/AnomalyDetector.ts';
 
 const T0 = Date.UTC(2026, 0, 1, 12, 0, 0);
 const node = { id: 'p:svc', name: 'svc', project: 'p', status: 'healthy', type: 'service', metadata: { state: 'running' } } as any;

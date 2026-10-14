@@ -1,8 +1,8 @@
-// algorithms/learning/dataset.ts: turn one recorded run (the injector's ledger + what the mapper's API showed) into a labelled dataset.
+// server/algorithms/learning/dataset.ts: turn one recorded run (the injector's ledger + what the mapper's API showed) into a labelled dataset.
 // PURE: text in, rows out. Features are computed causally (each moment sees only the past), exactly as the live server would.
 import { featureVectors, nodeSignals, FEATURE_NAMES } from '../detection/features.ts';
 import { parseLedger, parseObserved, type LedgerFault, type Snapshot } from '../evaluation/score.ts';
-import type { MetricSnapshot } from '../../server/models/MetricSnapshot.ts';
+import type { MetricSnapshot } from '../../models/MetricSnapshot.ts';
 
 export interface Moment {
   ts: number;

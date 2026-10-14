@@ -16,9 +16,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { statusFromSample, statusFromPsRow, indexPsRowsByServiceId } from '../../server/telemetry-platform/src/collection/containerHealth.js';
-import { computeEdgeWeights, CONFIDENCE } from '../../algorithms/graph/EdgeWeights.js';
-import { predictCascade, simulateFailure, intrinsicProbability, DEFAULT_TRANSMISSION } from '../../algorithms/graph/CascadeEngine.js';
-import { RCAEngine, dependencyReach } from '../../algorithms/rca/RCAEngine.js';
+import { computeEdgeWeights, CONFIDENCE } from '../../server/algorithms/graph/EdgeWeights.js';
+import { predictCascade, simulateFailure, intrinsicProbability, DEFAULT_TRANSMISSION } from '../../server/algorithms/graph/CascadeEngine.js';
+import { RCAEngine, dependencyReach } from '../../server/algorithms/rca/RCAEngine.js';
 import type { ServiceNode } from '../../server/models/ServiceNode.js';
 import type { DependencyEdge } from '../../server/models/DependencyEdge.js';
 
@@ -277,8 +277,8 @@ test('rca: a single failing service with no one else failing gets no coverage cr
 
 // --- temporal precedence ----------------------------------------------------
 
-import { AnomalyDetector } from '../../algorithms/detection/AnomalyDetector.js';
-import { TemporalAnalyzer } from '../../algorithms/rca/TemporalAnalyzer.js';
+import { AnomalyDetector } from '../../server/algorithms/detection/AnomalyDetector.js';
+import { TemporalAnalyzer } from '../../server/algorithms/rca/TemporalAnalyzer.js';
 
 function stubMetricStore() {
   // No metric history: only the container-health path produces anomalies,
@@ -376,7 +376,7 @@ test('anomaly: normal load inside its usual range raises nothing', () => {
 
 // --- found on live targets --------------------------------------------------
 
-import { TELEMETRY_FACTOR } from '../../algorithms/graph/EdgeWeights.js';
+import { TELEMETRY_FACTOR } from '../../server/algorithms/graph/EdgeWeights.js';
 
 test('weights: telemetry export is weighted at a fraction, and does not dilute real dependencies', () => {
   // Live OTel demo: `ad` sends all its outbound traffic to otel-collector and
@@ -622,7 +622,7 @@ test('cpu: saturation is judged against the container\'s allowance, not one core
 
 // --- the self-check ---------------------------------------------------------
 
-import { checkConsistency } from '../../algorithms/graph/consistency.js';
+import { checkConsistency } from '../../server/algorithms/graph/consistency.js';
 
 test('consistency: correct output passes, and each known fault is named', () => {
   const nodes = [node('p:web'), node('p:api'), node('p:db', 'critical')];

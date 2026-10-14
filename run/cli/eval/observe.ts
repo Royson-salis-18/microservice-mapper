@@ -3,7 +3,7 @@
 // so what it records is exactly what an operator looking at the mapper would have seen.
 import fs from 'node:fs';
 import path from 'node:path';
-import { norm, type Snapshot } from '../../../algorithms/evaluation/score.ts';
+import { norm, type Snapshot } from '../../../server/algorithms/evaluation/score.ts';
 
 const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) : NaN);
 
@@ -15,7 +15,7 @@ export async function snapshot(mapper: string, target: string): Promise<Snapshot
     ]);
     const status: Record<string, string> = {};
     // Everything an operator could see about each service: the raw readings and the container state. With the ledger
-    // this makes a self-contained, labelled dataset (algorithms/learning learns from it), recorded only through the public API.
+    // this makes a self-contained, labelled dataset (server/algorithms/learning learns from it), recorded only through the public API.
     const metrics: Record<string, Record<string, number | string | boolean | null>> = {};
     const KEEP = ['cpu', 'memoryPercent', 'networkRxRate', 'networkTxRate', 'cpuOfAllowance', 'cpuThrottledPct', 'restartDelta', 'requestCount', 'requestRate', 'errorRate', 'latency', 'latencyP95'];
     for (const n of graph.nodes ?? []) {

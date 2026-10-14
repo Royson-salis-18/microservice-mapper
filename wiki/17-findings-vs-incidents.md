@@ -45,7 +45,7 @@ information; one signal wearing two hats is not.
 
 ## 2. Incidents: the rules
 
-Defined in `algorithms/detection/thresholds.ts`, overridable via
+Defined in `server/algorithms/detection/thresholds.ts`, overridable via
 `server/data/incident_thresholds.json`, and editable in the UI under
 **Incidents → Detection rules**.
 
@@ -163,9 +163,9 @@ reasons:
 
 | What | Where |
 |---|---|
-| Threshold definitions, defaults, limits, docs | `algorithms/detection/thresholds.ts` |
+| Threshold definitions, defaults, limits, docs | `server/algorithms/detection/thresholds.ts` |
 | Threshold overrides (gitignored) | `server/data/incident_thresholds.json` |
-| Rule evaluation | `algorithms/detection/AnomalyDetector.ts` |
+| Rule evaluation | `server/algorithms/detection/AnomalyDetector.ts` |
 | Incident severity from rule output | `server/rca/IncidentManager.ts` |
 | Threshold API | `GET`/`POST /api/incidents/thresholds` |
 | Rules UI | `client/src/components/IncidentRulesPanel.tsx` |

@@ -1,6 +1,6 @@
 /**
  * One moment, one score per service. PURE. Two scorers share the features of features.ts:
- *   learned   a logistic model fitted offline on labelled faults (algorithms/learning): the probability this service is the cause
+ *   learned   a logistic model fitted offline on labelled faults (server/algorithms/learning): the probability this service is the cause
  *   rules     the earlier hand-written rule: its own evidence, or symptoms that no broken dependency explains, plus a large
  *             bonus for a container fact (down, paused, restarting, no network)
  * The per-target model (TargetModel.ts) calibrates the alarm threshold of whichever scorer is in use on that architecture's
@@ -8,8 +8,8 @@
  */
 import { FEATURE_NAMES, featureVectors, nodeSignals } from './features.js';
 import { isLoadGenerator } from './containerFacts.js';
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { MetricSnapshot } from '../../server/models/MetricSnapshot.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
 
 const I = (n: string) => FEATURE_NAMES.indexOf(n as (typeof FEATURE_NAMES)[number]);
 const ex = (v: number) => Math.expm1(v);

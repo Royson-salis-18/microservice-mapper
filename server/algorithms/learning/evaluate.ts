@@ -1,4 +1,4 @@
-// algorithms/learning/evaluate.ts: judge a scorer the way an operator would feel it - per fault and per alarm, not per row. PURE.
+// server/algorithms/learning/evaluate.ts: judge a scorer the way an operator would feel it - per fault and per alarm, not per row. PURE.
 //
 //   alarm       the highest-scoring service is at or above the threshold in `persistence` consecutive moments (one-off spikes do not page anyone)
 //   detected    an alarm during the fault (or within `graceSec` after it) whose top three services include the faulted

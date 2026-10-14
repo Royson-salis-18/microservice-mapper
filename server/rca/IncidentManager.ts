@@ -1,7 +1,7 @@
 import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incident.js';
 import type { GraphStore } from '../graph/GraphStore.js';
-import { AnomalyDetector } from '../../algorithms/detection/AnomalyDetector.js';
-import { RCAEngine } from '../../algorithms/rca/RCAEngine.js';
+import { AnomalyDetector } from '../algorithms/detection/AnomalyDetector.js';
+import { RCAEngine } from '../algorithms/rca/RCAEngine.js';
 import { LearnedScorer, FEATURE_LABEL } from './LearnedScorer.js';
 import { TargetModels } from './TargetModels.js';
 import { loadThresholds } from './thresholdsStore.js';

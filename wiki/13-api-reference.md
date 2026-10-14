@@ -21,7 +21,7 @@ from port `3001` by default.
 | GET | `/api/nodes/:id/logs` | Container logs over SSH. Query: `tail` (default 200, max 2000). 404 if the node has no known container id. |
 | GET | `/api/analytics` | Derived graph analytics (centrality, criticality). |
 | GET | `/api/diagnostics` | Per-target node/edge counts. |
-| GET | `/api/diagnostics/consistency` | Runs the 12 invariants in `algorithms/graph/consistency.ts` over the live graph and open incidents. Returns `{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }`. An empty `violations` list is the claim; anything in it is a named bug. See [32-accuracy-and-self-check](32-accuracy-and-self-check.md). |
+| GET | `/api/diagnostics/consistency` | Runs the 12 invariants in `server/algorithms/graph/consistency.ts` over the live graph and open incidents. Returns `{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }`. An empty `violations` list is the claim; anything in it is a named bug. See [32-accuracy-and-self-check](32-accuracy-and-self-check.md). |
 | GET | `/api/status` | Server status summary. |
 | GET | `/api/traffic` | Recent interaction events. Query: `limit` (default 100). |
 

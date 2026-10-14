@@ -8,8 +8,8 @@
 // have decided the learned model beats the rules): the server loads learned.json from server/rca/model/.
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildRun, FEATURE_NAMES, type Run } from '../../../algorithms/learning/dataset.ts';
-import { crossSystem, crossValidate, summarise, train, METHODS } from '../../../algorithms/learning/experiment.ts';
+import { buildRun, FEATURE_NAMES, type Run } from '../../../server/algorithms/learning/dataset.ts';
+import { crossSystem, crossValidate, summarise, train, METHODS } from '../../../server/algorithms/learning/experiment.ts';
 
 const args = process.argv.slice(2);
 const opt = (k: string, d: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };

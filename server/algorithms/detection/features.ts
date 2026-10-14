@@ -1,13 +1,13 @@
 /**
  * Features for "is this service the cause, right now?" - one vector per service per collection cycle. PURE.
  *
- * Shared by the offline learner (algorithms/learning) and the live server, so the model is trained on exactly what it later sees.
+ * Shared by the offline learner (server/algorithms/learning) and the live server, so the model is trained on exactly what it later sees.
  *
  * Two layers, deliberately separate:
  *   1. Unsupervised normalisation, per series: every signal is compared with that service's OWN recent past using the
  *      robust z of AnomalyDetector.robustScore (median/MAD, log scale for positive quantities, one-sided, noise-shrunk).
  *      This needs no labels and makes a CPU jump on a busy API comparable to one on a quiet database.
- *   2. Supervised combination (algorithms/learning): HOW MUCH each normalised signal, container fact and neighbour signal counts,
+ *   2. Supervised combination (server/algorithms/learning): HOW MUCH each normalised signal, container fact and neighbour signal counts,
  *      and where the alarm threshold sits, are learned from labelled fault runs - not written by hand.
  *
  * The constants below are measurement resolution (the smallest change worth noticing in each unit), not decision
@@ -15,8 +15,8 @@
  */
 import { robustScore, DETECTOR_PARAMS } from './AnomalyDetector.js';
 import { containerFact } from './containerFacts.js';
-import type { MetricSnapshot } from '../../server/models/MetricSnapshot.js';
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
+import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
 
 interface Signal {
   name: string;

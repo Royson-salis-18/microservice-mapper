@@ -1,4 +1,4 @@
-import type { AnomalyRecord } from '../../server/models/Incident.js';
+import type { AnomalyRecord } from '../../models/Incident.js';
 
 export interface TemporalTimelinePoint {
   timestamp: string;

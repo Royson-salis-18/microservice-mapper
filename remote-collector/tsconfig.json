@@ -14,6 +14,6 @@
     "types": ["node"],
     "typeRoots": ["../server/node_modules/@types"]
   },
-  "include": ["./**/*.ts", "../algorithms/detection/requestStats.ts"],
+  "include": ["./**/*.ts", "../server/algorithms/detection/requestStats.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fit, predict } from '../../algorithms/learning/logreg.ts';
-import { buildRun, labelledRows } from '../../algorithms/learning/dataset.ts';
-import { evaluate, tuneThreshold } from '../../algorithms/learning/evaluate.ts';
-import { FEATURE_NAMES } from '../../algorithms/detection/features.ts';
+import { fit, predict } from '../../server/algorithms/learning/logreg.ts';
+import { buildRun, labelledRows } from '../../server/algorithms/learning/dataset.ts';
+import { evaluate, tuneThreshold } from '../../server/algorithms/learning/evaluate.ts';
+import { FEATURE_NAMES } from '../../server/algorithms/detection/features.ts';
 
 test('logistic regression separates a clean signal and is deterministic', () => {
   const X: number[][] = [], y: number[] = [];

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLedger, score, wilson, auc, norm, parseTrafficLog, type Snapshot, type SnapIncident, type LedgerFault, type ImpactSample } from '../../algorithms/evaluation/score.ts';
+import { parseLedger, score, wilson, auc, norm, parseTrafficLog, type Snapshot, type SnapIncident, type LedgerFault, type ImpactSample } from '../../server/algorithms/evaluation/score.ts';
 
 const T0 = Date.UTC(2026, 0, 1, 12, 0, 0);
 const at = (s: number) => T0 + s * 1000;
@@ -198,8 +198,8 @@ test('a slowdown alone (no errors) counts as felt when p95 is 3x worse and at le
   assert.equal(tiny.visible, false);          // 4x but only 30 ms worse: not something a person notices
 });
 
-import { inferFamily, FAMILY_OF } from '../../algorithms/evaluation/infer.ts';
-import { bootstrapCI, kFold, spearman, binomUpper, moments, kappa } from '../../algorithms/evaluation/stats.ts';
+import { inferFamily, FAMILY_OF } from '../../server/algorithms/evaluation/infer.ts';
+import { bootstrapCI, kFold, spearman, binomUpper, moments, kappa } from '../../server/algorithms/evaluation/stats.ts';
 
 test('fault kind is read from the evidence the mapper holds on its named root', () => {
   assert.equal(inferFamily(['container-health:container-exited-or-critical']), 'down');

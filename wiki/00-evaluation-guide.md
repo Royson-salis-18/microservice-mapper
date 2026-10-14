@@ -39,7 +39,7 @@ flowchart LR
 | Collector | `remote-collector/` | TypeScript | Reads Docker every 5 s and posts the numbers to the server |
 | Server | `server/` | TypeScript (Express) | Stores graph and history, runs the logic every cycle, serves the API |
 | Dashboard | `client/` | React + Vite, 3D with three.js | Shows the map, incidents, cascade risk |
-| Decision logic | `algorithms/` | TypeScript | The real detector, root cause, cascade (used by the server) |
+| Decision logic | `server/algorithms/` | TypeScript | The real detector, root cause, cascade (used by the server) |
 | **Core logic (explain this)** | **`core_logic/`** | **Python** | **The same ideas in about 300 readable lines, with a demo and tests** |
 | Graphs and reports | `graphs/` | TypeScript | Builds the model lab page and the evaluation report |
 | Running, testing | `run/` | TS / JS | Start scripts, tests, evaluation and learning commands, recorded sample runs |
@@ -137,10 +137,10 @@ Be honest about this one: the 0.7 and the weights are modelling choices, not mea
 
 | Python (`core_logic/`) | TypeScript (real system) |
 |---|---|
-| `detector.py` `abnormal_scores`, `detect_service` | `algorithms/detection/AnomalyDetector.ts` |
-| `settings.py` | `DETECTOR_PARAMS`, `algorithms/detection/thresholds.ts` |
-| `root_cause.py` `rank_root_causes` | `algorithms/rca/RCAEngine.ts` |
-| `cascade.py` `predict_cascade`, `what_if` | `algorithms/graph/CascadeEngine.ts` |
+| `detector.py` `abnormal_scores`, `detect_service` | `server/algorithms/detection/AnomalyDetector.ts` |
+| `settings.py` | `DETECTOR_PARAMS`, `server/algorithms/detection/thresholds.ts` |
+| `root_cause.py` `rank_root_causes` | `server/algorithms/rca/RCAEngine.ts` |
+| `cascade.py` `predict_cascade`, `what_if` | `server/algorithms/graph/CascadeEngine.ts` |
 
 What the TypeScript adds on top: container facts straight from Docker, CPU-throttling signal, weights for each link depending on how it was discovered, a per-project learned baseline, cleaner silence rules for sparse traffic, and plain-language explanations. The core is what you read in Python.
 

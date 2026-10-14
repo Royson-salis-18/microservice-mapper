@@ -15,8 +15,8 @@ symptom is what you will be looking at when you come back to this.
 **Symptoms.** (1) In an incident, the service that called the broken one was named as root cause. (2) Incidents raised by CPU/memory anomalies on running services showed no root cause. (3) The propagation path pointed from the cause to its dependencies. (4) A `docker pause`d container never appeared in incidents. (5) sock-shop and train-ticket showed **LIVE** with 0 services discovered.
 
 **Causes and fixes.**
-* `algorithms/rca/RCAEngine.ts`: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -> 0.10; observed-edge bonus removed from the score.
-* `algorithms/detection/AnomalyDetector.ts`: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise `container-paused`.
+* `server/algorithms/rca/RCAEngine.ts`: the +0.15 "downstream correlation" bonus rewarded a service whose callee failed, i.e. a victim. Replaced by a -0.25 victim penalty and a +0.15 bonus for a service whose callers fail while its callees are healthy. Candidates now include anomalous running services. Propagation walks to callers. Precedence weight 0.30 -> 0.10; observed-edge bonus removed from the score.
+* `server/algorithms/detection/AnomalyDetector.ts`: robust baseline (median, 1.4826 x MAD) from history before the two judged samples; both samples must deviate the same way (persistence); missing readings skipped instead of read as 0; paused containers raise `container-paused`.
 * `server/collectors/DockerCollector.ts`: `State === 'paused'` -> status critical (was `unknown`).
 * `server/graph/GraphStore.ts`: an HTTP ping of the app's website no longer refreshes `lastSeen` (it said nothing about telemetry), and a discovery that found zero services no longer marks the target LIVE.
 
@@ -542,7 +542,7 @@ now annotated as deliberate rather than looking like oversights.
 
 ## 10. Accuracy audit (October 2026)
 
-A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (`scripts/simulate-target.ts`) against an isolated server, and a new self-check (`algorithms/graph/consistency.ts`, `GET /api/diagnostics/consistency`). Full write-up: [Keeping the numbers honest](32-accuracy-and-self-check.md) and [Measuring precisely](31-measurement-precision.md).
+A pass whose only question was: would each published number agree with someone checking it on the host by hand? It used a ground-truth simulator (`scripts/simulate-target.ts`) against an isolated server, and a new self-check (`server/algorithms/graph/consistency.ts`, `GET /api/diagnostics/consistency`). Full write-up: [Keeping the numbers honest](32-accuracy-and-self-check.md) and [Measuring precisely](31-measurement-precision.md).
 
 ### 10.1 Dependency shares summed to 183%
 Unmeasured edges were given `1/N` *on top of* a full split of the measured traffic. Now unmeasured edges get `1/N` each and the measured ones share the remainder, so every caller sums to exactly 1 per kind. Enforced by the `reliance-sums-to-one` rule.
@@ -566,7 +566,7 @@ Socket rows per minute say more about sweep frequency than about traffic. Each s
 Dual-stack servers list IPv4 clients in `/proc/net/tcp6` as `::ffff:a.b.c.d`. They were decoded as IPv6, matched no container, and the link vanished. `decodeProcNetIp()` now recognises them.
 
 ### 10.8 One set of link thresholds
-Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in `algorithms/graph/linkThresholds.ts` and the client's `edgeHeat.ts`, and a test asserts they match.
+Slow at 300 ms, very slow at 1 s, errors at 1% and 5%, on p95 where available. The same values are in `server/algorithms/graph/linkThresholds.ts` and the client's `edgeHeat.ts`, and a test asserts they match.
 
 ### 10.9 Smaller ones
 The anomaly baseline no longer treats missing samples as 0 (`|| 0`). Metrics are built with `num()` so missing means `null`. Evidence text says "not measured" instead of "0%". The connection sweep waits for itself like the poll loop.

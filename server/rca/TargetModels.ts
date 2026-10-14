@@ -6,7 +6,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { trainTarget, type TargetModel } from '../../algorithms/model/TargetModel.js';
+import { trainTarget, type TargetModel } from '../algorithms/model/TargetModel.js';
 import type { GraphStore } from '../graph/GraphStore.js';
 import type { LearnedScorer } from './LearnedScorer.js';
 

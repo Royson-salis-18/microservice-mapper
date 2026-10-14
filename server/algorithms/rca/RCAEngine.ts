@@ -1,7 +1,7 @@
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { DependencyEdge } from '../../server/models/DependencyEdge.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { DependencyEdge } from '../../models/DependencyEdge.js';
 import { containerFact } from '../detection/containerFacts.js';
-import type { AnomalyRecord, AtRiskService, CandidateCause, EvidenceItem, PropagationStep, RCAConfidence, ScoreContribution } from '../../server/models/Incident.js';
+import type { AnomalyRecord, AtRiskService, CandidateCause, EvidenceItem, PropagationStep, RCAConfidence, ScoreContribution } from '../../models/Incident.js';
 import { TemporalAnalyzer } from './TemporalAnalyzer.js';
 import { ExplanationEngine } from './ExplanationEngine.js';
 import { DEFAULT_THRESHOLDS, type IncidentThresholds } from '../detection/thresholds.js';
@@ -75,7 +75,7 @@ export interface RCAParameters {
   hostSilent?: boolean;
   /** The target's model is still learning its baseline: only container facts can raise an incident. */
   learning?: { haveSec: number; needSec: number };
-  /** Probabilities from the learned model (algorithms/learning), when one is installed: they decide whether there is an incident
+  /** Probabilities from the learned model (server/algorithms/learning), when one is installed: they decide whether there is an incident
    *  (alarm, already debounced over two cycles by the caller) and the order of the candidates. */
   learned?: { p: Map<string, number>; why: Map<string, { feature: string; value: number }[]>; alarm: boolean; threshold: number; labels: Record<string, string> };
 }

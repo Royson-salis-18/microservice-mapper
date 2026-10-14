@@ -854,7 +854,7 @@ test('flow: svg timing delivers exactly the pulse rate', () => {
 // --- one definition of a troubled link --------------------------------------
 
 import { LINK_THRESHOLDS } from '../../client/src/components/shared/edgeHeat.ts';
-import { LINK_THRESHOLDS as SERVER_LINK_THRESHOLDS, linkStatus } from '../../algorithms/graph/linkThresholds.ts';
+import { LINK_THRESHOLDS as SERVER_LINK_THRESHOLDS, linkStatus } from '../../server/algorithms/graph/linkThresholds.ts';
 
 test('links: the server\'s status and the client\'s colours use the same thresholds', () => {
   assert.deepEqual({ ...SERVER_LINK_THRESHOLDS }, { ...LINK_THRESHOLDS });

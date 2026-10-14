@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseRequestLines, summarize } from '../../algorithms/detection/requestStats.ts';
+import { parseRequestLines, summarize } from '../../server/algorithms/detection/requestStats.ts';
 
 test('service JSON and nginx lines are both counted; 5xx are errors', () => {
   const w = parseRequestLines([
@@ -18,7 +18,7 @@ test('a quiet window is a real zero rate with unknown latency', () => {
   assert.equal(s.requestRate, 0); assert.equal(s.errorRate, null); assert.equal(s.p95Latency, null);
 });
 
-import { mergeWindows, throttledPercent } from '../../algorithms/detection/requestStats.ts';
+import { mergeWindows, throttledPercent } from '../../server/algorithms/detection/requestStats.ts';
 test('rolling window: sparse windows add up to enough requests', () => {
   const w = mergeWindows([{ count: 2, errors: 0, ms: [3, 4] }, { count: 3, errors: 1, ms: [5, 6, 900] }]);
   assert.equal(w.count, 5); assert.equal(w.errors, 1); assert.equal(w.ms.length, 5);

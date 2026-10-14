@@ -1,6 +1,6 @@
 # 22 - Risk, cascades and blast radius
 
-**Files:** `server/graph/RiskEngine.ts` (per-service exposure, blast radius, orchestration), `algorithms/graph/CascadeEngine.ts` (the cascade model, criticality, what-if), `algorithms/graph/EdgeWeights.ts` (the weights both read).
+**Files:** `server/graph/RiskEngine.ts` (per-service exposure, blast radius, orchestration), `server/algorithms/graph/CascadeEngine.ts` (the cascade model, criticality, what-if), `server/algorithms/graph/EdgeWeights.ts` (the weights both read).
 
 ## What this answers
 

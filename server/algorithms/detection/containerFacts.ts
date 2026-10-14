@@ -1,4 +1,4 @@
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
 
 /**
  * What the container runtime says about a service, as one fact. PURE.

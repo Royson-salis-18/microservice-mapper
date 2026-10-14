@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { score } from '../../../algorithms/evaluation/score.ts';
+import { score } from '../../../server/algorithms/evaluation/score.ts';
 import { loadLedger, loadObserved, loadTrafficImpact } from './load.ts';
 import { observe } from './observe.ts';
 import { renderReport } from '../../../graphs/eval-report.ts';
