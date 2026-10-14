@@ -131,3 +131,8 @@ These are for developing the mapper, not for operating a system. A DevOps engine
 - It does not install anything inside your services.
 - It does not know about the fault injector. When you test with the benches, the injector keeps a private ledger and the mapper only sees symptoms.
 - It does not guess a number it cannot measure: unmeasured is shown as unknown.
+
+
+## ML scores are off by default
+
+The Isolation Forest scorer (research) is not used by the product unless the server is started with `MAPPER_ML=1`. Trained on little data it called a quiet, healthy system "100% anomalous", which showed up as ML-flagged tags, red services and at-risk counts with no traffic and no fault. Incidents, root cause and cascade risk come from the statistical detector.

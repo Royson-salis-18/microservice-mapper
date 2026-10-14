@@ -649,7 +649,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-green">APP GUIDE</span>
                 <span class="meta-item"><code>wiki/37-app-pages-guide.md</code></span>
                 <span class="meta-item">~7 min read</span>
-                <span class="meta-item">1,367 words</span>
+                <span class="meta-item">1,432 words</span>
             </div>
             <nav class="toc">
   <a href="#the-data-path-once">The data path, once</a>
@@ -879,6 +879,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li>It does not know about the fault injector. When you test with the benches, the injector keeps a private ledger and the mapper only sees symptoms.</li>
   <li>It does not guess a number it cannot measure: unmeasured is shown as unknown.</li>
 </ul>
+<h2 id="ml-scores-are-off-by-default">ML scores are off by default</h2>
+<p>The Isolation Forest scorer (research) is not used by the product unless the server is started with <code>MAPPER_ML=1</code>. Trained on little data it called a quiet, healthy system "100% anomalous", which showed up as ML-flagged tags, red services and at-risk counts with no traffic and no fault. Incidents, root cause and cascade risk come from the statistical detector.</p>
                 </article>
                 
             </div>

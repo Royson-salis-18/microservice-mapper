@@ -582,7 +582,10 @@ export class GraphStore {
       allEdges.push(...Array.from(edgesMap.values()));
     }
 
-    const scores = this.readAnomalyScores();
+    // The ML scorer is a research tool. Its scores reach the product (risk, cascade, the 3D tags) only when switched on with
+    // MAPPER_ML=1: trained on little data it calls a quiet, healthy system "100% anomalous", which then shows up as at-risk
+    // services and red tags with no traffic and no fault at all. The statistical detector is what the product relies on.
+    const scores = process.env.MAPPER_ML === '1' ? this.readAnomalyScores() : {};
     const now = Date.now();
     for (const node of allNodes) {
       const fresh = freshAnomalyScore(scores[node.id], now);
