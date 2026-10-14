@@ -1,7 +1,7 @@
 # Evaluation folder: how do we know the mapper is any good?
 
-Python files: `score.py`, `stats.py`, `infer.py`. Demos: `python3 algorithms/evaluation/<file>.py`.
-Tests: `python3 algorithms/evaluation/test_evaluation.py`.
+Python files: `score.py`, `stats.py`, `infer.py`. Demos: `python3 algorithms/detailed/evaluation/<file>.py`.
+Tests: `python3 algorithms/detailed/evaluation/test_evaluation.py`.
 
 The setting. A fault injector breaks real containers on purpose (crash, pause, brownout, memory
 pressure, partition, ...) and writes a private **ledger**: "fault f1 hit service db from time a to

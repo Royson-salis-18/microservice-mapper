@@ -1,8 +1,7 @@
-"""Checks for the core logic. Run:  python core_logic/test_core_logic.py"""
+"""Checks for the detector and the root cause ranking. Run:  python3 algorithms/test_detector_and_rca.py"""
 import random
 import unittest
 
-from cascade import at_risk, predict_cascade, what_if
 from detector import abnormal_scores, detect_service, went_silent
 from root_cause import confidence, monitoring_outage, rank_root_causes, reach_from
 
@@ -88,31 +87,6 @@ class RootCauseTests(unittest.TestCase):
     def test_reach_multiplies_weights(self):
         reach = reach_from("db", [("api", "db", 0.5), ("web", "api", 0.5)])
         self.assertAlmostEqual(reach["web"], 0.25)
-
-
-class CascadeTests(unittest.TestCase):
-    calls = [("web", "api", 1.0), ("api", "db", 1.0)]
-
-    def test_risk_flows_from_callee_to_caller(self):
-        s = {"web": svc(), "api": svc(), "db": svc(status="critical", hard=True)}
-        prob, _ = predict_cascade(s, self.calls)
-        self.assertEqual(prob["db"], 1.0)
-        self.assertAlmostEqual(prob["api"], 0.7, places=3)        
-        self.assertAlmostEqual(prob["web"], 0.49, places=3)         # 0.7 * 0.7
-        self.assertEqual([r["service"] for r in at_risk(s, self.calls)], ["api", "web"])
-
-    def test_healthy_system_has_no_risk(self):
-        s = {"web": svc(), "api": svc(), "db": svc()}
-        self.assertEqual(set(predict_cascade(s, self.calls)[0].values()), {0.0})
-
-    def test_cycles_converge(self):
-        s = {"a": svc(status="critical", hard=True), "b": svc()}
-        prob, _ = predict_cascade(s, [("a", "b", 1.0), ("b", "a", 1.0)])
-        self.assertLessEqual(max(prob.values()), 1.0)
-
-    def test_what_if(self):
-        s = {"web": svc(), "api": svc(), "db": svc()}
-        self.assertEqual(set(what_if("db", s, self.calls)), {"api", "web"})
 
 
 if __name__ == "__main__":

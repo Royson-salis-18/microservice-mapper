@@ -5,7 +5,7 @@ Open **wiki/visualizer/index.html`** in a browser for the readable version (diag
 | I want to… | Read | Where | Audience |
 |---|---|---|---|
 | Prepare for the evaluation in one hour | Evaluation guide | `wiki/00-evaluation-guide.md` | Presenters |
-| Read the simple Python version of the logic | core_logic | `core_logic/README.md` | Presenters |
+| Read the simple Python version of the logic | algorithms | `algorithms/README.md` | Presenters |
 | Understand what each page of the app shows and how to read it | How each page works | `wiki/37-app-pages-guide.md` | Operator |
 | Run everything on my own machine | Run it on your machine | `wiki/RUN_LOCAL.md` | Anyone |
 | Know the whole system in one read | How it all works | `wiki/19-how-it-all-works.md` | Anyone |

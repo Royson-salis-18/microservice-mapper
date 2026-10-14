@@ -1,4 +1,4 @@
-"""Tests for the model folder. Run: python3 algorithms/model/test_model.py"""
+"""Tests for the model folder. Run: python3 algorithms/detailed/model/test_model.py"""
 import pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import random

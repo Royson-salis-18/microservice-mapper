@@ -1,7 +1,7 @@
 """Cascading failure in one small file: who is likely to fail next?
 
 Run it:  python3 algorithms/cascading_failure.py
-Explained in cascading_failure.md. The full version is graph/cascade_engine.py.
+Explained in cascading_failure.md. The longer version is detailed/graph/cascade_engine.py.
 
 The idea
   - Every service has a starting failure chance p0 from what we measure right now.

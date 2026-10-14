@@ -1,7 +1,7 @@
 # Root-cause analysis (rca)
 
 Folder: `algorithms/rca/`. Python 3, standard library only. Run the tests with
-`python3 algorithms/rca/test_rca.py`.
+`python3 algorithms/detailed/rca/test_rca.py`.
 
 When an incident happens, many services look sick at once. This folder answers:
 **which service is the real cause, how sure are we, how did it spread, and who is
@@ -107,7 +107,7 @@ web 0.0 UNKNOWN own=0.0 symptoms=6.0 explained=7.0  ['symptoms:6.0', 'likely_vic
 propagation_path: ['db', 'orders', 'web']
 at_risk: orders, risk 0.5 via db      (1 - (1 - min(1, 9/7) * 0.5) = 0.5)
 ```
-With `explain_away_gamma = 0` (ignore the call graph, plain "most abnormal") the same input gives `db 0.56, orders 0.50, web 0.46`: the victims climb back up the list. The built-in demo (`python3 algorithms/rca/rca_engine.py`) shows the hard-fact case:
+With `explain_away_gamma = 0` (ignore the call graph, plain "most abnormal") the same input gives `db 0.56, orders 0.50, web 0.46`: the victims climb back up the list. The built-in demo (`python3 algorithms/detailed/rca/rca_engine.py`) shows the hard-fact case:
 ```
 confidence: HIGH | path: orders-db -> orders -> web
   orders-db  score=0.91  HIGH     own=0.0 sym=0.0 explained=0.0

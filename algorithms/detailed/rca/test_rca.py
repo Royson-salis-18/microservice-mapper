@@ -1,4 +1,4 @@
-"""Tests for the root-cause analysis files. Run: python3 algorithms/rca/test_rca.py"""
+"""Tests for the root-cause analysis files. Run: python3 algorithms/detailed/rca/test_rca.py"""
 import pathlib
 import sys
 import unittest

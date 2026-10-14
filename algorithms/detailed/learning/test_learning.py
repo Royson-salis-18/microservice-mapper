@@ -1,4 +1,4 @@
-"""Tests for the learning folder. Run: python3 algorithms/learning/test_learning.py"""
+"""Tests for the learning folder. Run: python3 algorithms/detailed/learning/test_learning.py"""
 import pathlib, sys, unittest, random
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
