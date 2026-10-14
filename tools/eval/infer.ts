@@ -23,7 +23,7 @@ export function inferFamily(evidence: string[]): string | null {
   if (has('memoryPercent')) return 'memory';
   if (has('silence')) return has('requestRate') || has('networkRxRate') ? 'isolated' : 'frozen';
   if (has('requestRate') && (has('networkRxRate') || has('networkTxRate')) && !has('latency') && !has('errorRate')) return 'isolated';
-  if (has('latency') || has('errorRate') || has('cpu')) return 'slow';
+  if (has('latency') || has('errorRate') || has('cpu') || has('cpuThrottledPct')) return 'slow';
   if (has('requestRate') || has('networkRxRate') || has('networkTxRate')) return 'isolated';
   return null;
 }

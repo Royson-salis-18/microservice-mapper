@@ -648,8 +648,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-red">RCA</span>
                 <span class="meta-item"><code>wiki/08-rca-engine.md</code></span>
-                <span class="meta-item">~11 min read</span>
-                <span class="meta-item">2,212 words</span>
+                <span class="meta-item">~12 min read</span>
+                <span class="meta-item">2,394 words</span>
             </div>
             <nav class="toc">
   <a href="#try-it" style="color:var(--sig);border-color:var(--sig);">Try it &darr;</a>
@@ -1001,6 +1001,13 @@ findEarliestAnomalousNode(anomalies: AnomalyRecord[]): string | null {
     </tr>
   </tbody>
 </table></div>
+<h2 id="brownouts-on-quiet-services">Brownouts on quiet services</h2>
+<p>A brownout cuts a service's CPU limit. On a busy service that shows as latency; on a quiet one there are too few requests to judge latency, so the slowness first appeared on its busier caller and the caller was blamed (seen in a live run: brownout on <code>inventory</code>, mapper named <code>api-gateway</code>). Two signals fix that:</p>
+<ul>
+  <li><strong>CPU throttling</strong> (<code>cpuThrottledPct</code>): the share of scheduler periods in which the container wanted CPU and its limit held it back, read from <code>docker stats</code>. It is the culprit's own evidence and does not need traffic. Also judged against an absolute limit of 85%.</li>
+  <li><strong>Rolling 60-second request window</strong>: request rate, error share and latency are computed over the last minute of log lines instead of one collection cycle, so a service with a request every few seconds still has enough requests to judge.</li>
+</ul>
+<p>Silence on services with counted requests now also needs a longer past (three times the minimum history) before it can be judged, which removes the false "went silent" alarms seen while the baseline was still being learned.</p>
                 </article>
                 
         <section id="try-it">

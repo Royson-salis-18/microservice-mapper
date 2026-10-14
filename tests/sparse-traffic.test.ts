@@ -31,3 +31,10 @@ test('p95 from plenty of requests that jumps IS reported', () => {
   h.push(sample(60, { requestRate: 5, requestCount: 40, p95Latency: 900 }), sample(61, { requestRate: 5, requestCount: 40, p95Latency: 950 }));
   assert.equal(detect(h).filter((a) => a.metric === 'latency').length, 1);
 });
+
+test('a CPU limit that starts holding the service back is its own evidence (brownout on the culprit)', () => {
+  const h = Array.from({ length: 40 }, (_, i) => sample(i, { cpuThrottledPct: i % 4 }));
+  h.push(sample(40, { cpuThrottledPct: 70 }), sample(41, { cpuThrottledPct: 75 }));
+  const a = detect(h).find((x) => x.metric === 'cpuThrottledPct');
+  assert.ok(a && a.evidence === 'own');
+});

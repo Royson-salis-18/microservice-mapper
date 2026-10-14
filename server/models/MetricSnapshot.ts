@@ -20,4 +20,9 @@ export interface MetricSnapshot {
   /** Restarts since the previous sample. */
   restartDelta?: number | null;
   pids?: number | null;
+  /** Share of CPU scheduler periods in which the container was held back by its CPU limit (0-100). */
+  cpuThrottledPct?: number | null;
+  cpuAllowanceCores?: number | null;
+  /** CPU used as a percentage of the container's own CPU limit. */
+  cpuOfAllowance?: number | null;
 }

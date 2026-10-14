@@ -38,3 +38,18 @@ export function summarize(w: RequestWindow, windowSec: number): RequestStats {
     p50Latency: s.length ? r1(q(s, 0.5)) : null, p95Latency: s.length ? r1(q(s, 0.95)) : null, p99Latency: s.length ? r1(q(s, 0.99)) : null,
   };
 }
+
+/** Several collection windows as one (for a rolling window): a service that gets a request every few seconds still yields
+ *  enough requests for a meaningful p95 and error share. */
+export function mergeWindows(ws: RequestWindow[]): RequestWindow {
+  return { count: ws.reduce((a, w) => a + w.count, 0), errors: ws.reduce((a, w) => a + w.errors, 0), ms: ws.flatMap((w) => w.ms) };
+}
+
+/** CPU throttling from two docker stats readings: the share of scheduler periods in which the container wanted CPU and was
+ *  held back by its limit. A brownout (CPU limit cut) shows here on the culprit itself, with or without traffic. */
+export function throttledPercent(cur: { periods?: number; throttled?: number } | undefined, prev: { periods?: number; throttled?: number } | undefined): number | undefined {
+  if (!cur || !prev || cur.periods === undefined || prev.periods === undefined || cur.throttled === undefined || prev.throttled === undefined) return undefined;
+  const dp = cur.periods - prev.periods, dt = cur.throttled - prev.throttled;
+  if (dp <= 0 || dt < 0) return dp === 0 ? 0 : undefined;
+  return Math.round((dt / dp) * 1000) / 10;
+}

@@ -287,3 +287,12 @@ Each of these used to be reported as a fault. The rules now, all in code with te
 | **Host unreachable** (SSH down, IP changed, instance stopped) | frozen readings kept services green or red and kept incidents open | after 2 minutes every service of that host shows unknown, and the incident says telemetry stopped; no service is blamed |
 | **Sparse traffic** | false "silent" and "slow" | see the section above |
 | **ML score** on a quiet system | red services, at-risk counts | ML off unless `MAPPER_ML=1` |
+
+## Brownouts on quiet services
+
+A brownout cuts a service's CPU limit. On a busy service that shows as latency; on a quiet one there are too few requests to judge latency, so the slowness first appeared on its busier caller and the caller was blamed (seen in a live run: brownout on `inventory`, mapper named `api-gateway`). Two signals fix that:
+
+- **CPU throttling** (`cpuThrottledPct`): the share of scheduler periods in which the container wanted CPU and its limit held it back, read from `docker stats`. It is the culprit's own evidence and does not need traffic. Also judged against an absolute limit of 85%.
+- **Rolling 60-second request window**: request rate, error share and latency are computed over the last minute of log lines instead of one collection cycle, so a service with a request every few seconds still has enough requests to judge.
+
+Silence on services with counted requests now also needs a longer past (three times the minimum history) before it can be judged, which removes the false "went silent" alarms seen while the baseline was still being learned.
