@@ -20,6 +20,20 @@ python3 algorithms/detection/anomaly_detector.py   # any file runs on its own an
 
 Each `.py` mirrors one TypeScript file; the name is the TypeScript name in snake_case (`RCAEngine.ts` is `rca_engine.py`). The docstring at the top of every file says which one and what was left out (storage, ids, UI bookkeeping).
 
+## The four core topics, and where each one lives
+
+If you only have time for the core logic, these are the files (everything else in this folder is supporting material):
+
+| Topic | Read first | Then |
+|---|---|---|
+| **Preprocessing** (raw readings into clean numbers) | `detection/request_stats.py` (log lines into request rate, error share, latency), `detection/features.py` (the 18 numbers per service) | `detection/container_facts.py`, `detection/thresholds.py` |
+| **Anomaly detection** (is it abnormal?) | `detection/anomaly_detector.py` | `model/target_model.py` (per-project baseline and alarm line) |
+| **Root cause analysis (RCA)** | `rca/rca_engine.py` | `rca/temporal_analyzer.py`, `rca/explanation_engine.py` |
+| **Cascading failure** | `graph/cascade_engine.py` | `graph/edge_weights.py` (how strongly a service depends on another) |
+| **Machine learning** | `learning/logreg.py`, `learning/experiment.py` | `learning/dataset.py`, `learning/evaluate.py` |
+
+Supporting only: `evaluation/` (how we scored the mapper), `graph/consistency.py`, `graph/link_thresholds.py`, `graph/service_roles.py`, `detection/scoring.py`.
+
 A smaller teaching version of just the three core steps (detect, root cause, cascade) with a runnable demo is in `../core_logic/`.
 
 ## Why is the real system written in TypeScript?

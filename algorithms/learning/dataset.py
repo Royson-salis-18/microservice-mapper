@@ -91,16 +91,16 @@ def slice_run(run, start, end):
                    faults=[f for f in run.faults if start <= f.a < end])
 
 
-def synthetic_run(name="demo", subject="benchA", minutes=40, seed=0, faults=None):
-    """Small fake run for demos and tests: 3 services, 5 s apart, 18 features each."""
+def synthetic_run(name="demo", subject="benchA", minutes=40, seed=0, faults=None, step_ms=5000):
+    """Small fake run for demos and tests: 3 services, `step_ms` apart, 18 features each."""
     import random
     rng = random.Random(seed)
     services = ["api", "db", "cache"]
     faults = faults if faults is not None else [Fault("f1", "crash", "db", 15 * 60000, 20 * 60000, ["api"]),
                                                 Fault("f2", "brownout", "cache", 28 * 60000, 33 * 60000, ["api"])]
     moments = []
-    for k in range(minutes * 12):
-        ts = k * 5000
+    for k in range(minutes * 60000 // step_ms):
+        ts = k * step_ms
         rows = []
         for s in services:
             row = [abs(rng.gauss(0, 0.3)) for _ in FEATURE_NAMES]
@@ -108,8 +108,10 @@ def synthetic_run(name="demo", subject="benchA", minutes=40, seed=0, faults=None
                 row[0] += 3          # "own"
                 row[2] += 2          # "cpu"
             rows.append(row)
-        alarm = any(f.a <= ts <= f.b for f in faults)
-        moments.append(Moment(ts, services, rows, alarm, None, []))
+        active = [f for f in faults if f.a <= ts <= f.b]
+        # pretend the live rules are perfect, so there is something to compare against
+        root = active[0].target if active else None
+        moments.append(Moment(ts, services, rows, bool(active), root, [root] if root else []))
     return make_run(name, subject, faults, moments)
 
 
