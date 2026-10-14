@@ -434,6 +434,12 @@ DOCS_CONFIG = [
         "desc": 'Long-form manual from an earlier stage. Where it disagrees, the chapters above win.',
     },
     {
+        "id": 'wiki-41-learning', "filename": '41-learning-and-calibration.html', "source": 'wiki/41-learning-and-calibration.md',
+        "title": 'Learning from labelled faults', "part": 'IV', "category": 'Forming a judgement',
+        "badge": 'ML', "badge_color": 'purple',
+        "desc": 'What is learned and what is not, why the validation is blocked by time, and how it is compared with the rules.',
+    },
+    {
         "id": 'docs-algorithms', "filename": 'mapper-algorithms.html', "source": 'docs/MAPPER_ALGORITHMS.md',
         "title": 'Mapper algorithms', "part": 'IV', "category": 'Forming a judgement',
         "badge": 'MATH', "badge_color": 'purple',
