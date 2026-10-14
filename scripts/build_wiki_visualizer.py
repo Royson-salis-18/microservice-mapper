@@ -440,6 +440,12 @@ DOCS_CONFIG = [
         "desc": 'What is learned and what is not, why the validation is blocked by time, and how it is compared with the rules.',
     },
     {
+        "id": 'wiki-42-model-lab', "filename": '42-model-lab.html', "source": 'wiki/42-model-lab.md',
+        "title": 'The model lab', "part": 'IV', "category": 'Forming a judgement',
+        "badge": 'REPORT', "badge_color": 'green',
+        "desc": 'Every chart behind the detection and learning, every hyperparameter, and where the data lives. Open model-lab.html for the live charts.',
+    },
+    {
         "id": 'docs-algorithms', "filename": 'mapper-algorithms.html', "source": 'docs/MAPPER_ALGORITHMS.md',
         "title": 'Mapper algorithms', "part": 'IV', "category": 'Forming a judgement',
         "badge": 'MATH', "badge_color": 'purple',

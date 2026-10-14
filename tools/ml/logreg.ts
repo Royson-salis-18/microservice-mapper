@@ -2,6 +2,9 @@
 // Small on purpose: ~18 features, a few thousand rows. A linear model keeps every learned weight readable in the UI and the
 // wiki ("a paused container counts this much"), which matters more here than squeezing out the last point with a black box.
 
+/** Every tunable of the fit (printed by the report). Rows are class-balanced; the intercept is not penalised. */
+export const LOGREG_PARAMS = { iterations: 30, tolerance: 1e-7, classBalanced: true, penalty: 'L2 (ridge), intercept excluded', defaultLambda: 1 } as const;
+
 export interface Model { mean: number[]; std: number[]; w: number[]; b: number; lambda: number; features: readonly string[] }
 
 const sigmoid = (z: number) => (z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z)));
@@ -24,7 +27,7 @@ function solve(A: number[][], y: number[]): number[] {
  * Fit. Rows are weighted so both classes count equally in total (faults are rare: without this the model learns "never").
  * lambda penalises large weights (not the intercept), which keeps the model stable on a few hundred positive rows.
  */
-export function fit(X: number[][], y: number[], features: readonly string[], lambda = 1, iters = 30): Model {
+export function fit(X: number[][], y: number[], features: readonly string[], lambda: number = LOGREG_PARAMS.defaultLambda, iters: number = LOGREG_PARAMS.iterations): Model {
   const d = X[0]?.length ?? 0, n = X.length;
   const mean = Array.from({ length: d }, (_, j) => X.reduce((s, r) => s + r[j], 0) / Math.max(1, n));
   const std = Array.from({ length: d }, (_, j) => Math.sqrt(X.reduce((s, r) => s + (r[j] - mean[j]) ** 2, 0) / Math.max(1, n)) || 1);
@@ -41,7 +44,7 @@ export function fit(X: number[][], y: number[], features: readonly string[], lam
     for (let j = 0; j <= d; j++) { for (let k = 0; k < j; k++) H[j][k] = H[k][j]; if (j > 0) { g[j] -= lambda * beta[j]; H[j][j] += lambda; } H[j][j] += 1e-9; }
     const step = solve(H, g);
     beta = beta.map((v, j) => v + step[j]);
-    if (Math.max(...step.map(Math.abs)) < 1e-7) break;
+    if (Math.max(...step.map(Math.abs)) < LOGREG_PARAMS.tolerance) break;
   }
   return { mean, std, w: beta.slice(1), b: beta[0], lambda, features };
 }

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Docker from 'dockerode';
-import { parseRequestLines, summarize, mergeWindows, throttledPercent, type RequestStats, type RequestWindow } from './requestStats.js';
+import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from './requestStats.js';
 import axios from 'axios';
 
 // Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
@@ -13,7 +13,7 @@ const INGEST_TOKEN = process.env.INGEST_TOKEN || 'mapper-secret-token';
 const TARGET_ID = process.env.TARGET_ID || 'sock-shop-aws';
 const ENVIRONMENT = process.env.ENVIRONMENT || 'aws';
 const REGION = process.env.REGION || 'ap-south-1';
-const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000', 10);
+const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || String(COLLECTOR_PARAMS.pollMs), 10);
 // Optional: watch one compose project only (several benches can share a host; each gets its own collector and target).
 const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT || '';
 const inProject = (c: { Labels?: Record<string, string> }) => !COMPOSE_PROJECT || (c.Labels?.['com.docker.compose.project'] === COMPOSE_PROJECT);
@@ -177,7 +177,7 @@ function demuxDockerLogs(buffer: Buffer): string[] {
 const prevSample = new Map<string, { t: number; rx?: number; tx?: number; startedAt?: string; restarts?: number; thr?: { periods?: number; throttled?: number } }>();
 /** Request windows of the last REQUEST_WINDOW_MS per container, summarised together each cycle. */
 const reqHistory = new Map<string, { t: number; w: RequestWindow }[]>();
-const REQUEST_WINDOW_MS = 60_000;
+const REQUEST_WINDOW_MS = COLLECTOR_PARAMS.requestWindowMs;
 
 let lastLogCheckTime = Math.floor((Date.now() - 10000) / 1000);
 

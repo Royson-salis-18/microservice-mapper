@@ -45,7 +45,7 @@ export class MetricStore {
    * so a 2s debounce meant serialising a multi-megabyte object (4.3 MB
    * observed, ~18 ms of blocking JSON work) almost continuously.
    */
-  private static readonly SAVE_DEBOUNCE_MS = 15_000;
+  static readonly SAVE_DEBOUNCE_MS = 15_000;
 
   private scheduleSave(): void {
     if (this.saveTimeout) return;
