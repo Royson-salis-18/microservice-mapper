@@ -47,6 +47,8 @@ const MIN_REQUESTS = 5;
 
 const SPECS: MetricSpec[] = [
   { metric: 'cpu', pick: h => h.cpu, current: n => n.metrics?.cpu, direction: 1, scale: 'log', unit: 0.5, floor: 0.15, kind: 'own', minDelta: 0 },
+  // A CPU limit holding the service back: the culprit's own signature of a brownout, visible with or without traffic.
+  { metric: 'cpuThrottledPct', pick: h => h.cpuThrottledPct, current: () => undefined, direction: 1, scale: 'lin', unit: 0, floor: 3, kind: 'own', minDelta: 0 },
   { metric: 'memoryPercent', pick: h => h.memoryPercent, current: n => n.metrics?.memoryPercent, direction: 1, scale: 'log', unit: 1, floor: 0.15, kind: 'own', minDelta: 0 },
   { metric: 'latency', pick: h => h.p95Latency ?? h.latency, current: n => n.metrics?.latency, direction: 1, scale: 'log', unit: 1, floor: 0.15, kind: 'symptom', minRequests: MIN_REQUESTS },
   { metric: 'errorRate', pick: h => h.errorRate, current: n => n.metrics?.errorRate, direction: 1, scale: 'lin', unit: 0, floor: 0.02, kind: 'symptom', minRequests: MIN_REQUESTS },
@@ -188,7 +190,7 @@ export class AnomalyDetector {
   /** A resource reading past the absolute limit is an anomaly whatever its history: a service that always runs at
    *  90% CPU has no headroom, even if 90% is "normal" for it. Both recent samples must be over the limit. */
   private absolute(recent: number[], baseline: number[], spec: MetricSpec, nodeId: string, targetId: string, now: string, t: IncidentThresholds): AnomalyRecord | null {
-    if (spec.metric !== 'cpu' && spec.metric !== 'memoryPercent') return null;
+    if (spec.metric !== 'cpu' && spec.metric !== 'memoryPercent' && spec.metric !== 'cpuThrottledPct') return null;
     if (!recent.every(v => finite(v) && v > t.absoluteCriticalPercent)) return null;
     const current = recent[recent.length - 1];
     return this.record(nodeId, targetId, spec.metric, now, current, Math.round(median(baseline) * 100) / 100, 0, null,
@@ -205,7 +207,8 @@ export class AnomalyDetector {
     // stretch of W seconds is surprising only if lambda * W is large (P(none) = exp(-lambda*W)); on a service that sees one request
     // every ten seconds, three quiet samples are ordinary. Needs expected >= 5 (a 0.7% chance of none) before silence means anything.
     const counted = history.filter(h => finite(h.requestRate));
-    if (counted.length >= t.minHistorySamples + k) {
+    if (counted.length > 0 && counted.length < 3 * t.minHistorySamples + k) return null;   // gaps need a longer past than levels do
+    if (counted.length >= 3 * t.minHistorySamples + k) {
       const recent = history.slice(-k);
       if (!recent.every(h => finite(h.requestRate) && h.requestRate === 0)) return null;
       const stamps = history.map(h => Date.parse(h.timestamp)).filter(finite);

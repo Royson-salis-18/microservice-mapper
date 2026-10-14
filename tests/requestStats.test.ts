@@ -17,3 +17,14 @@ test('a quiet window is a real zero rate with unknown latency', () => {
   const s = summarize(parseRequestLines([]), 5);
   assert.equal(s.requestRate, 0); assert.equal(s.errorRate, null); assert.equal(s.p95Latency, null);
 });
+
+import { mergeWindows, throttledPercent } from '../remote-collector/requestStats.ts';
+test('rolling window: sparse windows add up to enough requests', () => {
+  const w = mergeWindows([{ count: 2, errors: 0, ms: [3, 4] }, { count: 3, errors: 1, ms: [5, 6, 900] }]);
+  assert.equal(w.count, 5); assert.equal(w.errors, 1); assert.equal(w.ms.length, 5);
+});
+test('throttling: share of scheduler periods held back by the CPU limit', () => {
+  assert.equal(throttledPercent({ periods: 200, throttled: 150 }, { periods: 100, throttled: 100 }), 50);
+  assert.equal(throttledPercent({ periods: 100, throttled: 5 }, { periods: 100, throttled: 5 }), 0);
+  assert.equal(throttledPercent(undefined, { periods: 1, throttled: 0 }), undefined);
+});

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Docker from 'dockerode';
-import { parseRequestLines, summarize, type RequestStats } from './requestStats.js';
+import { parseRequestLines, summarize, mergeWindows, throttledPercent, type RequestStats, type RequestWindow } from './requestStats.js';
 import axios from 'axios';
 
 // Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
@@ -55,6 +55,7 @@ interface MetricSnapshot {
   requestCount?: number; requestRate?: number; errorCount?: number; errorRate?: number | null;
   latency?: number | null; p50Latency?: number | null; p95Latency?: number | null; p99Latency?: number | null;
   networkRxRate?: number; networkTxRate?: number; restartDelta?: number;
+  cpuThrottledPct?: number; cpuAllowanceCores?: number; cpuOfAllowance?: number;
   cpu?: number;
   memory?: number;
   memoryPercent?: number;
@@ -173,7 +174,10 @@ function demuxDockerLogs(buffer: Buffer): string[] {
 }
 
 /** What the previous cycle saw of each container: cumulative counters (for rates), start time (for restarts), log cursor. */
-const prevSample = new Map<string, { t: number; rx?: number; tx?: number; startedAt?: string; restarts?: number }>();
+const prevSample = new Map<string, { t: number; rx?: number; tx?: number; startedAt?: string; restarts?: number; thr?: { periods?: number; throttled?: number } }>();
+/** Request windows of the last REQUEST_WINDOW_MS per container, summarised together each cycle. */
+const reqHistory = new Map<string, { t: number; w: RequestWindow }[]>();
+const REQUEST_WINDOW_MS = 60_000;
 
 let lastLogCheckTime = Math.floor((Date.now() - 10000) / 1000);
 
@@ -409,10 +413,13 @@ async function discoverAndCollect() {
       const rate = (cur?: number, old?: number) => (cur !== undefined && old !== undefined && dt && cur >= old ? Math.round((cur - old) / dt) : undefined);
       let restartDelta = 0, startedAt: string | undefined, restarts: number | undefined;
       let req: RequestStats | undefined;
+      let allowance: number | undefined;
       try {
         const container = docker.getContainer(containerInfo.Id);
         const info = await container.inspect();
         startedAt = info.State?.StartedAt; restarts = info.RestartCount;
+        const hc = info.HostConfig ?? {};
+        allowance = hc.NanoCpus ? hc.NanoCpus / 1e9 : hc.CpuQuota > 0 && hc.CpuPeriod > 0 ? hc.CpuQuota / hc.CpuPeriod : undefined;
         // A running container attached to no network cannot be reached or reach anyone. Docker reports that as a fact.
         const detached = Object.keys(info.NetworkSettings?.Networks ?? {}).length === 0;
         const node = nodes.find((n) => n.id === id);
@@ -420,16 +427,24 @@ async function discoverAndCollect() {
         if (prev) restartDelta = Math.max(0, (restarts ?? 0) - (prev.restarts ?? 0)) || (prev.startedAt && startedAt && prev.startedAt !== startedAt ? 1 : 0);
         if (prev && dt) {
           const logsBuf = await container.logs({ stdout: true, stderr: true, since: Math.floor(prev.t / 1000), timestamps: false });
-          req = summarize(parseRequestLines(demuxDockerLogs(logsBuf)), dt);
+          const hist = (reqHistory.get(containerInfo.Id) ?? []).filter((h) => nowMs - h.t < REQUEST_WINDOW_MS);
+          hist.push({ t: nowMs, w: parseRequestLines(demuxDockerLogs(logsBuf)) });
+          reqHistory.set(containerInfo.Id, hist);
+          const span = Math.max(dt, (nowMs - hist[0].t) / 1000 + dt);
+          req = summarize(mergeWindows(hist.map((h) => h.w)), span);
         }
       } catch (e: any) { console.error('request stats failed', friendlyName, e.message); }
-      prevSample.set(containerInfo.Id, { t: nowMs, rx: networkRx, tx: networkTx, startedAt, restarts });
+      const st = statsById.get(containerInfo.Id);
+      const thr = st?.cpu_stats?.throttling_data ? { periods: st.cpu_stats.throttling_data.periods, throttled: st.cpu_stats.throttling_data.throttled_periods } : undefined;
+      const cpuThrottledPct = throttledPercent(thr, prev?.thr);
+      prevSample.set(containerInfo.Id, { t: nowMs, rx: networkRx, tx: networkTx, startedAt, restarts, thr });
       metrics.push({
         nodeId: id,
         snapshot: {
           timestamp: new Date().toISOString(),
           cpu, memory, memoryPercent, networkRx, networkTx,
           networkRxRate: rate(networkRx, prev?.rx), networkTxRate: rate(networkTx, prev?.tx), restartDelta,
+          cpuThrottledPct, cpuAllowanceCores: allowance, cpuOfAllowance: allowance && cpu !== undefined ? Math.round((cpu / (allowance * 100)) * 1000) / 10 : undefined,
           ...(req ?? {}),
         }
       });
