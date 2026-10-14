@@ -196,6 +196,35 @@ export class GraphStore {
     }
   }
 
+  /**
+   * Forget what was learned about a target: its services, links, metric history (the baselines), connection traces and
+   * edge rates. The target itself stays registered, so collection starts again from a clean slate on the next cycle.
+   */
+  public clearProjectData(targetId: string): void {
+    const prefix = `${targetId}:`;
+    for (const id of this.nodesByTarget.get(targetId)?.keys() ?? []) this.metricStore.deleteNode(id);
+    this.nodesByTarget.set(targetId, new Map());
+    this.edgesByTarget.set(targetId, new Map());
+    for (const m of [this.edgeActivity, this.edgeConns, this.edgeBaselines] as Map<string, unknown>[]) for (const k of [...m.keys()]) if (k.startsWith(prefix)) m.delete(k);
+    this.connPrimed.delete(targetId);
+    this.lastEdgeReportAt.delete(targetId);
+    void this.getTraceStore(targetId).clear();
+    this.scheduleSave();
+    this.requestBroadcast();
+  }
+
+  /** Stop watching a target and drop everything held about it. */
+  public removeProject(targetId: string): void {
+    this.discoveryEngine.stopTarget(targetId);
+    this.clearProjectData(targetId);
+    this.nodesByTarget.delete(targetId);
+    this.edgesByTarget.delete(targetId);
+    this.targets.delete(targetId);
+    this.traceStores.delete(targetId);
+    this.scheduleSave();
+    this.requestBroadcast();
+  }
+
   private scheduleSave(): void {
     if (this.saveTimeout) return;
     this.saveTimeout = setTimeout(() => {
@@ -872,6 +901,9 @@ export class GraphStore {
               requestRate: raw(snap.requestRate), errorRate: raw(snap.errorRate) ?? undefined,
               latency: raw(snap.latency) ?? undefined, latencyP95: raw(snap.p95Latency) ?? undefined,
             } : {}),
+            requestCount: raw(snap.requestCount),
+            cpuThrottledPct: raw(snap.cpuThrottledPct),
+            restartDelta: raw(snap.restartDelta),
             cpuAllowanceCores: raw(snap.cpuAllowanceCores),
             cpuOfAllowance: r1(snap.cpuOfAllowance),
           };

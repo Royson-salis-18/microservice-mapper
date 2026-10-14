@@ -122,6 +122,11 @@ export class AnomalyDetector {
    *  (IncidentManager) passes one that reads the overrides file; here it defaults to the pure defaults. */
   constructor(private metricStore: MetricStore, private getThresholds: () => IncidentThresholds = () => DEFAULT_THRESHOLDS) {}
 
+  /** Forget ongoing anomaly onsets for one target (ids are "<target>:<service>|metric"), or for all. */
+  public forget(targetId?: string): void {
+    for (const k of [...this.onset.keys()]) if (!targetId || k.startsWith(`${targetId}:`)) this.onset.delete(k);
+  }
+
   public detectAnomaliesForTarget(targetId: string, nodes: ServiceNode[]): AnomalyRecord[] {
     const anomalies: AnomalyRecord[] = [];
     const now = new Date().toISOString();

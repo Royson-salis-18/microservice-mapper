@@ -14,7 +14,21 @@ export async function snapshot(mapper: string, target: string): Promise<Snapshot
       fetch(`${mapper}/api/graph`, { signal: AbortSignal.timeout(8000) }).then((r) => r.json()),
     ]);
     const status: Record<string, string> = {};
-    for (const n of graph.nodes ?? []) if (n.project === target) status[norm(n.id)] = n.status;
+    // Everything an operator could see about each service: the raw readings and the container state. With the ledger
+    // this makes a self-contained, labelled dataset (tools/ml learns from it), recorded only through the public API.
+    const metrics: Record<string, Record<string, number | string | boolean | null>> = {};
+    const KEEP = ['cpu', 'memoryPercent', 'networkRxRate', 'networkTxRate', 'cpuOfAllowance', 'cpuThrottledPct', 'restartDelta', 'requestCount', 'requestRate', 'errorRate', 'latency', 'latencyP95'];
+    for (const n of graph.nodes ?? []) {
+      if (n.project !== target) continue;
+      status[norm(n.id)] = n.status;
+      const m: Record<string, number | string | boolean | null> = { state: n.metadata?.state ?? null };
+      if (n.metadata?.networkDetached) m.networkDetached = true;
+      if (typeof n.metadata?.exitCode === 'number') m.exitCode = n.metadata.exitCode;
+      for (const k of KEEP) { const v = n.metrics?.[k]; if (typeof v === 'number' && Number.isFinite(v)) m[k] = v; }
+      metrics[norm(n.id)] = m;
+    }
+    const edges = (graph.edges ?? []).filter((e: any) => e.observed && String(e.source).startsWith(`${target}:`) && String(e.target).startsWith(`${target}:`))
+      .map((e: any) => [norm(e.source), norm(e.target)] as [string, string]);
     const incidents = (Array.isArray(inc) ? inc : [])
       // keep only incidents open right now: the end of an incident is the first snapshot that no longer shows it
       .map((i: any) => ({
@@ -28,7 +42,7 @@ export async function snapshot(mapper: string, target: string): Promise<Snapshot
         rootEvidence: [...new Set((i.anomalies ?? []).filter((a: any) => norm(a.nodeId) === norm(i.rootCauseServiceId)).map((a: any) => `${a.metric}:${a.reason}`))],
       }))
       .filter((i: any) => i.endedAt === null);
-    return { ts: Date.now(), incidents, status };
+    return { ts: Date.now(), incidents, status, metrics, edges };
   } catch { return null; }
 }
 

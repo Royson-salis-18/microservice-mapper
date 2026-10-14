@@ -26,7 +26,9 @@ export interface SnapIncident {
   id: string; status: string; severity: string; startedAt: number; endedAt: number | null; root: string | null; confidence: string;
   candidates: string[]; affected: string[]; atRisk: { id: string; risk: number }[]; monitoringGap?: boolean; rootEvidence?: string[];
 }
-export interface Snapshot { ts: number; incidents: SnapIncident[]; status: Record<string, string> }
+export interface Snapshot { ts: number; incidents: SnapIncident[]; status: Record<string, string>;
+  /** Per-service readings and container state as the API showed them (recorded by observe.ts; absent in older files). */
+  metrics?: Record<string, Record<string, number | string | boolean | null>>; edges?: [string, string][] }
 
 /** One 5-second window of what the traffic generator experienced (users' view, independent of the mapper). */
 export interface ImpactSample { ts: number; n: number; p95: number; err: number }

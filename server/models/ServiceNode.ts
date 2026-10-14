@@ -38,6 +38,13 @@ export interface ServiceNode {
     /** CPU as a share of that allowance, 0..100. `cpu` above is docker's
      *  figure, percent of ONE core, which can exceed 100. */
     cpuOfAllowance?: number;
+    /** Share of CPU scheduler periods held back by the container's CPU limit, 0..100. */
+    cpuThrottledPct?: number;
+    /** Restarts since the previous sample. */
+    restartDelta?: number;
+    /** Requests behind requestRate/latency in the current window. */
+    requestCount?: number;
+    latencyP95?: number;
     // Tier 1/2 only — nothing outside the container can measure these.
     latency?: number | null;
     requestRate?: number | null;
