@@ -655,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-purple">ML</span>
                 <span class="meta-item"><code>wiki/43-ml-engine.md</code></span>
                 <span class="meta-item">~7 min read</span>
-                <span class="meta-item">1,342 words</span>
+                <span class="meta-item">1,393 words</span>
             </div>
             <nav class="toc">
   <a href="#how-it-works-step-by-step">How it works, step by step</a>
@@ -681,7 +681,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p>The top bar has a small <strong>Rules · ML</strong> switch. It decides which engine raises incidents and ranks the root cause. The setting is saved on the server, in <code>server/data/engine_mode.json</code>; <code>MAPPER_ENGINE=ml</code> overrides it.</p>
+                    <p>The top bar has a small <strong>Rules · ML</strong> switch. It decides which engine raises incidents and ranks the root cause. The setting is saved on the server, in <code>server/data/engine_mode.json</code>; <code>MAPPER_ENGINE=ml</code> or <code>rules</code> overrides it. The default is ML.</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th></th>
@@ -848,7 +848,7 @@ line  = typical + 3 × 1.4826 × MAD(training scores)      (robust, does not jum
   <li><strong>False alarms:</strong> it raises about half as many.</li>
   <li><strong>Root cause:</strong> it names the right service first about as often on ShopFlow, but less often on LedgerLine (46% against 56%).</li>
 </ul>
-<p>The default engine stays <strong>Rules</strong>; ML is one click away in the top bar.</p>
+<p>ML is the <strong>default</strong> engine: it finds as many faults, raises about half the false alarms and names the right service about as often overall. The rule engine is one click away in the top bar (or <code>MAPPER_ENGINE=rules</code>). The ML pipeline page shows a live table of what every service has learned and where the walk puts the blame.</p>
 <h2 id="limits-say-these-first">Limits (say these first)</h2>
 <ul>
   <li>34 faults is a small sample; differences of a few points are noise.</li>

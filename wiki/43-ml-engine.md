@@ -1,6 +1,6 @@
 # The ML engine (the Rules / ML switch)
 
-The top bar has a small **Rules · ML** switch. It decides which engine raises incidents and ranks the root cause. The setting is saved on the server, in `server/data/engine_mode.json`; `MAPPER_ENGINE=ml` overrides it.
+The top bar has a small **Rules · ML** switch. It decides which engine raises incidents and ranks the root cause. The setting is saved on the server, in `server/data/engine_mode.json`; `MAPPER_ENGINE=ml` or `rules` overrides it. The default is ML.
 
 | | Rules | ML |
 |---|---|---|
@@ -92,7 +92,7 @@ What each part contributes:
 - **False alarms:** it raises about half as many.
 - **Root cause:** it names the right service first about as often on ShopFlow, but less often on LedgerLine (46% against 56%).
 
-The default engine stays **Rules**; ML is one click away in the top bar.
+ML is the **default** engine: it finds as many faults, raises about half the false alarms and names the right service about as often overall. The rule engine is one click away in the top bar (or `MAPPER_ENGINE=rules`). The ML pipeline page shows a live table of what every service has learned and where the walk puts the blame.
 
 ## Limits (say these first)
 

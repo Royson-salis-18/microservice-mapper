@@ -14,13 +14,13 @@ export function getEngineMode(): EngineMode {
   if (env === 'ml' || env === 'rules') return (cached = env);
   try {
     const m = JSON.parse(fs.readFileSync(file(), 'utf8')).mode;
-    cached = m === 'ml' ? 'ml' : 'rules';
-  } catch { cached = 'rules'; }
+    cached = m === 'rules' ? 'rules' : 'ml';
+  } catch { cached = 'ml'; }
   return cached;
 }
 
 export function setEngineMode(mode: EngineMode): EngineMode {
-  cached = mode === 'ml' ? 'ml' : 'rules';
+  cached = mode === 'rules' ? 'rules' : 'ml';
   fs.mkdirSync(path.dirname(file()), { recursive: true });
   fs.writeFileSync(file(), JSON.stringify({ mode: cached, changedAt: new Date().toISOString() }, null, 2));
   return cached;
