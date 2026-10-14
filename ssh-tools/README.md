@@ -8,6 +8,16 @@ Scripts you run on **your own machine** (the cloud sandbox this was written in c
 | `setup-bench.sh <ip> <key> [user]` | installs Docker, clones bench-1 (`faultlab` branch), starts ShopFlow + traffic + monitoring, installs node | yes |
 | `panel-tunnel.sh <ip> <key> [user] [subject]` | starts the fault and traffic panel on the host and tunnels it to `http://localhost:8099` | starts one process |
 
+## Saved hosts went stale
+
+EC2 public IPs change on every stop/start. The mapper keeps the last IP it was given in `server/data/remote_config.json`, so after a restart of the instance every connection times out (`Timed out while waiting for handshake`). Fix the IP in the app (Edit project) or from a terminal:
+
+```
+npm run hosts                                 # list targets and whether port 22 answers
+npm run hosts -- set bench1 43.204.141.48     # new public IP
+npm run hosts -- remove bench2                # a host that no longer exists
+```
+
 ## The algorithm the mapper uses (SSH discovery path)
 
 Source: `server/connection/SSHConnection.ts`, `server/discovery/EndpointDiscoveryEngine.ts`, `server/util/platform.ts`.

@@ -47,7 +47,10 @@ async function assertPortFree(port: number): Promise<void> {
     probe.once('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         console.error(`\n[MAPPER] Port ${port} is already in use: another mapper server is probably running (for example from \`npm run dev\`).`);
-        console.error('[MAPPER] Not starting a second one, so targets are not polled twice. Stop the other server first, or set PORT.\n');
+        console.error('[MAPPER] Not starting a second one, so targets are not polled twice. Stop the other server first, or set PORT.');
+        console.error(process.platform === 'win32'
+          ? `[MAPPER] Find it: netstat -ano | findstr :${port}    then: taskkill /PID <pid> /F\n`
+          : `[MAPPER] Find it: lsof -nP -iTCP:${port} -sTCP:LISTEN    then: kill <pid>   (an old server left behind by Ctrl-C shows up here)\n`);
         process.exit(1);
       }
       resolve();

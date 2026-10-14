@@ -649,9 +649,10 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-blue">SSH</span>
                 <span class="meta-item"><code>wiki/39-ssh-tools.md</code></span>
                 <span class="meta-item">~3 min read</span>
-                <span class="meta-item">536 words</span>
+                <span class="meta-item">582 words</span>
             </div>
             <nav class="toc">
+  <a href="#saved-hosts-went-stale">Saved hosts went stale</a>
   <a href="#the-algorithm-the-mapper-uses-ssh-discovery-path">The algorithm the mapper u...</a>
   <a href="#why-a-host-will-not-connect">Why a host will not connect</a>
 </nav>
@@ -705,6 +706,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
+<h2 id="saved-hosts-went-stale">Saved hosts went stale</h2>
+<p>EC2 public IPs change on every stop/start, and the mapper keeps the last IP it was given. When every host times out, fix the IPs in the app (Edit project) or with <code>npm run hosts</code> (list, <code>set &lt;target&gt; &lt;ip&gt;</code>, <code>remove &lt;target&gt;</code>).</p>
 <h2 id="the-algorithm-the-mapper-uses-ssh-discovery-path">The algorithm the mapper uses (SSH discovery path)</h2>
 <p>Source: <code>server/connection/SSHConnection.ts</code>, <code>server/discovery/EndpointDiscoveryEngine.ts</code>, <code>server/util/platform.ts</code>.</p>
 <ol>

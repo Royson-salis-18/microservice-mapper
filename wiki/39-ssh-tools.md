@@ -21,6 +21,10 @@ Scripts you run on **your own machine** (the cloud sandbox this was written in c
 | `setup-bench.sh <ip> <key> [user]` | installs Docker, clones bench-1 (`faultlab` branch), starts ShopFlow + traffic + monitoring, installs node | yes |
 | `panel-tunnel.sh <ip> <key> [user] [subject]` | starts the fault and traffic panel on the host and tunnels it to `http://localhost:8099` | starts one process |
 
+## Saved hosts went stale
+
+EC2 public IPs change on every stop/start, and the mapper keeps the last IP it was given. When every host times out, fix the IPs in the app (Edit project) or with `npm run hosts` (list, `set <target> <ip>`, `remove <target>`).
+
 ## The algorithm the mapper uses (SSH discovery path)
 
 Source: `server/connection/SSHConnection.ts`, `server/discovery/EndpointDiscoveryEngine.ts`, `server/util/platform.ts`.
