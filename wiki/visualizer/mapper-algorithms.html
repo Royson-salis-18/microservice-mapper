@@ -789,7 +789,7 @@ d(e) = (b_e / Σ b) · (1 − u/N)        else if some have activity, u = # with
 d(e) = 1 / N                          else                                               (basis: uniform)</code></pre>
                     </div>
 <p><code>b</code> is the slow <strong>baseline</strong> of socket activity, not the instantaneous rate: a link goes quiet exactly when its callee dies, and weighting on live traffic would make a dead dependency look less important the longer it stays down. Shares always sum to exactly 1 per group. <strong>Telemetry edges</strong> (to or from an observability component) are scaled by 0.1: exporting traces is fire-and-forget, and weighing it at face value would predict a collector outage to take down a shop. <code>w(e) = clamp(confidence · d(e) · factor, 0, 1)</code>.</p>
-<p>Source: <code>algorithms/graph/EdgeWeights.ts</code> (pure), <code>server/graph/GraphStore.ts</code> (shell: persistence, merging).</p>
+<p>Source: <code>server/algorithms/graph/EdgeWeights.ts</code> (pure), <code>server/graph/GraphStore.ts</code> (shell: persistence, merging).</p>
 <hr class="rule">
 <h2 id="3-block-3-link-status"><span class="id">3</span> Block 3: link status</h2>
 <p>One definition of a troubled link, shared by the server (status) and the client (colour), checked equal by a test.</p>
@@ -817,7 +817,7 @@ d(e) = 1 / N                          else                                      
     </tr>
   </tbody>
 </table></div>
-<p>Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: <code>algorithms/graph/linkThresholds.ts</code>, <code>client/.../shared/edgeHeat.ts</code>.</p>
+<p>Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: <code>server/algorithms/graph/linkThresholds.ts</code>, <code>client/.../shared/edgeHeat.ts</code>.</p>
 <hr class="rule">
 <h2 id="4-block-4-anomaly-detection"><span class="id">4</span> Block 4: anomaly detection</h2>
 <p>Per service, per metric, against <strong>that service's own recent past</strong>. The method was measured on 751 labelled faults over real healthy traffic (<code>new-repo</code>, <code>wiki/RCA_STATISTICAL_REPORT.html</code>).</p>
@@ -883,7 +883,7 @@ d(e) = 1 / N                          else                                      
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">raise silence  iff  q &gt;= 0.6  and  obs = 0  and  z = (exp - obs) / sqrt(exp (1 - q)) &gt;= 3.5      (evidence: own)</code></pre>
                     </div>
 <p><strong>Hard evidence</strong> (a fact, not a degree): container paused, exited, dead, restarting, vanished, or a restart since the last sample. <strong>Onset tracking:</strong> an anomaly keeps the timestamp of its first sighting until it clears, so temporal precedence compares real start times.</p>
-<p>Source: <code>algorithms/detection/AnomalyDetector.ts</code> (pure; thresholds injected), <code>algorithms/detection/thresholds.ts</code> (defaults, limits), <code>thresholdsStore.ts</code> (disk).</p>
+<p>Source: <code>server/algorithms/detection/AnomalyDetector.ts</code> (pure; thresholds injected), <code>server/algorithms/detection/thresholds.ts</code> (defaults, limits), <code>thresholdsStore.ts</code> (disk).</p>
 <hr class="rule">
 <h2 id="5-block-5-root-cause-ranking"><span class="id">5</span> Block 5: root-cause ranking</h2>
 <p>The question is: of all the services that look unwell, which one is the <em>source</em>? A caller's errors are usually inherited from a broken callee, so the engine separates a service's own evidence from symptoms and lets a broken dependency <em>explain away</em> its callers' symptoms.</p>
@@ -929,7 +929,7 @@ d(e) = 1 / N                          else                                      
                     </div>
 <p><code>margin = 1 − raw₂/raw₁</code>. <code>γ = 0</code> (a threshold) turns explain-away and the coverage bonus off and gives plain "most abnormal"; the research bench measured that the <em>scoring</em> (silence, noise normalisation) matters more than the explain-away step, and the doc says so rather than overclaiming.</p>
 <p><strong>Propagation path:</strong> from the root, walk callers up to 3 hops, following only callers that are themselves troubled and lean on the callee materially (<code>w ≥ 0.1</code>). Healthy callers are not "propagated to"; they are the at-risk list. <strong>Affected services</strong> are returned as node ids.</p>
-<p>Source: <code>algorithms/rca/RCAEngine.ts</code> (pure), <code>TemporalAnalyzer.ts</code>, <code>ExplanationEngine.ts</code> (text).</p>
+<p>Source: <code>server/algorithms/rca/RCAEngine.ts</code> (pure), <code>TemporalAnalyzer.ts</code>, <code>ExplanationEngine.ts</code> (text).</p>
 <hr class="rule">
 <h2 id="6-block-6-cascade-prediction"><span class="id">6</span> Block 6: cascade prediction</h2>
 <p>What will fail next, and how far would one failure spread? Every service has an intrinsic failure probability <code>p₀</code> from what is measured now; risk flows against dependency arrows, <strong>noisy-OR</strong> combined (each route to failure is an independent chance):</p>
@@ -952,7 +952,7 @@ p₀   = 1 − (1 − p_status)(1 − p_anomaly)        p_status: critical 1.0, 
 <p>Convergence: <code>P</code> only rises from <code>p₀</code> and is bounded by 1, so the iteration converges even on dependency cycles. <strong>What-if</strong> answers "if this one service failed, how far would it spread?" by solving with <code>p₀ = 1</code> at that node only. <strong>Structural criticality</strong> is the traffic-weighted share of edges disrupted by that node's failure, <code>crit(n) = Σ_e traffic(e) · (1 − (1 − P_src(e))(1 − P_dst(e))) / Σ_e traffic(e)</code>, measured from a clean slate (a property of the service's place in the graph, not of what is failing now).</p>
 <p>These are <strong>estimates under a stated model</strong>, not observed frequencies. Each output carries the model name and <code>τ</code>. Whether the at-risk warnings were <em>honest</em> is measured against the injector's ledger (reliability diagram, Brier, ECE, AUC in the evaluation report).</p>
 <p>A second, cheaper at-risk list lives in the RCA engine for use inside an incident: for a healthy caller with failing callees <code>F</code>, <code>risk = 1 − Π_{c ∈ F} (1 − min(1, ev(c) / (2 zA)) · q)</code>, <code>q = 0.5</code>.</p>
-<p>Source: <code>algorithms/graph/CascadeEngine.ts</code> (pure), <code>RiskEngine.ts</code> (shell: runs it every poll cycle).</p>
+<p>Source: <code>server/algorithms/graph/CascadeEngine.ts</code> (pure), <code>RiskEngine.ts</code> (shell: runs it every poll cycle).</p>
 <hr class="rule">
 <h2 id="7-block-7-health-and-risk"><span class="id">7</span> Block 7: health and risk</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">

@@ -727,7 +727,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>GET</td>
       <td><code>/api/diagnostics/consistency</code></td>
-      <td>Runs the 12 invariants in <code>algorithms/graph/consistency.ts</code> over the live graph and open incidents. Returns <code>{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }</code>. An empty <code>violations</code> list is the claim; anything in it is a named bug. See <a href="32-accuracy-and-self-check.html">32-accuracy-and-self-check</a>.</td>
+      <td>Runs the 12 invariants in <code>server/algorithms/graph/consistency.ts</code> over the live graph and open incidents. Returns <code>{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }</code>. An empty <code>violations</code> list is the claim; anything in it is a named bug. See <a href="32-accuracy-and-self-check.html">32-accuracy-and-self-check</a>.</td>
     </tr>
     <tr>
       <td>GET</td>

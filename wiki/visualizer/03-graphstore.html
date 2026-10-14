@@ -958,7 +958,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
 <p>Two more things are written onto edges each cycle, outside the store:</p>
 <ul>
   <li><strong><code>edge.weight</code></strong>, by <code>RiskEngine.recomputeAll()</code> through <code>computeEdgeWeights()</code>: confidence × the caller's share of traffic, with shares summing to exactly 1 per caller and kind. See <a href="22-risk-engine.html">Risk, cascades and blast radius</a>.</li>
-  <li><strong><code>edge.status</code></strong> from <code>linkStatus(errorRate, p95 ?? latency)</code> (<code>algorithms/graph/linkThresholds.ts</code>): <code>degraded</code> at ≥ 1% errors or ≥ 300 ms, <code>failed</code> at ≥ 5% or ≥ 1 s. Without request data, the link stays <code>active</code>, and its colour comes from activity and the callee's status.</li>
+  <li><strong><code>edge.status</code></strong> from <code>linkStatus(errorRate, p95 ?? latency)</code> (<code>server/algorithms/graph/linkThresholds.ts</code>): <code>degraded</code> at ≥ 1% errors or ≥ 300 ms, <code>failed</code> at ≥ 5% or ≥ 1 s. Without request data, the link stays <code>active</code>, and its colour comes from activity and the callee's status.</li>
 </ul>
 <h2 id="broadcasts-are-coalesced">Broadcasts are coalesced</h2>
 <p><code>requestBroadcast()</code> sends at most one <code>graph-update</code> every 3 s, however many targets report in between. Several targets ingesting every few seconds used to fan out a full graph frame per ingest.</p>
