@@ -35,7 +35,7 @@ Data used everywhere: a *snapshot* is a dict like `{"cpu": 12.0, "memory_percent
 
 **Formula.** `new = min(max(value, low), high)`
 
-**Worked example** (actual output of `python3 algorithms/detection/thresholds.py`):
+**Worked example** (actual output of `python3 algorithms/detailed/detection/thresholds.py`):
 ```
 z_score_anomaly      default=3.5    edited=4.2
 z_score_high         default=5.0    edited=15

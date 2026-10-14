@@ -1,7 +1,7 @@
 # Dependency graph algorithms (graph)
 
 Folder: `algorithms/graph/`. Python 3, standard library only. Run the tests with
-`python3 algorithms/graph/test_graph.py`.
+`python3 algorithms/detailed/graph/test_graph.py`.
 
 The service map is a directed graph: edge `A -> B` means **A calls B**. These files decide
 how strong each edge is, how failures spread over the graph, and whether the numbers we

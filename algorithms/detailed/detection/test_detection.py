@@ -1,4 +1,4 @@
-"""Tests for the detection folder. Run: python3 algorithms/detection/test_detection.py"""
+"""Tests for the detection folder. Run: python3 algorithms/detailed/detection/test_detection.py"""
 import math
 import pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))

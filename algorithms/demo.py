@@ -1,11 +1,11 @@
-"""Run the whole logic on a small made-up shop. No dependencies, no server:  python core_logic/demo.py
+"""Run the whole logic on a small made-up shop. No dependencies, no server:  python3 algorithms/demo.py
 
 Shop:  mobile-api -> web -> cart -> cart-db      web -> payments -> bank-gateway
 The payments service freezes: its CPU stays normal but it stops answering, so web's errors rise.
 """
 import random
 
-from cascade import at_risk, what_if
+from cascading_failure import at_risk, what_if
 from detector import detect_service
 from root_cause import confidence, rank_root_causes
 
@@ -41,10 +41,16 @@ print("\n2. root cause ranking  (confidence:", confidence(ranked) + ")")
 for r in ranked:
     print(f"   {r['service']:13s} score {r['score']:6.2f}   own {r['own']:5.2f}  symptom {r['symptom']:5.2f}  explained away {r['explained']:5.2f}")
 
+# the cascade step needs a status per service: abnormal ones count as degraded, the stopped one as critical
+status = {n: ("degraded" if svc["findings"] else "healthy") for n, svc in services.items()}
+for r in ranked[:1]:
+    status[r["service"]] = "critical"
+call_pairs = [(a, b, w) for a, b, w in calls]
+
 print("\n3. who is next in line (cascade risk)")
-for r in at_risk(services, calls) or [{"service": "nobody", "probability": 0, "via": []}]:
-    print(f"   {r['service']:13s} {r['probability']:.0%} via {', '.join(r['via'])}")
+for name, p in at_risk(status, call_pairs).items():
+    print(f"   {name:13s} {p:.0%}")
 
 print("\n4. what if bank-gateway went down?")
-for name, p in what_if("bank-gateway", services, calls).items():
+for name, p in what_if("bank-gateway", status, call_pairs).items():
     print(f"   {name:13s} {p:.0%}")

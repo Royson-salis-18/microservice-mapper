@@ -1,40 +1,40 @@
 # algorithms
 
-Every algorithm of the mapper, explained in a Markdown page and written as short, readable Python.
+The core logic of the mapper as short Python files you can read in about 20 minutes and run with nothing installed (standard library only).
 
-The real system runs the TypeScript versions in `server/algorithms/` (same ideas, same numbers). These Python files are the simplified twins: you can run them, read them top to bottom, and explain them without knowing TypeScript. Standard library only, no installs.
+**Important, say this plainly if asked:** the running application executes the TypeScript in `server/algorithms/`. These Python files are the same ideas and the same numbers written in a smaller form for reading and explaining. They are not called by the app. The longer, faithful Python version of every TypeScript file is in `detailed/`.
 
 ```
-python3 algorithms/run_all_tests.py        # runs every test file below
-python3 algorithms/detection/anomaly_detector.py   # any file runs on its own and prints a small demo
+python3 algorithms/demo.py          # a made-up shop, one broken service: detect, find the cause, predict the spread
+python3 algorithms/run_tests.py     # tests for the files below
 ```
 
-| Folder | Page | Python files | Question it answers |
+## The files (about 450 lines in total)
+
+| Step | File | Lines | What it does |
 |---|---|---|---|
-| `detection/` | [detection.md](detection/detection.md) | `anomaly_detector`, `container_facts`, `features`, `request_stats`, `scoring`, `thresholds` | Is this service behaving abnormally compared with its own past? |
-| `model/` | [model.md](model/model.md) | `target_model` | What does "normal" look like for one whole project, and where should its alarm line sit? |
-| `rca/` | [rca.md](rca/rca.md) | `rca_engine`, `temporal_analyzer`, `explanation_engine` | Several services look bad: which one is the root cause? |
-| `graph/` | [graph.md](graph/graph.md) | `cascade_engine`, `edge_weights`, `consistency`, `link_thresholds`, `service_roles` | Who calls whom and how strongly, and who will fail next? |
-| `learning/` | [learning.md](learning/learning.md) | `logreg`, `dataset`, `evaluate`, `experiment` | Can a model learn to combine the signals better than the rules? |
-| `evaluation/` | [evaluation.md](evaluation/evaluation.md) | `score`, `stats`, `infer` | How good is the mapper, measured against the fault injector's answer key? |
+| 0 | `settings.py` | 30 | Every threshold and weight in one place |
+| 1 | `preprocessing.py` | 70 | Log lines into request count, error share and latency; the short feature list per service |
+| 2 | `detector.py` | 120 | Is a service abnormal compared with its own past? (median, MAD, log scale, two samples in a row) |
+| 3 | `root_cause.py` | 110 | Which service started it? (own evidence, symptoms, what dependencies explain away) |
+| 4 | `cascading_failure.py` | 60 | Who fails next? (noisy-OR along the call graph, "what if X failed?") |
+| 5 | `ml_model.py` | 90 | Logistic regression with class balance, L2 and blocked cross-validation |
 
-Each `.py` mirrors one TypeScript file; the name is the TypeScript name in snake_case (`RCAEngine.ts` is `rca_engine.py`). The docstring at the top of every file says which one and what was left out (storage, ids, UI bookkeeping).
+Read in that order. One-page explanation of step 4: [cascading_failure.md](cascading_failure.md).
 
-## The four core topics, and where each one lives
+## Where the real thing is
 
-If you only have time for the core logic, these are the files (everything else in this folder is supporting material):
+| This file | The real code the app runs |
+|---|---|
+| `preprocessing.py` | `server/algorithms/detection/requestStats.ts`, `features.ts` |
+| `detector.py` | `server/algorithms/detection/AnomalyDetector.ts` |
+| `root_cause.py` | `server/algorithms/rca/RCAEngine.ts` |
+| `cascading_failure.py` | `server/algorithms/graph/CascadeEngine.ts` |
+| `ml_model.py` | `server/algorithms/learning/logreg.ts`, `experiment.ts` |
 
-| Topic | Read first | Then |
-|---|---|---|
-| **Preprocessing** (raw readings into clean numbers) | `detection/request_stats.py` (log lines into request rate, error share, latency), `detection/features.py` (the 18 numbers per service) | `detection/container_facts.py`, `detection/thresholds.py` |
-| **Anomaly detection** (is it abnormal?) | `detection/anomaly_detector.py` | `model/target_model.py` (per-project baseline and alarm line) |
-| **Root cause analysis (RCA)** | `rca/rca_engine.py` | `rca/temporal_analyzer.py`, `rca/explanation_engine.py` |
-| **Cascading failure** | [`cascading_failure.py`](cascading_failure.py) (about 60 lines) and [`cascading_failure.md`](cascading_failure.md), then `graph/cascade_engine.py` (full version) | `graph/edge_weights.py` (how strongly a service depends on another) |
-| **Machine learning** | `learning/logreg.py`, `learning/experiment.py` | `learning/dataset.py`, `learning/evaluate.py` |
+## detailed/ (optional)
 
-Supporting only: `evaluation/` (how we scored the mapper), `graph/consistency.py`, `graph/link_thresholds.py`, `graph/service_roles.py`, `detection/scoring.py`.
-
-A smaller teaching version of just the three core steps (detect, root cause, cascade) with a runnable demo is in `../core_logic/`.
+One Python file per TypeScript file with a Markdown page per area, tested against the TypeScript where noted: `detection/`, `model/`, `rca/`, `graph/`, `learning/`, `evaluation/`. Only open it if an evaluator asks about something the six files above do not cover. Run all of its tests with `python3 algorithms/detailed/run_all_tests.py`.
 
 ## Why is the real system written in TypeScript?
 
@@ -48,12 +48,11 @@ The reasons, in the order to say them:
 4. **Docker and SSH libraries and real-time features are first class in Node.** The collector talks to the Docker engine (`dockerode`), the server holds SSH sessions (`ssh2`) and pushes live updates over WebSockets. These are mature, well supported in Node.
 5. **The same logic is reused everywhere.** The exact files the server uses are also used by the tests, by the command line tools that score the mapper against the fault injector, and by the report builders. One implementation, so the tests test what really runs.
 
-Be honest about the trade-off if asked "why not Python?": Python is the usual language for data science and is easier to read, which is why the machine learning experiments (`ml/`) are in Python and why this folder and `core_logic/` exist. Using it for the whole product would mean keeping two runtimes, converting data between them, and losing the shared types with the dashboard. For this tool the benefit of one language outweighed that.
+Be honest about the trade-off if asked "why not Python?": Python is the usual language for data science and is easier to read, which is why the machine learning experiments (`ml/`) are in Python and why this folder exists. Using it for the whole product would mean keeping two runtimes, converting data between them, and losing the shared types with the dashboard. For this tool the benefit of one language outweighed that.
 
 ## Reading order for the evaluation
 
-1. `detection/detection.md` (the core idea: compare with your own past)
-2. `rca/rca.md` (cause versus victims)
-3. `graph/graph.md` (the cascade formula)
-4. `model/model.md` and `learning/learning.md` (what is learned, and why the learned model is not used)
-5. `evaluation/evaluation.md` (how we measured it)
+1. `demo.py` output, then `detector.py` (the core idea: compare with your own past)
+2. `root_cause.py` (cause versus victims)
+3. `cascading_failure.py` and its page (the cascade formula)
+4. `ml_model.py` (what is learned, and why the learned model is not used: 50% of faults found against 97% for the rules)

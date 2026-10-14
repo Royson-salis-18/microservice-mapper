@@ -652,7 +652,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-green">SETUP</span>
                 <span class="meta-item"><code>README.md</code></span>
                 <span class="meta-item">~10 min read</span>
-                <span class="meta-item">2,054 words</span>
+                <span class="meta-item">2,041 words</span>
             </div>
             <nav class="toc">
   <a href="#what-it-does">What It Does</a>
@@ -769,7 +769,7 @@ cd microservice-mapper
 npm start            # installs whatever is missing, then starts the server (:3001) and the dashboard (:5173)</code></pre>
                     </div>
 <p>Open http://localhost:5173. Nothing else has to be installed or configured. With Docker running, <code>npm run local</code> also starts a collector for every Docker Compose project on your machine.</p>
-<p>Short on time? Read <a href="00-evaluation-guide.html">wiki/00-evaluation-guide.md</a> (one hour) and run <code>python3 core_logic/demo.py</code>; every algorithm in Python is in <a href="readme.html">algorithms/</a>. Step by step, including starting a test bench and injecting faults: <a href="run-local.html">wiki/RUN_LOCAL.md</a>. How the algorithms work: <a href="mapper-algorithms.html">wiki/MAPPER_ALGORITHMS.md</a>.</p>
+<p>Short on time? Read <a href="00-evaluation-guide.html">wiki/00-evaluation-guide.md</a> (one hour) and run <code>python3 algorithms/demo.py</code> (the core logic as short Python, see <a href="readme.html">algorithms/</a>). Step by step, including starting a test bench and injecting faults: <a href="run-local.html">wiki/RUN_LOCAL.md</a>. How the algorithms work: <a href="mapper-algorithms.html">wiki/MAPPER_ALGORITHMS.md</a>.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
   <li>Node.js ^20.19 or ≥ 22.12 (what Vite 8 requires), npm ≥ 9</li>
@@ -846,7 +846,7 @@ npm run dev</code></pre>
       <td>Rebuild the model lab page, <code>graphs/output/model-lab.html</code></td>
     </tr>
     <tr>
-      <td><code>python3 core_logic/demo.py</code></td>
+      <td><code>python3 algorithms/demo.py</code></td>
       <td>The detection, root-cause and cascade logic in plain Python</td>
     </tr>
     <tr>
@@ -1071,8 +1071,7 @@ WantedBy=multi-user.target</code></pre>
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
 │       ├── hooks/       # useGraphData - WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── algorithms/          # Every algorithm as simple Python plus a Markdown page per area (start at algorithms/README.md)
-├── core_logic/          # The same logic as short, readable Python (+ demo and tests)
+├── algorithms/          # The core logic as short Python with a demo and tests (start at algorithms/README.md)
 ├── graphs/              # Report builders; generated pages in graphs/output
 ├── run/                 # scripts, tests, command line tools, recorded sample runs, ssh helpers
 ├── ml/                  # Python anomaly detection pipeline (optional, research)

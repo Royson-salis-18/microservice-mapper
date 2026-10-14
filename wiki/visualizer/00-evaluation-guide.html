@@ -652,16 +652,16 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-cyan">START HERE</span>
                 <span class="meta-item"><code>wiki/00-evaluation-guide.md</code></span>
                 <span class="meta-item">~15 min read</span>
-                <span class="meta-item">2,986 words</span>
+                <span class="meta-item">2,993 words</span>
             </div>
             <nav class="toc">
   <a href="#1-the-project-in-one-minute">1. The project in one minute</a>
   <a href="#2-architecture">2. Architecture</a>
   <a href="#3-where-the-data-goes">3. Where the data goes</a>
   <a href="#4-the-three-algorithms">4. The three algorithms</a>
-  <a href="#41-detector-is-this-service-abnormal-core-logicdetectorpy">4.1 Detector: is this serv...</a>
-  <a href="#42-root-cause-which-service-started-it-core-logicroot-causepy">4.2 Root cause: which serv...</a>
-  <a href="#43-cascade-who-is-next-core-logiccascadepy">4.3 Cascade: who is next? ...</a>
+  <a href="#41-detector-is-this-service-abnormal-algorithmsdetectorpy">4.1 Detector: is this serv...</a>
+  <a href="#42-root-cause-which-service-started-it-algorithmsroot-causepy">4.2 Root cause: which serv...</a>
+  <a href="#43-cascade-who-is-next-algorithmscascading-failurepy">4.3 Cascade: who is next? ...</a>
   <a href="#5-how-the-python-maps-to-the-real-code">5. How the Python maps to ...</a>
   <a href="#6-learning-and-results-be-honest-here">6. Learning and results (b...</a>
   <a href="#7-demo-script-5-minutes">7. Demo script (5 minutes)</a>
@@ -733,16 +733,16 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>The real detector, root cause, cascade (used by the server)</td>
     </tr>
     <tr>
-      <td><strong>Algorithms, every file in Python</strong></td>
-      <td><strong><code>algorithms/</code></strong></td>
-      <td><strong>Python</strong></td>
-      <td><strong>One simplified <code>.py</code> per TypeScript file, plus a Markdown page per area. Start with <code>algorithms/README.md</code></strong></td>
+      <td>Longer Python versions</td>
+      <td><code>algorithms/detailed/</code></td>
+      <td>Python</td>
+      <td>One <code>.py</code> per TypeScript file plus a Markdown page per area, only if an evaluator digs deeper</td>
     </tr>
     <tr>
       <td><strong>Core logic (explain this)</strong></td>
-      <td><strong><code>core_logic/</code></strong></td>
+      <td><strong><code>algorithms/</code></strong></td>
       <td><strong>Python</strong></td>
-      <td><strong>The same ideas in about 300 readable lines, with a demo and tests</strong></td>
+      <td><strong>The same ideas in about 450 readable lines, with a demo and tests. Not called by the app: the app runs the TypeScript in <code>server/algorithms/</code></strong></td>
     </tr>
     <tr>
       <td>Graphs and reports</td>
@@ -770,7 +770,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>If an evaluator opens the logic, open <code>core_logic/</code>. It is Python, uses only the standard library, and is short.</p>
+<p>If an evaluator opens the logic, open <code>algorithms/</code>. It is Python, uses only the standard library, and is short.</p>
 <hr class="rule">
 <h2 id="3-where-the-data-goes"><span class="id">3</span> Where the data goes</h2>
 <ol>
@@ -783,8 +783,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Saved files, all under <code>server/data/</code> (not in git, created when you run it): <code>graph_db.json</code> (services and links), <code>telemetry_db.json</code> (history), <code>models/&lt;project&gt;.json</code> (per-project baseline model), <code>remote_config.json</code> (saved projects), <code>incident_thresholds.json</code> (rule edits).</p>
 <hr class="rule">
 <h2 id="4-the-three-algorithms"><span class="id">4</span> The three algorithms</h2>
-<p>You can run all of this: <code>python core_logic/demo.py</code>.</p>
-<h3 id="41-detector-is-this-service-abnormal-core-logicdetectorpy">4.1 Detector: is this service abnormal? (<code>core_logic/detector.py</code>)</h3>
+<p>You can run all of this: <code>python3 algorithms/demo.py</code>.</p>
+<h3 id="41-detector-is-this-service-abnormal-algorithmsdetectorpy">4.1 Detector: is this service abnormal? (<code>algorithms/detector.py</code>)</h3>
 <p>Idea: compare each service with <strong>its own</strong> past. A database at 60% CPU may be normal; a web server at 60% is not.</p>
 <p>For one metric (say CPU):</p>
 <ol>
@@ -836,7 +836,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </table></div>
 <p>Worked example: CPU readings hover around 10 (9.3 to 10.7). Two new readings of 25 and 30 get scores 5.9 and 7.0, so CPU is flagged (HIGH). Readings of 11.0 and 11.2 get 0.5 and 0.7: normal.</p>
 <p>Hard facts skip the statistics: a stopped, paused or crash-looping container is evidence by itself.</p>
-<h3 id="42-root-cause-which-service-started-it-core-logicroot-causepy">4.2 Root cause: which service started it? (<code>core_logic/root_cause.py</code>)</h3>
+<h3 id="42-root-cause-which-service-started-it-algorithmsroot-causepy">4.2 Root cause: which service started it? (<code>algorithms/root_cause.py</code>)</h3>
 <p>Failures travel <strong>against</strong> the direction of calls. If <code>checkout</code> calls <code>payments</code> and payments breaks, checkout starts failing. So when two connected services are both unhealthy, the one being called is the better suspect.</p>
 <p>Per service:</p>
 <ul>
@@ -854,7 +854,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Then: a small bonus for services that many other troubled services depend on, and the current verdict is kept unless another service beats it by 15% (so the answer does not flicker). Highest score wins. Confidence is HIGH if the winner is far ahead or is the only stopped container, MEDIUM if clearly ahead, LOW otherwise.</p>
 <p>Worked example (the demo): <code>payments</code> has traffic collapse (23.5) and latency (22.1). <code>web</code>, which calls payments, has errors 17.5 and latency 19.9. web's symptom minus what payments explains is below zero, so web scores 0 and <strong>payments</strong> is ranked first, with HIGH confidence.</p>
 <p>Special cases: a service with no data at all can be named if at least two of its callers show symptoms nothing else explains (blind spot). If most services go silent in the same moment, we report a <strong>monitoring outage</strong> and blame nobody. If the host itself stopped reporting, we blame no service.</p>
-<h3 id="43-cascade-who-is-next-core-logiccascadepy">4.3 Cascade: who is next? (<code>core_logic/cascade.py</code>)</h3>
+<h3 id="43-cascade-who-is-next-algorithmscascading-failurepy">4.3 Cascade: who is next? (<code>algorithms/cascading_failure.py</code>)</h3>
 <p>Each service gets a starting failure probability <code>p0</code>: stopped = 1.0, degraded = 0.5, abnormal evidence adds up to 0.8. Risk then flows from callee to caller:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -870,7 +870,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h2 id="5-how-the-python-maps-to-the-real-code"><span class="id">5</span> How the Python maps to the real code</h2>
 <div class="scroll"><table class="t">
   <thead><tr>
-    <th>Python (<code>core_logic/</code>)</th>
+    <th>Python (<code>algorithms/</code>)</th>
     <th>TypeScript (real system)</th>
   </tr></thead>
   <tbody>
@@ -967,7 +967,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li><code>npm start</code>, open http://localhost:5173. Show the 3D map: colour is state, links are calls.</li>
   <li>Point at a running project (or the sample). Open <strong>Incidents</strong>: the hero card names the root cause, confidence, and shows why (own, symptom, explained away).</li>
   <li>Open <strong>Cascade risk</strong>: probabilities per service, "what if this fails", at-risk list.</li>
-  <li>Show <code>core_logic/demo.py</code> output: the same three steps in text.</li>
+  <li>Show <code>algorithms/demo.py</code> output: the same three steps in text.</li>
   <li>Open <code>graphs/output/model-lab.html</code>: scroll to section 4 (comparison) and say the conclusion in section 6 above.</li>
 </ol>
 <hr class="rule">
@@ -998,9 +998,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-bash">git clone &lt;repo-url&gt; &amp;&amp; cd microservice-mapper
 npm start                          # installs what is missing, starts server (:3001) and dashboard (:5173)
-python3 core_logic/demo.py         # the logic on a small made-up shop
-python3 core_logic/test_core_logic.py
-python3 algorithms/run_all_tests.py   # tests for every Python algorithm file
+python3 algorithms/demo.py          # the logic on a small made-up shop
+python3 algorithms/run_tests.py     # tests for the core Python files
+python3 algorithms/detailed/run_all_tests.py   # tests for the longer versions
 npm test                           # the TypeScript tests
 npm run ml                         # compares rules and learned model on the recorded runs
 npm run ml:report                  # rebuilds graphs/output/model-lab.html</code></pre>
@@ -1013,8 +1013,7 @@ npm run ml:report                  # rebuilds graphs/output/model-lab.html</code
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TEXT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">algorithms/   every algorithm as simple Python + a Markdown page per area (explain these)
-core_logic/   just the three core steps in Python, with a demo
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">algorithms/   the core logic as short Python (explain these); algorithms/detailed has the longer versions
 graphs/       report builders and the generated model lab page (graphs/output)
 run/          start scripts, tests (run/tests), CLIs (run/cli), sample recorded runs (run/recorded-runs)
 wiki/         documentation; this page is the short path

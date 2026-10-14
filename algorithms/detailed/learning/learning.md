@@ -1,8 +1,8 @@
 # Learning folder: can a trained model beat the hand-written rules?
 
 Python files in this folder: `logreg.py`, `dataset.py`, `evaluate.py`, `experiment.py`. Run any of
-them with `python3 algorithms/learning/<file>.py` for a small demo, and the tests with
-`python3 algorithms/learning/test_learning.py`.
+them with `python3 algorithms/detailed/learning/<file>.py` for a small demo, and the tests with
+`python3 algorithms/detailed/learning/test_learning.py`.
 
 The story in one paragraph. The live mapper decides "which service is broken?" with hand-written
 rules. We asked: if we record runs where we inject known faults, can a statistical model learn the

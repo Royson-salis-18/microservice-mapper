@@ -40,14 +40,14 @@ flowchart LR
 | Server | `server/` | TypeScript (Express) | Stores graph and history, runs the logic every cycle, serves the API |
 | Dashboard | `client/` | React + Vite, 3D with three.js | Shows the map, incidents, cascade risk |
 | Decision logic | `server/algorithms/` | TypeScript | The real detector, root cause, cascade (used by the server) |
-| **Algorithms, every file in Python** | **`algorithms/`** | **Python** | **One simplified `.py` per TypeScript file, plus a Markdown page per area. Start with `algorithms/README.md`** |
-| **Core logic (explain this)** | **`core_logic/`** | **Python** | **The same ideas in about 300 readable lines, with a demo and tests** |
+| Longer Python versions | `algorithms/detailed/` | Python | One `.py` per TypeScript file plus a Markdown page per area, only if an evaluator digs deeper |
+| **Core logic (explain this)** | **`algorithms/`** | **Python** | **The same ideas in about 450 readable lines, with a demo and tests. Not called by the app: the app runs the TypeScript in `server/algorithms/`** |
 | Graphs and reports | `graphs/` | TypeScript | Builds the model lab page and the evaluation report |
 | Running, testing | `run/` | TS / JS | Start scripts, tests, evaluation and learning commands, recorded sample runs |
 | Documentation | `wiki/` | Markdown | This guide and the detailed chapters |
 | Not used right now | `unused/` | | Old experiments kept for reference |
 
-If an evaluator opens the logic, open `core_logic/`. It is Python, uses only the standard library, and is short.
+If an evaluator opens the logic, open `algorithms/`. It is Python, uses only the standard library, and is short.
 
 ---
 
@@ -65,9 +65,9 @@ Saved files, all under `server/data/` (not in git, created when you run it): `gr
 
 ## 4. The three algorithms
 
-You can run all of this: `python core_logic/demo.py`.
+You can run all of this: `python3 algorithms/demo.py`.
 
-### 4.1 Detector: is this service abnormal? (`core_logic/detector.py`)
+### 4.1 Detector: is this service abnormal? (`algorithms/detector.py`)
 
 Idea: compare each service with **its own** past. A database at 60% CPU may be normal; a web server at 60% is not.
 
@@ -95,7 +95,7 @@ Worked example: CPU readings hover around 10 (9.3 to 10.7). Two new readings of 
 
 Hard facts skip the statistics: a stopped, paused or crash-looping container is evidence by itself.
 
-### 4.2 Root cause: which service started it? (`core_logic/root_cause.py`)
+### 4.2 Root cause: which service started it? (`algorithms/root_cause.py`)
 
 Failures travel **against** the direction of calls. If `checkout` calls `payments` and payments breaks, checkout starts failing. So when two connected services are both unhealthy, the one being called is the better suspect.
 
@@ -116,7 +116,7 @@ Worked example (the demo): `payments` has traffic collapse (23.5) and latency (2
 
 Special cases: a service with no data at all can be named if at least two of its callers show symptoms nothing else explains (blind spot). If most services go silent in the same moment, we report a **monitoring outage** and blame nobody. If the host itself stopped reporting, we blame no service.
 
-### 4.3 Cascade: who is next? (`core_logic/cascade.py`)
+### 4.3 Cascade: who is next? (`algorithms/cascading_failure.py`)
 
 Each service gets a starting failure probability `p0`: stopped = 1.0, degraded = 0.5, abnormal evidence adds up to 0.8. Risk then flows from callee to caller:
 
@@ -136,7 +136,7 @@ Be honest about this one: the 0.7 and the weights are modelling choices, not mea
 
 ## 5. How the Python maps to the real code
 
-| Python (`core_logic/`) | TypeScript (real system) |
+| Python (`algorithms/`) | TypeScript (real system) |
 |---|---|
 | `detector.py` `abnormal_scores`, `detect_service` | `server/algorithms/detection/AnomalyDetector.ts` |
 | `settings.py` | `DETECTOR_PARAMS`, `server/algorithms/detection/thresholds.ts` |
@@ -186,7 +186,7 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 1. `npm start`, open http://localhost:5173. Show the 3D map: colour is state, links are calls.
 2. Point at a running project (or the sample). Open **Incidents**: the hero card names the root cause, confidence, and shows why (own, symptom, explained away).
 3. Open **Cascade risk**: probabilities per service, "what if this fails", at-risk list.
-4. Show `core_logic/demo.py` output: the same three steps in text.
+4. Show `algorithms/demo.py` output: the same three steps in text.
 5. Open `graphs/output/model-lab.html`: scroll to section 4 (comparison) and say the conclusion in section 6 above.
 
 ---
@@ -236,9 +236,9 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 ```bash
 git clone <repo-url> && cd microservice-mapper
 npm start                          # installs what is missing, starts server (:3001) and dashboard (:5173)
-python3 core_logic/demo.py         # the logic on a small made-up shop
-python3 core_logic/test_core_logic.py
-python3 algorithms/run_all_tests.py   # tests for every Python algorithm file
+python3 algorithms/demo.py          # the logic on a small made-up shop
+python3 algorithms/run_tests.py     # tests for the core Python files
+python3 algorithms/detailed/run_all_tests.py   # tests for the longer versions
 npm test                           # the TypeScript tests
 npm run ml                         # compares rules and learned model on the recorded runs
 npm run ml:report                  # rebuilds graphs/output/model-lab.html
@@ -253,8 +253,7 @@ The Python commands need only Python 3. The npm commands need the dependencies o
 ## 10. Folder map
 
 ```
-algorithms/   every algorithm as simple Python + a Markdown page per area (explain these)
-core_logic/   just the three core steps in Python, with a demo
+algorithms/   the core logic as short Python (explain these); algorithms/detailed has the longer versions
 graphs/       report builders and the generated model lab page (graphs/output)
 run/          start scripts, tests (run/tests), CLIs (run/cli), sample recorded runs (run/recorded-runs)
 wiki/         documentation; this page is the short path

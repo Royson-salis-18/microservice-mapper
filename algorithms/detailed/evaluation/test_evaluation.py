@@ -1,4 +1,4 @@
-"""Tests for the evaluation folder. Run: python3 algorithms/evaluation/test_evaluation.py"""
+"""Tests for the evaluation folder. Run: python3 algorithms/detailed/evaluation/test_evaluation.py"""
 import math, pathlib, sys, unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 

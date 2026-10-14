@@ -1,6 +1,6 @@
 # Cascading failure: who fails next?
 
-One page with the whole idea. Code: **`cascading_failure.py`** next to this page (about 60 lines, run it to see the example below), `graph/cascade_engine.py` (the full version, mirrors `server/algorithms/graph/CascadeEngine.ts`) and `../core_logic/cascade.py`. Details and more examples: `graph/graph.md`, section 4.
+One page with the whole idea. Code: **`cascading_failure.py`** next to this page (about 60 lines, run it to see the example below), `detailed/graph/cascade_engine.py` (the full version, mirrors `server/algorithms/graph/CascadeEngine.ts`) and `root_cause.py` and `demo.py` (which feed it). Details and more examples: `detailed/graph/graph.md`, section 4.
 
 ## The problem
 
@@ -24,18 +24,14 @@ P(service) = 1 - (1 - p0) x  product over its callees c of  (1 - tau x w(service
 6. **What if X failed?** Start from a healthy system, set X to failed, run the same calculation, read the others.
 7. **Structural criticality:** for each service, the expected share of the project's traffic that would be disrupted if it failed alone. This says how important a service is in the graph, independent of what is failing now.
 
-## Worked example (real output of `python3 algorithms/graph/cascade_engine.py`)
+## Worked example (real output of `python3 algorithms/cascading_failure.py`)
 
 `web -> orders -> db`, `db` stopped, `orders` degraded:
 
 ```
-converged=True after 3 rounds, expected failures 2.271
-  db      P=1.0    own=1.0    band=high      path=db
-  orders  P=0.815  own=0.5    band=high      path=orders <- db
-  web     P=0.456  own=0.0    band=elevated  path=web <- orders <- db
-  mail    P=0.0    own=0.0    band=minimal   path=mail
-at risk: [('web', 0.456)]
-what if db failed from a healthy system: [('orders', 0.63), ('web', 0.353)]
+chance of failing: {'web': 0.456, 'orders': 0.815, 'db': 1.0, 'mail': 0.0}
+at risk (look fine, but exposed): {'web': 0.456}
+what if db alone failed: {'web': 0.353, 'orders': 0.63}
 ```
 
 In this demo the links are `web -> orders` (weight 0.8), `orders -> db` (0.9) and `web -> mail` (0.2).

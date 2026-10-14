@@ -1,4 +1,4 @@
-"""Tests for the graph files. Run: python3 algorithms/graph/test_graph.py"""
+"""Tests for the graph files. Run: python3 algorithms/detailed/graph/test_graph.py"""
 import pathlib
 import sys
 import unittest

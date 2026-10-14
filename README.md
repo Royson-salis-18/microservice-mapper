@@ -62,7 +62,7 @@ npm start            # installs whatever is missing, then starts the server (:30
 
 Open http://localhost:5173. Nothing else has to be installed or configured. With Docker running, `npm run local` also starts a collector for every Docker Compose project on your machine.
 
-Short on time? Read [wiki/00-evaluation-guide.md](wiki/00-evaluation-guide.md) (one hour) and run `python3 core_logic/demo.py`; every algorithm in Python is in [algorithms/](algorithms/README.md). Step by step, including starting a test bench and injecting faults: [wiki/RUN_LOCAL.md](wiki/RUN_LOCAL.md). How the algorithms work: [wiki/MAPPER_ALGORITHMS.md](wiki/MAPPER_ALGORITHMS.md).
+Short on time? Read [wiki/00-evaluation-guide.md](wiki/00-evaluation-guide.md) (one hour) and run `python3 algorithms/demo.py` (the core logic as short Python, see [algorithms/](algorithms/README.md)). Step by step, including starting a test bench and injecting faults: [wiki/RUN_LOCAL.md](wiki/RUN_LOCAL.md). How the algorithms work: [wiki/MAPPER_ALGORITHMS.md](wiki/MAPPER_ALGORITHMS.md).
 
 ### Prerequisites
 
@@ -104,7 +104,7 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run traffic-gen` | Run traffic generator |
 | `npm run ml` | Compare the rules with a learned model on the recorded runs in `run/recorded-runs` |
 | `npm run ml:report` | Rebuild the model lab page, `graphs/output/model-lab.html` |
-| `python3 core_logic/demo.py` | The detection, root-cause and cascade logic in plain Python |
+| `python3 algorithms/demo.py` | The detection, root-cause and cascade logic in plain Python |
 | `npm test` | Run the test suite: graph, root cause, risk and cascades, layouts, SSH/Docker parsing, command sanitising |
 
 ---
@@ -279,8 +279,7 @@ microservice-mapper/
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
 │       ├── hooks/       # useGraphData - WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── algorithms/          # Every algorithm as simple Python plus a Markdown page per area (start at algorithms/README.md)
-├── core_logic/          # The same logic as short, readable Python (+ demo and tests)
+├── algorithms/          # The core logic as short Python with a demo and tests (start at algorithms/README.md)
 ├── graphs/              # Report builders; generated pages in graphs/output
 ├── run/                 # scripts, tests, command line tools, recorded sample runs, ssh helpers
 ├── ml/                  # Python anomaly detection pipeline (optional, research)
