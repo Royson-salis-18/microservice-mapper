@@ -648,8 +648,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-red">RCA</span>
                 <span class="meta-item"><code>wiki/08-rca-engine.md</code></span>
-                <span class="meta-item">~10 min read</span>
-                <span class="meta-item">1,938 words</span>
+                <span class="meta-item">~11 min read</span>
+                <span class="meta-item">2,212 words</span>
             </div>
             <nav class="toc">
   <a href="#try-it" style="color:var(--sig);border-color:var(--sig);">Try it &darr;</a>
@@ -950,6 +950,57 @@ findEarliestAnomalousNode(anomalies: AnomalyRecord[]): string | null {
   <li><strong>Latency and error rate</strong> are judged only when each judged sample holds at least 5 requests. A p95 from two requests is one unlucky request, not a trend.</li>
 </ul>
 <p>Measured on a stored ShopFlow run, the quiet periods produced about 150 false anomaly readings before these rules and 1 after, while a stopped service was still caught every time.</p>
+<h2 id="edge-cases-what-is-not-a-problem">Edge cases: what is NOT a problem</h2>
+<p>Each of these used to be reported as a fault. The rules now, all in code with tests (<code>tests/edge-cases.test.ts</code>, <code>tests/sparse-traffic.test.ts</code>):</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Situation</th>
+    <th>Before</th>
+    <th>Now</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Service with <strong>no data at all</strong> (never measured)</td>
+      <td>health counted as 0.5, so it ranked as risky; blamed as a "blind spot" on one noisy caller</td>
+      <td>no data is no evidence: left out of the health score; inferred as a cause only when two callers have unexplained symptoms past the threshold, or one past the HIGH threshold</td>
+    </tr>
+    <tr>
+      <td><strong>Job that finished</strong> (<code>Exited (0)</code>), container <strong>created but never started</strong></td>
+      <td>critical, hard evidence, root cause</td>
+      <td>not a failure: no anomaly, no incident</td>
+    </tr>
+    <tr>
+      <td><strong>Load generator</strong> stopped (traffic, locust, k6, stress…)</td>
+      <td>critical</td>
+      <td>not a failure: traffic is started and stopped by people</td>
+    </tr>
+    <tr>
+      <td><strong>Crashed</strong> container on the SSH path (<code>exited (137)</code>)</td>
+      <td>not hard evidence for the RCA engine (string mismatch)</td>
+      <td>hard evidence, like on the push path (<code>server/rca/containerFacts.ts</code>, one rule for both)</td>
+    </tr>
+    <tr>
+      <td><strong>Isolated</strong> service (no callers, no dependencies) that fails</td>
+      <td>HIGH</td>
+      <td>real failure, MEDIUM: there is no blast radius</td>
+    </tr>
+    <tr>
+      <td><strong>Host unreachable</strong> (SSH down, IP changed, instance stopped)</td>
+      <td>frozen readings kept services green or red and kept incidents open</td>
+      <td>after 2 minutes every service of that host shows unknown, and the incident says telemetry stopped; no service is blamed</td>
+    </tr>
+    <tr>
+      <td><strong>Sparse traffic</strong></td>
+      <td>false "silent" and "slow"</td>
+      <td>see the section above</td>
+    </tr>
+    <tr>
+      <td><strong>ML score</strong> on a quiet system</td>
+      <td>red services, at-risk counts</td>
+      <td>ML off unless <code>MAPPER_ML=1</code></td>
+    </tr>
+  </tbody>
+</table></div>
                 </article>
                 
         <section id="try-it">

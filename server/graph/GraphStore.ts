@@ -266,13 +266,20 @@ export class GraphStore {
 
   private checkTargetStaleness() {
     const now = Date.now();
-    for (const target of this.targets.values()) {
+    for (const [targetId, target] of this.targets.entries()) {
       if (target.lastSeen) {
         const diff = now - new Date(target.lastSeen).getTime();
         // Wider thresholds: STALE after 2min, OFFLINE after 5min
         if (diff > 300000) target.status = 'OFFLINE';
         else if (diff > 120000) target.status = 'STALE';
         else target.status = 'LIVE';
+        // Frozen readings must not keep painting services green or red: with no data from the host, every service of
+        // that target is unknown until telemetry resumes (the next ingest writes the real status back).
+        if (target.status !== 'LIVE') {
+          for (const n of this.nodesByTarget.get(targetId)?.values() ?? []) {
+            if (n.status !== 'unknown') { n.status = 'unknown'; n.metadata = { ...n.metadata, statusReason: `no telemetry from the host for ${Math.round(diff / 60000)} min` }; }
+          }
+        }
       } else {
         target.status = 'NO DATA';
       }

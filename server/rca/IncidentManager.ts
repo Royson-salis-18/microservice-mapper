@@ -25,7 +25,10 @@ export class IncidentManager {
 
     // 2. Execute RCA Analysis
     const open = this.activeIncidents.get(targetId);
+    const hostStatus = String((this.graphStore as any).targets?.get?.(targetId)?.status ?? 'LIVE');
+    const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
     const rcaResult = this.rcaEngine.analyzeIncident({
+      hostSilent,
       incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
       targetId,
       nodes: targetNodes,
@@ -59,6 +62,9 @@ export class IncidentManager {
     } else if (criticalCount > 0) {
       severity = criticalCount > t.criticalServicesForCritical ? 'CRITICAL' : 'HIGH';
       status = 'INCIDENT';
+      // A service nothing depends on and that depends on nothing: a real failure, but with no blast radius.
+      const rootId = rcaResult.primaryRootCause?.serviceId;
+      if (severity === 'HIGH' && rootId && !targetEdges.some(e => e.source === rootId || e.target === rootId)) severity = 'MEDIUM';
     } else if (degradedCount > 0) {
       severity = 'MEDIUM';
       status = 'DEGRADED';
