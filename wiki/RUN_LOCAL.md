@@ -14,7 +14,7 @@ that is running in Docker on the same machine, with realistic traffic, and a way
 ## 2. Get the mapper and start it
 
 ```bash
-git clone -b claude/zen-knuth-z3f9cj https://github.com/Royson-salis-18/microservice-mapper.git
+git clone https://github.com/Royson-salis-18/microservice-mapper.git
 cd microservice-mapper
 npm run setup          # installs every folder's dependencies and checks this machine (npm run doctor)
 npm run local          # starts the mapper + a collector for every docker compose project that is running
@@ -56,7 +56,7 @@ node lab/faultlab/faultlab.mjs shopflow heal                                    
 ```
 
 Watch the **Spatial view** and **Incidents** pages while it runs. Every fault is written to a private ledger (`~/.faultlab/ledger-shopflow.jsonl`) that the mapper cannot see.
-The full description of what it does and why it is blind to the mapper is in [`bench-1/docs/FAULT_INJECTION.md`](https://github.com/Royson-salis-18/bench-1).
+The full description of what it does and why it is blind to the mapper is in [`bench-1/wiki/FAULT_INJECTION.md`](https://github.com/Royson-salis-18/bench-1).
 
 ## 5. Score the mapper against the ledger
 

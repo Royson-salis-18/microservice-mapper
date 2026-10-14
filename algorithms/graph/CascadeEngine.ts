@@ -17,14 +17,14 @@ import type { DependencyEdge } from '../../server/models/DependencyEdge.js';
  * then flows along dependencies: a service that calls a failing service is
  * exposed in proportion to how much it depends on it (the edge weight).
  *
- * Combined with a noisy-OR — each independent route to failure has its own
+ * Combined with a noisy-OR - each independent route to failure has its own
  * chance, and the service fails if any of them does:
  *
  *   P(n) = 1 − (1 − p0(n)) × Π over callees c of (1 − τ · w(n→c) · P(c))
  *
  * τ, the transmission factor, is the fraction of a dependency's failure that
  * actually reaches its caller. It is below 1 because real services retry,
- * time out, cache and degrade gracefully — a dependency failing does not
+ * time out, cache and degrade gracefully - a dependency failing does not
  * always take its caller down with it.
  *
  * Solved by iterating to a fixed point, which handles cycles: P only ever
@@ -226,7 +226,7 @@ function describe(graph: Graph, P: Map<string, number>, p0: Map<string, number>,
     // Walk the strongest routes back to where the risk originates, stopping at
     // the first service whose risk does not meaningfully arrive from its own
     // dependencies. A degraded service can both have problems of its own and
-    // be inheriting risk — orders degraded because its database died — and
+    // be inheriting risk - orders degraded because its database died - and
     // both are worth showing, so the route is kept whenever the inherited part
     // is meaningful, not only when it is the larger part.
     const hasRoute = (id: string) => (inheritedById.get(id) ?? 0) >= MEANINGFUL_INHERITED || (inheritedById.get(id) ?? 0) > (p0.get(id) ?? 0);
@@ -282,7 +282,7 @@ export function predictCascade(
   const described = describe(graph, P, p0, reasonsById, tau);
 
   // "At risk" means currently fine by its own measurements, but expected to be
-  // pulled down through its dependencies — the services a cascade reaches next.
+  // pulled down through its dependencies - the services a cascade reaches next.
   const atRisk = described
     .filter(d => d.intrinsic < 0.15 && d.probability >= 0.15)
     .sort((a, b) => b.probability - a.probability || a.depth - b.depth);
@@ -308,8 +308,8 @@ export function predictCascade(
  * This replaced an unweighted reachability measure that badly overstated it.
  * Reachability treated any chain of calls as total failure: a queue that only
  * shipping depends on reached the frontend through shipping → orders →
- * frontend, so the frontend counted as down and *all* of its traffic — to
- * services a queue outage never touches — counted as disrupted. Measured on a
+ * frontend, so the frontend counted as down and *all* of its traffic - to
+ * services a queue outage never touches - counted as disrupted. Measured on a
  * simulated shop: 66% for the queue. Through the cascade model, a failure only
  * travels as far as the dependency weights carry it, which gives about 8%.
  *

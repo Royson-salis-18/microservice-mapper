@@ -1,4 +1,4 @@
-# RCA Engine — Root Cause Analysis
+# RCA Engine - Root Cause Analysis
 
 > **Rewritten 2026-10-12: the research method (rca-lab `core/`) is now the mapper's RCA. This box replaces the scoring
 > described further down, which is kept only as history.**
@@ -57,13 +57,13 @@
 > Tests: `tests/rca.test.ts` (9 tests; 7 fail on the old code).
 
 
-**Files:** `server/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
+**Files:** `algorithms/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
 
 ---
 
 ## What It Does
 
-When services degrade or fail, the RCA engine tries to identify the root cause — the original node that triggered a cascade — by scoring each failing node on multiple evidence factors.
+When services degrade or fail, the RCA engine tries to identify the root cause - the original node that triggered a cascade - by scoring each failing node on multiple evidence factors.
 
 This is **evidence-based scoring**, not ML inference. It's deterministic and explainable. The score tells you "this node is most likely the root cause because it had the earliest anomaly AND it's connected to all the failing downstream services."
 
@@ -103,9 +103,9 @@ if (node.id === earliestNodeId) {
 
 ```typescript
 if (node.status === 'critical' || node.metadata?.state === 'exited') {
-  score += 0.35;  // Container process exited — strong signal
+  score += 0.35;  // Container process exited - strong signal
 } else if (node.status === 'degraded') {
-  score += 0.15;  // Resource pressure — weaker signal
+  score += 0.15;  // Resource pressure - weaker signal
 }
 ```
 
@@ -120,11 +120,11 @@ const hasObservedEdge = connectedEdges.some(e => e.observed);
 if (hasObservedEdge) {
   score += 0.20;  // Runtime TCP/HTTP traffic confirms the dependency path
 } else if (connectedEdges.some(e => e.declared)) {
-  score += 0.05;  // Only Compose-declared — weak circumstantial evidence
+  score += 0.05;  // Only Compose-declared - weak circumstantial evidence
 }
 ```
 
-**Rationale:** If we can see actual traffic (observed edge), the causal path is confirmed. A declared-only edge just means "they were supposed to talk" — not that they actually did.
+**Rationale:** If we can see actual traffic (observed edge), the causal path is confirmed. A declared-only edge just means "they were supposed to talk" - not that they actually did.
 
 ### Factor 4: Downstream Blast Radius (+0.15)
 
@@ -154,7 +154,7 @@ if (downstreamFailing.length > 0) {
 
 ---
 
-## Propagation Path — BFS
+## Propagation Path - BFS
 
 ```typescript
 private buildPropagationPath(rootCause: ServiceNode, nodes: ServiceNode[], edges: DependencyEdge[]): PropagationStep[] {
@@ -164,7 +164,7 @@ private buildPropagationPath(rootCause: ServiceNode, nodes: ServiceNode[], edges
 
   while (queue.length > 0) {
     const currentId = queue.shift()!;
-    // Only traverse observed edges — declared-only paths are not confirmed
+    // Only traverse observed edges - declared-only paths are not confirmed
     const outgoing = edges.filter(e => e.source === currentId && e.observed);
     for (const edge of outgoing) {
       const target = nodes.find(n => n.id === edge.target);
@@ -180,7 +180,7 @@ private buildPropagationPath(rootCause: ServiceNode, nodes: ServiceNode[], edges
 }
 ```
 
-**Only observed edges in propagation:** Traversing declared-only edges would follow theoretical architecture paths. We only follow paths where we've actually seen traffic — those are the real propagation routes.
+**Only observed edges in propagation:** Traversing declared-only edges would follow theoretical architecture paths. We only follow paths where we've actually seen traffic - those are the real propagation routes.
 
 ---
 
@@ -247,7 +247,7 @@ getAnomalies(targetId: string, nodes: ServiceNode[]): AnomalyRecord[] {
 
 ---
 
-## `IncidentManager` — Lifecycle
+## `IncidentManager` - Lifecycle
 
 ```
 NORMAL → INCIDENT → RECOVERING → RESOLVED
@@ -282,7 +282,7 @@ Each of these used to be reported as a fault. The rules now, all in code with te
 | Service with **no data at all** (never measured) | health counted as 0.5, so it ranked as risky; blamed as a "blind spot" on one noisy caller | no data is no evidence: left out of the health score; inferred as a cause only when two callers have unexplained symptoms past the threshold, or one past the HIGH threshold |
 | **Job that finished** (`Exited (0)`), container **created but never started** | critical, hard evidence, root cause | not a failure: no anomaly, no incident |
 | **Load generator** stopped (traffic, locust, k6, stress…) | critical | not a failure: traffic is started and stopped by people |
-| **Crashed** container on the SSH path (`exited (137)`) | not hard evidence for the RCA engine (string mismatch) | hard evidence, like on the push path (`server/rca/containerFacts.ts`, one rule for both) |
+| **Crashed** container on the SSH path (`exited (137)`) | not hard evidence for the RCA engine (string mismatch) | hard evidence, like on the push path (`algorithms/detection/containerFacts.ts`, one rule for both) |
 | **Isolated** service (no callers, no dependencies) that fails | HIGH | real failure, MEDIUM: there is no blast radius |
 | **Host unreachable** (SSH down, IP changed, instance stopped) | frozen readings kept services green or red and kept incidents open | after 2 minutes every service of that host shows unknown, and the incident says telemetry stopped; no service is blamed |
 | **Sparse traffic** | false "silent" and "slow" | see the section above |

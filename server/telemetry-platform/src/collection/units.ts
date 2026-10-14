@@ -1,6 +1,6 @@
 /**
  * Docker's CLI output mixes binary units (KiB/MiB/GiB, used for memory)
- * and decimal units (kB/MB/GB, used for network/block IO) — this parser
+ * and decimal units (kB/MB/GB, used for network/block IO) - this parser
  * handles both so downstream code never stores human-formatted strings
  * (spec section 12: "Avoid storing only human-formatted strings").
  */

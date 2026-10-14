@@ -151,7 +151,7 @@ export function SelectedCard({ node, live, pinned }: { node: ServiceNode; live: 
           <div className="scene-card-row" style={{ alignItems: 'center', borderTop: '1px solid rgba(148,163,255,0.08)', paddingTop: 8 }}>
             <div>
               <div className="scene-card-label">Predicted failure (cascade model)</div>
-              <div className="scene-card-value" style={{ color: pColor }}>{p === null ? '—' : `${Math.round(p * 100)}%`}</div>
+              <div className="scene-card-value" style={{ color: pColor }}>{p === null ? '-' : `${Math.round(p * 100)}%`}</div>
               <div style={{ fontSize: 9, color: 'var(--color-text-dim)' }}>
                 {p === null ? 'not computed yet' : via ? `mostly via ${via}` : 'from its own state'}
               </div>

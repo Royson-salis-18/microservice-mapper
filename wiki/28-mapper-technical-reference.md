@@ -16,7 +16,7 @@ Three Node processes, one Python pipeline, one target reached only over SSH.
 
       The process generating load must not be the process measuring the result. Sharing an event
       loop means a slow target stalls collection, and a busy collector throttles the load
-      generator — each would silently distort the other.
+      generator - each would silently distort the other.
 
 
 
@@ -48,12 +48,12 @@ What exists, what it is, and what it claims to depend on.
 ## 03 The collection cycle
 
 
-One TargetAgent per target. This loop repeats while the agent lives — the next run is queued only after the current one finishes.
+One TargetAgent per target. This loop repeats while the agent lives - the next run is queued only after the current one finishes.
 
 
 
 > [!WARNING]
-> Trap 1 — the scan that failed 100% of the time, silently
+> Trap 1 - the scan that failed 100% of the time, silently
 
       The socket scan used to run docker exec <id> sh -c 'cat /proc/net/tcp'.
       That needs a shell inside the container. The OpenTelemetry demo's frontend is a
@@ -63,18 +63,18 @@ OCI runtime exec failed: exec: "sh": executable file not found in $PATH
 
 collectObservedEdges treated non-zero exit as “skip this service” and
       moved on without a word. frontend is precisely the service that calls cart,
-      currency, checkout and product-catalog — so those edges could never be observed. Across
+      currency, checkout and product-catalog - so those edges could never be observed. Across
       500 connection events it appeared as a source zero times, while every other
       service appeared at least once.
     
 
       Now it resolves the container's host PID and reads
-      /proc/<hostPid>/net/tcp from the host — needs nothing inside the
+      /proc/<hostPid>/net/tcp from the host - needs nothing inside the
       container, so it works on distroless, scratch and ordinary images alike.
 
 
 > [!WARNING]
-> Trap 2 — overlapping cycles exhausting SSH sessions
+> Trap 2 - overlapping cycles exhausting SSH sessions
 
       The loop was setInterval(poll, 5000) with an async poll. A cycle
       takes far longer than 5s on 25 services, so cycles stacked and ran concurrently until they
@@ -82,8 +82,8 @@ collectObservedEdges treated non-zero exit as “skip this service” and
     
 (SSH) Channel open failure: open failed
 
-      Measured at 2.66 refused scans per cycle. Self-scheduling — queue the
-      next run 5s after the last one ends, as drawn above — took that to
+      Measured at 2.66 refused scans per cycle. Self-scheduling - queue the
+      next run 5s after the last one ends, as drawn above - took that to
       0.00 over 41 cycles.
 
 
@@ -94,7 +94,7 @@ collectObservedEdges treated non-zero exit as “skip this service” and
 ## 04 The graph
 
 
-server/graph/GraphStore.ts — the single source of truth the UI reads.
+server/graph/GraphStore.ts - the single source of truth the UI reads.
 
 
 
@@ -102,7 +102,7 @@ server/graph/GraphStore.ts — the single source of truth the UI reads.
 ### Identity
 
 
-Node ids are project:service — open-telemetry:cart. Every
+Node ids are project:service - open-telemetry:cart. Every
     ingest path runs raw ids through normalizeId(), which is what makes it impossible
     for two projects' data to merge. Edge ids are source->target.
 
@@ -118,7 +118,7 @@ Node ids are project:service — open-telemetry:cart. Every
   observed: true,          // a live TCP connection was caught
   evidenceSources: ["compose", "network-tcp"],
 
-  activity: {              // tier 0 volume proxy — absent until seen once
+  activity: {              // tier 0 volume proxy - absent until seen once
     samplesPerMin: 184,   // socket OBSERVATIONS, not requests
     windowSec: 76,
     lastSeen: "2026-09-18T…"
@@ -167,15 +167,15 @@ Where each number came from, enforced rather than annotated.
 
 | Tier | Source | Resource | Topology | Latency | Errors |
 | --- | --- | --- | --- | --- | --- |
-| tier 0 | cgroup | yes | — | no | no |
-| tier 0 | socket-scan | — | yes | no | no |
-| tier 1 | access-log | — | yes | yes | yes |
-| tier 2 | prometheus | yes | — | yes | yes |
-| tier 2 | trace-backend | — | yes | yes | yes |
+| tier 0 | cgroup | yes | - | no | no |
+| tier 0 | socket-scan | - | yes | no | no |
+| tier 1 | access-log | - | yes | yes | yes |
+| tier 2 | prometheus | yes | - | yes | yes |
+| tier 2 | trace-backend | - | yes | yes | yes |
 
 
 This table is SOURCE_CAPABILITIES in models/MetricProvenance.ts, and it
-    is checked, not documentation — a test asserts a socket scan cannot write into a latency field.
+    is checked, not documentation - a test asserts a socket scan cannot write into a latency field.
 
 
 
@@ -199,12 +199,12 @@ This table is SOURCE_CAPABILITIES in models/MetricProvenance.ts, and it
 
       The query runs on the target, via curl over the SSH connection already held.
       Prometheus is bound to localhost there and only :8080 is open in the security
-      group — querying from outside would mean asking someone to open a port to read a metric.
+      group - querying from outside would mean asking someone to open a port to read a metric.
 
 
 > [!WARNING]
 > Three things tier 2 refuses to do
-NaN is not zero. A missing quantile stays absent — 0ms would read as “instant”.
+NaN is not zero. A missing quantile stays absent - 0ms would read as “instant”.
 No traffic is not 0% errors. A ratio needs a denominator; unknown stays unknown.
 No caller attribution. Prometheus measures the serving side and cannot say who called.
 
@@ -220,7 +220,7 @@ Finding what actually answers, then driving load only at that.
 
 
 
-### Entry point resolution — a waterfall
+### Entry point resolution - a waterfall
 
 
 
@@ -233,12 +233,12 @@ Finding what actually answers, then driving load only at that.
 
 
 
-### The two-phase probe — a funnel
+### The two-phase probe - a funnel
 
 
 
 
-49 404s from generic guesses on DeathStarBench — its API is 
+49 404s from generic guesses on DeathStarBench - its API is 
  → 6usable endpoints once its own workflow paths were used
  → 0sock-shop endpoints wrongly called dead, once timeouts adapted
 
@@ -273,7 +273,7 @@ Four Python scripts, driven from the UI, one model per service per detector.
 
 
 
-### The four detectors — deliberately different shapes of judgment
+### The four detectors - deliberately different shapes of judgment
 
 
 
@@ -291,7 +291,7 @@ Four Python scripts, driven from the UI, one model per service per detector.
       Fitted naively, LOF produced thresholds in the billions: the training data is mostly duplicate
       rows, so a point's 20 nearest neighbours are 20 copies of itself at distance zero, and local
       density goes to infinity. LOF now fits on distinct rows and refuses entirely below 20
-      of them — at 6 distinct rows it fired on 84.6% of its holdout, which is
+      of them - at 6 distinct rows it fired on 84.6% of its holdout, which is
       not a detector.
 
 
@@ -300,7 +300,7 @@ Four Python scripts, driven from the UI, one model per service per detector.
 
       The last 20% by time is held out, never a random split, which would leak adjacent samples
       across the boundary and flatter the result. The holdout is unlabelled, so what is reported is a
-      firing rate, not accuracy — compare it to contamination, not to 100%.
+      firing rate, not accuracy - compare it to contamination, not to 100%.
 
 
 
@@ -328,7 +328,7 @@ Rule-based throughout. server/rca/ imports nothing from ml/.
 
 
 
-### Root-cause scoring — weighted evidence
+### Root-cause scoring - weighted evidence
 
 
 
@@ -355,7 +355,7 @@ Rule-based throughout. server/rca/ imports nothing from ml/.
       A z-score divides by the standard deviation. sock-shop:front-end records 6
       distinct values across 1,568 samples, so the deviation approaches zero and the z-score
       explodes. Below flatlineStdDev the baseline is judged on absolute movement
-      instead — the rule that catches an idle service suddenly doing work.
+      instead - the rule that catches an idle service suddenly doing work.
 
 
 > [!WARNING]
@@ -460,8 +460,8 @@ Both wins came from doing less work, not from a faster runtime.
 
 
 
- → 2.0 msunfiltered — 97×, byte-identical output
- → 57 msfiltered by service — 5.6×
+ → 2.0 msunfiltered - 97×, byte-identical output
+ → 57 msfiltered by service - 5.6×
  → 0.00refused SSH scans per collection cycle
 
 > [!TIP]
@@ -510,7 +510,7 @@ histogram_quantile(0.95, sum(rate(
 > The models currently say very little, and it is a data problem
 
 sock-shop:front-end holds 1,568 training rows containing 6 distinct
-      values — 0.4%. No detector learns a boundary from six points, and no
+      values - 0.4%. No detector learns a boundary from six points, and no
       hyperparameter fixes that. Latency and error rate do not behave that way, which is the
       strongest argument for tier 1/2 beyond fidelity.
 
@@ -521,9 +521,9 @@ sock-shop:front-end holds 1,568 training rows containing 6 distinct
 
 | Target | Available | Note |
 | --- | --- | --- |
-| open-telemetry | tier 2 | full OTLP — histograms, status codes, service metadata |
+| open-telemetry | tier 2 | full OTLP - histograms, status codes, service metadata |
 | death-star | tier 0 | Jaeger running on :16686 but 0 services, null spans |
-| sock-shop | tier 0 | 909 MB box, load average 26, swapping — no APM at all |
+| sock-shop | tier 0 | 909 MB box, load average 26, swapping - no APM at all |
 | vertikal | tier 0 | Next.js + Supabase, no APM |
 
 

@@ -23,7 +23,7 @@ The definitive engineering authority for the autonomous topology discovery platf
 ## 1. Project Vision & Scope
 
 
-Microservice Mapper is engineered to solve the "Visibility Gap"—the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).
+Microservice Mapper is engineered to solve the "Visibility Gap"-the discrepancy between how a system is designed (Declarative Architecture) and how it actually behaves (Runtime Topology).
 
 
 Traditional observability relies on instrumentation (SDKs) or distributed tracing (OpenTelemetry). While powerful, these require significant developer effort to implement. Mapper takes a Zero-Touch approach, treating the network as the source of truth.

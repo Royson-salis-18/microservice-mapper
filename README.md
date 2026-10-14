@@ -9,7 +9,7 @@
 
 # Microservice Mapper
 
-**Real-time observability for Docker-based microservices — zero code changes required.**
+**Real-time observability for Docker-based microservices - zero code changes required.**
 
 Microservice Mapper connects to your EC2 instances over SSH, discovers your service topology from Docker Compose files and running containers, collects live telemetry, and renders an interactive 2D/3D dependency graph. Point it at a running stack and see your architecture come alive within seconds.
 
@@ -21,18 +21,18 @@ SSH into EC2 → Read Docker socket + /proc/net/tcp → Build live dependency gr
 
 ## What It Does
 
-- **Topology discovery** — reads your Compose file over SSH; discovers declared `depends_on` relationships
-- **Runtime observation** — reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)
-- **Live metrics** — CPU (against the container's own allowance), memory, and exact network counters from `docker stats` and `/proc`, refreshed every 5 seconds
-- **Root cause analysis** — when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path
-- **Cascade risk** — per-service health, criticality and risk; what-if failure simulation and blast radius
-- **Anomaly detection** — optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents
-- **Traffic experiments** — built-in load test runner with experiment tracking
-- **Embedded terminal** — SSH terminal into any target directly from the UI
+- **Topology discovery** - reads your Compose file over SSH; discovers declared `depends_on` relationships
+- **Runtime observation** - reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)
+- **Live metrics** - CPU (against the container's own allowance), memory, and exact network counters from `docker stats` and `/proc`, refreshed every 5 seconds
+- **Root cause analysis** - when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path
+- **Cascade risk** - per-service health, criticality and risk; what-if failure simulation and blast radius
+- **Anomaly detection** - optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents
+- **Traffic experiments** - built-in load test runner with experiment tracking
+- **Embedded terminal** - SSH terminal into any target directly from the UI
 
 ## What It Is NOT
 
-This is not a distributed tracing tool. There are no OpenTelemetry spans or request IDs. The "Traces" view shows SSH-sampled TCP connection snapshots from `/proc/net/tcp` — sampled at 5-second intervals, not per-request. No code changes are required in your applications.
+This is not a distributed tracing tool. There are no OpenTelemetry spans or request IDs. The "Traces" view shows SSH-sampled TCP connection snapshots from `/proc/net/tcp` - sampled at 5-second intervals, not per-request. No code changes are required in your applications.
 
 ---
 
@@ -46,23 +46,30 @@ This is not a distributed tracing tool. There are no OpenTelemetry spans or requ
 | Charts | Recharts |
 | Animations | Framer Motion |
 | Backend | Node.js, Express 5, TypeScript (run with `tsx`) |
-| WebSocket | `ws` v8 (raw — no Socket.io) |
-| SSH | `ssh2` v1 — Docker is read over SSH (`docker ps/inspect/stats`), nothing is installed on the target |
+| WebSocket | `ws` v8 (raw - no Socket.io) |
+| SSH | `ssh2` v1 - Docker is read over SSH (`docker ps/inspect/stats`), nothing is installed on the target |
 | ML Pipeline | Python 3, scikit-learn: Isolation Forest, LOF, one-class SVM, plus a z-score baseline |
 
 ---
 
 ## Quick Start
 
-**Fastest way to see it working on your own machine** (macOS, Linux or Windows, with Docker running): `npm run setup && npm run local`, then open http://localhost:5173.
-Step by step, including starting a test bench, injecting faults and scoring the mapper: [docs/RUN_LOCAL.md](docs/RUN_LOCAL.md). How the algorithms work: [docs/MAPPER_ALGORITHMS.md](docs/MAPPER_ALGORITHMS.md).
+```bash
+git clone https://github.com/Royson-salis-18/microservice-mapper.git
+cd microservice-mapper
+npm start            # installs whatever is missing, then starts the server (:3001) and the dashboard (:5173)
+```
+
+Open http://localhost:5173. Nothing else has to be installed or configured. With Docker running, `npm run local` also starts a collector for every Docker Compose project on your machine.
+
+Short on time? Read [wiki/00-evaluation-guide.md](wiki/00-evaluation-guide.md) (one hour) and run `python3 core_logic/demo.py`. Step by step, including starting a test bench and injecting faults: [wiki/RUN_LOCAL.md](wiki/RUN_LOCAL.md). How the algorithms work: [wiki/MAPPER_ALGORITHMS.md](wiki/MAPPER_ALGORITHMS.md).
 
 ### Prerequisites
 
 - Node.js ^20.19 or ≥ 22.12 (what Vite 8 requires), npm ≥ 9
 - Docker ≥ 20.10 on target EC2 instances
 - SSH key (`.pem`) with access to your EC2 instance. Keep it outside the repository; `*.pem` is git-ignored as a backstop
-- Python 3.9+ (optional — only for the ML anomaly pipeline). The server runs it as `python3`, or `python` on Windows; set `PYTHON` to override
+- Python 3.9+ (optional - only for the ML anomaly pipeline). The server runs it as `python3`, or `python` on Windows; set `PYTHON` to override
 
 ### Install & Run
 
@@ -71,7 +78,7 @@ Step by step, including starting a test bench, injecting faults and scoring the 
 git clone https://github.com/Royson-salis-18/microservice-mapper.git
 cd microservice-mapper
 
-# Install all sub-projects
+# Install all sub-projects (npm start does this for you when something is missing)
 npm run install:all
 
 # Start server + client
@@ -86,6 +93,7 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 
 | Command | Description |
 |---|---|
+| `npm start` | Install what is missing, then start server + client |
 | `npm run dev` | Start server + client concurrently |
 | `npm run server` | Start backend only |
 | `npm run client` | Start Vite dev server only |
@@ -94,6 +102,9 @@ The server runs on **:3001**. The Vite dev client runs on **:5173** and proxies 
 | `npm run local` | Start the mapper plus a collector for every docker compose project running on this machine |
 | `npm run eval` | Score the mapper against a fault-injection campaign (`observe`, `score`, `report`, `all`) |
 | `npm run traffic-gen` | Run traffic generator |
+| `npm run ml` | Compare the rules with a learned model on the recorded runs in `run/recorded-runs` |
+| `npm run ml:report` | Rebuild the model lab page, `graphs/output/model-lab.html` |
+| `python3 core_logic/demo.py` | The detection, root-cause and cascade logic in plain Python |
 | `npm test` | Run the test suite: graph, root cause, risk and cascades, layouts, SSH/Docker parsing, command sanitising |
 
 ---
@@ -141,7 +152,7 @@ What each colour, width and pulse on the graph means is in [wiki/33](./wiki/33-v
 
 ### Node ID Format
 
-All nodes use a canonical format: `${targetId}:${serviceName}` — e.g., `sock-shop:catalogue`. This prevents ID mismatches between subsystems. See [wiki/04-id-system.md](./wiki/04-id-system.md).
+All nodes use a canonical format: `${targetId}:${serviceName}` - e.g., `sock-shop:catalogue`. This prevents ID mismatches between subsystems. See [wiki/04-id-system.md](./wiki/04-id-system.md).
 
 ### Persistence
 
@@ -151,7 +162,7 @@ State persists to `server/data/graph_db.json` (debounced 2-second write). Nodes 
 
 ## Root Cause Analysis
 
-Every service that is failing or shows a metric anomaly is scored on additive factors (`server/rca/RCAEngine.ts`):
+Every service that is failing or shows a metric anomaly is scored on additive factors (`algorithms/rca/RCAEngine.ts`):
 
 | Factor | Points | Why |
 |---|---|---|
@@ -188,7 +199,7 @@ python3 score.py &
 python3 test_ensemble.py
 ```
 
-The server reads `ml/data/latest_scores.json` on each graph request using a mtime cache. No Python API calls at runtime — just a file read. Results appear under **Findings**, separate from rule-based incidents ([wiki/17](./wiki/17-findings-vs-incidents.md)).
+The server reads `ml/data/latest_scores.json` on each graph request using a mtime cache. No Python API calls at runtime - just a file read. Results appear under **Findings**, separate from rule-based incidents ([wiki/17](./wiki/17-findings-vs-incidents.md)).
 
 ---
 
@@ -255,7 +266,7 @@ microservice-mapper/
 │   ├── discovery/       # Discovery loop per target
 │   ├── telemetry-platform/src/  # SSH connection, Docker parsing, metric collection
 │   ├── telemetry-sources/       # Optional higher-tier sources (Prometheus)
-│   ├── rca/             # Anomaly detection, root cause, incidents
+│   ├── rca/             # Incident manager, learned scorer, per-target models (the logic itself is in ../algorithms)
 │   ├── traces/          # TCP connection event storage
 │   ├── telemetry/       # MetricStore ring buffer
 │   ├── traffic/         # Load test execution + experiments
@@ -265,33 +276,36 @@ microservice-mapper/
 ├── client/              # React 19 + Vite frontend (:5173)
 │   └── src/
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
-│       ├── hooks/       # useGraphData — WebSocket + HTTP data hook
+│       ├── hooks/       # useGraphData - WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── ml/                  # Python anomaly detection pipeline
+├── algorithms/          # The decision logic: detection, rca, graph (cascade), model, learning, evaluation
+├── core_logic/          # The same logic as short, readable Python (+ demo and tests)
+├── graphs/              # Report builders; generated pages in graphs/output
+├── run/                 # scripts, tests, command line tools, recorded sample runs, ssh helpers
+├── ml/                  # Python anomaly detection pipeline (optional, research)
 ├── traffic-gen/         # HTTP traffic scenario runner
-├── remote-collector/    # Optional push agent (not the default path)
-├── scripts/             # Ground-truth simulator, wiki builder, exports
-├── tests/               # npm test
-├── wiki/                # Technical documentation (Markdown)
-└── wiki visualizer/     # The same wiki as an illustrated HTML book (generated)
+├── remote-collector/    # Push agent that reads Docker and posts to the server
+├── unused/              # Old material, not part of the running system
+├── wiki/                # Documentation (Markdown); start with 00-evaluation-guide.md
+└── wiki/visualizer/     # The same wiki as an illustrated HTML book (generated)
 ```
 
 ---
 
 ## Documentation
 
-Full technical documentation lives in **[wiki/](./wiki/README.md)**: start at its index, which has reading paths by goal and every page. The same pages are published as an illustrated book with diagrams: open `wiki visualizer/index.html` (rebuild with `python3 scripts/build_wiki_visualizer.py`).
+Full technical documentation lives in **[wiki/](./wiki/README.md)**: start at its index, which has reading paths by goal and every page. The same pages are published as an illustrated book with diagrams: open wiki/visualizer/index.html` (rebuild with `python3 wiki/build_visualizer.py`).
 
 ---
 
 ## Known Limitations
 
-- **Connection sampling, not per-request tracing** — the sweep counts sockets in `ESTABLISHED` and `TIME_WAIT`. `TIME_WAIT` lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record
-- **No per-edge latency or error rate by default** — `edge.metrics` is `null` in a plain Docker/SSH deployment, and only a configured request-level source (access logs, Prometheus) fills it. Otherwise edge heat is graded on observed connection volume (`activity.samplesPerMin`), which is a concurrency proxy, not HTTP load
-- **HTTP/1.1 log parsing only** — no HTTP/2 or gRPC log parsing
-- **Linux targets only** — `/proc/net/tcp` is Linux-specific
-- **No auto-retraining** — ML models must be retrained (from the ML page or by hand) as data accumulates
-- **Single backend instance** — no built-in clustering
+- **Connection sampling, not per-request tracing** - the sweep counts sockets in `ESTABLISHED` and `TIME_WAIT`. `TIME_WAIT` lingers ~60s, so short request/response cycles between two sweeps are usually still caught, but nothing here is a per-request record
+- **No per-edge latency or error rate by default** - `edge.metrics` is `null` in a plain Docker/SSH deployment, and only a configured request-level source (access logs, Prometheus) fills it. Otherwise edge heat is graded on observed connection volume (`activity.samplesPerMin`), which is a concurrency proxy, not HTTP load
+- **HTTP/1.1 log parsing only** - no HTTP/2 or gRPC log parsing
+- **Linux targets only** - `/proc/net/tcp` is Linux-specific
+- **No auto-retraining** - ML models must be retrained (from the ML page or by hand) as data accumulates
+- **Single backend instance** - no built-in clustering
 
 ---
 
@@ -302,4 +316,4 @@ Full technical documentation lives in **[wiki/](./wiki/README.md)**: start at it
 
 ---
 
-*Royson Salis — September 2026*
+*Royson Salis - September 2026*

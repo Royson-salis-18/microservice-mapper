@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -650,8 +651,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-purple">ML</span>
                 <span class="meta-item"><code>wiki/41-learning-and-calibration.md</code></span>
-                <span class="meta-item">~5 min read</span>
-                <span class="meta-item">1,083 words</span>
+                <span class="meta-item">~6 min read</span>
+                <span class="meta-item">1,250 words</span>
             </div>
             <nav class="toc">
   <a href="#one-model-per-architecture-trained-at-every-start">One model per architecture...</a>
@@ -680,7 +681,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">flowchart LR
   A[Bench with the blind injector] --&gt;|ledger: what was broken, when| D[Dataset]
   B[Mapper API, recorded by the observer] --&gt;|readings and container state per service| D
-  D --&gt; F[Features&lt;br/&gt;server/rca/features.ts]
+  D --&gt; F[Features&lt;br/&gt;algorithms/detection/features.ts]
   F --&gt; L[Learner&lt;br/&gt;tools/ml]
   L --&gt; M[learned.json&lt;br/&gt;weights + threshold]
   M --&gt; S[Live server&lt;br/&gt;LearnedScorer]
@@ -705,7 +706,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>Train</td>
       <td>Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems</td>
-      <td><code>server/rca/TargetModel.ts</code> (pure)</td>
+      <td><code>algorithms/model/TargetModel.ts</code> (pure)</td>
     </tr>
     <tr>
       <td>Learning period</td>
@@ -789,8 +790,43 @@ npm run ml -- &lt;run-dir&gt; [&lt;run-dir&gt; ...]                            #
                     </div>
 <p>The server reloads <code>learned.json</code> when the file changes. Without the file, or with <code>MAPPER_LEARNED=0</code>, it uses the rule-based ranking. If the file does not match the current feature list it is ignored, with a warning in the server log.</p>
 <h2 id="results">Results</h2>
-<p>Filled in from the real runs below once they finish (a 60-minute calm campaign and a 25-minute storm on each bench, recorded with the current mapper).</p>
-<p>RESULTS_PLACEHOLDER</p>
+<p>Recorded runs are in <code>run/recorded-runs</code> (two benches, 217 minutes, 34 injected faults of six kinds). Blocked five-fold cross-validation by time, plus training on one bench and testing on the other. Reproduce with <code>npm run ml</code>.</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Method</th>
+    <th>Faults detected</th>
+    <th>Right service first (of detected)</th>
+    <th>False alarms per hour</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Live mapper (rules, as recorded)</td>
+      <td>97% (33/34)</td>
+      <td>58% (19/33)</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>Rules, fixed threshold</td>
+      <td>97%</td>
+      <td>55%</td>
+      <td>8.9</td>
+    </tr>
+    <tr>
+      <td>Rules, tuned threshold</td>
+      <td>82%</td>
+      <td>46%</td>
+      <td>4.4</td>
+    </tr>
+    <tr>
+      <td>Learned model</td>
+      <td>50%</td>
+      <td>53%</td>
+      <td>3.0</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>Across systems the learned model matched the rules (both about 53% caught and named) but with more false alarms (9 to 11 per hour against 9 for the re-scored rules and 0 for the live mapper).</p>
+<p><strong>Decision.</strong> The learned model is not clearly better, so the rules stay and <code>learned.json</code> is not installed. With 34 faults the learned weights were unstable (strongly related features such as <code>own</code> and <code>cpu</code> receive large opposite weights), and lambda was pushed to the top of its grid. More labelled faults are needed before the comparison is worth repeating.</p>
                 </article>
                 
             </div>
@@ -1072,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1227,10 +1263,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1328,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -661,7 +662,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#step-3-the-cascade-model">Step 3: the cascade model</a>
   <a href="#step-4-criticality-centrality-and-risk">Step 4: criticality, centr...</a>
   <a href="#worked-example-real-engine-output">Worked example (real engin...</a>
-  <a href="#what-if-and-blast-radius">What-if and blast radius</a>
+  <a href="#what-if-and-blast-radius">if and blast radius</a>
   <a href="#the-cycle-in-order">The cycle, in order</a>
 </nav>
         </header>
@@ -763,7 +764,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p><strong>Files:</strong> <code>server/graph/RiskEngine.ts</code> (per-service exposure, blast radius, orchestration), <code>server/graph/CascadeEngine.ts</code> (the cascade model, criticality, what-if), <code>server/graph/EdgeWeights.ts</code> (the weights both read).</p>
+                    <p><strong>Files:</strong> <code>server/graph/RiskEngine.ts</code> (per-service exposure, blast radius, orchestration), <code>algorithms/graph/CascadeEngine.ts</code> (the cascade model, criticality, what-if), <code>algorithms/graph/EdgeWeights.ts</code> (the weights both read).</p>
 <h2 id="what-this-answers">What this answers</h2>
 <p>RCA speaks once something is already broken. This layer looks ahead:</p>
 <div class="scroll"><table class="t">
@@ -962,7 +963,7 @@ criticality = disrupted / total project traffic</code></pre>
       <td>1.000</td>
       <td>0</td>
       <td>high</td>
-      <td>—</td>
+      <td>-</td>
       <td>0.77</td>
     </tr>
     <tr>
@@ -989,7 +990,7 @@ criticality = disrupted / total project traffic</code></pre>
       <td>0</td>
       <td>0</td>
       <td>minimal</td>
-      <td>—</td>
+      <td>-</td>
       <td>≤ 0.16</td>
     </tr>
   </tbody>
@@ -1339,7 +1340,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1494,10 +1495,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1595,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

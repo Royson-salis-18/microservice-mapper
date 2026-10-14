@@ -9,8 +9,8 @@ import { ChevronDown, ChevronRight, Info } from 'lucide-react';
  * permanently visible. Each paragraph earned its place individually and the
  * sum was a wall of grey text that buried the numbers it was explaining.
  *
- * The fix is not to delete the explanations — they are the difference between
- * a number and a number you can trust — but to put them one click away. The
+ * The fix is not to delete the explanations - they are the difference between
+ * a number and a number you can trust - but to put them one click away. The
  * heading states what the section is; the info button holds why it is there and how to
  * read it. Nothing is lost, and the data gets to be the loudest thing on the
  * page.
@@ -74,7 +74,7 @@ interface PanelProps {
   subtitle?: string;
   /** The long explanation. Hidden behind the info button. */
   about?: ReactNode;
-  /** Rendered at the right of the title row — counts, badges, controls. */
+  /** Rendered at the right of the title row - counts, badges, controls. */
   actions?: ReactNode;
   children: ReactNode;
   style?: CSSProperties;

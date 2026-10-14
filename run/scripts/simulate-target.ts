@@ -1,8 +1,8 @@
 /**
  * A synthetic target with a known topology and scripted failures.
  *
- * Pushes telemetry envelopes to the mapper's real /api/ingest endpoint — the
- * same GraphStore.ingestRemote() path the SSH collector feeds — so everything
+ * Pushes telemetry envelopes to the mapper's real /api/ingest endpoint - the
+ * same GraphStore.ingestRemote() path the SSH collector feeds - so everything
  * downstream runs for real: graph building, edge weights, anomaly detection,
  * root-cause scoring, cascade prediction, the API and the UI.
  *
@@ -93,7 +93,7 @@ const SCENARIOS: Record<string, { description: string; rootCause: string | null;
     description: 'orders-db is killed; orders then the frontend degrade as calls to it fail',
     rootCause: 'orders-db',
     faults: [
-      { service: 'orders-db', at: 30, status: 'critical', state: 'exited (137)', reason: 'container exited (137) — killed, commonly out of memory', down: true },
+      { service: 'orders-db', at: 30, status: 'critical', state: 'exited (137)', reason: 'container exited (137) - killed, commonly out of memory', down: true },
       { service: 'orders', at: 40, status: 'degraded', state: 'running', reason: 'resource saturation: CPU 91%', cpu: 91 },
       { service: 'frontend', at: 50, status: 'degraded', state: 'running', reason: 'resource saturation: CPU 88%', cpu: 88 },
     ],
@@ -132,7 +132,7 @@ async function main() {
 Scenarios: ${Object.keys(SCENARIOS).join(', ')}
 
 Run it against an isolated server so the synthetic target never lands in your
-real graph data — the server keeps its state in ./data relative to its cwd:
+real graph data - the server keeps its state in ./data relative to its cwd:
 
   mkdir -p /tmp/mapper-sim && cd /tmp/mapper-sim
   INGEST_TOKEN=sim PORT=3099 <repo>/server/node_modules/.bin/tsx <repo>/server/index.ts`);
@@ -158,7 +158,7 @@ real graph data — the server keeps its state in ./data relative to its cwd:
     process.exit(1);
   }
 
-  console.log(`[sim] target=${TARGET} scenario=${scenarioName} — ${scenario.description}`);
+  console.log(`[sim] target=${TARGET} scenario=${scenarioName} - ${scenario.description}`);
   console.log(`[sim] ground truth root cause: ${scenario.rootCause ?? 'none'}`);
 
   const start = Date.now();
@@ -206,7 +206,7 @@ real graph data — the server keeps its state in ./data relative to its cwd:
     const connectionEvents: any[] = [];
     for (const [from, to, perMin] of CALLS) {
       // No connection can be established to a container that is down, so the
-      // socket scan would stop seeing this link — exactly what happens live.
+      // socket scan would stop seeing this link - exactly what happens live.
       if (active.get(to)?.down || active.get(from)?.down) continue;
       edges.push({
         id: `${TARGET}:${from}->${TARGET}:${to}`,
@@ -266,7 +266,7 @@ real graph data — the server keeps its state in ./data relative to its cwd:
       const faults = [...active.keys()];
       console.log(`[sim] t=${t.toFixed(0).padStart(3)}s ingest ${res.status}  faults: ${faults.length ? faults.join(', ') : 'none'}`);
       if (res.status === 401) {
-        console.error('[sim] Unauthorized — pass the server\'s INGEST_TOKEN with --token.');
+        console.error('[sim] Unauthorized - pass the server\'s INGEST_TOKEN with --token.');
         process.exit(1);
       }
     } catch (e: any) {

@@ -73,7 +73,7 @@ export class ExplanationEngine {
     ].filter(Boolean).join(', ');
 
     const explanationText = independent
-      ? `Several services are misbehaving, but none of them explains the others through its dependencies — these look like independent problems rather than one cascade. '${cleanRcName}' ranks highest (${(primaryRootCause.score * 100).toFixed(0)}%) but is not shown to cause the rest. Key factors: ${scoreReasons}.`
+      ? `Several services are misbehaving, but none of them explains the others through its dependencies - these look like independent problems rather than one cascade. '${cleanRcName}' ranks highest (${(primaryRootCause.score * 100).toFixed(0)}%) but is not shown to cause the rest. Key factors: ${scoreReasons}.`
       : `'${cleanRcName}' ${lead} (score ${(primaryRootCause.score * 100).toFixed(0)}%). Key factors: ${scoreReasons}.`;
 
     const altList = alternativeCandidates
@@ -85,7 +85,7 @@ export class ExplanationEngine {
       }));
 
     const recommendations = independent
-      ? cleanAffected.map(s => `Investigate '${s}' on its own — nothing measured links it to the others`)
+      ? cleanAffected.map(s => `Investigate '${s}' on its own - nothing measured links it to the others`)
       : [
           factors.has('critical_status')
             ? `Check why '${cleanRcName}' stopped: container logs and exit code (137 usually means it was killed for memory)`

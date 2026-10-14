@@ -135,7 +135,7 @@ export class EndpointRegistry {
     // isn't the system under test (and which timed out from outside).
     //
     // Observability components are identified by service name rather than by
-    // port, because ports collide — :3000 is Grafana here and a perfectly
+    // port, because ports collide - :3000 is Grafana here and a perfectly
     // normal app frontend elsewhere. This only affects which endpoint is
     // OFFERED as the default; any endpoint can still be chosen explicitly.
     const APP_ENTRY_PORTS = [80, 443, 8080, 8000, 3000];

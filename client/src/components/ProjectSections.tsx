@@ -14,7 +14,7 @@ interface ProjectSectionsProps {
 
 /**
  * Keeps per-project data visually separate instead of merging it into one
- * list. With a single project selected this is a passthrough — the page
+ * list. With a single project selected this is a passthrough - the page
  * renders exactly as before. With "ALL" selected it stacks one labelled,
  * collapsible section per project, so two systems that happen to be
  * monitored at once never read as a single one.

@@ -1,0 +1,963 @@
+{
+  "runs": [
+    {
+      "name": "runC/ledgerline",
+      "moments": 1300,
+      "faults": 17
+    },
+    {
+      "name": "runC/shopflow",
+      "moments": 1300,
+      "faults": 17
+    }
+  ],
+  "k": 5,
+  "cv": {
+    "learned": {
+      "faults": 34,
+      "detected": 0.5,
+      "detectedN": 17,
+      "top1OfDetected": 0.5294117647058824,
+      "top1N": 9,
+      "caughtAndNamed": 0.2647058823529412,
+      "falseAlarmsPerHour": 2.95216387461668,
+      "falseAlarms": 2,
+      "medianDelaySec": 26.96
+    },
+    "rulesFixed": {
+      "faults": 34,
+      "detected": 0.9705882352941176,
+      "detectedN": 33,
+      "top1OfDetected": 0.5454545454545454,
+      "top1N": 18,
+      "caughtAndNamed": 0.5294117647058824,
+      "falseAlarmsPerHour": 8.85649162385004,
+      "falseAlarms": 6,
+      "medianDelaySec": 9.851
+    },
+    "rulesTuned": {
+      "faults": 34,
+      "detected": 0.8235294117647058,
+      "detectedN": 28,
+      "top1OfDetected": 0.4642857142857143,
+      "top1N": 13,
+      "caughtAndNamed": 0.38235294117647056,
+      "falseAlarmsPerHour": 4.42824581192502,
+      "falseAlarms": 3,
+      "medianDelaySec": 15.514
+    },
+    "live": {
+      "faults": 34,
+      "detected": 0.9705882352941176,
+      "detectedN": 33,
+      "top1OfDetected": 0.5757575757575758,
+      "top1N": 19,
+      "caughtAndNamed": 0.5588235294117647,
+      "falseAlarmsPerHour": 0,
+      "falseAlarms": 0,
+      "medianDelaySec": 4.984
+    }
+  },
+  "cross": [
+    {
+      "label": "train shopflow → test ledgerline",
+      "learned": {
+        "faults": 17,
+        "detected": 1,
+        "detectedN": 17,
+        "top1OfDetected": 0.5294117647058824,
+        "top1N": 9,
+        "caughtAndNamed": 0.5294117647058824,
+        "falseAlarmsPerHour": 11.313862037090193,
+        "falseAlarms": 15,
+        "medianDelaySec": 15.058
+      },
+      "rules": {
+        "faults": 17,
+        "detected": 0.9411764705882353,
+        "detectedN": 16,
+        "top1OfDetected": 0.5625,
+        "top1N": 9,
+        "caughtAndNamed": 0.5294117647058824,
+        "falseAlarmsPerHour": 9.051089629672154,
+        "falseAlarms": 12,
+        "medianDelaySec": 15.514
+      },
+      "live": {
+        "faults": 17,
+        "detected": 0.9411764705882353,
+        "detectedN": 16,
+        "top1OfDetected": 0.5625,
+        "top1N": 9,
+        "caughtAndNamed": 0.5294117647058824,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "medianDelaySec": 4.984
+      }
+    },
+    {
+      "label": "train ledgerline → test shopflow",
+      "learned": {
+        "faults": 17,
+        "detected": 1,
+        "detectedN": 17,
+        "top1OfDetected": 0.5294117647058824,
+        "top1N": 9,
+        "caughtAndNamed": 0.5294117647058824,
+        "falseAlarmsPerHour": 9.041634844786316,
+        "falseAlarms": 12,
+        "medianDelaySec": 17.236
+      },
+      "rules": {
+        "faults": 17,
+        "detected": 1,
+        "detectedN": 17,
+        "top1OfDetected": 0.5294117647058824,
+        "top1N": 9,
+        "caughtAndNamed": 0.5294117647058824,
+        "falseAlarmsPerHour": 9.041634844786316,
+        "falseAlarms": 12,
+        "medianDelaySec": 9.851
+      },
+      "live": {
+        "faults": 17,
+        "detected": 1,
+        "detectedN": 17,
+        "top1OfDetected": 0.5882352941176471,
+        "top1N": 10,
+        "caughtAndNamed": 0.5882352941176471,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "medianDelaySec": 6.919
+      }
+    }
+  ],
+  "threshold": 0.8465946592667314,
+  "lambda": 100,
+  "weights": [
+    {
+      "feature": "callersSymptomMax",
+      "weight": 0.642
+    },
+    {
+      "feature": "symptom",
+      "weight": -0.591
+    },
+    {
+      "feature": "throttle",
+      "weight": 0.57
+    },
+    {
+      "feature": "down",
+      "weight": 0.306
+    },
+    {
+      "feature": "own",
+      "weight": 0.277
+    },
+    {
+      "feature": "reqDrop",
+      "weight": 0.272
+    },
+    {
+      "feature": "netDrop",
+      "weight": -0.245
+    },
+    {
+      "feature": "restarting",
+      "weight": 0.23
+    },
+    {
+      "feature": "paused",
+      "weight": 0.198
+    },
+    {
+      "feature": "memory",
+      "weight": 0.193
+    },
+    {
+      "feature": "hasRequests",
+      "weight": 0.099
+    },
+    {
+      "feature": "latRise",
+      "weight": -0.097
+    },
+    {
+      "feature": "calleesEvidenceMax",
+      "weight": 0.044
+    },
+    {
+      "feature": "errRise",
+      "weight": -0.036
+    },
+    {
+      "feature": "cpu",
+      "weight": 0.011
+    },
+    {
+      "feature": "callersSymptomMean",
+      "weight": -0.009
+    },
+    {
+      "feature": "detached",
+      "weight": 0
+    },
+    {
+      "feature": "noData",
+      "weight": 0
+    }
+  ],
+  "perFault": [
+    {
+      "run": "runC/ledgerline",
+      "id": "f001",
+      "class": "crash-loop",
+      "target": "statements-worker",
+      "detected": true,
+      "top1": true,
+      "delaySec": 15.058,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f002",
+      "class": "stop",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 10.101,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f003",
+      "class": "stop",
+      "target": "statements-worker",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f004",
+      "class": "crash",
+      "target": "fraud-screening",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f005",
+      "class": "crash",
+      "target": "ledger",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f006",
+      "class": "memory",
+      "target": "transfers",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f007",
+      "class": "stop",
+      "target": "accounts",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f008",
+      "class": "brownout",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 90.107,
+      "predicted": "ledger-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f009",
+      "class": "memory",
+      "target": "ledger",
+      "detected": true,
+      "top1": false,
+      "delaySec": 48.055,
+      "predicted": "ledger-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f010",
+      "class": "memory",
+      "target": "accounts",
+      "detected": true,
+      "top1": true,
+      "delaySec": 26.476,
+      "predicted": "accounts",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001",
+      "class": "crash-loop",
+      "target": "orders-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 14.762,
+      "predicted": "orders-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f002",
+      "class": "stop",
+      "target": "orders",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f003",
+      "class": "stop",
+      "target": "orders-db",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f004",
+      "class": "crash",
+      "target": "payments",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f005",
+      "class": "crash",
+      "target": "cart-store",
+      "detected": true,
+      "top1": false,
+      "delaySec": 33.341,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f006",
+      "class": "memory",
+      "target": "cart",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f007",
+      "class": "stop",
+      "target": "catalog",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f008",
+      "class": "brownout",
+      "target": "cart-store",
+      "detected": true,
+      "top1": false,
+      "delaySec": 79.846,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f009",
+      "class": "memory",
+      "target": "cart",
+      "detected": true,
+      "top1": true,
+      "delaySec": 26.96,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f010",
+      "class": "memory",
+      "target": "catalog",
+      "detected": true,
+      "top1": true,
+      "delaySec": 36.459,
+      "predicted": "catalog",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f011",
+      "class": "brownout",
+      "target": "fx-provider",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f012",
+      "class": "crash",
+      "target": "accounts-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 22.478,
+      "predicted": "accounts-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f013",
+      "class": "crash",
+      "target": "accounts",
+      "detected": true,
+      "top1": false,
+      "delaySec": 34.591,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f014",
+      "class": "brownout",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 13.815,
+      "predicted": "ledger-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f015",
+      "class": "stop",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.707,
+      "predicted": "ledger-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f016",
+      "class": "pause",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": false,
+      "delaySec": 60.152,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f017",
+      "class": "crash",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": true,
+      "delaySec": 22.074,
+      "predicted": "fx-provider",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f011",
+      "class": "brownout",
+      "target": "orders",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f012",
+      "class": "crash",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 32.109,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f013",
+      "class": "crash",
+      "target": "catalog",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f014",
+      "class": "brownout",
+      "target": "inventory",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f015",
+      "class": "stop",
+      "target": "payments",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f016",
+      "class": "pause",
+      "target": "payments",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f017",
+      "class": "crash",
+      "target": "psp-sandbox",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    }
+  ],
+  "perFaultLive": [
+    {
+      "run": "runC/ledgerline",
+      "id": "f001",
+      "class": "crash-loop",
+      "target": "statements-worker",
+      "detected": true,
+      "top1": true,
+      "delaySec": 10.051,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f002",
+      "class": "stop",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 5.094,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f003",
+      "class": "stop",
+      "target": "statements-worker",
+      "detected": true,
+      "top1": false,
+      "delaySec": 2.437,
+      "predicted": "fraud-screening",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f004",
+      "class": "crash",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": true,
+      "delaySec": 0.491,
+      "predicted": "fraud-screening",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f005",
+      "class": "crash",
+      "target": "ledger",
+      "detected": true,
+      "top1": true,
+      "delaySec": 3.54,
+      "predicted": "ledger",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f006",
+      "class": "memory",
+      "target": "transfers",
+      "detected": true,
+      "top1": false,
+      "delaySec": 2.248,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f007",
+      "class": "stop",
+      "target": "accounts",
+      "detected": true,
+      "top1": false,
+      "delaySec": 3.648,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f008",
+      "class": "brownout",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.984,
+      "predicted": "ledger",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f009",
+      "class": "memory",
+      "target": "ledger",
+      "detected": true,
+      "top1": true,
+      "delaySec": 8,
+      "predicted": "ledger",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f010",
+      "class": "memory",
+      "target": "accounts",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.451,
+      "predicted": "accounts",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001",
+      "class": "crash-loop",
+      "target": "orders-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 9.754,
+      "predicted": "orders-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f002",
+      "class": "stop",
+      "target": "orders",
+      "detected": true,
+      "top1": false,
+      "delaySec": 185.063,
+      "predicted": "api-gateway",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f003",
+      "class": "stop",
+      "target": "orders-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 22.167,
+      "predicted": "payments",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f004",
+      "class": "crash",
+      "target": "payments",
+      "detected": true,
+      "top1": true,
+      "delaySec": 0.196,
+      "predicted": "payments",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f005",
+      "class": "crash",
+      "target": "cart-store",
+      "detected": true,
+      "top1": true,
+      "delaySec": 3.293,
+      "predicted": "cart-store",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f006",
+      "class": "memory",
+      "target": "cart",
+      "detected": true,
+      "top1": true,
+      "delaySec": 2.212,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f007",
+      "class": "stop",
+      "target": "catalog",
+      "detected": true,
+      "top1": false,
+      "delaySec": 3.347,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f008",
+      "class": "brownout",
+      "target": "cart-store",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.725,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f009",
+      "class": "memory",
+      "target": "cart",
+      "detected": true,
+      "top1": true,
+      "delaySec": 6.919,
+      "predicted": "cart",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f010",
+      "class": "memory",
+      "target": "catalog",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.421,
+      "predicted": "catalog",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f011",
+      "class": "brownout",
+      "target": "fx-provider",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f012",
+      "class": "crash",
+      "target": "accounts-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 12.466,
+      "predicted": "accounts-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f013",
+      "class": "crash",
+      "target": "accounts",
+      "detected": true,
+      "top1": true,
+      "delaySec": 4.544,
+      "predicted": "accounts",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f014",
+      "class": "brownout",
+      "target": "ledger-db",
+      "detected": true,
+      "top1": false,
+      "delaySec": 3.801,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f015",
+      "class": "stop",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.707,
+      "predicted": "statements-worker",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f016",
+      "class": "pause",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": true,
+      "delaySec": 15.084,
+      "predicted": "fraud-screening",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f017",
+      "class": "crash",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": true,
+      "delaySec": 12.063,
+      "predicted": "fx-provider",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f011",
+      "class": "brownout",
+      "target": "orders",
+      "detected": true,
+      "top1": false,
+      "delaySec": 31.36,
+      "predicted": "catalog-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f012",
+      "class": "crash",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 12.084,
+      "predicted": "catalog-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f013",
+      "class": "crash",
+      "target": "catalog",
+      "detected": true,
+      "top1": true,
+      "delaySec": 4.247,
+      "predicted": "catalog",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f014",
+      "class": "brownout",
+      "target": "inventory",
+      "detected": true,
+      "top1": false,
+      "delaySec": 3.547,
+      "predicted": "api-gateway",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f015",
+      "class": "stop",
+      "target": "payments",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.404,
+      "predicted": "api-gateway",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f016",
+      "class": "pause",
+      "target": "payments",
+      "detected": true,
+      "top1": true,
+      "delaySec": 9.851,
+      "predicted": "payments",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f017",
+      "class": "crash",
+      "target": "psp-sandbox",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.728,
+      "predicted": "psp-sandbox",
+      "isolated": true
+    }
+  ]
+}

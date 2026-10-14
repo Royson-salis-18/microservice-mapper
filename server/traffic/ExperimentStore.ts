@@ -65,7 +65,7 @@ export class ExperimentStore {
 
   /**
    * Nothing survives a process restart, so any record still marked RUNNING
-   * on load belongs to a run that is definitively over — the traffic it
+   * on load belongs to a run that is definitively over - the traffic it
    * described stopped when the previous process died. Left alone these
    * accumulate and make the UI report active experiments that nobody can
    * stop because nothing is driving them. Mark them INTERRUPTED rather

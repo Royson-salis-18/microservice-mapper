@@ -7,7 +7,7 @@ import { deriveServiceName, buildServiceId } from "../discovery/serviceIdentity.
  *
  * Before this existed, a node could only ever be `healthy` or `degraded`
  * (CPU or memory over 80%). A crashed container produces no `docker stats`
- * sample at all, so its node simply kept whatever status it last had — a
+ * sample at all, so its node simply kept whatever status it last had - a
  * dead database kept reading "healthy". Nothing anywhere set `critical`,
  * which meant the root-cause engine's strongest signal ("this container
  * exited") could never fire on real data.
@@ -50,7 +50,7 @@ export interface SampleSignals {
  *
  * Order matters: a crash-looping container is critical whatever its CPU
  * reads, and a container that has just come back from a crash is degraded
- * even if it now looks quiet — the crash is the event worth surfacing.
+ * even if it now looks quiet - the crash is the event worth surfacing.
  */
 export function statusFromSample(s: SampleSignals): ContainerHealth {
   const state = (s.containerState ?? "running").toLowerCase();
@@ -77,7 +77,7 @@ export function statusFromSample(s: SampleSignals): ContainerHealth {
     return {
       status: "degraded",
       state: "running",
-      reason: `restarted ${when} (restart count ${s.restartCount ?? "?"}) — it crashed and came back`,
+      reason: `restarted ${when} (restart count ${s.restartCount ?? "?"}) - it crashed and came back`,
     };
   }
 
@@ -104,8 +104,8 @@ export function statusFromSample(s: SampleSignals): ContainerHealth {
  * stats snapshot but running per `ps` is a race between two commands, not a
  * failure, and should not be reported as one.
  *
- * Exit code 0 is deliberately NOT critical. That is a job that finished —
- * sock-shop keeps a stress job at "Exited (0)" for days — and flagging it
+ * Exit code 0 is deliberately NOT critical. That is a job that finished -
+ * sock-shop keeps a stress job at "Exited (0)" for days - and flagging it
  * would put a permanent false root cause in every incident.
  */
 export function statusFromPsRow(row: DockerPsEntry | undefined): ContainerHealth | null {
@@ -128,7 +128,7 @@ export function statusFromPsRow(row: DockerPsEntry | undefined): ContainerHealth
       return { status: "unknown", state: "exited (0)", reason: "finished and exited cleanly (a completed job, not a crash)", exitCode: 0 };
     }
     const label = code !== undefined ? `exited (${code})` : state;
-    const hint = code === 137 ? " — killed, commonly out of memory" : code === 143 ? " — terminated by signal" : "";
+    const hint = code === 137 ? " - killed, commonly out of memory" : code === 143 ? " - terminated by signal" : "";
     return { status: "critical", state: label, reason: `container ${label}${hint}`, exitCode: code };
   }
   if (state === "paused") {
@@ -146,7 +146,7 @@ export function statusFromPsRow(row: DockerPsEntry | undefined): ContainerHealth
  *
  * Matching by service id rather than container id is what lets a container
  * that compose recreated (new id, same service) read as running instead of
- * crashed. When several containers map to one service, a running one wins —
+ * crashed. When several containers map to one service, a running one wins -
  * an old exited replica beside a live one is history, not the current state.
  */
 export function indexPsRowsByServiceId(targetId: string, entries: DockerPsEntry[]): Map<string, DockerPsEntry> {

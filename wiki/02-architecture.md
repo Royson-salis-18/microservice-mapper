@@ -1,4 +1,4 @@
-# Architecture — System Layers & Data Flow
+# Architecture - System Layers & Data Flow
 
 ## Component Map
 
@@ -48,57 +48,57 @@
 
 ## Five Layers
 
-### Layer 1 — Frontend Client (`/client`)
+### Layer 1 - Frontend Client (`/client`)
 
 **Tech:** React 19, Vite 8, TypeScript 6, `@xyflow/react` v12, Three.js v0.186, Recharts v3, Framer Motion v13, Lucide React
 
 **Entry point:** `client/src/main.tsx` → `App.tsx`
 
-The client renders graph state it receives over WebSocket. It does no polling — all data arrives pushed from the server. The main views are:
+The client renders graph state it receives over WebSocket. It does no polling - all data arrives pushed from the server. The main views are:
 
-- **Default / 2D Graph** — ReactFlow canvas with custom node + edge components
-- **3D Vision** — react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses
-- **Telemetry** — Sortable metrics table
-- **TRACES** — Live TCP connection stream + aggregated call graph
-- **RCA / INCIDENTS** — Root cause analysis results and incident timeline
-- **ML PIPELINE** — Anomaly detection status, model info
-- **EXPERIMENTS** — Traffic experiment history
-- **Analytics** — Graph-level stats (centrality, health scores)
-- **Reliability** — health, risk, cascade prediction, what-if and blast radius
-- **Findings** — ML ensemble anomalies, kept apart from incidents
+- **Default / 2D Graph** - ReactFlow canvas with custom node + edge components
+- **3D Vision** - react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses
+- **Telemetry** - Sortable metrics table
+- **TRACES** - Live TCP connection stream + aggregated call graph
+- **RCA / INCIDENTS** - Root cause analysis results and incident timeline
+- **ML PIPELINE** - Anomaly detection status, model info
+- **EXPERIMENTS** - Traffic experiment history
+- **Analytics** - Graph-level stats (centrality, health scores)
+- **Reliability** - health, risk, cascade prediction, what-if and blast radius
+- **Findings** - ML ensemble anomalies, kept apart from incidents
 
-### Layer 2 — Backend Server (`/server`)
+### Layer 2 - Backend Server (`/server`)
 
 **Tech:** Node.js 18+, Express 5, TypeScript 5.7 (run with tsx), `ws` v8, `ssh2` v1. See [Frameworks and why](30-tech-stack.md)
 
 **Entry point:** `server/index.ts`
 
 The server is the brain. It owns all state and is the only component that writes to disk. Key subsystems:
-- `GraphStore` — central state (nodes, edges, targets, metrics)
-- `EndpointDiscoveryEngine` — SSH connection management + topology discovery
-- `RCAEngine` / `IncidentManager` — failure analysis
-- `WebSocketManager` — broadcast hub + embedded terminal
-- `TrafficController` / `ExperimentManager` — load test execution
+- `GraphStore` - central state (nodes, edges, targets, metrics)
+- `EndpointDiscoveryEngine` - SSH connection management + topology discovery
+- `RCAEngine` / `IncidentManager` - failure analysis
+- `WebSocketManager` - broadcast hub + embedded terminal
+- `TrafficController` / `ExperimentManager` - load test execution
 
-### Layer 3 — Remote Collector (`/remote-collector`)
+### Layer 3 - Remote Collector (`/remote-collector`)
 
 **Tech:** Node.js, `dockerode`, `axios`
 
 **Optional; not the default path.** By default the server collects over SSH itself (`EndpointDiscoveryEngine` → `MetricCollector`) and installs nothing on the target. This standalone process is for hosts where you choose to run an agent: it reads the Docker socket and `/proc/net/tcp`, packages `TelemetryEnvelope` payloads, and POSTs them to `/api/ingest`, the same entry point the ground-truth simulator uses. It is stateless and restartable at any time.
 
-### Layer 4 — ML Pipeline (`/ml`)
+### Layer 4 - ML Pipeline (`/ml`)
 
 **Tech:** Python 3, scikit-learn (Isolation Forest, LOF, one-class SVM) + a z-score detector, combined by majority vote; pandas
 
-A completely separate process. Reads from `/api/graph`, writes `ml/data/latest_scores.json`. The server reads this file; it never calls Python. Optional — the system works without it.
+A completely separate process. Reads from `/api/graph`, writes `ml/data/latest_scores.json`. The server reads this file; it never calls Python. Optional - the system works without it.
 
-### Layer 5 — Target Workloads
+### Layer 5 - Target Workloads
 
 Unmodified Docker Compose applications. No agents, no sidecars, no config changes required. The system works by observing from the outside.
 
 ---
 
-## Data Flow — Step by Step
+## Data Flow - Step by Step
 
 ### 1. Initial Discovery (SSH)
 
@@ -137,7 +137,7 @@ remote-collector (on EC2)
               └── edgeActivity[id].count++
 ```
 
-### 3. Read Path — Every 5 seconds (server-side interval)
+### 3. Read Path - Every 5 seconds (server-side interval)
 
 ```
 setInterval(5000):
@@ -152,7 +152,7 @@ setInterval(5000):
                  └── broadcast('incident.updated', incident)
 ```
 
-### 4. Client Side — Position Preservation
+### 4. Client Side - Position Preservation
 
 ```
 WebSocket onmessage('graph-update', { nodes, edges, targets })
@@ -174,7 +174,7 @@ WebSocket onmessage('graph-update', { nodes, edges, targets })
 | 5173 | Frontend (dev) | HTTP (Vite dev server) |
 | 22 | EC2 SSH | SSH (outbound from server to EC2) |
 
-The remote collector on EC2 talks to `http://127.0.0.1:3001` — this works because the backend opens a **reverse SSH tunnel** (`-R 3001:localhost:3001`) when connecting to EC2. So the collector reaches the backend through the tunnel without any inbound firewall rules.
+The remote collector on EC2 talks to `http://127.0.0.1:3001` - this works because the backend opens a **reverse SSH tunnel** (`-R 3001:localhost:3001`) when connecting to EC2. So the collector reaches the backend through the tunnel without any inbound firewall rules.
 
 ---
 

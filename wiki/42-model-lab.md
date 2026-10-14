@@ -1,7 +1,9 @@
 # The model lab: every chart, every hyperparameter, and where the data lives
 
-**File:** `reports/model-lab.html` (also copied to `wiki visualizer/model-lab.html`). Open it in a browser.
-**Generator:** `tools/ml/report.ts`. Rebuild with `npm run ml:report -- ~/.faultlab/<run-dir> --wiki`.
+**File:** `graphs/output/model-lab.html` (also copied to wiki/visualizer/model-lab.html`). Open it in a browser.
+**Generator:** `graphs/model-lab.ts`. Rebuild with `npm run ml:report` (it reads the sample runs in `run/recorded-runs`; add run folders after the command to include your own, `--wiki` also copies it into the wiki book, `--quick` skips the slow sensitivity sweeps).
+
+**Reading it.** The page opens with a plain-language introduction, a glossary and a one-line verdict. Every chart carries a grey box under its title that says what the horizontal axis, the vertical axis and the picture mean. The data flow is a row of cards, so nothing is cut off on a small screen.
 
 It is built from recorded runs (the injector's ledger plus what the mapper's API showed), so it always describes real data. Re-run it after every new campaign.
 

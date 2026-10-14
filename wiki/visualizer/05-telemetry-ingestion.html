@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -749,7 +750,7 @@ this.upsertTarget({
 }</code></pre>
                     </div>
 <p><strong>Metadata merge (spread) not replace:</strong> The remote collector may only send a subset of metadata in a given cycle (e.g., it has the container ID but not the restart count yet). Using spread preserves fields the current batch didn't include.</p>
-<p><strong>Server clock for <code>lastSeen</code>:</strong> The collector's machine could have a clock skew of minutes. The server uses its own clock for <code>lastSeen</code> so that staleness detection (<code>checkTargetStaleness</code>) is consistent — it compares <code>lastSeen</code> against the server's own <code>Date.now()</code>.</p>
+<p><strong>Server clock for <code>lastSeen</code>:</strong> The collector's machine could have a clock skew of minutes. The server uses its own clock for <code>lastSeen</code> so that staleness detection (<code>checkTargetStaleness</code>) is consistent - it compares <code>lastSeen</code> against the server's own <code>Date.now()</code>.</p>
 <h2 id="stage-3-edge-events">Stage 3: Edge Events</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -810,7 +811,7 @@ this.upsertTarget({
   }
 }</code></pre>
                     </div>
-<p><strong>Why two writes?</strong> <code>MetricStore</code> is the historical store. <code>node.metrics</code> is the "latest value" fast path. Without the inline update, <code>getGraph()</code> would need to query MetricStore for every node on every broadcast — that's O(N) MetricStore lookups vs. O(1) already-on-the-node reads.</p>
+<p><strong>Why two writes?</strong> <code>MetricStore</code> is the historical store. <code>node.metrics</code> is the "latest value" fast path. Without the inline update, <code>getGraph()</code> would need to query MetricStore for every node on every broadcast - that's O(N) MetricStore lookups vs. O(1) already-on-the-node reads.</p>
 <p><strong>Why is <code>latency</code> null here?</strong> Docker stats don't know about HTTP latency. That data comes from log parsing (<code>events.interactions</code>). Setting it null here prevents stale values from a previous cycle from lingering.</p>
 <p><strong>CPU rounding:</strong> <code>Math.round(cpu * 10) / 10</code> → one decimal place. Avoids <code>23.456789%</code> in the UI.</p>
 <h2 id="stage-5-interaction-events-http-log-data">Stage 5: Interaction Events (HTTP Log Data)</h2>
@@ -834,7 +835,7 @@ this.upsertTarget({
   // Push to MetricStore for edge metric aggregation
   this.metricStore.pushEvent(e);
 
-  // Skip sentinel sources — they don&#x27;t map to a real edge
+  // Skip sentinel sources - they don&#x27;t map to a real edge
   if (e.source === &#x27;external&#x27; || e.source === &#x27;unknown-upstream&#x27;) continue;
 
   // Upgrade or create edge
@@ -919,13 +920,13 @@ if (events.connectionEvents?.length &gt; 0) {
     else if (agg.avgLatency &gt; 500) edge.status = &#x27;degraded&#x27;;
     else                           edge.status = &#x27;active&#x27;;
   } else if (edge.status === &#x27;degraded&#x27; || edge.status === &#x27;failed&#x27;) {
-    // No current evidence — reset stale bad status
+    // No current evidence - reset stale bad status
     edge.status = edge.observed ? &#x27;active&#x27; : &#x27;unknown&#x27;;
   }
 }</code></pre>
                     </div>
 <p><strong>Stale bad status reset:</strong> If an edge was <code>degraded</code> or <code>failed</code> but has received no HTTP interactions in the current aggregation window, the status resets to <code>active</code> (for observed edges) or <code>unknown</code>. This prevents one-time spikes from permanently marking an edge as failed.</p>
-<p><strong>Edge-only evidence policy:</strong> Edge status is computed only from data measured on that specific edge — not from the health of either endpoint node. See <a href="06-node-edge-lifecycle.html">06-node-edge-lifecycle.md</a> for the reasoning.</p>
+<p><strong>Edge-only evidence policy:</strong> Edge status is computed only from data measured on that specific edge - not from the health of either endpoint node. See <a href="06-node-edge-lifecycle.html">06-node-edge-lifecycle.md</a> for the reasoning.</p>
 <h2 id="stage-8-finalize">Stage 8: Finalize</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -1216,7 +1217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1371,10 +1372,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1472,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

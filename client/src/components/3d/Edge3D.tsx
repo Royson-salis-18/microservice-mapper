@@ -10,7 +10,7 @@ import { linkFlow } from '../shared/linkFlow';
 /**
  * How a link travels between two services.
  *   conduit  up out of the caller, along overhead trays at right angles, and
- *            down into the callee — the way cable runs in a real hall. Links
+ *            down into the callee - the way cable runs in a real hall. Links
  *            that share a corridor bundle together instead of crossing at
  *            random angles, which is what keeps a busy hall legible.
  *   arc      a single raised curve straight across.

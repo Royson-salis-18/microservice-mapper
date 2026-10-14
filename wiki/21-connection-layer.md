@@ -1,4 +1,4 @@
-# 21 — Connection Layer & SSH Infrastructure
+# 21 - Connection Layer & SSH Infrastructure
 
 ## Overview
 
@@ -46,11 +46,11 @@ The only production `Connection` implementation. Uses the `ssh2` library.
 
 ### Key Behaviors
 
-1. **Private key read from disk** — read once at `connect()` time, never logged, never embedded in config
-2. **Passphrase from environment** — optional, loaded from an env var name stored in config
-3. **Ready timeout** — defaults to 15,000ms, configurable per target
-4. **Command timeout** — per-command, via `RemoteCommand.timeoutMs`
-5. **Output capping** — stdout/stderr are capped at `RemoteCommand.maxOutputBytes` to prevent OOM from a runaway command
+1. **Private key read from disk** - read once at `connect()` time, never logged, never embedded in config
+2. **Passphrase from environment** - optional, loaded from an env var name stored in config
+3. **Ready timeout** - defaults to 15,000ms, configurable per target
+4. **Command timeout** - per-command, via `RemoteCommand.timeoutMs`
+5. **Output capping** - stdout/stderr are capped at `RemoteCommand.maxOutputBytes` to prevent OOM from a runaway command
 
 ### Timeout Handling
 
@@ -148,4 +148,4 @@ A known production issue: SSH channel exhaustion on resource-constrained EC2 hos
 
 1. **Stale node pruning** uses a 15-minute grace period (not 5 minutes like the OFFLINE threshold)
 2. **The `unhandledRejection` handler** in `server/index.ts` catches stray SSH rejections
-3. **Discovery failures at boot are non-fatal** — caught and logged, not propagated
+3. **Discovery failures at boot are non-fatal** - caught and logged, not propagated

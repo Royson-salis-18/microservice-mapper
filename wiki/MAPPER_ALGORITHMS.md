@@ -1,7 +1,7 @@
 # Mapper algorithms: graph building, root-cause analysis, cascade prediction
 
 What the mapper computes, block by block, with a flowchart, pseudocode, the mathematics and the source file for each. The companion document
-[`bench-1/docs/FAULT_INJECTION.md`](https://github.com/Royson-salis-18/bench-1) describes the machinery that tests it (blind fault injection and organic traffic);
+[`bench-1/wiki/FAULT_INJECTION.md`](https://github.com/Royson-salis-18/bench-1) describes the machinery that tests it (blind fault injection and organic traffic);
 section 9 here says how the two meet.
 
 Contents: [0 Pipeline](#0-the-pipeline) · [1 Collection](#1-block-1-collection) · [2 Graph building](#2-block-2-graph-building-and-edge-weights) ·
@@ -109,7 +109,7 @@ d(e) = 1 / N                          else                                      
 less important the longer it stays down. Shares always sum to exactly 1 per group. **Telemetry edges** (to or from an observability component) are scaled by 0.1: exporting traces is fire-and-forget,
 and weighing it at face value would predict a collector outage to take down a shop. `w(e) = clamp(confidence · d(e) · factor, 0, 1)`.
 
-Source: `server/graph/EdgeWeights.ts` (pure), `server/graph/GraphStore.ts` (shell: persistence, merging).
+Source: `algorithms/graph/EdgeWeights.ts` (pure), `server/graph/GraphStore.ts` (shell: persistence, merging).
 
 ---
 
@@ -124,13 +124,13 @@ One definition of a troubled link, shared by the server (status) and the client 
 | **observed**, grey-green by volume | otherwise: calm ≤ 60 /min < busy ≤ 250 < heavy ≤ 1200 < very heavy (samples per minute) |
 | **idle** (grey) | declared but never seen carrying traffic |
 
-Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: `server/graph/linkThresholds.ts`, `client/.../shared/edgeHeat.ts`.
+Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: `algorithms/graph/linkThresholds.ts`, `client/.../shared/edgeHeat.ts`.
 
 ---
 
 ## 4. Block 4: anomaly detection
 
-Per service, per metric, against **that service's own recent past**. The method was measured on 751 labelled faults over real healthy traffic (`new-repo`, `docs/RCA_STATISTICAL_REPORT.html`).
+Per service, per metric, against **that service's own recent past**. The method was measured on 751 labelled faults over real healthy traffic (`new-repo`, `wiki/RCA_STATISTICAL_REPORT.html`).
 
 ```mermaid
 flowchart TD
@@ -169,7 +169,7 @@ raise silence  iff  q >= 0.6  and  obs = 0  and  z = (exp - obs) / sqrt(exp (1 -
 **Hard evidence** (a fact, not a degree): container paused, exited, dead, restarting, vanished, or a restart since the last sample.
 **Onset tracking:** an anomaly keeps the timestamp of its first sighting until it clears, so temporal precedence compares real start times.
 
-Source: `server/rca/AnomalyDetector.ts` (pure; thresholds injected), `server/rca/thresholds.ts` (defaults, limits), `thresholdsStore.ts` (disk).
+Source: `algorithms/detection/AnomalyDetector.ts` (pure; thresholds injected), `algorithms/detection/thresholds.ts` (defaults, limits), `thresholdsStore.ts` (disk).
 
 ---
 
@@ -225,7 +225,7 @@ normalisation) matters more than the explain-away step, and the doc says so rath
 **Propagation path:** from the root, walk callers up to 3 hops, following only callers that are themselves troubled and lean on the callee materially (`w ≥ 0.1`). Healthy callers are
 not "propagated to"; they are the at-risk list. **Affected services** are returned as node ids.
 
-Source: `server/rca/RCAEngine.ts` (pure), `TemporalAnalyzer.ts`, `ExplanationEngine.ts` (text).
+Source: `algorithms/rca/RCAEngine.ts` (pure), `TemporalAnalyzer.ts`, `ExplanationEngine.ts` (text).
 
 ---
 
@@ -261,7 +261,7 @@ These are **estimates under a stated model**, not observed frequencies. Each out
 A second, cheaper at-risk list lives in the RCA engine for use inside an incident: for a healthy caller with failing callees `F`,
 `risk = 1 − Π_{c ∈ F} (1 − min(1, ev(c) / (2 zA)) · q)`, `q = 0.5`.
 
-Source: `server/graph/CascadeEngine.ts` (pure), `RiskEngine.ts` (shell: runs it every poll cycle).
+Source: `algorithms/graph/CascadeEngine.ts` (pure), `RiskEngine.ts` (shell: runs it every poll cycle).
 
 ---
 

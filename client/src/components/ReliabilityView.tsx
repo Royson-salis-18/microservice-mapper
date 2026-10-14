@@ -4,7 +4,7 @@ import { PageShell, PageHeader, Panel, Stat, StatRow, EmptyNote, SPACE } from '.
 import type { ServiceNode, CascadePrediction, NodeCascade, WhatIfResult, RiskBand } from '../types';
 
 /**
- * Reliability — three questions, in the order an operator asks them:
+ * Reliability - three questions, in the order an operator asks them:
  *
  *   1. What is likely to fail next?          (cascade prediction)
  *   2. What is exposed right now, and why?   (risk ranking)
@@ -13,7 +13,7 @@ import type { ServiceNode, CascadePrediction, NodeCascade, WhatIfResult, RiskBan
  * The prediction and the simulation come from the cascade model in
  * server/graph/CascadeEngine.ts: each service's measured state, spread along
  * weighted dependency edges. They are model estimates, and the page says so
- * with the model's name and parameter beside them — never presented as
+ * with the model's name and parameter beside them - never presented as
  * observed frequencies. The risk ranking is plain arithmetic over measured
  * signals, with each score's factors one click away.
  */
@@ -145,7 +145,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
         const data = await res.json();
         if (!cancelled) setPredictions(Array.isArray(data) ? data : [data]);
       } catch {
-        // Server briefly unreachable — keep the last prediction on screen.
+        // Server briefly unreachable - keep the last prediction on screen.
       }
     };
     load();
@@ -201,7 +201,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
     <PageShell>
       <PageHeader title="Cascade risk" scope={selectedProject}>
         What is likely to fail next, what is exposed right now, and what would happen if a given
-        service went down — computed from live measurements and the weighted dependency graph.
+        service went down - computed from live measurements and the weighted dependency graph.
       </PageHeader>
 
       {/* ---------------- 1. cascade prediction ---------------- */}
@@ -210,20 +210,20 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
         subtitle={
           predictions === null ? 'loading'
           : atRisk.length > 0 ? `${atRisk.length} healthy service(s) at risk of being pulled down`
-          : failingNow.length > 0 ? `${failingNow.length} failing — no healthy service predicted to follow`
+          : failingNow.length > 0 ? `${failingNow.length} failing - no healthy service predicted to follow`
           : 'nothing failing, nothing predicted'
         }
         about={
           <>
-            Each service gets a failure probability from its own measured state — a crashed or
-            crash-looping container, a recent restart, resource saturation, the anomaly model — and
+            Each service gets a failure probability from its own measured state - a crashed or
+            crash-looping container, a recent restart, resource saturation, the anomaly model - and
             that risk then spreads to the services that <em>call</em> it, in proportion to how much
             they depend on it (the edge weight).
             <br /><br />
             <strong>Model:</strong> noisy-OR propagation. A caller's chance of being brought down
             is combined across its dependencies as independent routes to failure. The transmission
             factor{transmission !== undefined ? ` (τ = ${transmission})` : ''} is the share of a
-            dependency's failure that actually reaches its caller — below 1 because real services
+            dependency's failure that actually reaches its caller - below 1 because real services
             retry, time out, and fall back.
             <br /><br />
             These are <strong>model estimates</strong>, not observed frequencies: the system does
@@ -243,7 +243,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
               <StatRow>
                 <Stat label="Failing now" value={failingNow.length} tone={failingNow.length ? 'var(--color-critical)' : 'var(--color-healthy)'} />
                 <Stat label="At risk next" value={atRisk.length} tone={atRisk.length ? 'var(--color-degraded)' : 'var(--color-healthy)'} />
-                <Stat label="Expected failures" value={expectedFailures.toFixed(1)} hint="Sum of every service's predicted probability — the model's expected number of failed services" />
+                <Stat label="Expected failures" value={expectedFailures.toFixed(1)} hint="Sum of every service's predicted probability - the model's expected number of failed services" />
                 {transmission !== undefined && <Stat label="Transmission τ" value={transmission} sub="model parameter" />}
               </StatRow>
             </div>
@@ -251,7 +251,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
             {failingNow.length > 0 && (
               <div style={{ marginBottom: SPACE.card }}>
                 <div style={{ fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
-                  Origin — failing on its own measurements
+                  Origin - failing on its own measurements
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {failingNow.map(c => <CascadeRow key={c.nodeId} c={c} />)}
@@ -284,7 +284,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
           <>
             <strong>riskScore</strong> is half current health (status, the anomaly model if the
             service has a trained model, and whether it is part of an open incident) and half{' '}
-            <strong>criticality</strong> — the share of this project's live traffic that would stop
+            <strong>criticality</strong> - the share of this project's live traffic that would stop
             if the service failed. It is exposure now, not a prediction.
             <br /><br />
             This differs from the "healthy %" on the Analytics tab, which is a fleet-wide count of
@@ -297,7 +297,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
       >
         {rows.length === 0 ? (
           <EmptyNote>
-            No risk scores yet. They are recomputed every poll cycle — give it a few seconds after the
+            No risk scores yet. They are recomputed every poll cycle - give it a few seconds after the
             target connects, or after the server restarts.
           </EmptyNote>
         ) : (
@@ -327,7 +327,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
                         health <span style={{ fontFamily: 'monospace' }}>{pct(a.healthScore!)}</span>
                       </span>
                       <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                        crit. {a.criticality === null || a.criticality === undefined ? '—' : <span style={{ fontFamily: 'monospace' }}>{pct(a.criticality)}</span>}
+                        crit. {a.criticality === null || a.criticality === undefined ? '-' : <span style={{ fontFamily: 'monospace' }}>{pct(a.criticality)}</span>}
                       </span>
                       <span style={{ fontSize: '13px', fontWeight: 700, fontFamily: 'monospace', color: riskTone(a.riskScore!), minWidth: '46px', textAlign: 'right' }}>
                         {pct(a.riskScore!)}
@@ -337,7 +337,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
                   {expanded && (
                     <div style={{
                       background: 'rgba(0,0,0,0.2)',
-                      // Longhand rather than `border` + `borderTop: none` — React warns when a
+                      // Longhand rather than `border` + `borderTop: none` - React warns when a
                       // shorthand and its longhand are both set on a re-rendering element.
                       borderLeft: `1px solid ${tint.border}`,
                       borderRight: `1px solid ${tint.border}`,
@@ -367,7 +367,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
       {/* ---------------- 3. what-if ---------------- */}
       <Panel
         title="What if this failed?"
-        subtitle="read-only simulation — nothing on the target is touched"
+        subtitle="read-only simulation - nothing on the target is touched"
         about={
           <>
             Assumes the chosen service fails outright, keeps every other service at its measured
@@ -421,7 +421,7 @@ export function ReliabilityView({ selectedProject = 'ALL', nodes }: ReliabilityV
         {sim.status === 'done' && (
           sim.result.affected.length === 0 ? (
             <EmptyNote>
-              Nothing observed depends on {sim.result.origin.nodeName} — no other service was seen calling
+              Nothing observed depends on {sim.result.origin.nodeName} - no other service was seen calling
               it, so its failure would not spread anywhere we can see.
             </EmptyNote>
           ) : (

@@ -31,7 +31,7 @@ Agreement between detectors only carries information when they *could* have disa
 
 ## Pipeline Stages
 
-### Stage 1 — `collector.py`
+### Stage 1 - `collector.py`
 
 Polls `GET /api/graph` every 10 seconds. Extracts `node.metrics` for all nodes and appends rows to `data/metrics_raw.csv`.
 
@@ -44,7 +44,7 @@ Polls `GET /api/graph` every 10 seconds. Extracts `node.metrics` for all nodes a
 
 **When to start:** As soon as possible, during **normal operation** (no active stress tests or incidents). The more baseline data before training, the better the models.
 
-### Stage 2 — `preprocess.py`
+### Stage 2 - `preprocess.py`
 
 ```python
 # 1. Load metrics_raw.csv
@@ -59,12 +59,12 @@ Polls `GET /api/graph` every 10 seconds. Extracts `node.metrics` for all nodes a
 
 **Why convert to rates?** `networkRx` as a cumulative counter always grows. An `IsolationForest` trained on cumulative values would flag new deployments (where counts reset) as anomalous. Rates (Δ per second) are stationary.
 
-### Stage 3 — `train.py`
+### Stage 3 - `train.py`
 
 For every service with at least `min_training_samples` (30) feature rows, all four detectors are fitted on the earlier part of its series (the chronological tail, 20% by default, is held out), and each is saved with its own score statistics in `models/<service>.meta.json`:
 
 ```python
-CONTAMINATION = 0.01          # explicit, never 'auto' — must be reproducible
+CONTAMINATION = 0.01          # explicit, never 'auto' - must be reproducible
 IsolationForest(n_estimators=200, contamination=0.01, ...)
 LocalOutlierFactor(n_neighbors=..., contamination=0.01, novelty=True)   # fitted on DISTINCT rows
 OneClassSVM(kernel="rbf", gamma="scale", nu=0.01)                         # nu ≈ expected outlier fraction
@@ -82,7 +82,7 @@ python3 train.py --since 2026-09-17T00:00:00Z --until 2026-09-17T02:00:00Z
 ```
 The `--since`/`--until` range is **excluded** from training. Data outside it is used.
 
-### Stage 4 — `score.py` + `ensemble.py`
+### Stage 4 - `score.py` + `ensemble.py`
 
 Every `score_interval_sec` (10 s), for each service with models:
 
@@ -141,7 +141,7 @@ wrapper would leave the interpreter running.
 
 ## Tuning Knobs
 
-All editable from the page, all genuinely wired into the Python — see
+All editable from the page, all genuinely wired into the Python - see
 [14-configuration](14-configuration.md) for the full table.
 
 - `contamination` → all four detectors (`nu` for the one-class SVM); must be below 0.5
@@ -170,7 +170,7 @@ service's series and scores the held-out tail, recording in `meta.json`:
 }
 ```
 
-The split is chronological, not random — a random split leaks adjacent
+The split is chronological, not random - a random split leaks adjacent
 samples across the boundary and flatters the result. The tail is unlabelled,
 so `flag_rate` is a **firing rate, not an accuracy**: how often the model
 fires on data it never saw. Compare it against `contamination`; much higher
@@ -180,7 +180,7 @@ suggests drift or a tail that was not actually normal.
 
 ## Server Integration
 
-`GraphStore.readAnomalyScores()` — called inside `getGraph()` before each response:
+`GraphStore.readAnomalyScores()` - called inside `getGraph()` before each response:
 
 ```typescript
 private readAnomalyScores(): Record<string, any> {
@@ -188,7 +188,7 @@ private readAnomalyScores(): Record<string, any> {
   try {
     const stat = fs.statSync(scoresPath);
     if (this.anomalyScoresCache?.mtimeMs === stat.mtimeMs) {
-      return this.anomalyScoresCache.data;  // Unchanged — return cache
+      return this.anomalyScoresCache.data;  // Unchanged - return cache
     }
     const data = JSON.parse(fs.readFileSync(scoresPath, 'utf8'));
     this.anomalyScoresCache = { mtimeMs: stat.mtimeMs, data };
@@ -223,14 +223,14 @@ if (s) {
 
 These are stated in the source code comments and `ml/README.md`, not hidden.
 
-**1. Unsupervised — no labeled data**
+**1. Unsupervised - no labeled data**
 Training on data that includes an incident teaches the model that the incident is "normal." The `--since/--until` exclusion is the manual workaround. The system does not auto-detect incident windows.
 
 **2. Minimum samples**
 A service needs at least 30 samples after preprocessing (`MIN_TRAINING_SAMPLES` in `train.py`) before it gets a model. New targets won't have anomaly scores until they've been observed for several minutes.
 
 **3. Feature set is limited**
-Only CPU (Docker's % of one core, as at training time), memory, and network rates are used. HTTP latency and error rate fields are `null` almost everywhere in current telemetry — Docker stats don't include HTTP metrics, and most services' logs aren't parsed. Adding these as features before they're populated would mean training on fabricated zeros.
+Only CPU (Docker's % of one core, as at training time), memory, and network rates are used. HTTP latency and error rate fields are `null` almost everywhere in current telemetry - Docker stats don't include HTTP metrics, and most services' logs aren't parsed. Adding these as features before they're populated would mean training on fabricated zeros.
 
 **4. No auto-retraining**
 Must manually re-run `preprocess.py` + `train.py` as data accumulates. A cron job like `0 3 * * * cd /path/to/ml && python3 preprocess.py && python3 train.py` handles this.
@@ -241,4 +241,4 @@ is no way to call those firings right or wrong. It is useful as a relative
 signal (compare to `contamination`, or across services), not as a score.
 
 **6. `collector.py` and MetricStore overlap**
-Both read `/api/graph`. The collector is standalone — it doesn't hook into MetricStore. This means there's some redundant API polling. The separation exists because the ML pipeline needs to be independently deployable (possibly on a different machine).
+Both read `/api/graph`. The collector is standalone - it doesn't hook into MetricStore. This means there's some redundant API polling. The separation exists because the ML pipeline needs to be independently deployable (possibly on a different machine).

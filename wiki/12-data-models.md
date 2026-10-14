@@ -1,4 +1,4 @@
-# Data Models — TypeScript Interfaces Reference
+# Data Models - TypeScript Interfaces Reference
 
 All models are defined in two places:
 - **Server canonical:** `server/models/` (individual files per type)
@@ -18,7 +18,7 @@ interface ServiceNode {
 
   // Health
   status:   'healthy' | 'degraded' | 'critical' | 'unknown';
-  lastSeen: string;  // ISO-8601 — server clock, not collector clock
+  lastSeen: string;  // ISO-8601 - server clock, not collector clock
 
   // Container metadata
   metadata: {
@@ -97,8 +97,8 @@ interface DependencyEdge {
   evidenceSources: string[];      // ["compose-config", "http-log", "proc-net-tcp"]
 
   // Timestamps
-  firstSeen?: string;  // ISO-8601 — when first observed
-  lastSeen?:  string;  // ISO-8601 — most recent confirmation
+  firstSeen?: string;  // ISO-8601 - when first observed
+  lastSeen?:  string;  // ISO-8601 - most recent confirmation
 
   // HTTP metrics (from InteractionEvent aggregation)
   metrics: {

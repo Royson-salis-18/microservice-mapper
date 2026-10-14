@@ -20,7 +20,7 @@ export interface EdgeAppearance {
  * looks calm in one view and hot in the other.
  *
  * Driven by observed TCP connection activity, because that is the only
- * real per-edge measurement available — `edge.metrics` (latency, error
+ * real per-edge measurement available - `edge.metrics` (latency, error
  * rate, request rate) is null on every edge in this deployment, so grading
  * by "load" in the HTTP sense would be inventing numbers. An explicit
  * failed/degraded status still wins over activity: a broken link matters

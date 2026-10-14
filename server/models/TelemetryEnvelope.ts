@@ -15,7 +15,7 @@ export interface TelemetryEnvelope {
     edges?: DependencyEdge[];
     metrics?: { nodeId: string; snapshot: MetricSnapshot }[];
     interactions?: InteractionEvent[];
-    /** Raw TCP connection events from /proc/net/tcp — SSH-sampled, not distributed tracing */
+    /** Raw TCP connection events from /proc/net/tcp - SSH-sampled, not distributed tracing */
     connectionEvents?: ConnectionEvent[];
   };
 }

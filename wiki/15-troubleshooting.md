@@ -33,8 +33,8 @@
 **Most likely cause:** ID mismatch between discovery and metric ingestion.
 
 **Diagnosis:**
-1. Check `GET /api/diagnostics` — is `nodeCount > 0`?
-2. Check server logs for `[INGEST]` lines — is the `targetId` correct?
+1. Check `GET /api/diagnostics` - is `nodeCount > 0`?
+2. Check server logs for `[INGEST]` lines - is the `targetId` correct?
 3. Look at what node IDs exist: `GET /api/targets/:id/services`
 4. Check if metric node IDs in the payload match IDs in `nodesByTarget`
 
@@ -49,13 +49,13 @@
 **Symptom:** Edges that were visible disappear without services going offline.
 
 **Cause 1: Stale status reset**
-Edges have their status reset if no HTTP metrics arrive in the aggregation window. This is intentional — stale `failed` statuses should clear. But it means edges without log data may appear to "disappear" from the active state view.
+Edges have their status reset if no HTTP metrics arrive in the aggregation window. This is intentional - stale `failed` statuses should clear. But it means edges without log data may appear to "disappear" from the active state view.
 
 **Cause 2: Node pruning cascade**
 If either endpoint node was pruned (15+ minutes without `lastSeen` update), its edges are pruned too. Check if the node's `lastSeen` is being updated.
 
 **Cause 3: Target went offline**
-If the target transitions to `OFFLINE` and then the session ends, `edgesByTarget` may be cleared during re-registration. Don't delete/re-add the target — use `POST /api/discovery/refresh` instead.
+If the target transitions to `OFFLINE` and then the session ends, `edgesByTarget` may be cleared during re-registration. Don't delete/re-add the target - use `POST /api/discovery/refresh` instead.
 
 ---
 
@@ -79,7 +79,7 @@ If the target transitions to `OFFLINE` and then the session ends, `edgesByTarget
 **Check list:**
 1. `data/remote_config.json` has `ec2PublicIp`, `sshUsername`, `sshKeyPath` for the selected target
 2. The SSH key doesn't have a passphrase (interactive passphrase prompts block the child process)
-3. `StrictHostKeyChecking=no` is set in the spawn args — host key prompts don't apply
+3. `StrictHostKeyChecking=no` is set in the spawn args - host key prompts don't apply
 4. The EC2 instance allows inbound SSH (port 22) from your IP
 
 **Testing manually:**
@@ -98,7 +98,7 @@ If this hangs, the server's terminal will also hang.
 **Check list:**
 1. Does `ml/data/latest_scores.json` exist? `ls -la ml/data/`
 2. Are IDs in the scores file canonical? Must be `"sock-shop:catalogue"` not `"sock-shop-catalogue"`
-3. Check mtime: `stat ml/data/latest_scores.json` — if not updating, `score.py` may have crashed
+3. Check mtime: `stat ml/data/latest_scores.json` - if not updating, `score.py` may have crashed
 4. Check `score.py` logs: `tail -f ml/logs/score.log`
 
 **IDs must match exactly.** If the collector uses `sock-shop-catalogue` but the server normalizes to `sock-shop:catalogue`, the score will never find its node.
@@ -110,8 +110,8 @@ If this hangs, the server's terminal will also hang.
 **Symptom:** Server process memory grows over time.
 
 **Known causes:**
-1. **MetricStore not deleting pruned nodes:** Fixed in `pruneStaleNodes()` — calls `metricStore.deleteNode(id)`. If on older code, upgrade.
-2. **`edgeActivity` leak:** Fixed — entries now deleted when edges are pruned. If on older code, restart server weekly.
+1. **MetricStore not deleting pruned nodes:** Fixed in `pruneStaleNodes()` - calls `metricStore.deleteNode(id)`. If on older code, upgrade.
+2. **`edgeActivity` leak:** Fixed - entries now deleted when edges are pruned. If on older code, restart server weekly.
 3. **`metrics_raw.csv` is on the server machine:** The ML `collector.py` should run on a separate machine or have file size monitoring.
 
 ---
@@ -123,7 +123,7 @@ If this hangs, the server's terminal will also hang.
 **Cause:** Layout signature computation is broken or position preservation logic isn't working.
 
 **Check:**
-1. Open browser DevTools → Console — are there JS errors?
+1. Open browser DevTools → Console - are there JS errors?
 2. Is `useGraphData`'s `sameNodeSet` check evaluating to `true` when it should? Add a `console.log(sameSet)` temporarily.
 3. Is a topology change actually happening? If a node briefly disappears and comes back (e.g., during a discovery cycle that misses a container), it gets a new position.
 

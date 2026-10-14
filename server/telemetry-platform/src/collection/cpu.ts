@@ -23,7 +23,7 @@ export interface CpuCounterSample {
  * cpuPercent = (cpuDelta / systemDelta) * onlineCpus * 100
  *
  * Returns null (never NaN/Infinity/a fabricated 0) when:
- *  - there is no previous sample (first sample — nothing to diff against)
+ *  - there is no previous sample (first sample - nothing to diff against)
  *  - systemDelta <= 0 (no time actually elapsed on the system counter)
  *  - cpuDelta < 0 (counter reset, e.g. container restarted)
  */
@@ -37,7 +37,7 @@ export function computeCpuPercentFromDelta(
   const systemDelta = current.systemUsageNs - previous.systemUsageNs;
 
   if (systemDelta <= 0) return null; // no elapsed system time, or clock/counter anomaly
-  if (cpuDelta < 0) return null; // counter reset (e.g. restart) — do not compute a negative %
+  if (cpuDelta < 0) return null; // counter reset (e.g. restart) - do not compute a negative %
   if (current.onlineCpus <= 0) return null;
 
   const percent = (cpuDelta / systemDelta) * current.onlineCpus * 100;

@@ -26,7 +26,7 @@ DEFAULTS = {
     "n_estimators": 200,
     "max_samples_fraction": 1.0,
     # Chronological tail held out of training and scored afterwards. The
-    # tail isn't labelled, so its flag rate is not an accuracy figure — it
+    # tail isn't labelled, so its flag rate is not an accuracy figure - it
     # only says how often the model fires on data it never saw. Compare it
     # to `contamination`: much higher means drift or a non-normal tail.
     "holdout_fraction": 0.2,

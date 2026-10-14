@@ -1,4 +1,4 @@
-# 26 — ML Pipeline Deep Dive (Code-Level)
+# 26 - ML Pipeline Deep Dive (Code-Level)
 
 ## Overview
 
@@ -106,7 +106,7 @@ Trains **four** detectors per service, each from a different statistical family:
 | **IsolationForest** | Partitioning | Cheap, handles mixed scales, the default |
 | **LOF** | Local density | Catches points normal globally but odd locally |
 | **OneClassSVM** | Boundary | Fits a frontier around the normal region |
-| **z-score** | Statistical | No fitting; max|z| — the interpretable baseline |
+| **z-score** | Statistical | No fitting; max|z| - the interpretable baseline |
 
 ### Key Design: Agreeing Detectors Must Be Different
 
@@ -118,7 +118,7 @@ Cross-model agreement is meaningful because these are deliberately different fam
 
 A critical fix: LOF fits on **distinct rows** only.
 
-> "1568 rows with 6 distinct values — the collector polls every 10s while docker stats updates less often, so the same state is recorded over and over. A point's 20 nearest neighbours are then 20 copies of itself at distance 0."
+> "1568 rows with 6 distinct values - the collector polls every 10s while docker stats updates less often, so the same state is recorded over and over. A point's 20 nearest neighbours are then 20 copies of itself at distance 0."
 
 Without deduplication, LOF thresholds exploded to 3.37×10⁹.
 
@@ -130,13 +130,13 @@ The chronological tail (default 20%) is held out from training and scored afterw
 holdout_fraction = 0.2
 ```
 
-The holdout flag rate is **not** an accuracy figure — it only says how often the model fires on data it never saw. Compare it to `contamination`: much higher means drift or a non-normal tail.
+The holdout flag rate is **not** an accuracy figure - it only says how often the model fires on data it never saw. Compare it to `contamination`: much higher means drift or a non-normal tail.
 
 ### Contamination
 
 Set explicitly at 0.01 (1%), never 'auto':
 
-> "Explicit, not 'auto' — must be reproducible for the paper."
+> "Explicit, not 'auto' - must be reproducible for the paper."
 
 ### Per-Model Metadata
 
@@ -240,6 +240,6 @@ DEFAULTS = {
 ## Communication with Node Server
 
 The pipeline communicates via:
-1. **HTTP** — `collector.py` and `score.py` poll `/api/graph`
-2. **Filesystem** — `score.py` writes `latest_scores.json`, Node reads it on each poll cycle
-3. **REST** — Node exposes `/api/ml/*` endpoints for the UI to trigger pipeline stages
+1. **HTTP** - `collector.py` and `score.py` poll `/api/graph`
+2. **Filesystem** - `score.py` writes `latest_scores.json`, Node reads it on each poll cycle
+3. **REST** - Node exposes `/api/ml/*` endpoints for the UI to trigger pipeline stages

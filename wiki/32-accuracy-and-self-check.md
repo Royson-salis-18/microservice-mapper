@@ -45,7 +45,7 @@ The simulator only ever uses target ids starting `sim-` and is meant to run agai
 
 ## 2. Invariants: the consistency check
 
-`server/graph/consistency.ts` holds `checkConsistency(nodes, edges, incidents)`. It is a pure function: give it the graph and the incidents, and it returns what is wrong. Every rule in it was written after the thing it checks was seen broken in live output.
+`algorithms/graph/consistency.ts` holds `checkConsistency(nodes, edges, incidents)`. It is a pure function: give it the graph and the incidents, and it returns what is wrong. Every rule in it was written after the thing it checks was seen broken in live output.
 
 | Rule | What must hold | The bug that prompted it |
 |---|---|---|

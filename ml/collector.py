@@ -79,7 +79,7 @@ def write_summary(started_at, per_service_count, per_service_first_seen, last_wr
     tmp_path = SUMMARY_PATH + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(summary, f, indent=2)
-    os.replace(tmp_path, SUMMARY_PATH)  # atomic — never a half-written file for the UI to read
+    os.replace(tmp_path, SUMMARY_PATH)  # atomic - never a half-written file for the UI to read
 
 
 def main():
@@ -115,7 +115,7 @@ def main():
             consecutive_failures += 1
             last_error = str(e)
             print(f"[collector] {ts} FAILED ({consecutive_failures}x): {e}", file=sys.stderr, flush=True)
-            # never let a failed cycle look like a quiet/normal period — the
+            # never let a failed cycle look like a quiet/normal period - the
             # gap itself is visible in the CSV's timestamp jump
         write_summary(started_at, per_service_count, per_service_first_seen, ts, total_rows, consecutive_failures, last_error)
         poll_interval_sec = load_config()["collect_interval_sec"]  # re-read each cycle so a UI tweak applies live

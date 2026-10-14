@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -721,8 +722,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Most likely cause:</strong> ID mismatch between discovery and metric ingestion.</p>
 <p><strong>Diagnosis:</strong></p>
 <ol>
-  <li>Check <code>GET /api/diagnostics</code> — is <code>nodeCount &gt; 0</code>?</li>
-  <li>Check server logs for <code>[INGEST]</code> lines — is the <code>targetId</code> correct?</li>
+  <li>Check <code>GET /api/diagnostics</code> - is <code>nodeCount &gt; 0</code>?</li>
+  <li>Check server logs for <code>[INGEST]</code> lines - is the <code>targetId</code> correct?</li>
   <li>Look at what node IDs exist: <code>GET /api/targets/:id/services</code></li>
   <li>Check if metric node IDs in the payload match IDs in <code>nodesByTarget</code></li>
 </ol>
@@ -731,9 +732,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <hr class="rule">
 <h2 id="edges-disappear-after-a-few-minutes">Edges Disappear After a Few Minutes</h2>
 <p><strong>Symptom:</strong> Edges that were visible disappear without services going offline.</p>
-<p><strong>Cause 1: Stale status reset</strong> Edges have their status reset if no HTTP metrics arrive in the aggregation window. This is intentional — stale <code>failed</code> statuses should clear. But it means edges without log data may appear to "disappear" from the active state view.</p>
+<p><strong>Cause 1: Stale status reset</strong> Edges have their status reset if no HTTP metrics arrive in the aggregation window. This is intentional - stale <code>failed</code> statuses should clear. But it means edges without log data may appear to "disappear" from the active state view.</p>
 <p><strong>Cause 2: Node pruning cascade</strong> If either endpoint node was pruned (15+ minutes without <code>lastSeen</code> update), its edges are pruned too. Check if the node's <code>lastSeen</code> is being updated.</p>
-<p><strong>Cause 3: Target went offline</strong> If the target transitions to <code>OFFLINE</code> and then the session ends, <code>edgesByTarget</code> may be cleared during re-registration. Don't delete/re-add the target — use <code>POST /api/discovery/refresh</code> instead.</p>
+<p><strong>Cause 3: Target went offline</strong> If the target transitions to <code>OFFLINE</code> and then the session ends, <code>edgesByTarget</code> may be cleared during re-registration. Don't delete/re-add the target - use <code>POST /api/discovery/refresh</code> instead.</p>
 <hr class="rule">
 <h2 id="tracesview-shows-no-events">TracesView Shows No Events</h2>
 <p><strong>Symptom:</strong> TCP event list is empty or "No trace events available."</p>
@@ -752,7 +753,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <ol>
   <li><code>data/remote_config.json</code> has <code>ec2PublicIp</code>, <code>sshUsername</code>, <code>sshKeyPath</code> for the selected target</li>
   <li>The SSH key doesn't have a passphrase (interactive passphrase prompts block the child process)</li>
-  <li><code>StrictHostKeyChecking=no</code> is set in the spawn args — host key prompts don't apply</li>
+  <li><code>StrictHostKeyChecking=no</code> is set in the spawn args - host key prompts don't apply</li>
   <li>The EC2 instance allows inbound SSH (port 22) from your IP</li>
 </ol>
 <p><strong>Testing manually:</strong></p>
@@ -770,7 +771,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <ol>
   <li>Does <code>ml/data/latest_scores.json</code> exist? <code>ls -la ml/data/</code></li>
   <li>Are IDs in the scores file canonical? Must be <code>"sock-shop:catalogue"</code> not <code>"sock-shop-catalogue"</code></li>
-  <li>Check mtime: <code>stat ml/data/latest_scores.json</code> — if not updating, <code>score.py</code> may have crashed</li>
+  <li>Check mtime: <code>stat ml/data/latest_scores.json</code> - if not updating, <code>score.py</code> may have crashed</li>
   <li>Check <code>score.py</code> logs: <code>tail -f ml/logs/score.log</code></li>
 </ol>
 <p><strong>IDs must match exactly.</strong> If the collector uses <code>sock-shop-catalogue</code> but the server normalizes to <code>sock-shop:catalogue</code>, the score will never find its node.</p>
@@ -779,8 +780,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Symptom:</strong> Server process memory grows over time.</p>
 <p><strong>Known causes:</strong></p>
 <ol>
-  <li><strong>MetricStore not deleting pruned nodes:</strong> Fixed in <code>pruneStaleNodes()</code> — calls <code>metricStore.deleteNode(id)</code>. If on older code, upgrade.</li>
-  <li><strong><code>edgeActivity</code> leak:</strong> Fixed — entries now deleted when edges are pruned. If on older code, restart server weekly.</li>
+  <li><strong>MetricStore not deleting pruned nodes:</strong> Fixed in <code>pruneStaleNodes()</code> - calls <code>metricStore.deleteNode(id)</code>. If on older code, upgrade.</li>
+  <li><strong><code>edgeActivity</code> leak:</strong> Fixed - entries now deleted when edges are pruned. If on older code, restart server weekly.</li>
   <li><strong><code>metrics_raw.csv</code> is on the server machine:</strong> The ML <code>collector.py</code> should run on a separate machine or have file size monitoring.</li>
 </ol>
 <hr class="rule">
@@ -789,7 +790,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>Cause:</strong> Layout signature computation is broken or position preservation logic isn't working.</p>
 <p><strong>Check:</strong></p>
 <ol>
-  <li>Open browser DevTools → Console — are there JS errors?</li>
+  <li>Open browser DevTools → Console - are there JS errors?</li>
   <li>Is <code>useGraphData</code>'s <code>sameNodeSet</code> check evaluating to <code>true</code> when it should? Add a <code>console.log(sameSet)</code> temporarily.</li>
   <li>Is a topology change actually happening? If a node briefly disappears and comes back (e.g., during a discovery cycle that misses a container), it gets a new position.</li>
 </ol>
@@ -1094,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1249,10 +1250,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1350,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

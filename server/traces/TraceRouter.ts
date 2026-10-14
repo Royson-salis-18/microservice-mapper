@@ -39,7 +39,7 @@ export function createTraceRouter(
     });
   });
 
-  // Start/Stop are now UI-level subscriptions — the remote-collector
+  // Start/Stop are now UI-level subscriptions - the remote-collector
   // sends connection events continuously via the ingest pipeline.
   // These endpoints exist for API compatibility.
   router.post('/start', async (req, res) => {

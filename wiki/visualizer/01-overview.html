@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html" selected>What this is, and why</option>
@@ -694,7 +695,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <text x="134" y="88" text-anchor="middle" style="font-family:var(--body);font-size:13px;font-weight:600;fill:var(--ink)">Your machine</text>
       <text x="134" y="112" text-anchor="middle" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">server + client + traffic-gen</text>
       <text x="134" y="140" text-anchor="middle" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">holds the graph, the models,</text>
-      <text x="134" y="158" text-anchor="middle" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">the incidents — all of it</text>
+      <text x="134" y="158" text-anchor="middle" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">the incidents - all of it</text>
       <text x="134" y="188" text-anchor="middle" style="font-family:var(--mono);font-size:11px;fill:var(--sig)">nothing of this is on the target</text>
 
       <line x1="254" y1="120" x2="404" y2="120" stroke="var(--sig)" stroke-width="2" marker-end="url(#ars)"/>
@@ -730,7 +731,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="doc-main">
                 <article class="doc-body">
                     <h2 id="what-it-does">What It Does</h2>
-<p>Microservice Mapper is a <strong>zero-instrumentation observability platform</strong> for Docker-based microservice stacks. It discovers your topology, monitors your services in real time, and visualizes everything in an interactive 2D/3D UI — without a single line of code added to your applications.</p>
+<p>Microservice Mapper is a <strong>zero-instrumentation observability platform</strong> for Docker-based microservice stacks. It discovers your topology, monitors your services in real time, and visualizes everything in an interactive 2D/3D UI - without a single line of code added to your applications.</p>
 <p>You point it at an EC2 instance, give it an SSH key, and it does the rest:</p>
 <ul>
   <li>Reads your Docker Compose file over SSH to build a declared architecture baseline</li>
@@ -773,7 +774,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h2 id="design-philosophy">Design Philosophy</h2>
 <p>The core insight that drives every design decision:</p>
 <div class="box why"><p><strong>Declared architecture + runtime observation = the truth about your system.</strong></p></div>
-<p>Most tools show you either what <em>should</em> be happening (architecture diagrams) or what <em>is</em> happening right now (metrics). Microservice Mapper shows both simultaneously and highlights the delta — which is where all the interesting information lives.</p>
+<p>Most tools show you either what <em>should</em> be happening (architecture diagrams) or what <em>is</em> happening right now (metrics). Microservice Mapper shows both simultaneously and highlights the delta - which is where all the interesting information lives.</p>
 <h3 id="what-the-delta-tells-you">What the delta tells you</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -790,24 +791,24 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>❌</td>
       <td>✅</td>
-      <td>Dead code or misconfiguration — nobody is calling this service</td>
+      <td>Dead code or misconfiguration - nobody is calling this service</td>
     </tr>
     <tr>
       <td>✅</td>
       <td>❌</td>
-      <td>Shadow dependency — undocumented inter-service communication</td>
+      <td>Shadow dependency - undocumented inter-service communication</td>
     </tr>
   </tbody>
 </table></div>
 <h2 id="origin">Origin</h2>
 <p>Started as a visualization tool for two target systems:</p>
 <ol>
-  <li><strong>Sock Shop</strong> — Weave Works' open-source e-commerce microservice demo</li>
-  <li><strong>Vertikal</strong> — A custom financial trading simulation platform</li>
+  <li><strong>Sock Shop</strong> - Weave Works' open-source e-commerce microservice demo</li>
+  <li><strong>Vertikal</strong> - A custom financial trading simulation platform</li>
 </ol>
 <p>The architecture is adapter-aware so both can share the same graph engine despite having different log formats, different gateway types (Traefik vs NGINX), and different service topologies.</p>
 <h2 id="scale-resource-philosophy">Scale &amp; Resource Philosophy</h2>
-<div class="box why"><p>"Do NOT build an unnecessarily heavy telemetry system." — original design brief</p></div>
+<div class="box why"><p>"Do NOT build an unnecessarily heavy telemetry system." - original design brief</p></div>
 <p>The system is designed to run the backend on a developer laptop and the collector on a <code>t2.micro</code> EC2 instance. This means:</p>
 <ul>
   <li>No Kafka, no Cassandra, no InfluxDB</li>
@@ -829,9 +830,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         </div>
 
         <div class="page-nav-footer">
-<a href="index.html" class="page-nav-btn prev">
+<a href="00-evaluation-guide.html" class="page-nav-btn prev">
             <span class="page-nav-label">← Previous Document</span>
-            <span class="page-nav-title">Contents</span>
+            <span class="page-nav-title">Evaluation guide: one hour</span>
         </a>
 <a href="37-app-pages-guide.html" class="page-nav-btn next">
             <span class="page-nav-label">Next Document →</span>
@@ -1103,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1258,10 +1259,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1359,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

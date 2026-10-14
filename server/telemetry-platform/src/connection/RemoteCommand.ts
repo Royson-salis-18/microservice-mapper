@@ -17,7 +17,7 @@ export interface RemoteCommandResult<T = unknown> {
 }
 
 export interface RemoteCommand<T = unknown> {
-  /** Human-readable, logged name — e.g. "docker.ps" */
+  /** Human-readable, logged name - e.g. "docker.ps" */
   name: string;
   /** The literal command to execute. No string interpolation of raw user input. */
   command: string;
@@ -56,7 +56,7 @@ export const REMOTE_COMMANDS = {
   // These are all round-trips to a Docker daemon that competes with the
   // containers it's running: on a swap-thrashing 2GB box with ~18 JVM
   // services, `docker ps` was measured at 45s and `docker inspect` at ~3s.
-  // A timeout shorter than that doesn't degrade gracefully — discovery
+  // A timeout shorter than that doesn't degrade gracefully - discovery
   // returns zero services and the whole target disappears from the graph.
   dockerVersion: (): RemoteCommand<string> => ({
     name: "docker.version",
@@ -145,14 +145,14 @@ export const REMOTE_COMMANDS = {
    * entrypoint is /nodejs/bin/node and which has no `sh` at all, so every
    * scan of it failed with exit 127 ("exec: sh: executable file not found").
    * collectObservedEdges treats a non-zero exit as "skip this service", so
-   * frontend's outbound connections were invisible 100% of the time —
+   * frontend's outbound connections were invisible 100% of the time -
    * permanently, not intermittently.
    *
    * That mattered more than it sounds: frontend is the service that actually
    * calls cart / currency / checkout / shipping / product-catalog when it
    * serves /api/*. So none of those edges could ever be observed, none could
    * ever be discovered from traffic, and no amount of load would ever make
-   * them light up — which is exactly the "stress doesn't show in the edges"
+   * them light up - which is exactly the "stress doesn't show in the edges"
    * and "several edges are missing" symptoms.
    *
    * Reading /proc/<hostPid>/net/tcp from the host is the same data (the file

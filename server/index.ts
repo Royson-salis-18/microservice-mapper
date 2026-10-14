@@ -131,7 +131,7 @@ async function main() {
   // first timer tick) so the first broadcast after boot isn't 5s stale.
   // What each target's incident last looked like when it was sent. An
   // incident was broadcast every cycle for every target whether or not
-  // anything had changed — 48 a minute measured live — so it now goes out
+  // anything had changed - 48 a minute measured live - so it now goes out
   // only when something a person would notice has changed.
   const lastIncidentSignature = new Map<string, string>();
   const incidentSignature = (i: any) => JSON.stringify([
@@ -168,7 +168,7 @@ async function main() {
 }
 
 // A long-running collector polls hosts that are frequently unreachable. A
-// single stray rejection — a dropped SSH channel, a socket reset mid-write —
+// single stray rejection - a dropped SSH channel, a socket reset mid-write -
 // would otherwise terminate the whole server in Node 18+, taking every
 // healthy target down with it. Log loudly and keep serving; a crash loop is
 // strictly worse than a degraded target.

@@ -6,7 +6,7 @@
  * tests pin down decisions, not just shapes: that a crash is critical and a
  * finished job is not, that a heavily used dependency outweighs a rarely used
  * one, that the root cause is the failure the others follow from, and that
- * predicted risk flows from a failing service to its callers — not the other
+ * predicted risk flows from a failing service to its callers - not the other
  * way round.
  *
  * Run: npx tsx --test tests/pipeline.test.ts
@@ -323,7 +323,7 @@ test('onset: problems that began in the same cycle are reported as a tie', () =>
 
 test('weights: a link that went silent because its callee died keeps its pre-failure weight', () => {
   // orders normally sends 90 of 140 samples/min to the db. The db has just
-  // died, so the live rate on that link is ~0 — but the baseline remembers.
+  // died, so the live rate on that link is ~0 - but the baseline remembers.
   const edges = [
     edge('p:orders', 'p:db', 1, { activity: { samplesPerMin: 1, windowSec: 60, lastSeen: '', baselinePerMin: 90 } }),
     edge('p:orders', 'p:payment', 30, { activity: { samplesPerMin: 30, windowSec: 60, lastSeen: '', baselinePerMin: 30 } }),
@@ -360,7 +360,7 @@ test('anomaly: a sustained spike is still detected once its own samples are in t
 });
 
 test('anomaly: the absolute limit fires regardless of deviation, as documented', () => {
-  // Always ran hot — no deviation from its own history — but past the limit.
+  // Always ran hot - no deviation from its own history - but past the limit.
   const detector = new AnomalyDetector(historyStore(90, 90, 20));
   const anomalies = detector.detectAnomaliesForTarget('p', [node('p:hot', 'degraded', { metrics: { cpu: 90, memoryPercent: 30 } })]);
   const cpu = anomalies.find(a => a.metric === 'cpu');
@@ -380,7 +380,7 @@ import { TELEMETRY_FACTOR } from '../../algorithms/graph/EdgeWeights.js';
 
 test('weights: telemetry export is weighted at a fraction, and does not dilute real dependencies', () => {
   // Live OTel demo: `ad` sends all its outbound traffic to otel-collector and
-  // weighed 1.00 on it — a collector outage would have been predicted to take
+  // weighed 1.00 on it - a collector outage would have been predicted to take
   // the whole shop down.
   const edges = [
     edge('p:ad', 'p:otel-collector', 40),
@@ -483,7 +483,7 @@ test('traces: concurrent saves keep every event, in time order, and write compac
     const now = Date.now();
     const t1 = new Date(now - 2000).toISOString();
     const t2 = new Date(now - 1000).toISOString();
-    // Two saves in flight at once, the later one carrying the older batch —
+    // Two saves in flight at once, the later one carrying the older batch -
     // the case that used to lose events to a read/modify/write race.
     await Promise.all([store.saveEvents(ev(t2, 3)), store.saveEvents(ev(t1, 2))]);
     const all = await store.loadEvents();

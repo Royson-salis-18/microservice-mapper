@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -655,7 +656,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             </div>
             <nav class="toc">
   <a href="#the-problem-stated-precisely">The problem, stated precis...</a>
-  <a href="#measured-2026-09-18-on-the-open-telemetry-target">Measured, 2026-09-18, on t...</a>
+  <a href="#measured-2026-09-18-on-the-open-telemetry-target">telemetry target</a>
   <a href="#why-this-is-not-simply-use-prometheus">Why this is not simply &quot;us...</a>
   <a href="#the-design-tiered-sources-labelled-provenance">The design: tiered sources...</a>
   <a href="#why-this-also-fixes-the-ml">Why this also fixes the ML</a>
@@ -745,7 +746,7 @@ demo_cart_get_cart_latency_seconds_count
 query_range over 6h -&gt; 155, 577, 979, 1230, ...   # history well past 1 hour</code></pre>
                     </div>
 <p>Error-rate series present: <code>http_server_request_duration_seconds_bucket</code>, <code>http_server_duration_milliseconds_bucket</code>, <code>http_server_active_requests</code>, <code>http_server_response_body_size_bytes_bucket</code>.</p>
-<p>Prometheus reports <code>activeTargets: []</code> — it is not scraping. The OTel Collector pushes into it. The data exists because the demo instruments itself.</p>
+<p>Prometheus reports <code>activeTargets: []</code> - it is not scraping. The OTel Collector pushes into it. The data exists because the demo instruments itself.</p>
 <h3 id="why-this-is-not-simply-use-prometheus">Why this is not simply "use Prometheus"</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -759,7 +760,7 @@ query_range over 6h -&gt; 155, 577, 979, 1230, ...   # history well past 1 hour<
     </tr>
     <tr>
       <td>death-star</td>
-      <td>Jaeger on :16686, <strong>0 services, null spans</strong> — instrumentation off</td>
+      <td>Jaeger on :16686, <strong>0 services, null spans</strong> - instrumentation off</td>
     </tr>
     <tr>
       <td>sock-shop</td>
@@ -806,17 +807,17 @@ query_range over 6h -&gt; 155, 577, 979, 1230, ...   # history well past 1 hour<
 <p><strong>Every metric carries where it came from.</strong> Mixing a cgroup estimate with a histogram quantile and presenting both as "latency" would be exactly the kind of dishonesty the evidence model (<code>declared</code> vs <code>observed</code>) exists to prevent. The same discipline extends to metric provenance.</p>
 <hr class="rule">
 <h2 id="why-this-also-fixes-the-ml">Why this also fixes the ML</h2>
-<p>The models are currently crippled by thin data — <code>sock-shop:front-end</code> has <strong>6 distinct values across 1568 rows</strong> (0.4%), because CPU and memory on a mostly-idle container barely move and the collector samples faster than they change. Every detector fires on 0% because there is nothing to learn.</p>
+<p>The models are currently crippled by thin data - <code>sock-shop:front-end</code> has <strong>6 distinct values across 1568 rows</strong> (0.4%), because CPU and memory on a mostly-idle container barely move and the collector samples faster than they change. Every detector fires on 0% because there is nothing to learn.</p>
 <p>Latency and error rate do not behave that way. p95 latency varies continuously under load; a status-code mix changes the moment anything degrades. Adding Tier 1/2 features is the most direct fix available for the distinct-signal problem, and it costs no new instrumentation on the one target that matters most.</p>
 <hr class="rule">
 <h2 id="phases">Phases</h2>
-<h3 id="phase-1-provenance-foundation">Phase 1 — Provenance foundation</h3>
+<h3 id="phase-1-provenance-foundation">Phase 1 - Provenance foundation</h3>
 <p>Add an explicit source to every metric and edge metric, so any number can say which tier produced it. Nothing else can land honestly until this exists.</p>
 <p><em>Done when:</em> metrics carry a source field end to end, the UI can read it, and existing Tier 0 numbers are labelled as such. No behaviour change otherwise.</p>
-<h3 id="phase-2-telemetry-source-abstraction">Phase 2 — Telemetry source abstraction</h3>
+<h3 id="phase-2-telemetry-source-abstraction">Phase 2 - Telemetry source abstraction</h3>
 <p>A <code>TelemetrySource</code> interface with the current SSH collector as the first implementation, so adding a second source is not surgery on <code>MetricCollector</code>. Per-target configuration of which sources to try, in <code>remote_config.json</code>.</p>
 <p><em>Done when:</em> the existing collector runs unchanged behind the interface, and a target can declare additional sources without code changes.</p>
-<h3 id="phase-3-prometheus-source-tier-2">Phase 3 — Prometheus source (Tier 2)</h3>
+<h3 id="phase-3-prometheus-source-tier-2">Phase 3 - Prometheus source (Tier 2)</h3>
 <p>Query the target's Prometheus over the SSH connection already held. Map PromQL to the fields that are currently null:</p>
 <ul>
   <li><code>edge.metrics.latencyP50/P95/P99</code> from <code>histogram_quantile</code> on duration buckets</li>
@@ -824,7 +825,7 @@ query_range over 6h -&gt; 155, 577, 979, 1230, ...   # history well past 1 hour<
   <li><code>edge.metrics.requestRate</code> from <code>rate()</code> on the count series</li>
 </ul>
 <p><em>Done when:</em> <code>edge.metrics</code> is non-null for open-telemetry, values match what a direct PromQL query returns, and the UI labels them Tier 2.</p>
-<h3 id="phase-3b-wiring-done">Phase 3b — Wiring (done)</h3>
+<h3 id="phase-3b-wiring-done">Phase 3b - Wiring (done)</h3>
 <p>Tier 2 metrics reach the graph and the UI.</p>
 <p><strong>Enabling it.</strong> Per target in <code>server/data/remote_config.json</code>:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -839,31 +840,31 @@ query_range over 6h -&gt; 155, 577, 979, 1230, ...   # history well past 1 hour<
   }
 }</code></pre>
                     </div>
-<p><code>localhost</code> is correct and deliberate — the query runs <em>on the target</em> via curl over the SSH connection already held. Prometheus is bound to localhost there and only :8080 is open in the security group, so querying from outside would mean opening a port to read a metric.</p>
+<p><code>localhost</code> is correct and deliberate - the query runs <em>on the target</em> via curl over the SSH connection already held. Prometheus is bound to localhost there and only :8080 is open in the security group, so querying from outside would mean opening a port to read a metric.</p>
 <p>Opt-in, never inferred. A reachable Prometheus is not on its own consent to query it every cycle.</p>
 <p><strong>Failure behaviour.</strong> The whole Tier 2 path is wrapped. If the source is slow, broken, or returns nonsense, the cycle logs once and returns empty, and the Tier 0 metrics collected in the same cycle are published unchanged. The merge is additive for the same reason: a cycle where Prometheus was unavailable must not wipe the CPU and memory that <code>docker stats</code> just returned. Both properties are covered by tests.</p>
 <p><strong>In the UI.</strong> The inspection sidebar grows a <code>REQUEST METRICS</code> block with a <code>TIER 2 · prometheus</code> badge, separate from <code>LIVE HEALTH</code> which is now marked <code>tier 0 · cgroup</code>. They are kept apart on purpose: CPU is measured by the kernel, latency by whatever the target happens to run, and those are not the same kind of fact.</p>
 <p>Two things it will not do:</p>
 <ul>
   <li>A missing quantile reads "not measured", never <code>0ms</code>.</li>
-  <li>An error rate with no traffic in the window reads "no traffic in window", never <code>0%</code> — a clean bill of health nobody earned.</li>
+  <li>An error rate with no traffic in the window reads "no traffic in window", never <code>0%</code> - a clean bill of health nobody earned.</li>
 </ul>
-<p><em>Verified:</em> server boots with the path wired and stays silent when no target opts in; 44 tests pass. <strong>Not yet verified against live Prometheus</strong> — all four targets were unreachable (SSH closed) throughout this work.</p>
-<h3 id="phase-4-edge-heat-and-rca-use-real-rates">Phase 4 — Edge heat and RCA use real rates</h3>
-<p>Edge heat currently grades on <code>samplesPerMin</code> — socket observations, an honest proxy but a proxy. Where a real request rate exists, use it. Same for RCA: real error rates are far stronger evidence than status heuristics.</p>
+<p><em>Verified:</em> server boots with the path wired and stays silent when no target opts in; 44 tests pass. <strong>Not yet verified against live Prometheus</strong> - all four targets were unreachable (SSH closed) throughout this work.</p>
+<h3 id="phase-4-edge-heat-and-rca-use-real-rates">Phase 4 - Edge heat and RCA use real rates</h3>
+<p>Edge heat currently grades on <code>samplesPerMin</code> - socket observations, an honest proxy but a proxy. Where a real request rate exists, use it. Same for RCA: real error rates are far stronger evidence than status heuristics.</p>
 <p><em>Done when:</em> heat uses request rate where available and socket samples otherwise, with the difference visible rather than silently swapped.</p>
-<h3 id="phase-5-access-logs-tier-1">Phase 5 — Access logs (Tier 1)</h3>
+<h3 id="phase-5-access-logs-tier-1">Phase 5 - Access logs (Tier 1)</h3>
 <p><code>parseHttpLogLine</code> and <code>collectHttpInteractions</code> already exist and find nothing, because these proxies do not log to stdout in a parseable form by default. Document the config change per proxy and make the parser robust to the formats actually emitted.</p>
 <p><em>Done when:</em> a configured Envoy or nginx produces real per-request rows in Raw Traffic Logs, on a target with no Prometheus.</p>
-<h3 id="phase-6-richer-ml-features">Phase 6 — Richer ML features</h3>
+<h3 id="phase-6-richer-ml-features">Phase 6 - Richer ML features</h3>
 <p>Extend <code>ml/</code> to include latency and error-rate features where the tier provides them, with the feature set recorded per model so a model trained on four features is never confused with one trained on seven.</p>
 <p><em>Done when:</em> models train on the extended feature set, and distinct-row counts on instrumented targets are materially better than the current 0.4%.</p>
-<h3 id="phase-7-comparison-harness">Phase 7 — Comparison harness</h3>
+<h3 id="phase-7-comparison-harness">Phase 7 - Comparison harness</h3>
 <p>Use the instrumented target as ground truth and measure how well the agentless signal tracks it. Does socket-sample rate correlate with real request rate? Does a cgroup-only Isolation Forest detect what a latency-aware one detects?</p>
 <p><em>Done when:</em> there is a reproducible comparison with numbers. This is the part most likely to be publishable, and it only exists because Tier 0 was kept rather than replaced.</p>
 <hr class="rule">
 <h2 id="sequencing-note">Sequencing note</h2>
-<p>Phases 1–2 are pure refactoring and can be done with every target offline — which matters, because all four were unreachable when this plan was written (the EC2 IPs rotate constantly). Phases 3 onward need a live instrumented target for verification.</p>
+<p>Phases 1–2 are pure refactoring and can be done with every target offline - which matters, because all four were unreachable when this plan was written (the EC2 IPs rotate constantly). Phases 3 onward need a live instrumented target for verification.</p>
                 </article>
                 
             </div>
@@ -1145,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1300,10 +1301,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1401,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

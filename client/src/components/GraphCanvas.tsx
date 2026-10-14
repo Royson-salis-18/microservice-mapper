@@ -18,8 +18,8 @@ interface GraphCanvasProps {
 
 /**
  * Refits the viewport when the arrangement changes. Each layout occupies a
- * completely different footprint — a spiral is compact, a hierarchy is very
- * wide — so without this, switching leaves you staring at empty canvas with
+ * completely different footprint - a spiral is compact, a hierarchy is very
+ * wide - so without this, switching leaves you staring at empty canvas with
  * the graph off-screen.
  */
 function RefitOnLayoutChange({ layoutKey, nodeCount }: { layoutKey?: string; nodeCount: number }) {

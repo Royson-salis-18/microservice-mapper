@@ -100,7 +100,7 @@ Cards are **flat and matte** on purpose. Gloss and reflections were tried and re
 │ [icon]  orders            ●     │   ANOMALY    ← ML ensemble, persistent only
 │         sock-shop               │
 │ CPU ▓▓▓▓▓▓░░░░░░  41.0%         │   ← share of its CPU allowance
-│ MEM ▓▓▓░░░░░░░░░  22.5%         │   ← share of its memory limit; "—" if unmeasured
+│ MEM ▓▓▓░░░░░░░░░  22.5%         │   ← share of its memory limit; "-" if unmeasured
 └─────────────────────────────────┘
 ```
 

@@ -1,7 +1,7 @@
 /**
  * The output of Phase 2 discovery: a normalized inventory of the host,
  * containers, and declared/candidate dependencies. This is DISCOVERED
- * ARCHITECTURE ONLY — no runtime traffic claims live here (spec section 2).
+ * ARCHITECTURE ONLY - no runtime traffic claims live here (spec section 2).
  */
 
 export interface HostMetadata {
@@ -11,7 +11,7 @@ export interface HostMetadata {
   remoteUtcTime: string | null;
   dockerAvailable: boolean;
   dockerVersion: string | null;
-  discoveredAt: string; // ISO-8601 UTC — when this inventory was built
+  discoveredAt: string; // ISO-8601 UTC - when this inventory was built
 }
 
 export interface ArchitectureInventory {

@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -665,7 +666,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#readanomalyscores-mtime-cache">mtime Cache</a>
   <a href="#schedulesave-debounced-disk-write">Debounced Disk Write</a>
   <a href="#applyedgeactivity-heat-map-calculation">Heat Map Calculation</a>
-  <a href="#why-half-count-carry-forward">Why half-count carry-forwa...</a>
+  <a href="#why-half-count-carry-forward">forward?</a>
 </nav>
         </header>
 
@@ -695,7 +696,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// Primary state — three parallel Maps, all keyed by targetId
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">// Primary state - three parallel Maps, all keyed by targetId
 public targets       = new Map&lt;string, Target&gt;();
 public nodesByTarget = new Map&lt;string, Map&lt;string, ServiceNode&gt;&gt;();
 public edgesByTarget = new Map&lt;string, Map&lt;string, DependencyEdge&gt;&gt;();
@@ -706,10 +707,10 @@ public endpointRegistry  = new EndpointRegistry();   // per-route HTTP stats
 public discoveryEngine   : EndpointDiscoveryEngine;
 private traceStores      = new Map&lt;string, TraceStore&gt;(); // lazy per-target
 
-// Rolling TCP observation count per edge — powers the heat display
+// Rolling TCP observation count per edge - powers the heat display
 private edgeActivity = new Map&lt;string, { count: number; windowStart: number }&gt;();
 
-// ML score mtime cache — avoids reparsing unchanged file
+// ML score mtime cache - avoids reparsing unchanged file
 private anomalyScoresCache: { mtimeMs: number; data: Record&lt;string, any&gt; } | null = null;
 
 // Debounce timer for disk writes
@@ -742,7 +743,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
                     </div></figure>
 <p>Note: <code>clearRuntimeState()</code> was called here in early versions and removed. Calling it wiped targets every restart, forcing users to re-add them each time. The 10-second interval on the same setInterval as staleness checks avoids two separate timers for related tasks.</p>
 <hr class="rule">
-<h2 id="helper-accessors-lazy-map-creation">Helper Accessors — Lazy Map Creation</h2>
+<h2 id="helper-accessors-lazy-map-creation">Helper Accessors - Lazy Map Creation</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -755,7 +756,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
                     </div>
 <p>Same pattern for <code>getTargetEdges</code>. This eliminates <code>if (!map) create; map.set(...)</code> boilerplate throughout every method that touches nodes or edges.</p>
 <hr class="rule">
-<h2 id="getgraph-the-read-path"><code>getGraph()</code> — The Read Path</h2>
+<h2 id="getgraph-the-read-path"><code>getGraph()</code> - The Read Path</h2>
 <p>Called on every WebSocket broadcast and every <code>GET /api/graph</code> request.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -788,12 +789,12 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
 }</code></pre>
                     </div>
 <h3 id="design-decision-ml-scores-applied-at-read-time">Design decision: ML scores applied at read time</h3>
-<p>The ML pipeline writes <code>ml/data/latest_scores.json</code> every 10 seconds. The server could watch this file with <code>fs.watch()</code> and push updates, but that adds complexity. Instead, scores are applied fresh on every <code>getGraph()</code> call using a mtime cache — if the file hasn't changed, the cached parse result is returned in microseconds.</p>
+<p>The ML pipeline writes <code>ml/data/latest_scores.json</code> every 10 seconds. The server could watch this file with <code>fs.watch()</code> and push updates, but that adds complexity. Instead, scores are applied fresh on every <code>getGraph()</code> call using a mtime cache - if the file hasn't changed, the cached parse result is returned in microseconds.</p>
 <hr class="rule">
-<h2 id="ingestremote-the-write-path"><code>ingestRemote()</code> — The Write Path</h2>
+<h2 id="ingestremote-the-write-path"><code>ingestRemote()</code> - The Write Path</h2>
 <p>See <a href="05-telemetry-ingestion.html">05-telemetry-ingestion.md</a> for the full breakdown.</p>
 <hr class="rule">
-<h2 id="handletopologydiscovered-from-ssh-discovery"><code>handleTopologyDiscovered()</code> — From SSH Discovery</h2>
+<h2 id="handletopologydiscovered-from-ssh-discovery"><code>handleTopologyDiscovered()</code> - From SSH Discovery</h2>
 <p>Called by <code>EndpointDiscoveryEngine</code> when a discovery cycle completes.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -803,7 +804,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
   const nodesMap = this.getTargetNodes(targetId);
   const edgesMap = this.getTargetEdges(targetId);
 
-  // Upsert nodes — never overwrite a node that has richer runtime data
+  // Upsert nodes - never overwrite a node that has richer runtime data
   for (const svc of services) {
     const id = `${targetId}:${svc.name}`;
     const existing = nodesMap.get(id);
@@ -841,7 +842,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
 }</code></pre>
                     </div>
 <hr class="rule">
-<h2 id="readanomalyscores-mtime-cache"><code>readAnomalyScores()</code> — mtime Cache</h2>
+<h2 id="readanomalyscores-mtime-cache"><code>readAnomalyScores()</code> - mtime Cache</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -863,13 +864,13 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
                     </div>
 <p>Checking <code>statSync().mtimeMs</code> before <code>readFileSync</code> costs ~0.1ms and saves the JSON parse (~1-10ms) on every <code>getGraph()</code> call when the score file hasn't changed. The file is written every 10 seconds by <code>ml/score.py</code>, so caching is appropriate.</p>
 <hr class="rule">
-<h2 id="schedulesave-debounced-disk-write"><code>scheduleSave()</code> — Debounced Disk Write</h2>
+<h2 id="schedulesave-debounced-disk-write"><code>scheduleSave()</code> - Debounced Disk Write</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-typescript">private scheduleSave(): void {
-  if (this.saveTimeout) return;  // Already pending — don&#x27;t stack up
+  if (this.saveTimeout) return;  // Already pending - don&#x27;t stack up
   this.saveTimeout = setTimeout(() =&gt; {
     this.saveTimeout = null;
     this.saveToDisk();
@@ -879,7 +880,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
 <p>Any number of calls within a 2-second window = exactly one disk write. During active telemetry ingestion, <code>ingestRemote()</code> is called ~12 times/minute (one per service per collection cycle). Without debouncing: 12 writes/minute per target. With debouncing: ~2 writes/minute total.</p>
 <p>The 2-second window is a balance: short enough that state isn't lost if the process crashes, long enough to collapse bursts.</p>
 <hr class="rule">
-<h2 id="applyedgeactivity-heat-map-calculation"><code>applyEdgeActivity()</code> — Heat Map Calculation</h2>
+<h2 id="applyedgeactivity-heat-map-calculation"><code>applyEdgeActivity()</code> - Heat Map Calculation</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -899,7 +900,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
       lastSeen: new Date().toISOString(),
     };
 
-    // Window reset every ~2 minutes — carry half to avoid snap-to-zero
+    // Window reset every ~2 minutes - carry half to avoid snap-to-zero
     if (elapsedMs &gt; 120_000) {
       this.edgeActivity.set(edge.id, {
         count: Math.floor(bucket.count / 2),
@@ -957,7 +958,7 @@ private saveTimeout: NodeJS.Timeout | null = null;</code></pre>
 <p>Two more things are written onto edges each cycle, outside the store:</p>
 <ul>
   <li><strong><code>edge.weight</code></strong>, by <code>RiskEngine.recomputeAll()</code> through <code>computeEdgeWeights()</code>: confidence × the caller's share of traffic, with shares summing to exactly 1 per caller and kind. See <a href="22-risk-engine.html">Risk, cascades and blast radius</a>.</li>
-  <li><strong><code>edge.status</code></strong> from <code>linkStatus(errorRate, p95 ?? latency)</code> (<code>server/graph/linkThresholds.ts</code>): <code>degraded</code> at ≥ 1% errors or ≥ 300 ms, <code>failed</code> at ≥ 5% or ≥ 1 s. Without request data, the link stays <code>active</code>, and its colour comes from activity and the callee's status.</li>
+  <li><strong><code>edge.status</code></strong> from <code>linkStatus(errorRate, p95 ?? latency)</code> (<code>algorithms/graph/linkThresholds.ts</code>): <code>degraded</code> at ≥ 1% errors or ≥ 300 ms, <code>failed</code> at ≥ 5% or ≥ 1 s. Without request data, the link stays <code>active</code>, and its colour comes from activity and the callee's status.</li>
 </ul>
 <h2 id="broadcasts-are-coalesced">Broadcasts are coalesced</h2>
 <p><code>requestBroadcast()</code> sends at most one <code>graph-update</code> every 3 s, however many targets report in between. Several targets ingesting every few seconds used to fan out a full graph frame per ingest.</p>
@@ -1242,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1397,10 +1398,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1498,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

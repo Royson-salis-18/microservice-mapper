@@ -1,4 +1,4 @@
-# Remote Collector — Telemetry Sources & Design
+# Remote Collector - Telemetry Sources & Design
 
 **File:** `remote-collector/index.ts`
 
@@ -28,14 +28,14 @@ POLLING_INTERVAL=5000               # ms between collection cycles
 
 ---
 
-## Telemetry Source 1 — Docker Socket
+## Telemetry Source 1 - Docker Socket
 
 ### Container Stats (CPU, Memory, Network)
 
 ```typescript
 const stats = await container.stats({ stream: false });  // one-shot snapshot
 
-// CPU calculation — Docker provides deltas:
+// CPU calculation - Docker provides deltas:
 const cpuDelta    = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
 const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
 const numCPUs     = stats.cpu_stats.online_cpus || stats.cpu_stats.cpu_usage.percpu_usage?.length || 1;
@@ -68,11 +68,11 @@ stream.on('data', (chunk) => {
 });
 ```
 
-This gives near-instantaneous node status updates when containers start/stop — much faster than waiting for the next polling cycle.
+This gives near-instantaneous node status updates when containers start/stop - much faster than waiting for the next polling cycle.
 
 ---
 
-## Telemetry Source 2 — Container Log Parsing
+## Telemetry Source 2 - Container Log Parsing
 
 ### Docker Log Framing
 
@@ -102,7 +102,7 @@ function demuxDockerLogs(buffer: Buffer): string[] {
 }
 ```
 
-**Why is this important?** Without stripping the header, the first 8 bytes of every log line are binary garbage. Regex patterns fail silently — no HTTP events are extracted, edge observability is blind.
+**Why is this important?** Without stripping the header, the first 8 bytes of every log line are binary garbage. Regex patterns fail silently - no HTTP events are extracted, edge observability is blind.
 
 ### Standard Access Log Format (Apache/NGINX combined)
 
@@ -146,7 +146,7 @@ Matching a log line's `remote_addr` or `upstream_addr` against this map converts
 
 ---
 
-## Telemetry Source 3 — `/proc/net/tcp` Polling
+## Telemetry Source 3 - `/proc/net/tcp` Polling
 
 Linux's `/proc/net/tcp` contains the kernel's TCP connection table. The collector reads it at each polling interval.
 

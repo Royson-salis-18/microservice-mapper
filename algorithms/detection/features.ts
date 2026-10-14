@@ -1,5 +1,5 @@
 /**
- * Features for "is this service the cause, right now?" — one vector per service per collection cycle. PURE.
+ * Features for "is this service the cause, right now?" - one vector per service per collection cycle. PURE.
  *
  * Shared by the offline learner (algorithms/learning) and the live server, so the model is trained on exactly what it later sees.
  *
@@ -8,7 +8,7 @@
  *      robust z of AnomalyDetector.robustScore (median/MAD, log scale for positive quantities, one-sided, noise-shrunk).
  *      This needs no labels and makes a CPU jump on a busy API comparable to one on a quiet database.
  *   2. Supervised combination (algorithms/learning): HOW MUCH each normalised signal, container fact and neighbour signal counts,
- *      and where the alarm threshold sits, are learned from labelled fault runs — not written by hand.
+ *      and where the alarm threshold sits, are learned from labelled fault runs - not written by hand.
  *
  * The constants below are measurement resolution (the smallest change worth noticing in each unit), not decision
  * thresholds: a 0.5% CPU step or a 2 kB/s network step is noise at the precision docker reports.

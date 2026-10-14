@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -659,7 +660,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#2-block-2-graph-building-and-edge-weights">2. Block 2: graph building...</a>
   <a href="#3-block-3-link-status">3. Block 3: link status</a>
   <a href="#4-block-4-anomaly-detection">4. Block 4: anomaly detect...</a>
-  <a href="#5-block-5-root-cause-ranking">5. Block 5: root-cause ran...</a>
+  <a href="#5-block-5-root-cause-ranking">cause ranking</a>
   <a href="#6-block-6-cascade-prediction">6. Block 6: cascade predic...</a>
   <a href="#7-block-7-health-and-risk">7. Block 7: health and risk</a>
   <a href="#8-block-8-incident-lifecycle">8. Block 8: incident lifec...</a>
@@ -683,7 +684,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p>What the mapper computes, block by block, with a flowchart, pseudocode, the mathematics and the source file for each. The companion document <a href="https://github.com/Royson-salis-18/bench-1"><code>bench-1/docs/FAULT_INJECTION.md</code></a> describes the machinery that tests it (blind fault injection and organic traffic); section 9 here says how the two meet.</p>
+                    <p>What the mapper computes, block by block, with a flowchart, pseudocode, the mathematics and the source file for each. The companion document <a href="https://github.com/Royson-salis-18/bench-1"><code>bench-1/wiki/FAULT_INJECTION.md</code></a> describes the machinery that tests it (blind fault injection and organic traffic); section 9 here says how the two meet.</p>
 <p>Contents: <a href="#0-the-pipeline">0 Pipeline</a> · <a href="#1-block-1-collection">1 Collection</a> · <a href="#2-block-2-graph-building-and-edge-weights">2 Graph building</a> · <a href="#3-block-3-link-status">3 Link status</a> · <a href="#4-block-4-anomaly-detection">4 Anomaly detection</a> · <a href="#5-block-5-root-cause-ranking">5 Root cause</a> · <a href="#6-block-6-cascade-prediction">6 Cascade</a> · <a href="#7-block-7-health-and-risk">7 Health and risk</a> · <a href="#8-block-8-incident-lifecycle">8 Incident lifecycle</a> · <a href="#9-how-it-is-evaluated">9 Evaluation</a> · <a href="#10-logic-separation-which-file-does-what">10 Logic separation</a> · <a href="#11-the-model-in-one-page">11 Model summary</a></p>
 <hr class="rule">
 <h2 id="0-the-pipeline"><span class="id">0</span> The pipeline</h2>
@@ -788,7 +789,7 @@ d(e) = (b_e / Σ b) · (1 − u/N)        else if some have activity, u = # with
 d(e) = 1 / N                          else                                               (basis: uniform)</code></pre>
                     </div>
 <p><code>b</code> is the slow <strong>baseline</strong> of socket activity, not the instantaneous rate: a link goes quiet exactly when its callee dies, and weighting on live traffic would make a dead dependency look less important the longer it stays down. Shares always sum to exactly 1 per group. <strong>Telemetry edges</strong> (to or from an observability component) are scaled by 0.1: exporting traces is fire-and-forget, and weighing it at face value would predict a collector outage to take down a shop. <code>w(e) = clamp(confidence · d(e) · factor, 0, 1)</code>.</p>
-<p>Source: <code>server/graph/EdgeWeights.ts</code> (pure), <code>server/graph/GraphStore.ts</code> (shell: persistence, merging).</p>
+<p>Source: <code>algorithms/graph/EdgeWeights.ts</code> (pure), <code>server/graph/GraphStore.ts</code> (shell: persistence, merging).</p>
 <hr class="rule">
 <h2 id="3-block-3-link-status"><span class="id">3</span> Block 3: link status</h2>
 <p>One definition of a troubled link, shared by the server (status) and the client (colour), checked equal by a test.</p>
@@ -816,10 +817,10 @@ d(e) = 1 / N                          else                                      
     </tr>
   </tbody>
 </table></div>
-<p>Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: <code>server/graph/linkThresholds.ts</code>, <code>client/.../shared/edgeHeat.ts</code>.</p>
+<p>Measured request data outranks the callee's status: a link carrying clean traffic is not failing just because its callee was flagged. Source: <code>algorithms/graph/linkThresholds.ts</code>, <code>client/.../shared/edgeHeat.ts</code>.</p>
 <hr class="rule">
 <h2 id="4-block-4-anomaly-detection"><span class="id">4</span> Block 4: anomaly detection</h2>
-<p>Per service, per metric, against <strong>that service's own recent past</strong>. The method was measured on 751 labelled faults over real healthy traffic (<code>new-repo</code>, <code>docs/RCA_STATISTICAL_REPORT.html</code>).</p>
+<p>Per service, per metric, against <strong>that service's own recent past</strong>. The method was measured on 751 labelled faults over real healthy traffic (<code>new-repo</code>, <code>wiki/RCA_STATISTICAL_REPORT.html</code>).</p>
 <figure><div class="fx" style="margin:18px 0;overflow:auto"><pre class="mermaid">flowchart TD
     S[&quot;series x = past samples of one metric (never including the 2 being judged)&quot;] --&gt; T[&quot;transform: log(x + u) for positive quantities, identity for rates&quot;]
     T --&gt; F1[&quot;fit: c = median, s = max(1.4826 MAD, q90 spread / 1.645, floor)&quot;]
@@ -882,7 +883,7 @@ d(e) = 1 / N                          else                                      
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">raise silence  iff  q &gt;= 0.6  and  obs = 0  and  z = (exp - obs) / sqrt(exp (1 - q)) &gt;= 3.5      (evidence: own)</code></pre>
                     </div>
 <p><strong>Hard evidence</strong> (a fact, not a degree): container paused, exited, dead, restarting, vanished, or a restart since the last sample. <strong>Onset tracking:</strong> an anomaly keeps the timestamp of its first sighting until it clears, so temporal precedence compares real start times.</p>
-<p>Source: <code>server/rca/AnomalyDetector.ts</code> (pure; thresholds injected), <code>server/rca/thresholds.ts</code> (defaults, limits), <code>thresholdsStore.ts</code> (disk).</p>
+<p>Source: <code>algorithms/detection/AnomalyDetector.ts</code> (pure; thresholds injected), <code>algorithms/detection/thresholds.ts</code> (defaults, limits), <code>thresholdsStore.ts</code> (disk).</p>
 <hr class="rule">
 <h2 id="5-block-5-root-cause-ranking"><span class="id">5</span> Block 5: root-cause ranking</h2>
 <p>The question is: of all the services that look unwell, which one is the <em>source</em>? A caller's errors are usually inherited from a broken callee, so the engine separates a service's own evidence from symptoms and lets a broken dependency <em>explain away</em> its callers' symptoms.</p>
@@ -928,7 +929,7 @@ d(e) = 1 / N                          else                                      
                     </div>
 <p><code>margin = 1 − raw₂/raw₁</code>. <code>γ = 0</code> (a threshold) turns explain-away and the coverage bonus off and gives plain "most abnormal"; the research bench measured that the <em>scoring</em> (silence, noise normalisation) matters more than the explain-away step, and the doc says so rather than overclaiming.</p>
 <p><strong>Propagation path:</strong> from the root, walk callers up to 3 hops, following only callers that are themselves troubled and lean on the callee materially (<code>w ≥ 0.1</code>). Healthy callers are not "propagated to"; they are the at-risk list. <strong>Affected services</strong> are returned as node ids.</p>
-<p>Source: <code>server/rca/RCAEngine.ts</code> (pure), <code>TemporalAnalyzer.ts</code>, <code>ExplanationEngine.ts</code> (text).</p>
+<p>Source: <code>algorithms/rca/RCAEngine.ts</code> (pure), <code>TemporalAnalyzer.ts</code>, <code>ExplanationEngine.ts</code> (text).</p>
 <hr class="rule">
 <h2 id="6-block-6-cascade-prediction"><span class="id">6</span> Block 6: cascade prediction</h2>
 <p>What will fail next, and how far would one failure spread? Every service has an intrinsic failure probability <code>p₀</code> from what is measured now; risk flows against dependency arrows, <strong>noisy-OR</strong> combined (each route to failure is an independent chance):</p>
@@ -951,7 +952,7 @@ p₀   = 1 − (1 − p_status)(1 − p_anomaly)        p_status: critical 1.0, 
 <p>Convergence: <code>P</code> only rises from <code>p₀</code> and is bounded by 1, so the iteration converges even on dependency cycles. <strong>What-if</strong> answers "if this one service failed, how far would it spread?" by solving with <code>p₀ = 1</code> at that node only. <strong>Structural criticality</strong> is the traffic-weighted share of edges disrupted by that node's failure, <code>crit(n) = Σ_e traffic(e) · (1 − (1 − P_src(e))(1 − P_dst(e))) / Σ_e traffic(e)</code>, measured from a clean slate (a property of the service's place in the graph, not of what is failing now).</p>
 <p>These are <strong>estimates under a stated model</strong>, not observed frequencies. Each output carries the model name and <code>τ</code>. Whether the at-risk warnings were <em>honest</em> is measured against the injector's ledger (reliability diagram, Brier, ECE, AUC in the evaluation report).</p>
 <p>A second, cheaper at-risk list lives in the RCA engine for use inside an incident: for a healthy caller with failing callees <code>F</code>, <code>risk = 1 − Π_{c ∈ F} (1 − min(1, ev(c) / (2 zA)) · q)</code>, <code>q = 0.5</code>.</p>
-<p>Source: <code>server/graph/CascadeEngine.ts</code> (pure), <code>RiskEngine.ts</code> (shell: runs it every poll cycle).</p>
+<p>Source: <code>algorithms/graph/CascadeEngine.ts</code> (pure), <code>RiskEngine.ts</code> (shell: runs it every poll cycle).</p>
 <hr class="rule">
 <h2 id="7-block-7-health-and-risk"><span class="id">7</span> Block 7: health and risk</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -1371,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1526,10 +1527,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1627,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

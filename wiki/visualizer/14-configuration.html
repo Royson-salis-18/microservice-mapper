@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -659,7 +660,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#target-ssh-config-serverdataremote-configjson">server/data/remoteconfig.j...</a>
   <a href="#ml-pipeline-mlconfigjson">ml/config.json</a>
   <a href="#the-holdout-is-not-an-accuracy-figure">The holdout is not an accu...</a>
-  <a href="#data-files-auto-created-at-runtime">Auto-Created at Runtime</a>
+  <a href="#data-files-auto-created-at-runtime">Created at Runtime</a>
   <a href="#frontend-clientviteconfigts">client/vite.config.ts</a>
 </nav>
         </header>
@@ -679,7 +680,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="doc-main">
                 <article class="doc-body">
                     <hr class="rule">
-<h2 id="server-serverconfigts">Server — <code>server/config.ts</code></h2>
+<h2 id="server-serverconfigts">Server - <code>server/config.ts</code></h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -728,7 +729,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <hr class="rule">
-<h2 id="remote-collector-environment-variables">Remote Collector — Environment Variables</h2>
+<h2 id="remote-collector-environment-variables">Remote Collector - Environment Variables</h2>
 <p>Set on the EC2 instance before starting the collector:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -770,7 +771,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <hr class="rule">
-<h2 id="target-ssh-config-serverdataremote-configjson">Target SSH Config — <code>server/data/remote_config.json</code></h2>
+<h2 id="target-ssh-config-serverdataremote-configjson">Target SSH Config - <code>server/data/remote_config.json</code></h2>
 <p>Written by the UI (<code>RemoteConfigPanel</code>) or manually. Loaded by <code>GraphStore.loadTargetsFromConfig()</code> at startup.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -793,18 +794,18 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   }
 }</code></pre>
                     </div>
-<p><strong><code>sshKeyPath</code> supports <code>~/</code></strong> — expanded via <code>path.join(os.homedir(), ...)</code>. No passphrase-protected keys (would require <code>ssh-agent</code> integration).</p>
-<p><strong><code>baseUrl</code></strong> — used for HTTP health pings. Optional but recommended. If absent, <code>endpointStatus</code> stays <code>UNCONFIGURED</code>.</p>
-<p><strong><code>trafficBaseUrl</code></strong> (optional) — pins the URL traffic is actually sent to, overriding what discovery infers. Set it from the <strong>Entry point</strong> control in the Traffic panel, or via <code>POST /api/traffic/entrypoint</code>.</p>
+<p><strong><code>sshKeyPath</code> supports <code>~/</code></strong> - expanded via <code>path.join(os.homedir(), ...)</code>. No passphrase-protected keys (would require <code>ssh-agent</code> integration).</p>
+<p><strong><code>baseUrl</code></strong> - used for HTTP health pings. Optional but recommended. If absent, <code>endpointStatus</code> stays <code>UNCONFIGURED</code>.</p>
+<p><strong><code>trafficBaseUrl</code></strong> (optional) - pins the URL traffic is actually sent to, overriding what discovery infers. Set it from the <strong>Entry point</strong> control in the Traffic panel, or via <code>POST /api/traffic/entrypoint</code>.</p>
 <p>It exists because discovery can only report what a container <em>publishes</em>, which is not the same as what is <em>reachable from where the app runs</em>. Two real cases:</p>
 <ul>
   <li>A published port is closed in the security group, so the inferred URL times out forever while an SSH forward (<code>http://localhost:18080</code>) works.</li>
-  <li>Discovery picks the alphabetically-first endpoint, which can be a telemetry port — a DeathStarBench box resolved to Jaeger's OTLP <code>:4318</code> rather than the app's own entry.</li>
+  <li>Discovery picks the alphabetically-first endpoint, which can be a telemetry port - a DeathStarBench box resolved to Jaeger's OTLP <code>:4318</code> rather than the app's own entry.</li>
 </ul>
 <p><code>GET /api/traffic/entrypoints</code> flags a pin whose host no longer matches the target's current <code>ec2PublicIp</code> (<code>staleHost</code>), because these instances get a new public IP on every stop/start.</p>
 <p>Note that <code>POST /api/config/remote</code> <strong>merges</strong> into the existing entry rather than replacing it, specifically so that updating an IP does not silently erase this key.</p>
 <hr class="rule">
-<h2 id="ml-pipeline-mlconfigjson">ML Pipeline — <code>ml/config.json</code></h2>
+<h2 id="ml-pipeline-mlconfigjson">ML Pipeline - <code>ml/config.json</code></h2>
 <p>Defaults live in <code>ml/mlconfig.py</code>. <code>collector.py</code> and <code>score.py</code> re-read this file every cycle, so changes to their keys take effect within one cycle with no restart. <code>preprocess.py</code> and <code>train.py</code> read it once at startup, so their keys only apply on the next <strong>Retrain</strong>.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -899,9 +900,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>All of these are editable from the <strong>ML Pipeline</strong> page; the API validates them (<code>POST /api/ml/config</code>).</p>
 <h3 id="the-holdout-is-not-an-accuracy-figure">The holdout is not an accuracy figure</h3>
 <p><code>holdout_fraction</code> splits <strong>chronologically</strong>, not randomly: the model fits the earlier part of each service's data and is then scored on the tail it never saw. A random split would leak adjacent samples across the boundary and flatter the result.</p>
-<p>The tail is unlabelled, so what comes back is a <strong>firing rate</strong>, not an error rate — "how often does this model fire on data it never saw". Compare it to <code>contamination</code>: much higher suggests drift or a tail that was not actually normal. It is reported per model in <code>models/*.meta.json</code> and in the <code>Holdout flagged</code> column on the ML Pipeline page.</p>
+<p>The tail is unlabelled, so what comes back is a <strong>firing rate</strong>, not an error rate - "how often does this model fire on data it never saw". Compare it to <code>contamination</code>: much higher suggests drift or a tail that was not actually normal. It is reported per model in <code>models/*.meta.json</code> and in the <code>Holdout flagged</code> column on the ML Pipeline page.</p>
 <hr class="rule">
-<h2 id="data-files-auto-created-at-runtime">Data Files — Auto-Created at Runtime</h2>
+<h2 id="data-files-auto-created-at-runtime">Data Files - Auto-Created at Runtime</h2>
 <p>The server's <code>data/</code> paths are relative to its working directory, which <code>npm run server</code> sets to <code>server/</code>, so they live in <code>server/data/</code> (git-ignored).</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -962,10 +963,10 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p><strong>To reset graph state completely:</strong> <code>rm server/data/graph_db.json</code> — targets will be re-discovered from <code>remote_config.json</code> on next startup.</p>
+<p><strong>To reset graph state completely:</strong> <code>rm server/data/graph_db.json</code> - targets will be re-discovered from <code>remote_config.json</code> on next startup.</p>
 <p><strong>To reset everything:</strong> <code>rm -rf server/data/ ml/data/ ml/models/</code></p>
 <hr class="rule">
-<h2 id="frontend-clientviteconfigts">Frontend — <code>client/vite.config.ts</code></h2>
+<h2 id="frontend-clientviteconfigts">Frontend - <code>client/vite.config.ts</code></h2>
 <p>The Vite dev server proxies API calls to the backend:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -1264,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1419,10 +1420,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1520,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

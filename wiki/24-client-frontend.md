@@ -1,4 +1,4 @@
-# 24 — Client Frontend Architecture & Views
+# 24 - Client Frontend Architecture & Views
 
 ## Overview
 
@@ -156,11 +156,11 @@ const terminalLeft = isInspectorOpen
 ## ML Pipeline View (73KB)
 
 The largest single component. Manages the entire ML workflow from the UI:
-- **Collector status** — shows whether `collector.py` is running and sample counts
-- **Preprocessing** — trigger `preprocess.py`, view normalization stats
-- **Training** — configure and run `train.py` with parameter tuning
-- **Scoring** — monitor `score.py` live scoring loop
-- **Model comparison** — per-detector scores and votes (Isolation Forest, LOF, one-class SVM, z-score); the verdict is a majority vote with the median score
+- **Collector status** - shows whether `collector.py` is running and sample counts
+- **Preprocessing** - trigger `preprocess.py`, view normalization stats
+- **Training** - configure and run `train.py` with parameter tuning
+- **Scoring** - monitor `score.py` live scoring loop
+- **Model comparison** - per-detector scores and votes (Isolation Forest, LOF, one-class SVM, z-score); the verdict is a majority vote with the median score
 
 ## Real-Time Data Hook (useGraphData)
 
@@ -175,7 +175,7 @@ All data flows through the single WebSocket connection for `graph-update`, `inci
 
 Each `graph-update` replaces the whole graph, but the hook **reuses** every node and edge whose *displayed* values have not changed (CPU to 0.1%, bytes to the MiB, scores to the percent; see `DISPLAY_PRECISION`). React then skips them, so a 50-service canvas re-renders only what visibly moved. Shared objects are tracked with a `WeakMap` keyed by the data object (`hooks/shareById.ts`), which keeps it correct under React StrictMode's double-invoked updaters.
 
-## Sidebar Navigation (Sidebar.tsx — 6KB)
+## Sidebar Navigation (Sidebar.tsx - 6KB)
 
 Vertical icon-based sidebar with tabs:
 - Each tab shows an icon and label

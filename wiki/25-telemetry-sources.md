@@ -1,4 +1,4 @@
-# 25 — Prometheus & Telemetry Source Plugin Architecture
+# 25 - Prometheus & Telemetry Source Plugin Architecture
 
 ## Overview
 
@@ -19,7 +19,7 @@ export interface TelemetrySource {
   readonly kind: MetricSourceKind;
   readonly targetId: string;
 
-  // Cheap liveness check — called before collection so an absent
+  // Cheap liveness check - called before collection so an absent
   // source costs one probe rather than a full timeout on every cycle.
   probe(): Promise<TelemetrySourceStatus>;
 
@@ -34,7 +34,7 @@ export interface TelemetrySource {
 - It does **not** own connections, does not write to the graph, and cannot decide what a metric means
 - The contract is deliberately narrow
 
-## MetricProvenance — Tracking Where Numbers Come From
+## MetricProvenance - Tracking Where Numbers Come From
 
 ```typescript
 export type MetricSourceKind =
@@ -86,7 +86,7 @@ The Tier 2 implementation. Reads the target's own Prometheus instance.
 
 ### Why SSH, Not Direct HTTP?
 
-> "Prometheus is bound to localhost on these boxes and only :8080 is open in the security group, so querying from outside would require opening a port — a change to someone's infrastructure to read a metric, which is not a trade worth making."
+> "Prometheus is bound to localhost on these boxes and only :8080 is open in the security group, so querying from outside would require opening a port - a change to someone's infrastructure to read a metric, which is not a trade worth making."
 
 ### Duration Histogram Discovery
 
@@ -102,7 +102,7 @@ const DURATION_FAMILIES = [
 ];
 ```
 
-Units differ between them — guessing seconds-vs-milliseconds silently produces numbers 1000x wrong.
+Units differ between them - guessing seconds-vs-milliseconds silently produces numbers 1000x wrong.
 
 ### Label Convention Discovery
 
@@ -132,7 +132,7 @@ For each service with a recognized duration histogram:
 
 ### Edge Attribution Limitation
 
-Prometheus only attributes to the serving side. Without explicit client-side labels, it cannot say who called, so no caller→callee attribution is claimed — rather than inventing one.
+Prometheus only attributes to the serving side. Without explicit client-side labels, it cannot say who called, so no caller→callee attribution is claimed - rather than inventing one.
 
 ## Per-Target Configuration
 
@@ -154,7 +154,7 @@ interface TelemetrySourceConfig {
 }
 ```
 
-Absent means Tier 0 only — the correct default. Enabling a source that is not there should be a deliberate act.
+Absent means Tier 0 only - the correct default. Enabling a source that is not there should be a deliberate act.
 
 ## How Tier 1/2 Metrics Flow to the Graph
 
@@ -165,7 +165,7 @@ When the remote collector or telemetry source produces Tier 1/2 request metrics,
 const req = (node as any).requestMetrics;
 delete (node as any).requestMetrics;
 if (existing) {
-  // Merged rather than assigned — a cycle where the optional source
+  // Merged rather than assigned - a cycle where the optional source
   // was unavailable does not wipe the resource metrics
   existing.metrics = { ...(existing.metrics ?? {}), ...req };
 }

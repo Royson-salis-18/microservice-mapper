@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -656,12 +657,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <nav class="toc">
   <a href="#overview">Overview</a>
   <a href="#architecture">Architecture</a>
-  <a href="#connection-interface-servertelemetry-platformsrcconnectionconnectionts">Connection Interface (serv...</a>
-  <a href="#sshconnection-servertelemetry-platformsrcconnectionsshconnectionts">SSHConnection (server/tele...</a>
+  <a href="#connection-interface-servertelemetry-platformsrcconnectionconnectionts">platform/src/connection/Co...</a>
+  <a href="#sshconnection-servertelemetry-platformsrcconnectionsshconnectionts">platform/src/connection/SS...</a>
   <a href="#key-behaviors">Key Behaviors</a>
   <a href="#timeout-handling">Timeout Handling</a>
-  <a href="#remotecommandt-servertelemetry-platformsrcconnectionremotecommandts">RemoteCommand&lt;T&gt; (server/t...</a>
-  <a href="#connectionmanager-servertelemetry-platformsrcconnectionconnectionmanagerts">ConnectionManager (server/...</a>
+  <a href="#remotecommandt-servertelemetry-platformsrcconnectionremotecommandts">platform/src/connection/Re...</a>
+  <a href="#connectionmanager-servertelemetry-platformsrcconnectionconnectionmanagerts">platform/src/connection/Co...</a>
   <a href="#retry-strategy">Retry Strategy</a>
   <a href="#ssh-in-the-websocket-terminal">SSH in the WebSocket Termi...</a>
   <a href="#ssh-channel-exhaustion">SSH Channel Exhaustion</a>
@@ -725,11 +726,11 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>The only production <code>Connection</code> implementation. Uses the <code>ssh2</code> library.</p>
 <h3 id="key-behaviors">Key Behaviors</h3>
 <ol>
-  <li><strong>Private key read from disk</strong> — read once at <code>connect()</code> time, never logged, never embedded in config</li>
-  <li><strong>Passphrase from environment</strong> — optional, loaded from an env var name stored in config</li>
-  <li><strong>Ready timeout</strong> — defaults to 15,000ms, configurable per target</li>
-  <li><strong>Command timeout</strong> — per-command, via <code>RemoteCommand.timeoutMs</code></li>
-  <li><strong>Output capping</strong> — stdout/stderr are capped at <code>RemoteCommand.maxOutputBytes</code> to prevent OOM from a runaway command</li>
+  <li><strong>Private key read from disk</strong> - read once at <code>connect()</code> time, never logged, never embedded in config</li>
+  <li><strong>Passphrase from environment</strong> - optional, loaded from an env var name stored in config</li>
+  <li><strong>Ready timeout</strong> - defaults to 15,000ms, configurable per target</li>
+  <li><strong>Command timeout</strong> - per-command, via <code>RemoteCommand.timeoutMs</code></li>
+  <li><strong>Output capping</strong> - stdout/stderr are capped at <code>RemoteCommand.maxOutputBytes</code> to prevent OOM from a runaway command</li>
 </ol>
 <h3 id="timeout-handling">Timeout Handling</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -826,7 +827,7 @@ export interface RemoteCommandResult&lt;T&gt; {
 <ol>
   <li><strong>Stale node pruning</strong> uses a 15-minute grace period (not 5 minutes like the OFFLINE threshold)</li>
   <li><strong>The <code>unhandledRejection</code> handler</strong> in <code>server/index.ts</code> catches stray SSH rejections</li>
-  <li><strong>Discovery failures at boot are non-fatal</strong> — caught and logged, not propagated</li>
+  <li><strong>Discovery failures at boot are non-fatal</strong> - caught and logged, not propagated</li>
 </ol>
                 </article>
                 
@@ -1109,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1264,10 +1265,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1365,7 +1366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

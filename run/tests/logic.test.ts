@@ -1,7 +1,7 @@
 /**
  * Tests for the pure logic behind the views: spatial arrangements (2D and
  * 3D) and the shared edge heat scale. These are the pieces where a silent
- * bug is invisible — a layout that quietly drops a node, or a heat band
+ * bug is invisible - a layout that quietly drops a node, or a heat band
  * that never triggers, looks like "the data is like that" on screen.
  *
  * Run: npx tsx --test tests/logic.test.ts
@@ -311,7 +311,7 @@ test('heat: undefined edge does not throw', () => {
 // These guard the carve-outs in EndpointDiscoveryEngine.restartCrashedContainers.
 // The load-generator rule matters most: reviving one resurrects synthetic
 // traffic outside the traffic controller, which is load the UI cannot show
-// or stop. The regex is duplicated here on purpose — importing the engine
+// or stop. The regex is duplicated here on purpose - importing the engine
 // would pull in ssh2 and a live connection manager.
 const LOAD_GENERATOR_NAMES = /(user-sim|usersim|load-?gen|loadgen|loadgenerator|locust|k6|jmeter|gatling|stress|bench|wrk2?\b|siege|vegeta|artillery)/i;
 
@@ -393,7 +393,7 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
 
 /** Mirrors toNumber() in server/rca/thresholds.ts. Number(null) and
  *  Number([]) are both 0, so a bare Number.isFinite guard would accept them
- *  and clamp to the minimum — the most sensitive possible setting. */
+ *  and clamp to the minimum - the most sensitive possible setting. */
 function toThresholdNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'string' && value.trim() !== '') {
@@ -438,7 +438,7 @@ test('thresholds: an unrelated key cannot inject itself', () => {
 });
 
 test('thresholds: severity bounds stay ordered so a band cannot vanish', () => {
-  // Not enforced by clamping — this documents that the ordering is the
+  // Not enforced by clamping - this documents that the ordering is the
   // operator's to keep, and that each bound is independently in range.
   const t = clampThresholds({ zScoreAnomaly: 2.5, zScoreHigh: 3, zScoreCritical: 4 });
   assert.ok(t.zScoreAnomaly <= t.zScoreHigh && t.zScoreHigh <= t.zScoreCritical);

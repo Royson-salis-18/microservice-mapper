@@ -14,7 +14,7 @@ import {
 } from './MLPipelineView';
 
 /**
- * Findings — everything the trained models concluded.
+ * Findings - everything the trained models concluded.
  *
  * The split from Incidents is about provenance, not presentation:
  *
@@ -55,8 +55,8 @@ function CurrentFindings({ rows, onSelect }: {
 
   const about = (
     <>
-      Each sample is scored by every detector trained for that service — Isolation Forest, LOF,
-      one-class SVM and z-score — against that detector's own training distribution, so "high"
+      Each sample is scored by every detector trained for that service - Isolation Forest, LOF,
+      one-class SVM and z-score - against that detector's own training distribution, so "high"
       always means high <em>for that service</em>, never against a shared bar. A service is
       flagged when <strong>at least half of its usable detectors</strong> agree; the score shown is
       the median across them, with ~0.5 at a detector's threshold.
@@ -226,7 +226,7 @@ export function FindingsView({ selectedProject = 'ALL' }: FindingsViewProps) {
     <PageShell>
       <PageHeader title="Findings" scope={selectedProject}>
         What the trained detectors concluded. These are model outputs, so they are only as good as what
-        the models were fitted on — rule-based alerts that need no model live under Incidents.
+        the models were fitted on - rule-based alerts that need no model live under Incidents.
       </PageHeader>
 
       <CurrentFindings rows={rows} onSelect={setSelectedSid} />

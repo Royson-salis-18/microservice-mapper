@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -660,7 +661,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#design-contract">Design Contract</a>
   <a href="#metricprovenance-tracking-where-numbers-come-from">Tracking Where Numbers Com...</a>
   <a href="#capability-enforcement">Capability Enforcement</a>
-  <a href="#prometheussource-servertelemetry-sourcesprometheussourcets">PrometheusSource (server/t...</a>
+  <a href="#prometheussource-servertelemetry-sourcesprometheussourcets">sources/PrometheusSource.ts)</a>
   <a href="#how-it-works">How It Works</a>
   <a href="#why-ssh-not-direct-http">Why SSH, Not Direct HTTP?</a>
   <a href="#duration-histogram-discovery">Duration Histogram Discovery</a>
@@ -727,7 +728,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   readonly kind: MetricSourceKind;
   readonly targetId: string;
 
-  // Cheap liveness check — called before collection so an absent
+  // Cheap liveness check - called before collection so an absent
   // source costs one probe rather than a full timeout on every cycle.
   probe(): Promise&lt;TelemetrySourceStatus&gt;;
 
@@ -741,7 +742,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li>It does <strong>not</strong> own connections, does not write to the graph, and cannot decide what a metric means</li>
   <li>The contract is deliberately narrow</li>
 </ul>
-<h2 id="metricprovenance-tracking-where-numbers-come-from">MetricProvenance — Tracking Where Numbers Come From</h2>
+<h2 id="metricprovenance-tracking-where-numbers-come-from">MetricProvenance - Tracking Where Numbers Come From</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TYPESCRIPT</span>
@@ -790,7 +791,7 @@ export interface MetricProvenance {
   <li><strong>Collection</strong>: Runs PromQL queries via <code>curl</code> over SSH (not from the mapper directly)</li>
 </ol>
 <h3 id="why-ssh-not-direct-http">Why SSH, Not Direct HTTP?</h3>
-<div class="box why"><p>"Prometheus is bound to localhost on these boxes and only :8080 is open in the security group, so querying from outside would require opening a port — a change to someone's infrastructure to read a metric, which is not a trade worth making."</p></div>
+<div class="box why"><p>"Prometheus is bound to localhost on these boxes and only :8080 is open in the security group, so querying from outside would require opening a port - a change to someone's infrastructure to read a metric, which is not a trade worth making."</p></div>
 <h3 id="duration-histogram-discovery">Duration Histogram Discovery</h3>
 <p>Multiple OTel versions emit different metric names:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -805,7 +806,7 @@ export interface MetricProvenance {
   { base: &#x27;rpc_server_duration_seconds&#x27;, toMs: 1000 },
 ];</code></pre>
                     </div>
-<p>Units differ between them — guessing seconds-vs-milliseconds silently produces numbers 1000x wrong.</p>
+<p>Units differ between them - guessing seconds-vs-milliseconds silently produces numbers 1000x wrong.</p>
 <h3 id="label-convention-discovery">Label Convention Discovery</h3>
 <p>Service name and status code labels also vary:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -848,7 +849,7 @@ const STATUS_LABELS = [&#x27;http_response_status_code&#x27;, &#x27;http_status_
 <h3 id="verified-against-production">Verified Against Production</h3>
 <div class="box why"><p>"Verified against the live open-telemetry target on 2026-09-18: histogram_quantile(0.95, ...) → 0.0829 (82.9 ms p95, service_name="cart", 2296 samples)"</p></div>
 <h3 id="edge-attribution-limitation">Edge Attribution Limitation</h3>
-<p>Prometheus only attributes to the serving side. Without explicit client-side labels, it cannot say who called, so no caller→callee attribution is claimed — rather than inventing one.</p>
+<p>Prometheus only attributes to the serving side. Without explicit client-side labels, it cannot say who called, so no caller→callee attribution is claimed - rather than inventing one.</p>
 <h2 id="per-target-configuration">Per-Target Configuration</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -870,7 +871,7 @@ const STATUS_LABELS = [&#x27;http_response_status_code&#x27;, &#x27;http_status_
   };
 }</code></pre>
                     </div>
-<p>Absent means Tier 0 only — the correct default. Enabling a source that is not there should be a deliberate act.</p>
+<p>Absent means Tier 0 only - the correct default. Enabling a source that is not there should be a deliberate act.</p>
 <h2 id="how-tier-12-metrics-flow-to-the-graph">How Tier 1/2 Metrics Flow to the Graph</h2>
 <p>When the remote collector or telemetry source produces Tier 1/2 request metrics, they ride along on the <code>TelemetryEnvelope</code> as <code>requestMetrics</code> on each node:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -881,7 +882,7 @@ const STATUS_LABELS = [&#x27;http_response_status_code&#x27;, &#x27;http_status_
 const req = (node as any).requestMetrics;
 delete (node as any).requestMetrics;
 if (existing) {
-  // Merged rather than assigned — a cycle where the optional source
+  // Merged rather than assigned - a cycle where the optional source
   // was unavailable does not wipe the resource metrics
   existing.metrics = { ...(existing.metrics ?? {}), ...req };
 }</code></pre>
@@ -1168,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1323,10 +1324,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1424,7 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

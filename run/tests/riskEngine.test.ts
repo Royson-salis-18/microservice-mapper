@@ -1,5 +1,5 @@
 /**
- * RiskEngine's pure arithmetic — computeProjectRisk and computeBlastRadius.
+ * RiskEngine's pure arithmetic - computeProjectRisk and computeBlastRadius.
  *
  * These take plain node/edge arrays rather than a GraphStore, specifically so
  * they can be tested without booting a store (whose constructor loads from
@@ -70,7 +70,7 @@ test('risk: a leaf node with zero observed edges in a project that has activity 
   const edges = [edge('p:a', 'p:b', 100)];
   const risk = computeProjectRisk(nodes, edges, []);
   // p:leaf has no outgoing observed edges, but the project has real activity
-  // (the a->b edge) — its footprint carries none of it, and that is a real 0.
+  // (the a->b edge) - its footprint carries none of it, and that is a real 0.
   assert.equal(risk.get('p:leaf')!.criticality, 0);
   assert.equal(risk.get('p:leaf')!.centrality, 0);
 });
@@ -145,10 +145,10 @@ test('risk: a missing anomaly score is omitted from the breakdown, not defaulted
   assert.equal(factors.length, 2); // status + incident only
 });
 
-test('risk: computeProjectRisk takes already-scoped input — RiskEngine.recomputeAll groups nodes/edges by project before calling it, so p2 alone (no edges) gets null, independent of what p1 looks like', () => {
+test('risk: computeProjectRisk takes already-scoped input - RiskEngine.recomputeAll groups nodes/edges by project before calling it, so p2 alone (no edges) gets null, independent of what p1 looks like', () => {
   // This mirrors what recomputeAll actually does: group by project, then call
   // computeProjectRisk once per project. Feeding it a mixed-project array
-  // directly (skipping that grouping) is not the supported contract — degree
+  // directly (skipping that grouping) is not the supported contract - degree
   // and activity are computed over whatever set of edges you hand it.
   const p1Risk = computeProjectRisk([node('p1:a'), node('p1:b')], [edge('p1:a', 'p1:b', 500)], []);
   const p2Risk = computeProjectRisk([node('p2:x')], [], []);
@@ -192,7 +192,7 @@ test('blast radius: share reflects how much of a dependent\'s own dependencies a
   const result = computeBlastRadius('p:payment', nodes, edges)!;
   const checkout = result.affected.find(e => e.nodeId === 'p:checkout')!;
   assert.equal(checkout.outboundSamplesPerMin, 100);
-  // 60 of checkout's 100 flows into the failing set — it is hurt, not dead.
+  // 60 of checkout's 100 flows into the failing set - it is hurt, not dead.
   assert.equal(checkout.shareOfItsDependencies, 0.6);
 });
 
@@ -237,7 +237,7 @@ test('criticality separates a shared dependency from a leaf that nothing calls',
   assert.equal(c('p:orders-db'), c('p:catalogue-db'));
 
   // The databases sit under a chain, so more traffic dies with them than with
-  // the leaf store of a single service path — and critically, the numbers are
+  // the leaf store of a single service path - and critically, the numbers are
   // not all pinned at 1.0 the way reachability made them.
   const distinct = new Set([c('p:frontend'), c('p:orders'), c('p:orders-db')]);
   assert.ok(distinct.size > 1, `criticality must discriminate, got ${[...distinct]}`);
@@ -253,7 +253,7 @@ test('criticality: a node nothing depends on only takes its own traffic with it'
   const risk = computeProjectRisk(nodes, edges, []);
   // Killing b stops the 50 flowing into it, out of 500 total. Nothing else.
   assert.equal(risk.get('p:b')!.criticality, 0.1);
-  // Killing d stops its 450 — nine times the blast of b, correctly ranked.
+  // Killing d stops its 450 - nine times the blast of b, correctly ranked.
   assert.equal(risk.get('p:d')!.criticality, 0.9);
 });
 
@@ -274,7 +274,7 @@ test('direction: the end holding the listening port is the one being called', ()
   assert.equal(fromClient.evidence, 'direction:listen-port');
 
   // The same connection seen from the database's own scan must resolve to the
-  // SAME direction — this is what stops one link becoming two opposite edges.
+  // SAME direction - this is what stops one link becoming two opposite edges.
   const fromServer = orientConnection(27017, 45000, new Set([27017]), new Set([8080]));
   assert.equal(fromServer.scannedIsCaller, false);
   assert.equal(fromServer.evidence, 'direction:listen-port');
@@ -303,7 +303,7 @@ test('direction: says so when it genuinely cannot tell, rather than guessing sil
 
 test('direction: listen-port evidence wins over the ephemeral heuristic', () => {
   // Local port is in the ephemeral range but is genuinely this service's
-  // listening port — a server that happens to listen high. The listen table
+  // listening port - a server that happens to listen high. The listen table
   // must win, or the arrow points backwards.
   const r = orientConnection(40000, 40001, new Set([40000]), new Set());
   assert.equal(r.scannedIsCaller, false);

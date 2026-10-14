@@ -1,6 +1,6 @@
-# 22 — Risk, cascades and blast radius
+# 22 - Risk, cascades and blast radius
 
-**Files:** `server/graph/RiskEngine.ts` (per-service exposure, blast radius, orchestration), `server/graph/CascadeEngine.ts` (the cascade model, criticality, what-if), `server/graph/EdgeWeights.ts` (the weights both read).
+**Files:** `server/graph/RiskEngine.ts` (per-service exposure, blast radius, orchestration), `algorithms/graph/CascadeEngine.ts` (the cascade model, criticality, what-if), `algorithms/graph/EdgeWeights.ts` (the weights both read).
 
 ## What this answers
 
@@ -129,10 +129,10 @@ frontend ──0.60──► orders ──0.75──► orders-db
 
 | Service | p0 | P | inherited | band | via | risk |
 |---|---|---|---|---|---|---|
-| `orders-db` | 1.00 | 1.000 | 0 | high | — | 0.77 |
+| `orders-db` | 1.00 | 1.000 | 0 | high | - | 0.77 |
 | `orders` | 0.48 (0.6 × 0.8) | **0.753** | 0.525 | high | `orders-db` | 0.54 |
 | `frontend` | 0 | **0.316** | 0.316 | low | `orders` | 0.17 |
-| `catalogue`, `payment` | 0 | 0 | 0 | minimal | — | ≤ 0.16 |
+| `catalogue`, `payment` | 0 | 0 | 0 | minimal | - | ≤ 0.16 |
 
 Check `orders` by hand: `1 − (1 − 0.48) × (1 − 0.7 × 0.75 × 1.0) = 1 − 0.52 × 0.475 = 0.753`. `frontend` is **at risk** (fine on its own, P ≥ 0.15), with path `frontend > orders > orders-db`.
 

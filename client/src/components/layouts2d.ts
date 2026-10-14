@@ -18,12 +18,12 @@ export interface Layout2DOption {
 
 export const LAYOUTS_2D: Layout2DOption[] = [
   { id: 'clusters', label: 'Clusters', hint: 'Each project laid out separately, services stacked by role' },
-  { id: 'hierarchy', label: 'Hierarchy', hint: 'Flows left to right by dependency depth — entry points first' },
+  { id: 'hierarchy', label: 'Hierarchy', hint: 'Flows left to right by dependency depth - entry points first' },
   { id: 'tiers', label: 'Tiers', hint: 'All projects share rows by role: gateways on top, databases at the bottom' },
-  { id: 'grid', label: 'Grid', hint: 'Even rows and columns — easiest to scan a lot of services' },
+  { id: 'grid', label: 'Grid', hint: 'Even rows and columns - easiest to scan a lot of services' },
   { id: 'circle', label: 'Circle', hint: 'Single ring, every service equally spaced' },
   { id: 'polygon', label: 'Polygon', hint: 'Distributed along the edges of an n-sided shape' },
-  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count — busiest in the middle' },
+  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count - busiest in the middle' },
   { id: 'spiral', label: 'Spiral', hint: 'One continuous outward spiral, good for a long chain' },
 ];
 
@@ -76,7 +76,7 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
 }
 
 /**
- * Left-to-right dependency depth. Sources (nothing depends on them — the
+ * Left-to-right dependency depth. Sources (nothing depends on them - the
  * entry points) sit in the first column, and each service is placed one
  * column right of its deepest depender. Cycles are common in a real mesh,
  * so depth is computed with a visited set rather than assuming a DAG.
@@ -102,7 +102,7 @@ function hierarchyDepths(items: Item[], edges: Edge[]): Map<string, number> {
 
   // Breadth-first, assigning each node a depth exactly once. An earlier
   // version re-queued a node whenever a longer path to it was found, to get
-  // "deepest depender wins" — but on a cycle (A -> B -> A, which real
+  // "deepest depender wins" - but on a cycle (A -> B -> A, which real
   // meshes have: a service and its database each observed calling the
   // other) the depth grows without bound and the loop never terminates,
   // freezing whatever thread it runs on. First-visit depth is stable,

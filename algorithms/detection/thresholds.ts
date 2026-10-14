@@ -4,7 +4,7 @@
  *
  * Incidents are deliberately rule-based and completely separate from the ML
  * pipeline. Nothing here loads a model, and the trained detectors never feed
- * this path — that separation is the point. The models are a research
+ * this path - that separation is the point. The models are a research
  * artefact whose output belongs in Findings, and they need training data,
  * a fitted artefact per service and a scorer process to say anything at all.
  * An incident has to fire on a service that started five minutes ago, on a
@@ -100,7 +100,7 @@ const LIMITS: Record<keyof IncidentThresholds, [number, number]> = {
  *
  * Number(null) is 0 and Number([]) is 0, both finite, so a plain
  * Number.isFinite guard lets `{"zScoreAnomaly": null}` through and clamps it
- * to the minimum — which is the most sensitive possible setting, making every
+ * to the minimum - which is the most sensitive possible setting, making every
  * sample anomalous. Silently turning a malformed edit into an alert storm is
  * the worst available failure, so anything not a number or a numeric string
  * is rejected and the previous value stands.
@@ -144,7 +144,7 @@ export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
   minDeltaPercent:
     'Even a large z-score is ignored unless the metric moved this many percentage points from its baseline. Stops an idle service going from 0.05% to 2% CPU from raising an incident.',
   absoluteHighPercent:
-    'A CPU or memory reading above this is HIGH no matter how calm the baseline is — a service pinned at 75% is worth seeing even if it has been there long enough to look normal.',
+    'A CPU or memory reading above this is HIGH no matter how calm the baseline is - a service pinned at 75% is worth seeing even if it has been there long enough to look normal.',
   absoluteCriticalPercent: 'A reading above this is CRITICAL regardless of deviation.',
   flatlineStdDev:
     'Below this standard deviation the baseline counts as flat. Dividing by a near-zero deviation makes z-scores explode, so the flat case is judged on absolute movement instead.',

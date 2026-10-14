@@ -510,7 +510,7 @@
     html += '<div class="ls-h">Cascade <span>CascadeEngine · τ 0.7</span></div>';
     html += '<div class="ls-kv"><span>expected failures</span><b>' + expected.toFixed(2) + '</b></div>';
     html += atRisk.length
-      ? atRisk.map((c) => '<div class="ls-risk"><span>' + esc(c.id) + ' <em>at risk via ' + esc(c.via || '—') + '</em></span><b class="b-' + c.band + '">' + c.p.toFixed(2) + '</b></div>').join('')
+      ? atRisk.map((c) => '<div class="ls-risk"><span>' + esc(c.id) + ' <em>at risk via ' + esc(c.via || '-') + '</em></span><b class="b-' + c.band + '">' + c.p.toFixed(2) + '</b></div>').join('')
       : '<div class="ls-why">No healthy service is pulled above 0.15 through its dependencies.</div>';
     panel.innerHTML = html;
   }

@@ -13,7 +13,7 @@ import { createContext, useContext } from 'react';
  *
  * They default to collapsed, which is right on ML Pipeline where the charts
  * are secondary to the controls. On Findings the charts *are* the page, and a
- * results page whose results are all folded away is worse than a busy one —
+ * results page whose results are all folded away is worse than a busy one -
  * so that page flips the default rather than every component taking a prop.
  */
 export const PanelsStartOpen = createContext(false);
@@ -72,7 +72,7 @@ export interface MLStatus {
 }
 
 function timeAgo(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const diffSec = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
   if (diffSec < 60) return `${diffSec}s ago`;
   if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
@@ -172,8 +172,8 @@ function StatusChip({ tone, children }: { tone: 'healthy' | 'degraded' | 'critic
  * Panel used by every chart on ML Pipeline and Findings.
  *
  * `desc` used to render as a permanently visible paragraph under each title.
- * Individually each one earned its place — they are the difference between a
- * number and a number you can trust — but eight of them stacked down a page
+ * Individually each one earned its place - they are the difference between a
+ * number and a number you can trust - but eight of them stacked down a page
  * turned into a wall of grey text that buried the charts it was explaining.
  *
  * The explanation now lives behind the ⓘ. Nothing is lost, and the data gets
@@ -334,7 +334,7 @@ export function ScoreHistoryChart({ sid }: { sid: string | null }) {
 
   return (
     <CollapsiblePanel 
-      title={`Anomaly score trend — ${sid}`}
+      title={`Anomaly score trend - ${sid}`}
       desc="From score_history.csv, written every scoring cycle"
     >
       {data.length < 2 ? (
@@ -366,8 +366,8 @@ const FEATURE_SERIES = [
   { raw: 'network_tx_rate', z: 'z_network_tx_rate', label: 'TX B/s', color: SERIES[3] },
 ];
 
-// Shows the exact rows train.py fits on — raw values on the left, the
-// z-scores actually fed to the forest on the right — so a score can be
+// Shows the exact rows train.py fits on - raw values on the left, the
+// z-scores actually fed to the forest on the right - so a score can be
 // traced back to the data that produced it instead of taken on faith.
 export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: string[]; sid: string | null; onSelect: (sid: string) => void }) {
   const [rows, setRows] = useState<Array<Record<string, any>>>([]);
@@ -396,7 +396,7 @@ export function FeatureExplorer({ serviceIds, sid, onSelect }: { serviceIds: str
   return (
     <CollapsiblePanel 
       title="Feature explorer" 
-      desc="The actual rows from features.csv — raw metrics and the normalized z-scores the model is fitted on"
+      desc="The actual rows from features.csv - raw metrics and the normalized z-scores the model is fitted on"
       defaultCollapsed={true}
       headerContent={
         <select
@@ -563,7 +563,7 @@ const ALGO_NOTE: Record<string, string> = {
   iforest: 'Partitioning. Cheap, copes with mixed scales.',
   lof: 'Local density. Catches a point that is normal globally but odd locally.',
   ocsvm: 'Boundary. Fits a frontier around the normal region.',
-  zscore: 'Statistical baseline. No fitting — the interpretable number the others must beat.',
+  zscore: 'Statistical baseline. No fitting - the interpretable number the others must beat.',
 };
 
 /**
@@ -600,7 +600,7 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
       title="Detectors by project" 
       desc={
         <span style={{lineHeight: 1.5}}>
-          Each service is fitted independently per project — a sock-shop model never sees death-star data.
+          Each service is fitted independently per project - a sock-shop model never sees death-star data.
           The held-out tail is unlabelled, so a firing rate is not accuracy: it is how often that detector
           fires on data collected after it was fitted.
         </span>
@@ -639,10 +639,10 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
                       <td style={{ ...TD, color: fitted.length ? 'var(--color-text-main)' : 'var(--color-text-dim)' }}>{fitted.length}</td>
                       <td style={{ ...TD, color: refused.length ? 'var(--color-degraded)' : 'var(--color-text-dim)' }}
                           title={refused[0]?.error || ''}>
-                        {refused.length || '—'}
+                        {refused.length || '-'}
                       </td>
                       <td style={TD}>
-                        {meanRate === null ? <span style={{ color: 'var(--color-text-dim)' }}>—</span> : `${(meanRate * 100).toFixed(1)}%`}
+                        {meanRate === null ? <span style={{ color: 'var(--color-text-dim)' }}>-</span> : `${(meanRate * 100).toFixed(1)}%`}
                       </td>
                       <td style={{ ...TD, fontSize: '12px', color: 'var(--color-text-muted)' }}>{ALGO_NOTE[algo] || ''}</td>
                     </tr>
@@ -660,7 +660,7 @@ export function DetectorComparison({ models }: { models: ModelMeta[] }) {
 /**
  * Distinct rows vs total rows, per service.
  *
- * The first thing to check when every detector fires on 0% — a detector
+ * The first thing to check when every detector fires on 0% - a detector
  * cannot learn a boundary from a handful of distinct points no matter how
  * many times they were sampled. Measured on sock-shop:front-end: 1568 rows
  * carrying 6 distinct values, because collection polls faster than the
@@ -685,7 +685,7 @@ export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
       desc={
         <span style={{lineHeight: 1.5}}>
           How much of each training set is actually distinct. Repeated rows carry no extra information,
-          so a low percentage here caps what any detector can learn — and is the reason to look at before
+          so a low percentage here caps what any detector can learn - and is the reason to look at before
           concluding a model is bad.
           {thin.length > 0 && (
             <strong style={{ color: 'var(--color-degraded)' }}> {thin.length} service{thin.length === 1 ? '' : 's'} below 5%.</strong>
@@ -725,7 +725,7 @@ export function DataQualityPanel({ models }: { models: ModelMeta[] }) {
 }
 
 // Training size vs how often the model fires on the held-out tail. The tail
-// isn't labelled, so a high rate isn't "wrong" — it means the model fires a
+// isn't labelled, so a high rate isn't "wrong" - it means the model fires a
 // lot on data it never saw, which is either drift or a non-normal tail.
 export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; onSelect: (sid: string) => void }) {
   const points = useMemo(() => models
@@ -744,7 +744,7 @@ export function ModelQualityChart({ models, onSelect }: { models: ModelMeta[]; o
   return (
     <CollapsiblePanel 
       title="Model check: holdout firing rate" 
-      desc="Each model trained on the earlier part of its data and scored on the held-out tail. Unlabelled data, so this is a firing rate, not accuracy — compare it to contamination."
+      desc="Each model trained on the earlier part of its data and scored on the held-out tail. Unlabelled data, so this is a firing rate, not accuracy - compare it to contamination."
       defaultCollapsed={true}
     >
       {points.length === 0 ? (
@@ -844,7 +844,7 @@ function ProcessCard({ proc, label, description, onAction, busy }: {
       <div style={{ display: 'flex', gap: '12px', fontSize: '11.5px', flexWrap: 'wrap', alignItems: 'center', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>
         <StatusChip tone={running ? 'healthy' : 'unknown'}>{running ? 'Running' : 'Stopped'}</StatusChip>
         {proc?.pid && <span>PID <span style={{ fontFamily: 'var(--font-mono)' }}>{proc.pid}</span></span>}
-        {running && !proc?.managed && <span style={{ color: 'var(--color-degraded)' }} title="Started outside this app — can still be stopped here">External</span>}
+        {running && !proc?.managed && <span style={{ color: 'var(--color-degraded)' }} title="Started outside this app - can still be stopped here">External</span>}
         {proc?.startedAt && <span>Up {timeAgo(proc.startedAt).replace(' ago', '')}</span>}
       </div>
 
@@ -909,7 +909,7 @@ function ProcessPanel() {
           The two long-running stages. The <strong>collector</strong> polls the mapper and appends raw
           metrics; the <strong>scorer</strong> runs live metrics against the trained models each cycle.
           <br /><br />
-          If either is stopped, everything downstream is frozen at whatever it last wrote — which is why
+          If either is stopped, everything downstream is frozen at whatever it last wrote - which is why
           "Collected" and "Scored live" read 0 on this page when they are not running.
         </InfoTip>
       </div>
@@ -952,7 +952,7 @@ type ConfigField = { key: keyof MLConfig; label: string; step: string; hint: str
 const CONFIG_GROUPS: Array<{ group: string; applies: string; fields: ConfigField[] }> = [
   {
     group: 'Collection',
-    applies: 'live — collector.py re-reads config each cycle',
+    applies: 'live - collector.py re-reads config each cycle',
     fields: [
       { key: 'collect_interval_sec', label: 'Collect interval (s)', step: '1', hint: 'how often collector.py polls the mapper' },
     ],
@@ -969,7 +969,7 @@ const CONFIG_GROUPS: Array<{ group: string; applies: string; fields: ConfigField
     applies: 'on next Retrain',
     fields: [
       { key: 'min_training_samples', label: 'Min training samples', step: '1', hint: 'below this, a service gets no model' },
-      { key: 'contamination', label: 'Contamination', step: '0.001', hint: 'expected fraction of anomalies — sets how aggressive the forest is' },
+      { key: 'contamination', label: 'Contamination', step: '0.001', hint: 'expected fraction of anomalies - sets how aggressive the forest is' },
       { key: 'n_estimators', label: 'Trees (n_estimators)', step: '10', hint: 'number of trees in each Isolation Forest' },
       { key: 'max_samples_fraction', label: 'Max samples fraction', step: '0.05', hint: 'fraction of the training rows each tree draws (1.0 = sklearn auto)' },
       { key: 'holdout_fraction', label: 'Holdout fraction', step: '0.05', hint: 'chronological tail held out of training and scored afterwards (0 = train on everything)' },
@@ -977,7 +977,7 @@ const CONFIG_GROUPS: Array<{ group: string; applies: string; fields: ConfigField
   },
   {
     group: 'Scoring',
-    applies: 'live — score.py re-reads config each cycle',
+    applies: 'live - score.py re-reads config each cycle',
     fields: [
       { key: 'score_interval_sec', label: 'Score interval (s)', step: '1', hint: 'how often score.py re-scores live data' },
       { key: 'persistence_windows', label: 'Persistence windows', step: '1', hint: 'consecutive above-threshold windows before flagging a real anomaly' },
@@ -1031,7 +1031,7 @@ function ConfigPanel() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setConfig(data.config);
-      setSaveMsg('Saved — collector.py/score.py pick this up within one cycle. preprocess.py/train.py need a Retrain.');
+      setSaveMsg('Saved - collector.py/score.py pick this up within one cycle. preprocess.py/train.py need a Retrain.');
     } catch (e: any) {
       setSaveMsg(`Failed: ${e.message}`);
     } finally {
@@ -1184,8 +1184,8 @@ function ConfigPanel() {
 /**
  * One line of numbers for whatever is currently in scope.
  *
- * The page is long, and the questions asked most often — how many services
- * are there, how many have a model, how stale is it — were only answerable
+ * The page is long, and the questions asked most often - how many services
+ * are there, how many have a model, how stale is it - were only answerable
  * by scrolling through several panels and adding up rows.
  */
 function ScopeSummary({ rows, models, training }: {
@@ -1227,7 +1227,7 @@ function ScopeSummary({ rows, models, training }: {
       subtitle={`${services} service${services === 1 ? '' : 's'} in scope`}
       about={
         <>
-          <strong>Collected</strong> and <strong>scored live</strong> both require a running process —
+          <strong>Collected</strong> and <strong>scored live</strong> both require a running process -
           if they read 0, the Collector or Scorer is stopped and the rest of this page is a snapshot,
           not live state.
           <br /><br />
@@ -1356,7 +1356,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
 
   // Models are trained per exact service_id ("project:service"), so a
   // sock-shop service's model never sees train-ticket's data or vice versa
-  // — nothing is mixed at the data or training level. This just makes that
+  // - nothing is mixed at the data or training level. This just makes that
   // isolation visible: group the table by project instead of one flat list.
   const byProject = new Map<string, typeof rows>();
   for (const row of rows) {
@@ -1376,7 +1376,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
       <PageHeader title="ML pipeline" scope={selectedProject}>
         {scoped
           ? 'How the pipeline is configured and how far each service has got through it. Model outputs live under Findings.'
-          : `Configuration and per-service progress across ${projectNames.join(', ') || 'no projects yet'} — pick one in the top bar to scope this page.`}
+          : `Configuration and per-service progress across ${projectNames.join(', ') || 'no projects yet'} - pick one in the top bar to scope this page.`}
       </PageHeader>
 
       <ScopeSummary rows={rows} models={scopedModels} training={training} />
@@ -1417,7 +1417,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           {preprocessing ? (
             <>
               <Stat label="Raw rows read" value={preprocessing.raw_rows_read.toLocaleString()} />
-              <Stat label="Feature rows" value={preprocessing.feature_rows_written?.toLocaleString() ?? '—'} />
+              <Stat label="Feature rows" value={preprocessing.feature_rows_written?.toLocaleString() ?? '-'} />
               <Stat label="Services with features" value={preprocessing.services_with_features ?? 0} />
               <Stat label="Min samples/service" value={preprocessing.min_samples_per_service} />
             </>
@@ -1436,7 +1436,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
               <Stat label="Models trained" value={Object.keys(training.trained).length} />
               <Stat label="Skipped (too few samples)" value={Object.keys(training.skipped).length} />
               <Stat label="Contamination" value={training.contamination} />
-              <Stat label="Trees / features" value={`${training.n_estimators ?? '—'} / ${training.feature_columns?.length ?? '—'}`} />
+              <Stat label="Trees / features" value={`${training.n_estimators ?? '-'} / ${training.feature_columns?.length ?? '-'}`} />
               <Stat
                 label="Holdout"
                 value={training.holdout_fraction ? `${Math.round(training.holdout_fraction * 100)}% of each series` : 'Off'}
@@ -1479,8 +1479,8 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
           not already say, so it only earns its space when comparing projects. */}
       {!scoped && <PipelineFunnelChart projectNames={projectNames} byProject={byProject} />}
 
-      {/* Model outputs — live scores, model quality, detector agreement, data
-          quality and the feature explorer — moved to Findings. This page is
+      {/* Model outputs - live scores, model quality, detector agreement, data
+          quality and the feature explorer - moved to Findings. This page is
           the machine: how the pipeline is configured and how far each service
           has got through it. */}
       <div style={{
@@ -1490,11 +1490,11 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
       }}>
         Looking for scores, model quality, detector agreement or the feature explorer? Those are model
         <em> outputs</em> and live under <strong style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>Findings</strong>.
-        This page covers the pipeline itself — processes, execution, configuration, and how far each
+        This page covers the pipeline itself - processes, execution, configuration, and how far each
         service has got through collection, preprocessing and training.
       </div>
 
-      {/* Per-project pipeline progress — one section per project, never merged */}
+      {/* Per-project pipeline progress - one section per project, never merged */}
       {projectNames.map((project) => {
         const projectRows = byProject.get(project)!;
         const trainedCount = projectRows.filter(r => r.trainedEntry).length;
@@ -1514,7 +1514,7 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
                   <th style={TH}>Collected</th>
                   <th style={TH}>Feature-ready</th>
                   <th style={TH}>Trained</th>
-                  <th style={TH} title="Share of the held-out tail this model flagged — unlabelled data, so a firing rate rather than an error rate">Holdout flagged</th>
+                  <th style={TH} title="Share of the held-out tail this model flagged - unlabelled data, so a firing rate rather than an error rate">Holdout flagged</th>
                   <th style={TH}>Threshold</th>
                   <th style={TH}>Live score</th>
                   <th style={TH}>Status</th>
@@ -1535,23 +1535,23 @@ export function MLPipelineView({ selectedProject = 'ALL' }: MLPipelineViewProps)
                       <td style={TD}>
                         {featured?.status === 'ok'
                           ? `${featured.feature_samples}${featured.zero_variance_features?.length ? ` (${featured.zero_variance_features.length} flat)` : ''}`
-                          : featured?.status === 'skipped_too_few_samples' ? `${featured.raw_samples} (too few)` : '—'}
+                          : featured?.status === 'skipped_too_few_samples' ? `${featured.raw_samples} (too few)` : '-'}
                       </td>
                       <td style={TD}>
                         {trainedEntry ? (
                           <span>Yes <span style={{ color: 'var(--color-text-dim)' }}>({trainedEntry.samples})</span></span>
                         ) : skippedEntry ? (
                           <span style={{ color: 'var(--color-text-muted)' }}>No <span style={{ color: 'var(--color-text-dim)' }}>({skippedEntry.samples} samples)</span></span>
-                        ) : '—'}
+                        ) : '-'}
                       </td>
                       <td style={TD}>
                         {trainedEntry?.holdout
                           ? <span title={`${trainedEntry.holdout.samples} held-out rows`}>{(trainedEntry.holdout.flag_rate * 100).toFixed(1)}%</span>
-                          : trainedEntry ? <span style={{ color: 'var(--color-text-dim)' }}>No holdout</span> : '—'}
+                          : trainedEntry ? <span style={{ color: 'var(--color-text-dim)' }}>No holdout</span> : '-'}
                       </td>
-                      <td style={TD}>{trainedEntry ? trainedEntry.threshold_p99.toFixed(3) : '—'}</td>
+                      <td style={TD}>{trainedEntry ? trainedEntry.threshold_p99.toFixed(3) : '-'}</td>
                       <td style={TD}>
-                        {live ? <ScoreBar score={live.anomaly_score} persistent={live.persistent} aboveThreshold={live.above_threshold} /> : '—'}
+                        {live ? <ScoreBar score={live.anomaly_score} persistent={live.persistent} aboveThreshold={live.above_threshold} /> : '-'}
                       </td>
                       <td style={TD}>
                         {live?.persistent ? (

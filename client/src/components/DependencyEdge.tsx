@@ -83,7 +83,7 @@ export function CustomDependencyEdge({
         </circle>
       )}
 
-      {/* Label — only on hover */}
+      {/* Label - only on hover */}
       {hovered && (
         <EdgeLabelRenderer>
           <div

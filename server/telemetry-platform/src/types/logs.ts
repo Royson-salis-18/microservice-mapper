@@ -25,7 +25,7 @@ export interface LogEvent {
   source: string; // e.g. "stdout", "stderr", "nginx-access"
   rawMessage: string;
 
-  // Optional fields extracted by a LogParser — never invented if absent
+  // Optional fields extracted by a LogParser - never invented if absent
   route?: string;
   method?: string;
   statusCode?: number;

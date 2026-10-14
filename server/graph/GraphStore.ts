@@ -321,14 +321,14 @@ export class GraphStore {
   // discovery/metric match failure, used to leave a permanent ghost node
   // behind (e.g. "unknown-<hash>") since nodes were only ever upserted,
   // never removed. Anything not touched by a real discovery or telemetry
-  // update in a while is almost certainly gone — drop it, and any edge
+  // update in a while is almost certainly gone - drop it, and any edge
   // that pointed at it, rather than let the graph accumulate forever.
   // Deliberately longer than checkTargetStaleness()'s 5min OFFLINE
   // threshold: on these resource-constrained EC2 hosts, SSH channel
   // exhaustion has been observed to black out ALL commands (discovery and
   // telemetry alike) for several minutes at a stretch. Pruning on the same
   // 5min clock as OFFLINE would wipe every node the moment a target goes
-  // OFFLINE, even though it typically recovers on its own — so give it
+  // OFFLINE, even though it typically recovers on its own - so give it
   // extra room to reconnect and reconfirm before treating nodes as gone.
   private static readonly STALE_NODE_MS = 900_000;
   /** Request metrics older than this with nothing newer are dropped. */
@@ -340,11 +340,11 @@ export class GraphStore {
   static readonly STALE_EDGE_MS = 600_000;
   /** Per target: when it last reported any observed edge at all. */
   private lastEdgeReportAt = new Map<string, number>();
-  /** Coalescing state for graph-update broadcasts — see requestBroadcast(). */
+  /** Coalescing state for graph-update broadcasts - see requestBroadcast(). */
   private broadcastTimer: NodeJS.Timeout | null = null;
   private lastBroadcastAt = 0;
   private static readonly BROADCAST_MIN_INTERVAL_MS = 3_000;
-  /** Slow reference level of each edge's traffic — see applyEdgeActivity. */
+  /** Slow reference level of each edge's traffic - see applyEdgeActivity. */
   private edgeBaselines = new Map<string, { value: number; at: number }>();
   static readonly BASELINE_RISE_MS = 60_000;
   static readonly BASELINE_FALL_MS = 600_000;
@@ -388,14 +388,14 @@ export class GraphStore {
    *
    * Nothing used to do this: once an edge was seen it stayed `observed`
    * forever, unless one of its nodes was pruned. So a dependency a service
-   * stopped using was drawn as live indefinitely, and — the reason this
-   * matters now — the reverse-duplicate edges recorded before direction was
+   * stopped using was drawn as live indefinitely, and - the reason this
+   * matters now - the reverse-duplicate edges recorded before direction was
    * recovered from listening ports (one real link stored as A->B *and* B->A)
    * would have sat in the graph permanently, keeping every false cycle alive.
    *
    * Expiry is measured against the target's own most recent edge report, not
-   * wall-clock time. If the target has gone quiet — an SSH outage, which on
-   * these hosts is common and usually recovers — nothing expires, because
+   * wall-clock time. If the target has gone quiet - an SSH outage, which on
+   * these hosts is common and usually recovers - nothing expires, because
    * silence there says nothing about any particular link. Only an edge the
    * target *keeps not reporting while reporting others* is let go.
    */
@@ -405,7 +405,7 @@ export class GraphStore {
    *
    * Five places broadcast the full graph, one of them after every telemetry
    * envelope from every target. Measured live: 66 full-graph pushes a minute
-   * (~130 KB each, 8.5 MB/min), and the client rebuilds on each — roughly one
+   * (~130 KB each, 8.5 MB/min), and the client rebuilds on each - roughly one
    * 120 ms main-thread stall every 1.7 seconds. Collection runs on a 5-second
    * cycle, so nothing is gained by pushing faster than this; a burst of
    * requests collapses into one broadcast carrying the newest state.
@@ -591,7 +591,7 @@ export class GraphStore {
   private anomalyScoresCache: { mtimeMs: number; data: Record<string, any> } | null = null;
 
   /** Reads ml/score.py's output file, re-reading only when it changes on
-   * disk. Missing file (no models trained yet) is not an error — just no
+   * disk. Missing file (no models trained yet) is not an error - just no
    * scores to attach. */
   private readAnomalyScores(): Record<string, any> {
     const scoresPath = path.resolve(process.cwd(), '..', 'ml', 'data', 'latest_scores.json');
@@ -695,7 +695,7 @@ export class GraphStore {
    * resets once it has run long enough to be meaningful, so the figure
    * tracks current activity instead of drifting toward a lifetime average.
    * Edges with no observations are left without an `activity` field rather
-   * than being given a zero — "never seen" and "measured as idle" are
+   * than being given a zero - "never seen" and "measured as idle" are
    * different claims.
    */
   private applyEdgeActivity(edges: DependencyEdge[]): void {
@@ -715,7 +715,7 @@ export class GraphStore {
       // Only fed once the rate window is long enough to mean something. A
       // window of a second or two turns three events into "180/min"; the fast
       // rise would absorb that artefact and the slow decay would then hold it
-      // for ten minutes — observed as a 171/min baseline on a 90/min link.
+      // for ten minutes - observed as a 171/min baseline on a 90/min link.
       const prev = this.edgeBaselines.get(edge.id);
       let baseline: number | undefined = prev?.value;
       if (elapsedMs >= GraphStore.BASELINE_MIN_WINDOW_MS) {
@@ -820,8 +820,8 @@ export class GraphStore {
           if (req) {
             existing.metrics = { ...(existing.metrics ?? {}), ...req } as any;
           } else if (existing.metrics?.provenance) {
-            // No request metrics this cycle. Keep the last ones briefly — an
-            // optional source can miss a cycle — but not indefinitely, or a
+            // No request metrics this cycle. Keep the last ones briefly - an
+            // optional source can miss a cycle - but not indefinitely, or a
             // source that went away leaves a latency figure on screen that
             // nothing is measuring any more.
             const age = Date.now() - new Date(existing.metrics.provenance.observedAt).getTime();
@@ -881,12 +881,12 @@ export class GraphStore {
         if (node) {
           // Merge the Tier 0 resource fields over whatever is already there.
           // This used to assign a fresh object with latency/requestRate/
-          // errorRate hardcoded to null — and since nodes are processed above
+          // errorRate hardcoded to null - and since nodes are processed above
           // this loop, it wiped the Tier 1/2 request metrics (and their
           // provenance) that had been merged in from the same envelope a
           // moment earlier. Request-level data never survived a cycle.
           // Missing readings stay missing (undefined) rather than becoming 0,
-          // so the UI shows "—" instead of a confident "0%".
+          // so the UI shows "-" instead of a confident "0%".
           const r1 = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10) / 10 : undefined);
           const raw = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
           const snap = m.snapshot as any;
@@ -990,7 +990,7 @@ export class GraphStore {
       console.log(`[TRACES] target=${targetId} connectionEvents=${events.connectionEvents.length}`);
 
       // Roll up per-edge connection activity. This is the only real
-      // measure of how busy a link is — edge.metrics (latency, errors,
+      // measure of how busy a link is - edge.metrics (latency, errors,
       // request rate) is null for every edge here because nothing collects
       // HTTP-level data, so activity is what the heat scale can honestly
       // be driven by.
@@ -1007,7 +1007,7 @@ export class GraphStore {
     }
     
     // Edge status/color comes only from evidence measured on that edge
-    // (below) — an overloaded node shows its own stress on its own card,
+    // (below) - an overloaded node shows its own stress on its own card,
     // it doesn't get smeared onto every edge touching it, since we have no
     // actual latency/error data for most of those edges.
     for (const edge of edgesMap.values()) {
@@ -1023,7 +1023,7 @@ export class GraphStore {
         // link could be drawn orange while its own status said "active".
         edge.status = linkStatus(edgeMetrics.errorRate, (edgeMetrics as any).p95Latency ?? edgeMetrics.latency);
       } else if (edge.status === 'degraded' || edge.status === 'failed') {
-        // no current edge-level evidence to justify this — don't leave a
+        // no current edge-level evidence to justify this - don't leave a
         // stale bad status sitting there forever
         edge.status = edge.observed ? 'active' : 'unknown';
       }

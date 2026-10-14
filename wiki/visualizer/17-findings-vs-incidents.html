@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -657,7 +658,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#1-the-split">1. The split</a>
   <a href="#why-they-must-stay-separate">Why they must stay separate</a>
   <a href="#2-incidents-the-rules">2. Incidents: the rules</a>
-  <a href="#the-flat-baseline-rule-exists-for-a-real-reason">The flat-baseline rule exi...</a>
+  <a href="#the-flat-baseline-rule-exists-for-a-real-reason">baseline rule exists for a...</a>
   <a href="#editing">Editing</a>
   <a href="#3-findings-what-the-models-say">3. Findings: what the mode...</a>
   <a href="#findings-can-be-empty-and-that-is-not-a-bug">Findings can be empty and ...</a>
@@ -742,7 +743,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
     <tr>
       <td>Source</td>
-      <td>Trained detectors — Isolation Forest, LOF, One-Class SVM, z-score</td>
+      <td>Trained detectors - Isolation Forest, LOF, One-Class SVM, z-score</td>
       <td>Fixed rules on live metrics</td>
     </tr>
     <tr>
@@ -774,12 +775,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </table></div>
 <p>They share no code. <code>server/rca/</code> does not import anything from <code>ml/</code>, and a grep for <code>latest_scores</code>, <code>isolation</code> or <code>anomaly_score</code> under <code>server/rca/</code> returns nothing. That is the design, not an accident of history.</p>
 <h3 id="why-they-must-stay-separate">Why they must stay separate</h3>
-<p><strong>Incidents have to work when the models cannot.</strong> An incident must fire on a service discovered a minute ago, on a target whose models were never trained, while <code>score.py</code> is stopped — which, in practice, is most of the time. A model cannot do that: it needs enough training rows, a fitted artefact and a running scorer. A fixed rule on a live metric needs none of those.</p>
-<p><strong>The research needs it.</strong> The models are the object of study. If incidents were raised by the models, every evaluation of those models would be scored against alerts the models themselves produced — the detector grading its own homework. Keeping the rule-based path independent means it can act as a reference the model output is compared <em>against</em>.</p>
+<p><strong>Incidents have to work when the models cannot.</strong> An incident must fire on a service discovered a minute ago, on a target whose models were never trained, while <code>score.py</code> is stopped - which, in practice, is most of the time. A model cannot do that: it needs enough training rows, a fitted artefact and a running scorer. A fixed rule on a live metric needs none of those.</p>
+<p><strong>The research needs it.</strong> The models are the object of study. If incidents were raised by the models, every evaluation of those models would be scored against alerts the models themselves produced - the detector grading its own homework. Keeping the rule-based path independent means it can act as a reference the model output is compared <em>against</em>.</p>
 <p><strong>They fail differently, and that is useful.</strong> A rule misses a slow drift that never crosses 70%. A model misses a failure mode that was present throughout training and so looks normal to it. Two independent signals disagreeing is information; one signal wearing two hats is not.</p>
 <hr class="rule">
 <h2 id="2-incidents-the-rules"><span class="id">2</span> Incidents: the rules</h2>
-<p>Defined in <code>server/rca/thresholds.ts</code>, overridable via <code>server/data/incident_thresholds.json</code>, and editable in the UI under <strong>Incidents → Detection rules</strong>.</p>
+<p>Defined in <code>algorithms/detection/thresholds.ts</code>, overridable via <code>server/data/incident_thresholds.json</code>, and editable in the UI under <strong>Incidents → Detection rules</strong>.</p>
 <p>Every value below was previously a literal inside <code>AnomalyDetector.ts</code>, where the only way to answer "why did this fire?" was to read the source.</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -841,24 +842,24 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <h3 id="the-flat-baseline-rule-exists-for-a-real-reason">The flat-baseline rule exists for a real reason</h3>
-<p>A z-score divides by the standard deviation. Most services here sit perfectly still — <code>sock-shop:front-end</code> records 6 distinct values across 1568 samples — so the deviation approaches zero and the z-score explodes, making every tiny movement look infinitely anomalous. Below <code>flatlineStdDev</code> the baseline is treated as flat and judged on absolute movement instead. This is the rule that catches an idle service suddenly doing work.</p>
+<p>A z-score divides by the standard deviation. Most services here sit perfectly still - <code>sock-shop:front-end</code> records 6 distinct values across 1568 samples - so the deviation approaches zero and the z-score explodes, making every tiny movement look infinitely anomalous. Below <code>flatlineStdDev</code> the baseline is treated as flat and judged on absolute movement instead. This is the rule that catches an idle service suddenly doing work.</p>
 <h3 id="editing">Editing</h3>
-<p><code>POST /api/incidents/thresholds</code> with any subset of the keys, or <code>{"reset": true}</code>. Every value is clamped to a stated range — posting <code>absoluteCriticalPercent: 999</code> stores <code>100</code> — so a bad edit cannot silently disable detection. Thresholds are re-read on each detection pass, so a change takes effect on the next cycle with no restart.</p>
+<p><code>POST /api/incidents/thresholds</code> with any subset of the keys, or <code>{"reset": true}</code>. Every value is clamped to a stated range - posting <code>absoluteCriticalPercent: 999</code> stores <code>100</code> - so a bad edit cannot silently disable detection. Thresholds are re-read on each detection pass, so a change takes effect on the next cycle with no restart.</p>
 <p>The right values are target-dependent. A 909 MB box pinned at 90% CPU needs different bounds from one that idles at 2%; that is why they are editable rather than tuned once and hardcoded.</p>
 <hr class="rule">
 <h2 id="3-findings-what-the-models-say"><span class="id">3</span> Findings: what the models say</h2>
-<p><strong>Current findings</strong> — services above their model's own p99 training threshold, split by whether the breach is <em>persistent</em> (has held for the configured number of consecutive scoring cycles) or a single cycle. Persistent ones sort first; a single cycle above threshold is very often one noisy sample.</p>
-<p><strong>Live anomaly scores / Anomaly score trend</strong> — current score per service, and its history once a service is selected.</p>
-<p><strong>Anomaly score distribution</strong> — where scored services sit, bucketed.</p>
-<p><strong>Model check — holdout firing rate</strong> — how often each model fires on the chronological tail it never saw. The tail is unlabelled, so this is a <em>firing rate</em>, not accuracy, and the honest comparison is against contamination.</p>
-<p><strong>Detectors by project</strong> — per detector: fitted, refused, mean firing rate. Four detectors only earn their cost if they can disagree; if agreement is 1.0 everywhere they are adding cost and no information.</p>
-<p><strong>Distinct signal per service</strong> — distinct vs total training rows. The first number to check when every detector fires on 0%.</p>
-<p><strong>Feature explorer</strong> — the actual rows the models were fitted on.</p>
+<p><strong>Current findings</strong> - services above their model's own p99 training threshold, split by whether the breach is <em>persistent</em> (has held for the configured number of consecutive scoring cycles) or a single cycle. Persistent ones sort first; a single cycle above threshold is very often one noisy sample.</p>
+<p><strong>Live anomaly scores / Anomaly score trend</strong> - current score per service, and its history once a service is selected.</p>
+<p><strong>Anomaly score distribution</strong> - where scored services sit, bucketed.</p>
+<p><strong>Model check - holdout firing rate</strong> - how often each model fires on the chronological tail it never saw. The tail is unlabelled, so this is a <em>firing rate</em>, not accuracy, and the honest comparison is against contamination.</p>
+<p><strong>Detectors by project</strong> - per detector: fitted, refused, mean firing rate. Four detectors only earn their cost if they can disagree; if agreement is 1.0 everywhere they are adding cost and no information.</p>
+<p><strong>Distinct signal per service</strong> - distinct vs total training rows. The first number to check when every detector fires on 0%.</p>
+<p><strong>Feature explorer</strong> - the actual rows the models were fitted on.</p>
 <h3 id="findings-can-be-empty-and-that-is-not-a-bug">Findings can be empty and that is not a bug</h3>
 <p>If the scorer is stopped or the target unreachable, nothing is scored, and the page says so rather than showing stale numbers as if they were live. What was learned at training time is still shown; what is happening <em>now</em> is not, because nothing measured it.</p>
 <hr class="rule">
 <h2 id="4-what-moved-and-what-ml-pipeline-is-now"><span class="id">4</span> What moved, and what ML Pipeline is now</h2>
-<p><strong>ML Pipeline</strong> is the machine — how the pipeline is configured and how far each service has got through it:</p>
+<p><strong>ML Pipeline</strong> is the machine - how the pipeline is configured and how far each service has got through it:</p>
 <ul>
   <li>Pipeline processes (collector, scorer) with start/stop</li>
   <li>Execution panel (scope, preprocess, train; hyperparameters and suggestions)</li>
@@ -874,7 +875,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>"Results" was the request; <strong>Findings</strong> is what it is called, for three reasons:</p>
 <ol>
   <li><em>Results</em> is ambiguous in a repo that also has experiment results, traffic results and RCA results. Findings is unclaimed.</li>
-  <li>It is the right strength of claim. These are things the models <em>found</em>, which may be artefacts of thin training data — not conclusions.</li>
+  <li>It is the right strength of claim. These are things the models <em>found</em>, which may be artefacts of thin training data - not conclusions.</li>
   <li>It sits naturally beside Incidents: findings are observations, incidents are events with a severity that demand a response.</li>
 </ol>
 <hr class="rule">
@@ -887,7 +888,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <tbody>
     <tr>
       <td>Threshold definitions, defaults, limits, docs</td>
-      <td><code>server/rca/thresholds.ts</code></td>
+      <td><code>algorithms/detection/thresholds.ts</code></td>
     </tr>
     <tr>
       <td>Threshold overrides (gitignored)</td>
@@ -895,7 +896,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
     <tr>
       <td>Rule evaluation</td>
-      <td><code>server/rca/AnomalyDetector.ts</code></td>
+      <td><code>algorithms/detection/AnomalyDetector.ts</code></td>
     </tr>
     <tr>
       <td>Incident severity from rule output</td>
@@ -1202,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1357,10 +1358,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1458,7 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

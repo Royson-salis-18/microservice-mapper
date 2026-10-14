@@ -94,7 +94,7 @@ google-chrome --headless=new --user-data-dir=/tmp/mm-chrome --use-angle=swiftsha
 ## Building this book
 
 ```bash
-python3 scripts/build_wiki_visualizer.py      # wiki/*.md → "wiki visualizer/*.html"
+python3 wiki/build_visualizer.py      # wiki/*.md → "wiki/visualizer/*.html"
 ```
 
 The chapter list, part structure, diagrams and interactive labs all live in that script. Each lab re-implements a real function with the same constants. When you change an RCA weight, a risk weight, a threshold or a colour band, change the lab in the same commit. A lab that disagrees with its source teaches the wrong thing.

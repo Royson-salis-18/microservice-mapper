@@ -5,7 +5,7 @@ import Docker from 'dockerode';
 import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from '../algorithms/detection/requestStats.js';
 import axios from 'axios';
 
-// Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
+// Default to 127.0.0.1:3001 - the server opens a reverse SSH tunnel so this reaches the mapper.
 const MAPPER_URL = process.env.MAPPER_URL || 'http://127.0.0.1:3001';
 console.log(`[collector] MAPPER_URL=${MAPPER_URL}`);
 
@@ -77,7 +77,7 @@ interface InteractionEvent {
 }
 
 /**
- * Raw TCP connection event. NOT a trace span — this is an SSH-sampled
+ * Raw TCP connection event. NOT a trace span - this is an SSH-sampled
  * snapshot of active TCP connections between containers, captured by
  * reading /proc/net/tcp. Known limitations:
  * - Samples at collection-cycle granularity (POLLING_INTERVAL)

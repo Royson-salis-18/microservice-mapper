@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -664,7 +665,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#ml-pipeline">ML pipeline</a>
   <a href="#incidents-and-rca">Incidents and RCA</a>
   <a href="#traces">Traces</a>
-  <a href="#traffic-gen-control-plane">Traffic-gen control plane</a>
+  <a href="#traffic-gen-control-plane">gen control plane</a>
 </nav>
         </header>
 
@@ -696,7 +697,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>GET</td>
       <td><code>/api/graph</code></td>
-      <td>Whole graph: <code>{ nodes, edges, targets }</code>. Every project combined — filter client-side by <code>node.project</code>.</td>
+      <td>Whole graph: <code>{ nodes, edges, targets }</code>. Every project combined - filter client-side by <code>node.project</code>.</td>
     </tr>
     <tr>
       <td>GET</td>
@@ -726,7 +727,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>GET</td>
       <td><code>/api/diagnostics/consistency</code></td>
-      <td>Runs the 12 invariants in <code>server/graph/consistency.ts</code> over the live graph and open incidents. Returns <code>{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }</code>. An empty <code>violations</code> list is the claim; anything in it is a named bug. See <a href="32-accuracy-and-self-check.html">32-accuracy-and-self-check</a>.</td>
+      <td>Runs the 12 invariants in <code>algorithms/graph/consistency.ts</code> over the live graph and open incidents. Returns <code>{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }</code>. An empty <code>violations</code> list is the claim; anything in it is a named bug. See <a href="32-accuracy-and-self-check.html">32-accuracy-and-self-check</a>.</td>
     </tr>
     <tr>
       <td>GET</td>
@@ -876,7 +877,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p><strong>Merge semantics matter here.</strong> This handler merges onto the existing entry rather than replacing it, because the record also holds keys the edit form never sends — notably <code>trafficBaseUrl</code>. Replacing wholesale silently erased the pinned traffic entry point every time someone updated an IP.</p>
+<p><strong>Merge semantics matter here.</strong> This handler merges onto the existing entry rather than replacing it, because the record also holds keys the edit form never sends - notably <code>trafficBaseUrl</code>. Replacing wholesale silently erased the pinned traffic entry point every time someone updated an IP.</p>
 <hr class="rule">
 <h2 id="traffic-control">Traffic control</h2>
 <div class="scroll"><table class="t">
@@ -951,7 +952,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>Records still marked <code>RUNNING</code> when the store loads are reconciled to <code>INTERRUPTED</code> — nothing survives a process restart, so a <code>RUNNING</code> record on load describes a run that is definitively over. They are marked, not deleted, so history stays intact.</p>
+<p>Records still marked <code>RUNNING</code> when the store loads are reconciled to <code>INTERRUPTED</code> - nothing survives a process restart, so a <code>RUNNING</code> record on load describes a run that is definitively over. They are marked, not deleted, so history stays intact.</p>
 <hr class="rule">
 <h2 id="ml-pipeline">ML pipeline</h2>
 <div class="scroll"><table class="t">
@@ -1023,7 +1024,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>Config validation: all numeric keys must be positive; <code>contamination</code> must be <code>&lt; 0.5</code> (an IsolationForest requirement); <code>holdout_fraction</code> must be <code>0 ≤ x &lt; 0.5</code> (0 is legal — train on everything); <code>feature_columns</code> must be a non-empty subset of the four <code>z_*</code> features.</p>
+<p>Config validation: all numeric keys must be positive; <code>contamination</code> must be <code>&lt; 0.5</code> (an IsolationForest requirement); <code>holdout_fraction</code> must be <code>0 ≤ x &lt; 0.5</code> (0 is legal - train on everything); <code>feature_columns</code> must be a non-empty subset of the four <code>z_*</code> features.</p>
 <p>Process control reports instances started <strong>outside</strong> the app too, detected with an anchored <code>pgrep</code>. Without the anchor the match also hits shell wrappers whose command line merely contains <code>python3 collector.py</code>, and stopping the wrapper would leave the interpreter running.</p>
 <hr class="rule">
 <h2 id="incidents-and-rca">Incidents and RCA</h2>
@@ -1160,7 +1161,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>A target whose workflow module exports <code>STUB: true</code> is <strong>rejected</strong> by <code>/api/start</code> unless the request supplies confirmed endpoints (<code>useDiscoveredEndpoints</code> plus a non-empty <code>endpointPaths</code>). This is why a new target can fail with HTTP 400 while looking correctly configured — see <a href="15-troubleshooting.html">15-troubleshooting</a>.</p>
+<p>A target whose workflow module exports <code>STUB: true</code> is <strong>rejected</strong> by <code>/api/start</code> unless the request supplies confirmed endpoints (<code>useDiscoveredEndpoints</code> plus a non-empty <code>endpointPaths</code>). This is why a new target can fail with HTTP 400 while looking correctly configured - see <a href="15-troubleshooting.html">15-troubleshooting</a>.</p>
                 </article>
                 
             </div>
@@ -1442,7 +1443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1597,10 +1598,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1698,7 +1699,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

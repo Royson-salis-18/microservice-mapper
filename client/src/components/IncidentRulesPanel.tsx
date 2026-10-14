@@ -4,14 +4,14 @@ import { ChevronRight, RotateCcw } from 'lucide-react';
 /**
  * The rules that decide what becomes an incident, shown where incidents are.
  *
- * These numbers used to be literals inside AnomalyDetector — a z-score of
- * 2.5, an absolute 85%, a 30-point jump on a flat baseline — so the honest
+ * These numbers used to be literals inside AnomalyDetector - a z-score of
+ * 2.5, an absolute 85%, a 30-point jump on a flat baseline - so the honest
  * answer to "why did this fire?" was "read the source". They are editable
  * here because the right value depends on the target: a 909MB box that sits
  * pinned at 90% CPU needs different bounds from one that idles at 2%.
  *
  * Nothing on this panel touches the ML pipeline. Incidents are rule-based on
- * purpose — they have to fire on a service discovered a minute ago, on a
+ * purpose - they have to fire on a service discovered a minute ago, on a
  * target whose models were never trained, while the scorer is stopped. What
  * the models think lives under Findings.
  */
@@ -104,7 +104,7 @@ export function IncidentRulesPanel() {
       } else {
         setData(prev => (prev ? { ...prev, values: out.values } : prev));
         setDraft(Object.fromEntries(Object.entries(out.values).map(([k, v]) => [k, String(v)])));
-        setMessage(reset ? 'Reset to defaults — applies on the next detection cycle.' : 'Saved — applies on the next detection cycle.');
+        setMessage(reset ? 'Reset to defaults - applies on the next detection cycle.' : 'Saved - applies on the next detection cycle.');
       }
     } catch (e: any) {
       setMessage(e?.message || 'Could not reach the server');
@@ -161,7 +161,7 @@ export function IncidentRulesPanel() {
       {open && (
         <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--color-border)' }}>
           <p style={{ margin: '14px 0 18px 0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6, maxWidth: '760px' }}>
-            An incident fires when a live metric breaks one of these rules — no trained model is consulted,
+            An incident fires when a live metric breaks one of these rules - no trained model is consulted,
             which is why incidents work on a target that has never been trained and while the scorer is
             stopped. What the models think is a separate question, under <strong style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>Findings</strong>.
             The right values depend on the target: a box pinned at 90% CPU needs different bounds from one

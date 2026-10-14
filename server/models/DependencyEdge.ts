@@ -18,7 +18,7 @@ export interface DependencyEdge {
    * Per-request metrics. Null under Tier 0 alone, and that is not a gap to
    * paper over: a socket table contains no requests, so there is nothing
    * here to report. Filled by Tier 1 (proxy access logs) or Tier 2 (the
-   * target's own Prometheus/traces) when the target provides them — see
+   * target's own Prometheus/traces) when the target provides them - see
    * wiki/18-telemetry-tiers-plan.md.
    */
   metrics: {
@@ -42,7 +42,7 @@ export interface DependencyEdge {
    * /proc/net/tcp scans. Deliberately NOT called requestRate: these are
    * connection observations, not HTTP requests, and there is no latency or
    * error data behind them. Absent until the link has been seen at least
-   * once — never defaulted to 0, which would read as "measured, and idle".
+   * once - never defaulted to 0, which would read as "measured, and idle".
    */
   activity?: {
     /**
@@ -50,7 +50,7 @@ export interface DependencyEdge {
      * collector re-counts every ESTABLISHED/TIME_WAIT socket on each sweep,
      * so one long-lived connection contributes on every scan. It is a
      * proxy for how much concurrent traffic a link carries, and it is the
-     * only per-edge volume signal available — there is no latency, error
+     * only per-edge volume signal available - there is no latency, error
      * rate or request count behind these links.
      */
     samplesPerMin: number;
@@ -70,7 +70,7 @@ export interface DependencyEdge {
      * about a minute when traffic grows, and decays over about ten when it
      * falls. Dependency weights are computed from this rather than the
      * instantaneous rate, because a link goes quiet precisely when its callee
-     * dies — weighting on current traffic made a crashed database look less
+     * dies - weighting on current traffic made a crashed database look less
      * and less important to its callers the longer it stayed down.
      */
     baselinePerMin?: number;
@@ -101,7 +101,7 @@ export interface EdgeWeight {
   /**
    * What `dependency` was computed from. `requests` and `activity` are
    * measurements; `uniform` means no traffic figure existed for this caller,
-   * so its dependencies were weighted equally — stated rather than hidden.
+   * so its dependencies were weighted equally - stated rather than hidden.
    */
   dependencyBasis: 'requests' | 'activity' | 'uniform';
   /**
@@ -114,7 +114,7 @@ export interface EdgeWeight {
   /** This edge's traffic relative to the busiest edge in its project, 0..1.
    *  Null when this edge carries no traffic measurement. */
   volume: number | null;
-  /** How sure we are this dependency exists and points this way, 0..1 —
+  /** How sure we are this dependency exists and points this way, 0..1 -
    *  from the kind of evidence behind it. */
   confidence: number;
   /** Plain-language source of `confidence`. */

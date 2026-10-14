@@ -20,13 +20,13 @@ export interface LayoutOption {
 export const LAYOUTS: LayoutOption[] = [
   { id: 'halls', label: 'Islands', hint: 'Each project a district of platforms by role: edge, services, data, messaging, with observability set apart' },
   { id: 'clusters', label: 'Clusters', hint: 'One island per project, laid out side by side' },
-  { id: 'grid', label: 'Grid', hint: 'Even rows and columns — easiest to scan a lot of services' },
+  { id: 'grid', label: 'Grid', hint: 'Even rows and columns - easiest to scan a lot of services' },
   { id: 'circle', label: 'Circle', hint: 'Single ring, every service equally spaced' },
   { id: 'polygon', label: 'Polygon', hint: 'Services distributed along the edges of an n-sided shape' },
-  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count — busiest in the middle' },
+  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count - busiest in the middle' },
   { id: 'tiers', label: 'Tiers', hint: 'Stacked by role: gateways on top, databases at the bottom' },
   { id: 'sphere', label: 'Sphere', hint: 'Even spread over a sphere (Fibonacci)' },
-  { id: 'helix', label: 'Helix', hint: 'Rising spiral — good for spotting one long chain' },
+  { id: 'helix', label: 'Helix', hint: 'Rising spiral - good for spotting one long chain' },
 ];
 
 export interface LayoutNode {
@@ -120,7 +120,7 @@ export function computeLayout(layout: LayoutId, nodes: LayoutNode[]): Positions 
     }
 
     case 'radial': {
-      // Most-connected services in the centre, leaves pushed outward — the
+      // Most-connected services in the centre, leaves pushed outward - the
       // shape itself then says which services are load-bearing.
       const sorted = [...nodes].sort((a, b) => b.degree - a.degree);
       let placed = 0;
@@ -145,7 +145,7 @@ export function computeLayout(layout: LayoutId, nodes: LayoutNode[]): Positions 
     case 'tiers': {
       // Each tier is a wrapped slab in the XZ plane at its own height, not a
       // single row. Unwrapped, a 19-service tier became one flat line 220
-      // units wide that reads as a wall from any normal camera angle — the
+      // units wide that reads as a wall from any normal camera angle - the
       // 2D view wraps for the same reason.
       const byTier = groupBy(nodes, (node) => String(tierOf(node.type)));
       const tiers = Array.from(byTier.keys()).sort((a, b) => Number(a) - Number(b));

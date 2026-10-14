@@ -22,7 +22,7 @@ import { config } from '../config.js';
  * Normalises the load knobs that arrive from the UI as strings or nulls.
  *
  * Every field is optional and an absent/invalid one is dropped entirely
- * rather than coerced to 0 — traffic-gen falls back to the workflow
+ * rather than coerced to 0 - traffic-gen falls back to the workflow
  * profile's own default when a field is missing, and a literal 0 would be
  * rejected by engine.validateConfig ("users must be a positive integer").
  */
@@ -73,14 +73,14 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
    * Two different things can count as observed traffic here and only one of
    * them usually exists:
    *
-   *   HTTP interactions — method, route, status, latency — parsed out of
+   *   HTTP interactions - method, route, status, latency - parsed out of
    *   container access logs. Richest, but it needs a service that actually
    *   writes a parseable access log to stdout. DeathStarBench's nginx-thrift
    *   does not, and sock-shop's edge-router does not either, so this feed was
    *   permanently empty on those targets and the panel just said "waiting for
    *   traffic events" forever while traffic was plainly flowing.
    *
-   *   Socket connections — who talked to whom, on which port — observed by
+   *   Socket connections - who talked to whom, on which port - observed by
    *   the /proc/net/tcp scanner. Coarser (no route, no status) but it exists
    *   for every target, because it needs nothing of the application.
    *
@@ -135,7 +135,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   });
 
   // Read-only: a BFS over already-observed traffic, nothing touches the
-  // target. Ranked risk scores need no endpoint of their own — every node
+  // target. Ranked risk scores need no endpoint of their own - every node
   // already carries analytics.riskScore via /api/graph.
   router.get('/reliability/blast-radius/:nodeId', (req, res) => {
     if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
@@ -155,7 +155,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(prediction);
   });
 
-  // "What if this failed?" — read-only simulation over the cascade model.
+  // "What if this failed?" - read-only simulation over the cascade model.
   router.get('/reliability/whatif/:nodeId', (req, res) => {
     if (!riskEngine) return res.status(503).json({ error: 'Risk engine not available' });
     const result = riskEngine.simulateCascade(req.params.nodeId);
@@ -271,7 +271,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     res.json(incidentManager.getAllActiveIncidents());
   });
 
-  // Registered before /incidents/:id — otherwise Express matches
+  // Registered before /incidents/:id - otherwise Express matches
   // "thresholds" as an incident id and this never runs.
   /**
    * The rules that decide what becomes an incident, plus what each one means.
@@ -449,7 +449,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   });
 
   // Operator-pinned entry point per target. Discovery can only report what a
-  // container publishes, which isn't always what's reachable from here — so
+  // container publishes, which isn't always what's reachable from here - so
   // this records the URL traffic should actually use, and the probe proves
   // it responds before anyone starts a run against it.
   router.get('/traffic/entrypoints', (_req, res) => {
@@ -514,7 +514,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
    * actually answer. This is the "find all the entry points and see them
    * working" step: discovery says what is published, this says what responds.
    *
-   * Read-only — it sends one GET per endpoint and starts no traffic. The
+   * Read-only - it sends one GET per endpoint and starts no traffic. The
    * result feeds the sweep run, so an operator can see the surface before
    * committing load to it.
    */
@@ -842,7 +842,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     const serviceId = req.query.serviceId as string | undefined;
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 300, 2000);
     // Reads backwards from EOF and stops once it has `limit` rows, instead
-    // of loading all 33 MB to return 300 of them. See util/tailCsv.ts — the
+    // of loading all 33 MB to return 300 of them. See util/tailCsv.ts - the
     // old path spent 141ms, of which 0.3ms was the actual answer.
     const columns = readCsvHeader(featuresPath);
     const sidIndex = columns.indexOf('service_id');
@@ -932,7 +932,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
           return;
         }
       } else {
-        appendLog('[retrain] skipping preprocess — reusing the existing features.csv');
+        appendLog('[retrain] skipping preprocess - reusing the existing features.csv');
       }
 
       const trainArgs = ['train.py'];
@@ -962,7 +962,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   /**
    * The actual source of the pipeline scripts, so the execution panel shows
    * what really runs rather than a prose description of it that can drift.
-   * Read-only and allow-listed by name — this serves files, and the set of
+   * Read-only and allow-listed by name - this serves files, and the set of
    * files it will serve is fixed here rather than taken from the request.
    */
   router.get('/ml/source/:name', (req, res) => {
@@ -992,7 +992,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
    *
    * Deliberately not a table of textbook defaults. The useful question is not
    * "what is a normal contamination" but "what will happen to *these* services
-   * at that value", and that depends on facts only the feature table knows —
+   * at that value", and that depends on facts only the feature table knows -
    * above all how many DISTINCT rows each service has, which on these targets
    * is a tiny fraction of the row count because collection polls faster than
    * the metrics change.
@@ -1018,7 +1018,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
 
     const featuresPath = path.join(mlDataDir, 'features.csv');
     if (!fs.existsSync(featuresPath)) {
-      return res.json({ available: false, reason: 'No features.csv yet — run preprocessing first.' });
+      return res.json({ available: false, reason: 'No features.csv yet - run preprocessing first.' });
     }
 
     const Z_COLUMNS = ['z_cpu_percent', 'z_memory_percent', 'z_network_rx_rate', 'z_network_tx_rate'];
@@ -1119,7 +1119,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
           range: [100, 300],
           hard_limits: [10, 1000],
           reason:
-            `${nEstimators} — more trees buy score stability, and stability is capped by how many ` +
+            `${nEstimators} - more trees buy score stability, and stability is capped by how many ` +
             `distinct points there are to partition (median ${medDistinct} here). Past ~200 the ` +
             'returns are small and the cost is linear. Isolation Forest only; the other three ignore it.',
         },
@@ -1130,7 +1130,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
           reason:
             `At 30 it skips ${wouldSkip(30)} of ${services.length} service(s); at 100 it would skip ` +
             `${wouldSkip(100)}. Counts raw rows, not distinct ones, so a service can clear this ` +
-            'comfortably and still carry almost no signal — check "thin data" before trusting a pass.',
+            'comfortably and still carry almost no signal - check "thin data" before trusting a pass.',
         },
         holdout_fraction: {
           suggested: holdout,
@@ -1139,7 +1139,7 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
           reason:
             `${holdout} leaves about ${Math.round(medRows * holdout)} rows held out at the median ` +
             `service (${medRows} rows). The split is chronological, so the holdout is the most recent ` +
-            'data — a high firing rate on it usually means the system changed, not that the model is wrong.',
+            'data - a high firing rate on it usually means the system changed, not that the model is wrong.',
         },
         algorithms: {
           suggested: lofCapable.length >= services.length / 2
@@ -1148,13 +1148,13 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
           reason:
             `${lofCapable.length} of ${services.length} service(s) have the 20+ distinct rows LOF ` +
             'needs for a density model; it refuses on the rest and records why. ' +
-            'Keep zscore whatever else you run — it needs no fitting and is the interpretable ' +
+            'Keep zscore whatever else you run - it needs no fitting and is the interpretable ' +
             'baseline the others have to beat.',
         },
       },
       warnings: [
         ...(thin.length > 0
-          ? [`${thin.length} of ${services.length} service(s) are under 5% distinct rows. No hyperparameter fixes that — it needs slower collection or longer, more varied runs.`]
+          ? [`${thin.length} of ${services.length} service(s) are under 5% distinct rows. No hyperparameter fixes that - it needs slower collection or longer, more varied runs.`]
           : []),
         ...(minRows < 30
           ? [`The smallest service has ${minRows} feature row(s), below the default min_samples of 30, so it will be skipped.`]

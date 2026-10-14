@@ -9,7 +9,7 @@ export interface ServiceNode {
   status: 'healthy' | 'degraded' | 'critical' | 'unknown';
   /** ISO-8601 UTC timestamp of the last discovery or telemetry update that
    * touched this node. Used to prune ghost nodes a container's containerId
-   * churn (restart) or a one-off match failure left behind — see
+   * churn (restart) or a one-off match failure left behind - see
    * GraphStore.pruneStaleNodes(). */
   lastSeen?: string;
   metadata: {
@@ -45,7 +45,7 @@ export interface ServiceNode {
     /** Requests behind requestRate/latency in the current window. */
     requestCount?: number;
     latencyP95?: number;
-    // Tier 1/2 only — nothing outside the container can measure these.
+    // Tier 1/2 only - nothing outside the container can measure these.
     latency?: number | null;
     requestRate?: number | null;
     errorRate?: number | null;
@@ -56,7 +56,7 @@ export interface ServiceNode {
     // healthScore, riskScore, criticality, centrality, upstreamCount and
     // downstreamCount are computed every poll cycle by RiskEngine.recomputeAll()
     // (server/graph/RiskEngine.ts) from signals already collected elsewhere on
-    // this object — status, anomalyScore, open incidents, and observed edge
+    // this object - status, anomalyScore, open incidents, and observed edge
     // activity. healthBreakdown is what makes riskScore/healthScore checkable
     // by hand rather than taken on faith.
     healthScore?: number | null;
@@ -69,13 +69,13 @@ export interface ServiceNode {
      * in server/graph/CascadeEngine.ts: its own measured state combined with
      * risk flowing in from failing dependencies over weighted edges.
      *
-     * A model estimate, not an observed frequency — nothing has been
+     * A model estimate, not an observed frequency - nothing has been
      * calibrated against records of real cascades. The model and its
      * transmission parameter are served alongside it at
      * /api/reliability/cascade so that is never hidden.
      */
     failureProbability?: number | null;
-    /** The part of failureProbability arriving through dependencies alone —
+    /** The part of failureProbability arriving through dependencies alone -
      *  how exposed this service is to something else failing. */
     affectedProbability?: number | null;
     /** The dependency contributing most of that inherited risk. */

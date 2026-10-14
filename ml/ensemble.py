@@ -4,7 +4,7 @@ Scoring a sample against all four trained detectors, and combining them.
 Two problems this replaces, both in the old live scorer:
 
 1. Only the Isolation Forest was ever used. LOF, the one-class SVM and the
-   z-score detector were trained, saved to models/, and never consulted — so
+   z-score detector were trained, saved to models/, and never consulted - so
    the "four detectors" existed only in training reports.
 
 2. The score was raw / threshold, clamped to 0..1. For an Isolation Forest
@@ -13,7 +13,7 @@ Two problems this replaces, both in the old live scorer:
    training points score above 0, which makes the 99th percentile ~0. All 24
    trained models had |threshold| < 0.001. With threshold <= 0 the score was
    forced to 0 for every sample, while `above_threshold` (raw >= -0.0) could
-   still be true — contradictory output, and a displayed anomaly score of 0
+   still be true - contradictory output, and a displayed anomaly score of 0
    for every service. With a threshold a hair above 0, dividing by it made
    the slightest deviation read as 1.0.
 
@@ -48,12 +48,12 @@ def detector_score(raw, stats):
 
     `stats` needs `threshold_p99` and a centre: `train_score_median` when the
     model was trained recently enough to record it, else `train_score_mean`.
-    The median is preferred because these distributions are heavily skewed —
+    The median is preferred because these distributions are heavily skewed -
     a one-class SVM had its mean pulled past its own p99 by a few extreme
     training scores, which leaves nothing sensible to measure against.
 
-    Returns None when the detector cannot be used — missing statistics, or a
-    degenerate distribution — rather than inventing a score.
+    Returns None when the detector cannot be used - missing statistics, or a
+    degenerate distribution - rather than inventing a score.
     """
     if raw is None or stats is None:
         return None

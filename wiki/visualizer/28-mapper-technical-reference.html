@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -687,7 +688,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <h2 id="01-process-topology"><span class="id">01</span> Process topology</h2>
 <p>Three Node processes, one Python pipeline, one target reached only over SSH.</p>
 <div class="box trap"><h4>Important</h4><p>Why traffic-gen is its own process</p></div>
-<p>The process generating load must not be the process measuring the result. Sharing an event loop means a slow target stalls collection, and a busy collector throttles the load generator — each would silently distort the other.</p>
+<p>The process generating load must not be the process measuring the result. Sharing an event loop means a slow target stalls collection, and a busy collector throttles the load generator - each would silently distort the other.</p>
 <p>02</p>
 <h2 id="02-discovery"><span class="id">02</span> Discovery</h2>
 <p>What exists, what it is, and what it claims to depend on.</p>
@@ -696,21 +697,21 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>On a periodic rescan, a zero-service result keeps the previous set and logs the reason. On the initial cycle it is taken as-is, because then it really is the state.</p>
 <p>03</p>
 <h2 id="03-the-collection-cycle"><span class="id">03</span> The collection cycle</h2>
-<p>One TargetAgent per target. This loop repeats while the agent lives — the next run is queued only after the current one finishes.</p>
-<div class="box trap"><h4>Warning</h4><p>Trap 1 — the scan that failed 100% of the time, silently</p></div>
+<p>One TargetAgent per target. This loop repeats while the agent lives - the next run is queued only after the current one finishes.</p>
+<div class="box trap"><h4>Warning</h4><p>Trap 1 - the scan that failed 100% of the time, silently</p></div>
 <p>The socket scan used to run docker exec &lt;id&gt; sh -c 'cat /proc/net/tcp'. That needs a shell inside the container. The OpenTelemetry demo's frontend is a distroless image whose entrypoint is /nodejs/bin/node, so every scan returned:</p>
 <p>OCI runtime exec failed: exec: "sh": executable file not found in $PATH</p>
-<p>collectObservedEdges treated non-zero exit as “skip this service” and moved on without a word. frontend is precisely the service that calls cart, currency, checkout and product-catalog — so those edges could never be observed. Across 500 connection events it appeared as a source zero times, while every other service appeared at least once.</p>
-<p>Now it resolves the container's host PID and reads /proc/&lt;hostPid&gt;/net/tcp from the host — needs nothing inside the container, so it works on distroless, scratch and ordinary images alike.</p>
-<div class="box trap"><h4>Warning</h4><p>Trap 2 — overlapping cycles exhausting SSH sessions</p></div>
+<p>collectObservedEdges treated non-zero exit as “skip this service” and moved on without a word. frontend is precisely the service that calls cart, currency, checkout and product-catalog - so those edges could never be observed. Across 500 connection events it appeared as a source zero times, while every other service appeared at least once.</p>
+<p>Now it resolves the container's host PID and reads /proc/&lt;hostPid&gt;/net/tcp from the host - needs nothing inside the container, so it works on distroless, scratch and ordinary images alike.</p>
+<div class="box trap"><h4>Warning</h4><p>Trap 2 - overlapping cycles exhausting SSH sessions</p></div>
 <p>The loop was setInterval(poll, 5000) with an async poll. A cycle takes far longer than 5s on 25 services, so cycles stacked and ran concurrently until they passed OpenSSH's MaxSessions (default 10):</p>
 <p>(SSH) Channel open failure: open failed</p>
-<p>Measured at 2.66 refused scans per cycle. Self-scheduling — queue the next run 5s after the last one ends, as drawn above — took that to 0.00 over 41 cycles.</p>
+<p>Measured at 2.66 refused scans per cycle. Self-scheduling - queue the next run 5s after the last one ends, as drawn above - took that to 0.00 over 41 cycles.</p>
 <p>04</p>
 <h2 id="04-the-graph"><span class="id">04</span> The graph</h2>
-<p>server/graph/GraphStore.ts — the single source of truth the UI reads.</p>
+<p>server/graph/GraphStore.ts - the single source of truth the UI reads.</p>
 <h3 id="identity">Identity</h3>
-<p>Node ids are project:service — open-telemetry:cart. Every ingest path runs raw ids through normalizeId(), which is what makes it impossible for two projects' data to merge. Edge ids are source-&gt;target.</p>
+<p>Node ids are project:service - open-telemetry:cart. Every ingest path runs raw ids through normalizeId(), which is what makes it impossible for two projects' data to merge. Edge ids are source-&gt;target.</p>
 <h3 id="edge-shape">Edge shape</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -722,7 +723,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   observed: true,          // a live TCP connection was caught
   evidenceSources: [&quot;compose&quot;, &quot;network-tcp&quot;],
 
-  activity: {              // tier 0 volume proxy — absent until seen once
+  activity: {              // tier 0 volume proxy - absent until seen once
     samplesPerMin: 184,   // socket OBSERVATIONS, not requests
     windowSec: 76,
     lastSeen: &quot;2026-09-18T…&quot;
@@ -783,14 +784,14 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>tier 0</td>
       <td>cgroup</td>
       <td>yes</td>
-      <td>—</td>
+      <td>-</td>
       <td>no</td>
       <td>no</td>
     </tr>
     <tr>
       <td>tier 0</td>
       <td>socket-scan</td>
-      <td>—</td>
+      <td>-</td>
       <td>yes</td>
       <td>no</td>
       <td>no</td>
@@ -798,7 +799,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     <tr>
       <td>tier 1</td>
       <td>access-log</td>
-      <td>—</td>
+      <td>-</td>
       <td>yes</td>
       <td>yes</td>
       <td>yes</td>
@@ -807,21 +808,21 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>tier 2</td>
       <td>prometheus</td>
       <td>yes</td>
-      <td>—</td>
+      <td>-</td>
       <td>yes</td>
       <td>yes</td>
     </tr>
     <tr>
       <td>tier 2</td>
       <td>trace-backend</td>
-      <td>—</td>
+      <td>-</td>
       <td>yes</td>
       <td>yes</td>
       <td>yes</td>
     </tr>
   </tbody>
 </table></div>
-<p>This table is SOURCE_CAPABILITIES in models/MetricProvenance.ts, and it is checked, not documentation — a test asserts a socket scan cannot write into a latency field.</p>
+<p>This table is SOURCE_CAPABILITIES in models/MetricProvenance.ts, and it is checked, not documentation - a test asserts a socket scan cannot write into a latency field.</p>
 <h3 id="enabling-tier-2">Enabling tier 2</h3>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -837,17 +838,17 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 }</code></pre>
                     </div>
 <div class="box trap"><h4>Important</h4><p>Why localhost is correct here</p></div>
-<p>The query runs on the target, via curl over the SSH connection already held. Prometheus is bound to localhost there and only :8080 is open in the security group — querying from outside would mean asking someone to open a port to read a metric.</p>
+<p>The query runs on the target, via curl over the SSH connection already held. Prometheus is bound to localhost there and only :8080 is open in the security group - querying from outside would mean asking someone to open a port to read a metric.</p>
 <div class="box trap"><h4>Warning</h4><p>Three things tier 2 refuses to do</p></div>
-<p>NaN is not zero. A missing quantile stays absent — 0ms would read as “instant”. No traffic is not 0% errors. A ratio needs a denominator; unknown stays unknown. No caller attribution. Prometheus measures the serving side and cannot say who called.</p>
+<p>NaN is not zero. A missing quantile stays absent - 0ms would read as “instant”. No traffic is not 0% errors. A ratio needs a denominator; unknown stays unknown. No caller attribution. Prometheus measures the serving side and cannot say who called.</p>
 <p>06</p>
 <h2 id="06-traffic-generation"><span class="id">06</span> Traffic generation</h2>
 <p>Finding what actually answers, then driving load only at that.</p>
-<h3 id="entry-point-resolution-a-waterfall">Entry point resolution — a waterfall</h3>
+<h3 id="entry-point-resolution-a-waterfall">Entry point resolution - a waterfall</h3>
 <div class="box trap"><h4>Important</h4><p>Why observability UIs are ranked last in step 3</p></div>
 <p>Ranking by lowest port made Grafana on :3000 beat the real app frontend on :8080. Observability components are demoted by service name instead, because ports collide: :3000 is Grafana here and a perfectly normal frontend elsewhere.</p>
-<h3 id="the-two-phase-probe-a-funnel">The two-phase probe — a funnel</h3>
-<p>49 404s from generic guesses on DeathStarBench — its API is → 6usable endpoints once its own workflow paths were used → 0sock-shop endpoints wrongly called dead, once timeouts adapted</p>
+<h3 id="the-two-phase-probe-a-funnel">The two-phase probe - a funnel</h3>
+<p>49 404s from generic guesses on DeathStarBench - its API is → 6usable endpoints once its own workflow paths were used → 0sock-shop endpoints wrongly called dead, once timeouts adapted</p>
 <div class="box trap"><h4>Important</h4><p>Adaptive timeouts, and why a timeout is retried but a 404 is not</p></div>
 <p>A flat 6s budget called 23 of 41 sock-shop candidates dead. They were alive: /catalogue?size=5 answered in 15.1s. Reporting a live endpoint as dead means that service gets no load and produces no telemetry at all. Phase 2 now scales its timeout off the slowest origin, and anything that only timed out is retried once at 25s. A refused connection or a 404 is an answer, and is not retried.</p>
 <div class="box trap"><h4>Warning</h4><p>The user-cap bug that made HEAVY and STRESS unstartable</p></div>
@@ -855,7 +856,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>07</p>
 <h2 id="07-the-ml-pipeline"><span class="id">07</span> The ML pipeline</h2>
 <p>Four Python scripts, driven from the UI, one model per service per detector.</p>
-<h3 id="the-four-detectors-deliberately-different-shapes-of-judgment">The four detectors — deliberately different shapes of judgment</h3>
+<h3 id="the-four-detectors-deliberately-different-shapes-of-judgment">The four detectors - deliberately different shapes of judgment</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Key</th>
@@ -886,9 +887,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <div class="box trap"><h4>Warning</h4><p>LOF and the 3.37×109 threshold</p></div>
-<p>Fitted naively, LOF produced thresholds in the billions: the training data is mostly duplicate rows, so a point's 20 nearest neighbours are 20 copies of itself at distance zero, and local density goes to infinity. LOF now fits on distinct rows and refuses entirely below 20 of them — at 6 distinct rows it fired on 84.6% of its holdout, which is not a detector.</p>
+<p>Fitted naively, LOF produced thresholds in the billions: the training data is mostly duplicate rows, so a point's 20 nearest neighbours are 20 copies of itself at distance zero, and local density goes to infinity. LOF now fits on distinct rows and refuses entirely below 20 of them - at 6 distinct rows it fired on 84.6% of its holdout, which is not a detector.</p>
 <div class="box trap"><h4>Important</h4><p>Chronological holdout, not random</p></div>
-<p>The last 20% by time is held out, never a random split, which would leak adjacent samples across the boundary and flatter the result. The holdout is unlabelled, so what is reported is a firing rate, not accuracy — compare it to contamination, not to 100%.</p>
+<p>The last 20% by time is held out, never a random split, which would leak adjacent samples across the boundary and flatter the result. The holdout is unlabelled, so what is reported is a firing rate, not accuracy - compare it to contamination, not to 100%.</p>
 <h3 id="suggestions-are-computed-not-quoted">Suggestions are computed, not quoted</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -919,7 +920,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>08</p>
 <h2 id="08-incidents-root-cause"><span class="id">08</span> Incidents &amp; root-cause</h2>
 <p>Rule-based throughout. server/rca/ imports nothing from ml/.</p>
-<h3 id="root-cause-scoring-weighted-evidence">Root-cause scoring — weighted evidence</h3>
+<h3 id="root-cause-scoring-weighted-evidence">Root-cause scoring - weighted evidence</h3>
 <h3 id="the-ten-incident-rules">The ten incident rules</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -978,7 +979,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   </tbody>
 </table></div>
 <div class="box trap"><h4>Important</h4><p>Why the flat-baseline rule exists at all</p></div>
-<p>A z-score divides by the standard deviation. sock-shop:front-end records 6 distinct values across 1,568 samples, so the deviation approaches zero and the z-score explodes. Below flatlineStdDev the baseline is judged on absolute movement instead — the rule that catches an idle service suddenly doing work.</p>
+<p>A z-score divides by the standard deviation. sock-shop:front-end records 6 distinct values across 1,568 samples, so the deviation approaches zero and the z-score explodes. Below flatlineStdDev the baseline is judged on absolute movement instead - the rule that catches an idle service suddenly doing work.</p>
 <div class="box trap"><h4>Warning</h4><p>A validation bug worth knowing about</p></div>
 <p>Number(null) and Number([]) are both 0, and finite. So {"zScoreAnomaly": null} passed an isFinite guard and clamped to 0.5, the most sensitive possible value, making every sample anomalous. Non-numeric input is now rejected outright.</p>
 <p>09</p>
@@ -1033,7 +1034,7 @@ POST /incidents/thresholds    // clamped; {reset:true} restores</code></pre>
 <p>Both wins came from doing less work, not from a faster runtime.</p>
 <h3 id="tail-reading-the-feature-table">Tail-reading the feature table</h3>
 <p>/api/ml/features returns the most recent 300 rows and was reading all 33 MB to do it.</p>
-<p>→ 2.0 msunfiltered — 97×, byte-identical output → 57 msfiltered by service — 5.6× → 0.00refused SSH scans per collection cycle</p>
+<p>→ 2.0 msunfiltered - 97×, byte-identical output → 57 msfiltered by service - 5.6× → 0.00refused SSH scans per collection cycle</p>
 <div class="box perf"><h4>Tip</h4><p>Two details that mattered more than the raw speed</p></div>
 <p>The filter predicate reads one column with fieldAt() rather than line.split(','), which allocates a 19-element array per line and discards it.</p>
 <p>A filter matching nothing would otherwise walk the whole file backwards. maxBytes caps the scan so a bad filter degrades instead of hanging.</p>
@@ -1070,7 +1071,7 @@ POST /incidents/thresholds    // clamped; {reset:true} restores</code></pre>
   → 0.0829      // 82.9 ms p95, service_name=&quot;cart&quot;, 2,296 samples</code></pre>
                     </div>
 <div class="box trap"><h4>Warning</h4><p>The models currently say very little, and it is a data problem</p></div>
-<p>sock-shop:front-end holds 1,568 training rows containing 6 distinct values — 0.4%. No detector learns a boundary from six points, and no hyperparameter fixes that. Latency and error rate do not behave that way, which is the strongest argument for tier 1/2 beyond fidelity.</p>
+<p>sock-shop:front-end holds 1,568 training rows containing 6 distinct values - 0.4%. No detector learns a boundary from six points, and no hyperparameter fixes that. Latency and error rate do not behave that way, which is the strongest argument for tier 1/2 beyond fidelity.</p>
 <h3 id="current-target-status">Current target status</h3>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -1082,7 +1083,7 @@ POST /incidents/thresholds    // clamped; {reset:true} restores</code></pre>
     <tr>
       <td>open-telemetry</td>
       <td>tier 2</td>
-      <td>full OTLP — histograms, status codes, service metadata</td>
+      <td>full OTLP - histograms, status codes, service metadata</td>
     </tr>
     <tr>
       <td>death-star</td>
@@ -1092,7 +1093,7 @@ POST /incidents/thresholds    // clamped; {reset:true} restores</code></pre>
     <tr>
       <td>sock-shop</td>
       <td>tier 0</td>
-      <td>909 MB box, load average 26, swapping — no APM at all</td>
+      <td>909 MB box, load average 26, swapping - no APM at all</td>
     </tr>
     <tr>
       <td>vertikal</td>
@@ -1382,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1537,10 +1538,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1638,7 +1639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

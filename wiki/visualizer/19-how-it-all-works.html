@@ -566,6 +566,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="" disabled>Jump to a chapter…</option>
 <optgroup label="Contents">
 <option value="index.html">Contents</option>
+<option value="00-evaluation-guide.html">Evaluation guide: one hour</option>
 </optgroup>
 <optgroup label="Understanding the system">
 <option value="01-overview.html">What this is, and why</option>
@@ -654,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="meta-item">2,378 words</span>
             </div>
             <nav class="toc">
-  <a href="#the-one-sentence-version">The one-sentence version</a>
+  <a href="#the-one-sentence-version">sentence version</a>
   <a href="#the-doctor-analogy">The doctor analogy</a>
   <a href="#the-five-things-it-does">The five things it does</a>
   <a href="#why-two-opinions-instead-of-one">Why two opinions instead o...</a>
@@ -687,12 +688,12 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p>Two passes over the same system. <strong>Part 1</strong> is the plain-language version — no jargon, read it first. <strong>Part 2</strong> is the real architecture with file paths, intervals and data shapes.</p>
+                    <p>Two passes over the same system. <strong>Part 1</strong> is the plain-language version - no jargon, read it first. <strong>Part 2</strong> is the real architecture with file paths, intervals and data shapes.</p>
 <p>Accurate as of 2026-09-24.</p>
 <hr class="rule">
-<h2 id="part-1-the-plain-version">Part 1 — The plain version</h2>
+<h2 id="part-1-the-plain-version">Part 1 - The plain version</h2>
 <h2 id="the-one-sentence-version">The one-sentence version</h2>
-<p>You give it an SSH key to a server running Docker containers. It logs in, looks around, works out which services exist and which ones talk to each other, watches them, generates traffic against them, and tells you when something looks wrong — <strong>without installing anything on that server</strong>.</p>
+<p>You give it an SSH key to a server running Docker containers. It logs in, looks around, works out which services exist and which ones talk to each other, watches them, generates traffic against them, and tells you when something looks wrong - <strong>without installing anything on that server</strong>.</p>
 <h2 id="the-doctor-analogy">The doctor analogy</h2>
 <p>Think of a doctor examining a patient who cannot be opened up.</p>
 <div class="scroll"><table class="t">
@@ -718,7 +719,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
       <td>Trains an anomaly model per service on its own history</td>
     </tr>
     <tr>
-      <td>"Your temperature is 39°C — that's a fever by any standard"</td>
+      <td>"Your temperature is 39°C - that's a fever by any standard"</td>
       <td><strong>Incidents</strong>: fixed rules on live numbers</td>
     </tr>
     <tr>
@@ -731,21 +732,21 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
     </tr>
   </tbody>
 </table></div>
-<p>The last row is the important recent addition. Most patients don't wear a fitness tracker, so the doctor must work from the outside. But if one <em>does</em>, ignoring it would be silly — you just have to be clear about which readings came from which source.</p>
+<p>The last row is the important recent addition. Most patients don't wear a fitness tracker, so the doctor must work from the outside. But if one <em>does</em>, ignoring it would be silly - you just have to be clear about which readings came from which source.</p>
 <h2 id="the-five-things-it-does">The five things it does</h2>
 <p><strong>1. Find out what's there.</strong> Logs in over SSH, runs <code>docker ps</code>, reads the compose file. Now it knows there are 25 services called cart, checkout, payment and so on.</p>
 <p><strong>2. Work out who talks to whom.</strong> Two separate kinds of evidence, never mixed up:</p>
 <ul>
-  <li><strong>Declared</strong> — the compose file <em>says</em> checkout depends on payment. That's a claim on paper. Drawn as a dim grey line.</li>
-  <li><strong>Observed</strong> — we actually caught an open network connection between them. That's a fact. Drawn as a bright line, coloured by how busy it is.</li>
+  <li><strong>Declared</strong> - the compose file <em>says</em> checkout depends on payment. That's a claim on paper. Drawn as a dim grey line.</li>
+  <li><strong>Observed</strong> - we actually caught an open network connection between them. That's a fact. Drawn as a bright line, coloured by how busy it is.</li>
 </ul>
 <p>This distinction is the backbone of the whole design. The system will never tell you two services talk because their <em>names</em> look related.</p>
 <p><strong>3. Watch them.</strong> Every 5 seconds it collects CPU, memory, network bytes and a snapshot of open connections for every container.</p>
 <p><strong>4. Poke them.</strong> A traffic generator sends real HTTP requests so there's something to observe. Idle services produce no signal. It first <em>probes</em> to find which endpoints actually answer, then drives load only at those.</p>
 <p><strong>5. Say when something's wrong.</strong> Two independent opinions, deliberately kept apart:</p>
 <ul>
-  <li><strong>Incidents</strong> — rules. "CPU is above 85%" or "this is 2.5 standard deviations from its own recent baseline". Works immediately, on any target, needs no setup.</li>
-  <li><strong>Findings</strong> — machine learning. Four different detectors, each trained per service on its own history. Needs training data and a running scorer.</li>
+  <li><strong>Incidents</strong> - rules. "CPU is above 85%" or "this is 2.5 standard deviations from its own recent baseline". Works immediately, on any target, needs no setup.</li>
+  <li><strong>Findings</strong> - machine learning. Four different detectors, each trained per service on its own history. Needs training data and a running scorer.</li>
 </ul>
 <h2 id="why-two-opinions-instead-of-one">Why two opinions instead of one</h2>
 <p>Because they fail differently, and because of honesty.</p>
@@ -753,8 +754,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>The honesty part matters more for the research. If incidents were raised by the models, then any test of "how good are these models?" would be graded against alarms the models themselves raised. The models would be marking their own homework. Keeping rules independent gives you something to compare <em>against</em>.</p>
 <h2 id="what-it-genuinely-cannot-do">What it genuinely cannot do</h2>
 <p>From outside a container you can see <strong>how much</strong> work it's doing. You cannot see <strong>what</strong> the work was.</p>
-<p>CPU, memory and network bytes are exact. But there is no way to extract "this request took 82 ms and returned a 500" from <code>docker stats</code> and a socket table — requests simply aren't in there. That's physics, not a missing feature.</p>
-<p><strong>Unless the target already measures itself.</strong> The OpenTelemetry demo runs its own Prometheus with exact latency histograms. We were ignoring it and scraping sockets instead. Now, if a target publishes that data, we read it — and every number is labelled with where it came from, so a rough outside estimate is never mistaken for an exact internal measurement.</p>
+<p>CPU, memory and network bytes are exact. But there is no way to extract "this request took 82 ms and returned a 500" from <code>docker stats</code> and a socket table - requests simply aren't in there. That's physics, not a missing feature.</p>
+<p><strong>Unless the target already measures itself.</strong> The OpenTelemetry demo runs its own Prometheus with exact latency histograms. We were ignoring it and scraping sockets instead. Now, if a target publishes that data, we read it - and every number is labelled with where it came from, so a rough outside estimate is never mistaken for an exact internal measurement.</p>
 <h2 id="the-three-tiers-plainly">The three tiers, plainly</h2>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -782,11 +783,11 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 </table></div>
 <p>Tier 0 always works and is the fallback. Tiers 1 and 2 are better when available. Of the four current targets, only one has Tier 2.</p>
 <h2 id="why-the-models-currently-say-very-little">Why the models currently say very little</h2>
-<p>An honest caveat. The detectors mostly report nothing, and it isn't the algorithms' fault — it's the data.</p>
+<p>An honest caveat. The detectors mostly report nothing, and it isn't the algorithms' fault - it's the data.</p>
 <p><code>sock-shop:front-end</code> has <strong>1568 training rows containing 6 distinct values</strong>. An idle container's CPU barely moves, and we sample it faster than it changes, so we record the same reading hundreds of times. You cannot learn a boundary from six points no matter how many times you write them down.</p>
 <p>That's why Tier 1/2 matters beyond fidelity: latency and error rate actually <em>vary</em>. They would give the models something to learn from.</p>
 <hr class="rule">
-<h2 id="part-2-the-detailed-picture">Part 2 — The detailed picture</h2>
+<h2 id="part-2-the-detailed-picture">Part 2 - The detailed picture</h2>
 <h2 id="processes">Processes</h2>
 <p>Three, plus optional Python.</p>
 <figure><div class="fx" style="margin: 18px 0;">
@@ -830,7 +831,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                     </div></figure>
 <p>What each of those figures means exactly, and how it is kept exact, is in <a href="31-measurement-precision.html">Measuring precisely</a>.</p>
 <p><strong>Self-scheduling, not <code>setInterval</code>.</strong> A cycle takes far longer than 5s (25 services × one SSH exec each). <code>setInterval</code> fired regardless, so cycles overlapped and exhausted the SSH server's <code>MaxSessions</code>. Measured: 2.66 refused scans per cycle before, <strong>0.00 after</strong>.</p>
-<p><strong>Socket reads come from the host, not the container.</strong> <code>docker exec &lt;id&gt; sh -c 'cat /proc/net/tcp'</code> fails on any image without a shell — the OTel demo's frontend is distroless, so its scan failed 100% of the time, silently. It now reads <code>/proc/&lt;hostPid&gt;/net/tcp</code> from the host, which needs nothing inside the container.</p>
+<p><strong>Socket reads come from the host, not the container.</strong> <code>docker exec &lt;id&gt; sh -c 'cat /proc/net/tcp'</code> fails on any image without a shell - the OTel demo's frontend is distroless, so its scan failed 100% of the time, silently. It now reads <code>/proc/&lt;hostPid&gt;/net/tcp</code> from the host, which needs nothing inside the container.</p>
 <h2 id="the-graph">The graph</h2>
 <p><code>server/graph/GraphStore.ts</code>. Node ids are <code>project:service</code> (<code>open-telemetry:cart</code>), which is what keeps projects from ever mixing.</p>
 <p><strong>Edges carry evidence, not just existence:</strong></p>
@@ -862,11 +863,11 @@ metrics: { p95Latency, errorRate, requestRate, provenance } | null</code></pre>
                     </div></figure>
 <p><strong><code>probeSurface</code> is two-phase</strong> because one is not enough:</p>
 <ol>
-  <li><strong>Origins</strong> — one request per discovered <code>host:port</code>. On the OTel demo this eliminated 19 of 20: only <code>:8080</code> is open in the security group.</li>
-  <li><strong>Paths</strong> — for each origin that answered, probe paths behind it. A gateway fans one open port to every backend by path, so stopping at phase 1 reports "1 endpoint works" for a 25-service system.</li>
+  <li><strong>Origins</strong> - one request per discovered <code>host:port</code>. On the OTel demo this eliminated 19 of 20: only <code>:8080</code> is open in the security group.</li>
+  <li><strong>Paths</strong> - for each origin that answered, probe paths behind it. A gateway fans one open port to every backend by path, so stopping at phase 1 reports "1 endpoint works" for a 25-service system.</li>
 </ol>
 <p>Path candidates come from the target's <strong>own workflow file</strong> first (<code>GET /api/targets/:id/paths</code>), then generic conventions. DeathStarBench's API is <code>/wrk2-api/*</code>; generic guesses produced 49 404s out of 53, while its workflow had the real paths all along.</p>
-<p>Timeouts adapt: phase 2 scales off the slowest origin and retries anything that only <em>timed out</em> at 25s. Sock-shop went from "23 of 41 dead" to <strong>0 dead, 11 usable</strong> — they were alive, just slower than a flat 6s budget.</p>
+<p>Timeouts adapt: phase 2 scales off the slowest origin and retries anything that only <em>timed out</em> at 25s. Sock-shop went from "23 of 41 dead" to <strong>0 dead, 11 usable</strong> - they were alive, just slower than a flat 6s budget.</p>
 <h2 id="the-ml-pipeline">The ML pipeline</h2>
 <p>Four Python scripts in <code>ml/</code>, driven from the UI.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -948,7 +949,7 @@ score.py       every 10s → data/latest_scores.json</code></pre>
 </table></div>
 <p><code>server/rca/</code> imports nothing from <code>ml/</code>. All ten incident rules are editable in the UI, clamped to safe ranges, re-read each pass.</p>
 <h2 id="telemetry-tiers">Telemetry tiers</h2>
-<p><code>server/models/MetricProvenance.ts</code> records where every number came from, and <code>SOURCE_CAPABILITIES</code> enforces what each source may claim — a socket scan cannot populate a latency field.</p>
+<p><code>server/models/MetricProvenance.ts</code> records where every number came from, and <code>SOURCE_CAPABILITIES</code> enforces what each source may claim - a socket scan cannot populate a latency field.</p>
 <p>Tier 2 is opt-in per target:</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
@@ -957,10 +958,10 @@ score.py       every 10s → data/latest_scores.json</code></pre>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-json">&quot;telemetrySources&quot;: { &quot;prometheus&quot;: { &quot;enabled&quot;: true, &quot;url&quot;: &quot;http://localhost:9090&quot; } }</code></pre>
                     </div>
 <p><code>localhost</code> is correct: the query runs <em>on the target</em> via curl over the existing SSH connection, because Prometheus is bound to localhost there.</p>
-<p>The whole Tier 2 path is wrapped — a broken optional source logs once and returns empty, and the merge is additive so a failed cycle never wipes the Tier 0 metrics collected in the same cycle.</p>
+<p>The whole Tier 2 path is wrapped - a broken optional source logs once and returns empty, and the merge is additive so a failed cycle never wipes the Tier 0 metrics collected in the same cycle.</p>
 <h2 id="performance-notes">Performance notes</h2>
 <p>Two measured fixes worth remembering:</p>
-<p><strong>Tail-reading beats full-reading.</strong> <code>/api/ml/features</code> returns the most recent 300 rows and was reading all 33 MB to do it: 114.9 ms reading, 26.1 ms splitting into 152k strings, <strong>0.3 ms</strong> doing the actual work. <code>util/tailCsv.ts</code> seeks backwards from EOF and stops when it has enough — <strong>194 ms → 2.0 ms</strong>, byte-identical output.</p>
+<p><strong>Tail-reading beats full-reading.</strong> <code>/api/ml/features</code> returns the most recent 300 rows and was reading all 33 MB to do it: 114.9 ms reading, 26.1 ms splitting into 152k strings, <strong>0.3 ms</strong> doing the actual work. <code>util/tailCsv.ts</code> seeks backwards from EOF and stops when it has enough - <strong>194 ms → 2.0 ms</strong>, byte-identical output.</p>
 <p><strong>Cost should track the answer, not the history.</strong> These files only grow. Anything proportional to total history degrades on its own over time.</p>
 <h2 id="the-pages">The pages</h2>
 <div class="scroll"><table class="t">
@@ -1311,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1466,10 +1467,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1567,7 +1568,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);

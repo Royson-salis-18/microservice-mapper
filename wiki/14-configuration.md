@@ -2,7 +2,7 @@
 
 ---
 
-## Server — `server/config.ts`
+## Server - `server/config.ts`
 
 ```typescript
 export const config = {
@@ -26,7 +26,7 @@ Override any value with an environment variable. The server reads only its envir
 
 ---
 
-## Remote Collector — Environment Variables
+## Remote Collector - Environment Variables
 
 Set on the EC2 instance before starting the collector:
 
@@ -41,7 +41,7 @@ Set on the EC2 instance before starting the collector:
 
 ---
 
-## Target SSH Config — `server/data/remote_config.json`
+## Target SSH Config - `server/data/remote_config.json`
 
 Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadTargetsFromConfig()` at startup.
 
@@ -64,11 +64,11 @@ Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadT
 }
 ```
 
-**`sshKeyPath` supports `~/`** — expanded via `path.join(os.homedir(), ...)`. No passphrase-protected keys (would require `ssh-agent` integration).
+**`sshKeyPath` supports `~/`** - expanded via `path.join(os.homedir(), ...)`. No passphrase-protected keys (would require `ssh-agent` integration).
 
-**`baseUrl`** — used for HTTP health pings. Optional but recommended. If absent, `endpointStatus` stays `UNCONFIGURED`.
+**`baseUrl`** - used for HTTP health pings. Optional but recommended. If absent, `endpointStatus` stays `UNCONFIGURED`.
 
-**`trafficBaseUrl`** (optional) — pins the URL traffic is actually sent to,
+**`trafficBaseUrl`** (optional) - pins the URL traffic is actually sent to,
 overriding what discovery infers. Set it from the **Entry point** control in
 the Traffic panel, or via `POST /api/traffic/entrypoint`.
 
@@ -79,7 +79,7 @@ real cases:
 - A published port is closed in the security group, so the inferred URL
   times out forever while an SSH forward (`http://localhost:18080`) works.
 - Discovery picks the alphabetically-first endpoint, which can be a
-  telemetry port — a DeathStarBench box resolved to Jaeger's OTLP `:4318`
+  telemetry port - a DeathStarBench box resolved to Jaeger's OTLP `:4318`
   rather than the app's own entry.
 
 `GET /api/traffic/entrypoints` flags a pin whose host no longer matches the
@@ -92,7 +92,7 @@ erase this key.
 
 ---
 
-## ML Pipeline — `ml/config.json`
+## ML Pipeline - `ml/config.json`
 
 Defaults live in `ml/mlconfig.py`. `collector.py` and `score.py` re-read this
 file every cycle, so changes to their keys take effect within one cycle with
@@ -141,14 +141,14 @@ never saw. A random split would leak adjacent samples across the boundary
 and flatter the result.
 
 The tail is unlabelled, so what comes back is a **firing rate**, not an error
-rate — "how often does this model fire on data it never saw". Compare it to
+rate - "how often does this model fire on data it never saw". Compare it to
 `contamination`: much higher suggests drift or a tail that was not actually
 normal. It is reported per model in `models/*.meta.json` and in the
 `Holdout flagged` column on the ML Pipeline page.
 
 ---
 
-## Data Files — Auto-Created at Runtime
+## Data Files - Auto-Created at Runtime
 
 The server's `data/` paths are relative to its working directory, which `npm run server` sets to `server/`, so they live in `server/data/` (git-ignored).
 
@@ -165,13 +165,13 @@ The server's `data/` paths are relative to its working directory, which `npm run
 | `ml/models/<service>.joblib`, `.lof.joblib`, `.ocsvm.joblib`, `.meta.json` | `ml/train.py` | The four detectors per service (z-score lives in the meta), each with its training score statistics |
 | `server/data/incident_thresholds.json` | Editing thresholds on the Incidents page | Overrides for the rule-based incident detector |
 
-**To reset graph state completely:** `rm server/data/graph_db.json` — targets will be re-discovered from `remote_config.json` on next startup.
+**To reset graph state completely:** `rm server/data/graph_db.json` - targets will be re-discovered from `remote_config.json` on next startup.
 
 **To reset everything:** `rm -rf server/data/ ml/data/ ml/models/`
 
 ---
 
-## Frontend — `client/vite.config.ts`
+## Frontend - `client/vite.config.ts`
 
 The Vite dev server proxies API calls to the backend:
 

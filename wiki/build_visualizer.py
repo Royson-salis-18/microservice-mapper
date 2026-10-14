@@ -24,7 +24,7 @@ OUTPUT_DIR = BASE_DIR / "wiki" / "visualizer"
 # The book.
 #
 # This used to be 37 pages in eight overlapping buckets, ordered 19, 01, 02,
-# 21, 23, 07, 25, 18, 08, 22... — which is why it read as a pile rather than
+# 21, 23, 07, 25, 18, 08, 22... - which is why it read as a pile rather than
 # something you could work through. Three of those pages were not docs at all:
 # a 1,491-line monolith duplicating the whole wiki out of a temporary git
 # worktree, a file that was a *prompt* rather than documentation, and a README
@@ -61,6 +61,12 @@ DOCS_CONFIG = [
         "title": 'Contents', "part": None, "category": 'Contents',
         "badge": 'START HERE', "badge_color": 'cyan',
         "desc": 'The reading path through the system, part by part.',
+    },
+    {
+        "id": 'wiki-00-evaluation-guide', "filename": '00-evaluation-guide.html', "source": 'wiki/00-evaluation-guide.md',
+        "title": 'Evaluation guide: one hour', "part": None, "category": 'Contents',
+        "badge": 'START HERE', "badge_color": 'cyan',
+        "desc": 'The short path: what it is, how the logic works, results, demo script and likely questions.',
     },
     {
         "id": 'wiki-01-overview', "filename": '01-overview.html', "source": 'wiki/01-overview.md',
@@ -1310,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
     const labNum = (id) => {
         const v = labVal(id).toLowerCase();
-        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        if (v === '' || v === 'none' || v === 'null' || v === '-') return null;
         const n = parseFloat(v);
         return isFinite(n) ? n : null;
     };
@@ -1465,10 +1471,10 @@ document.addEventListener('DOMContentLoaded', () => {
             status = 'degraded';
             reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
         }
-        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+        out('labCpu', big(share === null ? '-' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
             big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
             '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
-            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+            ' · ' + (cpu ?? '-') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
     };
 
     // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
@@ -1566,7 +1572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const n of names) {
             const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
             if (raw === null || c === null || t === null || t - c <= 1e-9) {
-                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                lines.push(row(n, '-', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
                 continue;
             }
             const r = (raw - c) / (t - c);
@@ -1762,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', () => {
 #
 # Hand-authored SVG, one per chapter where a picture carries the mechanism
 # better than a paragraph. They use the page's own CSS variables so they track
-# the theme, and they describe what the code actually does — the numbers and
+# the theme, and they describe what the code actually does - the numbers and
 # names in them are the real ones.
 # ---------------------------------------------------------------------------
 
@@ -1799,7 +1805,7 @@ def diagram_overview():
       <text x="134" y="88" text-anchor="middle" style="{_T}">Your machine</text>
       <text x="134" y="112" text-anchor="middle" style="{_TS}">server + client + traffic-gen</text>
       <text x="134" y="140" text-anchor="middle" style="{_TS}">holds the graph, the models,</text>
-      <text x="134" y="158" text-anchor="middle" style="{_TS}">the incidents — all of it</text>
+      <text x="134" y="158" text-anchor="middle" style="{_TS}">the incidents - all of it</text>
       <text x="134" y="188" text-anchor="middle" style="{_TM}">nothing of this is on the target</text>
 
       <line x1="254" y1="120" x2="404" y2="120" stroke="var(--sig)" stroke-width="2" marker-end="url(#ars)"/>
@@ -2104,7 +2110,7 @@ def diagram_sweep():
         body += f'\n      <text x="{x}" y="236" text-anchor="middle" style="{_TM}">{n}</text>'
     body += f"""
       <text x="20" y="262" style="{_TS}">new (never seen)</text>"""
-    for x, n in zip(xs, ["—", "1", "0", "0", "0", "0"]):
+    for x, n in zip(xs, ["-", "1", "0", "0", "0", "0"]):
         body += f'\n      <text x="{x}" y="262" text-anchor="middle" style="{_TM}">{n}</text>'
     body += f"""
       <text x="740" y="210" text-anchor="end" style="{_TS}">17 sightings</text>
@@ -2299,7 +2305,7 @@ def get_chapter_diagram(doc_id):
     return fn() if fn else ""
 
 def chapter_list():
-    """The readable chapters, in order — everything except the contents page."""
+    """The readable chapters, in order - everything except the contents page."""
     return [d for d in DOCS_CONFIG if d.get("part")]
 
 def chapter_number(doc_id):
@@ -2407,8 +2413,8 @@ def extract_toc_pills(md_text):
             tag_id = slugify(raw_title)
             
             pill_text = clean_title
-            if "—" in pill_text:
-                pill_text = pill_text.split("—")[-1].strip()
+            if "-" in pill_text:
+                pill_text = pill_text.split("-")[-1].strip()
             if len(pill_text) > 28:
                 pill_text = pill_text[:26] + "..."
             pills.append(f'<a href="#{tag_id}">{escape_html(pill_text)}</a>')
@@ -2777,7 +2783,7 @@ def markdown_to_html(md_text, base_filename=""):
                     continue
                 output.append(f'<h2 id="{heading_id}">{clean_text}</h2>')
             elif level == 2:
-                num_match = re.match(r"^(\d+(?:\.\d+)?)\.?\s*[-—–.]?\s+(.+)$", heading_text)
+                num_match = re.match(r"^(\d+(?:\.\d+)?)\.?\s*[--–.]?\s+(.+)$", heading_text)
                 if num_match:
                     output.append(f'<h2 id="{heading_id}"><span class="id">{num_match.group(1)}</span> {process_inline(num_match.group(2))}</h2>')
                 else:
