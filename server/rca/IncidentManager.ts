@@ -3,6 +3,7 @@ import type { GraphStore } from '../graph/GraphStore.js';
 import { AnomalyDetector } from './AnomalyDetector.js';
 import { RCAEngine } from './RCAEngine.js';
 import { LearnedScorer, FEATURE_LABEL } from './LearnedScorer.js';
+import { TargetModels } from './TargetModels.js';
 import { loadThresholds } from './thresholdsStore.js';
 
 export class IncidentManager {
@@ -10,12 +11,15 @@ export class IncidentManager {
   private anomalyDetector: AnomalyDetector;
   private rcaEngine: RCAEngine;
   private learned = new LearnedScorer();
+  /** One model per architecture, trained on its own baseline at every start (call models.start() once the server is up). */
+  public readonly models: TargetModels;
   /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
   private learnedHot = new Map<string, boolean>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
     this.rcaEngine = new RCAEngine();
+    this.models = new TargetModels(graphStore, this.learned);
   }
 
   public evaluateTarget(targetId: string): Incident | null {
@@ -31,7 +35,9 @@ export class IncidentManager {
     const open = this.activeIncidents.get(targetId);
     const hostStatus = String((this.graphStore as any).targets?.get?.(targetId)?.status ?? 'LIVE');
     const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
-    const scored = hostSilent ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'));
+    const model = this.models.get(targetId);
+    const learning = model.state === 'learning' ? { haveSec: model.baselineSec, needSec: model.needSec } : undefined;
+    const scored = hostSilent || learning ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'), model.threshold);
     let learned: any;
     if (scored) {
       const hot = scored.maxP >= scored.threshold;
@@ -39,6 +45,7 @@ export class IncidentManager {
       this.learnedHot.set(targetId, hot);
     }
     const rcaResult = this.rcaEngine.analyzeIncident({
+      learning,
       learned,
       hostSilent,
       incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
@@ -51,6 +58,7 @@ export class IncidentManager {
 
     const existing = this.activeIncidents.get(targetId);
     const now = new Date().toISOString();
+    this.models.noteIncident(targetId, rcaResult.incidentDetected);
 
     if (!rcaResult.incidentDetected) {
       if (existing && existing.status !== 'RESOLVED') {
@@ -167,6 +175,7 @@ export class IncidentManager {
   /** Drop incidents (and the detector's onset memory) for one target, or for all. */
   public clear(targetId?: string): void {
     if (targetId) this.activeIncidents.delete(targetId); else this.activeIncidents.clear();
+    this.models.clear(targetId);
     this.anomalyDetector.forget(targetId);
   }
 

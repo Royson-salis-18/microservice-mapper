@@ -19,6 +19,9 @@ export type ContainerFact = 'down' | 'paused' | 'restarting' | 'detached' | 'ben
 
 const LOAD_GENERATOR = /(^|[-_])(traffic|user-sim|usersim|load-?gen|loadgenerator|locust|k6|jmeter|gatling|stress|wrk2?|siege|vegeta|artillery)([-_]|$)/i;
 
+/** Containers that exist to produce load: not part of the system being judged. */
+export const isLoadGenerator = (name: string) => LOAD_GENERATOR.test(name ?? '');
+
 export function exitCodeOf(n: ServiceNode): number | null {
   const m = n.metadata as any;
   if (typeof m?.exitCode === 'number') return m.exitCode;

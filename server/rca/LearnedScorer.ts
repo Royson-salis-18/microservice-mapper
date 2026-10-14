@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { featureVectors, nodeSignals, FEATURE_NAMES } from './features.js';
+import { isLoadGenerator } from './containerFacts.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
@@ -56,9 +57,10 @@ export class LearnedScorer {
     return this.model;
   }
 
-  score(nodes: ServiceNode[], edges: DependencyEdge[], history: (id: string) => MetricSnapshot[]): LearnedScores | null {
+  score(nodes: ServiceNode[], edges: DependencyEdge[], history: (id: string) => MetricSnapshot[], threshold?: number): LearnedScores | null {
     const model = this.current();
     if (!model) return null;
+    nodes = nodes.filter((n) => !isLoadGenerator(n.name));
     const signals = nodes.map((n) => nodeSignals(n, history(n.id)));
     const pairs = edges.filter((e) => e.observed).map((e) => [e.source, e.target] as [string, string]);
     const names = new Map(nodes.map((n) => [n.id, n.name]));
@@ -70,6 +72,6 @@ export class LearnedScorer {
       p.set(n.id, s.p); why.set(n.id, s.why);
       if (s.p > maxP) { maxP = s.p; top = n.id; }
     }
-    return { p, why, threshold: model.threshold, maxP, top };
+    return { p, why, threshold: threshold ?? model.threshold, maxP, top };
   }
 }

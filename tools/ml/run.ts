@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildRun, labelledRows, slice, FEATURE_NAMES, type Run } from './dataset.ts';
 import { fit, predict, type Model } from './logreg.ts';
+import { rulesScore } from '../../server/rca/scoring.ts';
 import { evaluate, tuneThreshold, type Scores, type EventResult } from './evaluate.ts';
 
 const args = process.argv.slice(2);
@@ -26,11 +27,7 @@ for (const d of dirs) for (const f of fs.readdirSync(d).filter((x) => /^observed
 if (!runs.length) { console.error('no usable runs (need observed-*.jsonl recorded with metrics, and the matching ledger)'); process.exit(1); }
 
 const idx = (n: string) => FEATURE_NAMES.indexOf(n as any);
-const ex = (v: number) => Math.expm1(v);
-/** The hand-written rule the mapper used before (unsupervised): own evidence, or symptoms not explained by a broken
- *  dependency, plus a big bonus for container facts. The comparison point for what learning adds. */
-const heuristic = (x: number[]) => Math.max(ex(x[idx('own')]), ex(x[idx('symptom')]) - ex(x[idx('calleesEvidenceMax')])) + 10 * Math.max(x[idx('down')], x[idx('paused')], x[idx('restarting')], x[idx('detached')]);
-
+const heuristic = rulesScore;
 const scorer = (rs: Run[], f: (x: number[]) => number): Scores => (ri, mi) => rs[ri].moments[mi].X.map(f);
 const rowsOf = (rs: Run[], keep?: (r: Run, ts: number) => boolean) => {
   const X: number[][] = [], y: number[] = [];

@@ -14,6 +14,7 @@ const CORE = [
   'server/rca/RCAEngine.ts', 'server/rca/AnomalyDetector.ts', 'server/rca/TemporalAnalyzer.ts', 'server/rca/ExplanationEngine.ts', 'server/rca/thresholds.ts',
   'server/graph/CascadeEngine.ts', 'server/graph/EdgeWeights.ts', 'server/graph/consistency.ts', 'server/graph/linkThresholds.ts', 'server/graph/serviceRoles.ts',
   'client/src/components/shared/edgeHeat.ts', 'tools/eval/score.ts', 'tools/eval/report.ts',
+  'server/rca/features.ts', 'server/rca/scoring.ts', 'server/rca/TargetModel.ts', 'server/rca/containerFacts.ts', 'tools/ml/logreg.ts', 'tools/ml/dataset.ts', 'tools/ml/evaluate.ts', 'tools/eval/infer.ts', 'tools/eval/stats.ts',
 ];
 const FORBIDDEN = /^(node:)?(fs|fs\/promises|path|os|http|https|net|tls|dns|child_process|worker_threads|cluster|crypto|stream|zlib)$|^(express|ws|axios|dockerode|ssh2|cors|socket\.io)(\/.*)?$/;
 
@@ -50,7 +51,7 @@ for (const rel of CORE) {
 }
 
 test('the I/O shells exist and are where the I/O went', () => {
-  for (const [rel, needle] of [['server/rca/thresholdsStore.ts', 'node:fs'], ['tools/eval/load.ts', 'node:fs'], ['tools/eval/observe.ts', 'fetch(']] as const) {
+  for (const [rel, needle] of [['server/rca/thresholdsStore.ts', 'node:fs'], ['tools/eval/load.ts', 'node:fs'], ['tools/eval/observe.ts', 'fetch('], ['server/rca/TargetModels.ts', 'node:fs'], ['server/rca/LearnedScorer.ts', 'node:fs']] as const) {
     assert.ok(fs.readFileSync(path.join(ROOT, rel), 'utf8').includes(needle), `${rel} should hold the I/O`);
   }
 });

@@ -72,6 +72,11 @@ export class MetricStore {
     }
   }
 
+  /** Everything held for a node (the ring buffer: about 90 minutes at the usual pace), oldest first. */
+  getAll(nodeId: string): MetricSnapshot[] {
+    return this.store.get(nodeId) ?? [];
+  }
+
   push(nodeId: string, snapshot: MetricSnapshot): void {
     if (!this.store.has(nodeId)) {
       this.store.set(nodeId, []);

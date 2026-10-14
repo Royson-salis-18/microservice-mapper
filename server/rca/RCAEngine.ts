@@ -73,6 +73,8 @@ export interface RCAParameters {
   incumbent?: string | null;
   /** The host itself stopped sending telemetry (target STALE or OFFLINE): judge nothing on frozen readings, blame no service. */
   hostSilent?: boolean;
+  /** The target's model is still learning its baseline: only container facts can raise an incident. */
+  learning?: { haveSec: number; needSec: number };
   /** Probabilities from the learned model (tools/ml), when one is installed: they decide whether there is an incident
    *  (alarm, already debounced over two cycles by the caller) and the order of the candidates. */
   learned?: { p: Map<string, number>; why: Map<string, { feature: string; value: number }[]>; alarm: boolean; threshold: number; labels: Record<string, string> };
@@ -104,7 +106,8 @@ export class RCAEngine {
     const targetNodes = nodes.filter(n => n.project === targetId);
     const ids = new Set(targetNodes.map(n => n.id));
     const targetEdges = edges.filter(e => ids.has(e.source) && ids.has(e.target) && e.source !== e.target);
-    const targetAnomalies = anomalies.filter(a => a.targetId === targetId);
+    // While the baseline is still being learned nothing soft is judged: only container facts count.
+    const targetAnomalies = anomalies.filter(a => a.targetId === targetId && (!params.learning || (a.evidence ?? (a.metric === 'container-health' ? 'hard' : 'own')) === 'hard'));
     const byNode = new Map<string, AnomalyRecord[]>();
     for (const a of targetAnomalies) byNode.set(a.nodeId, [...(byNode.get(a.nodeId) ?? []), a]);
 
@@ -164,7 +167,7 @@ export class RCAEngine {
     const quietIds = targetNodes.filter(n => n.metadata?.vanished || (byNode.get(n.id) ?? []).some(a => a.metric === 'silence')).map(n => n.id);
     const monitoringGap = !!params.hostSilent || (targetNodes.length >= 3 && quietIds.length >= Math.max(3, Math.ceil(t.monitoringGapShare * targetNodes.length)));
 
-    const nothing = params.learned ? !params.learned.alarm && !targetNodes.some(n => hard.get(n.id))
+    const nothing = params.learning ? !targetNodes.some(n => hard.get(n.id)) : params.learned ? !params.learned.alarm && !targetNodes.some(n => hard.get(n.id))
       : targetAnomalies.length === 0 && !targetNodes.some(n => hard.get(n.id) || n.status === 'degraded');
     if (nothing || monitoringGap) {
       const explanation = this.explanationEngine.generateExplanation({

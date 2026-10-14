@@ -38,6 +38,24 @@ A fault only counts as a root cause to find if it changed something. Crash, stop
 
 Wilson and bootstrap 95% intervals, 5-fold stratified cross-validation of the accuracy estimate (the rules are fixed, so this shows stability and is not model selection), a one-sided binomial test against picking a candidate at random, skewness and excess kurtosis of the detection delay, and Spearman correlation between fault duration and delay. Resampling is seeded, so the same inputs give the same numbers.
 
+## Runs so far on ShopFlow (one fault at a time, blind injector)
+
+Small samples: read the counts, not just the percentages. Every row is a different version of the mapper, so the rows show how the mapper changed, not noise.
+
+| Run | Mapper version | Faults | Detected | Right service named first (of detected) | False alarms per hour | What the misses were |
+|---|---|---|---|---|---|---|
+| Stormy (overlapping faults) | rules, first version | 20 | 18 (90%) | 14 of 18 (78%) | not measured | overlapping faults make one right answer ambiguous |
+| A | rules, before the sparse-traffic and container-fact fixes | 6 | 5 (83%) | 3 of 5 | 7.6 (learning period included) | both partitions blamed on a caller; one fault never reported |
+| B | rules, with the sparse-traffic and container-fact fixes | 8 | 7 (88%) | 4 of 7 | 2.2 (first 8 minutes left out) | brownouts on `inventory`, `catalog-db` and `psp-sandbox`, and a flap on `catalog`, blamed on callers or missed |
+| C | learned model (see page 41) | in progress | | | | |
+
+What the runs showed, in order of how much each cost:
+
+1. **Hard container facts are reliable.** Crash, stop, crash-loop and pause were named correctly every time in runs A and B (crash on `api-gateway`, `catalog`, `orders`; pause on `inventory`; crash-loop on `cart`).
+2. **Partitions looked like missing data.** A container with no network reports nothing, and the hand-written rules treated that as "unknown", so a caller was blamed. Docker states it as a fact (no network attached), so it is now read as one.
+3. **Soft faults on quiet services are the hard case.** A brownout (CPU limit cut) on a service that gets a request every few seconds produces too few requests to see latency. The slowness showed first on a busier caller, which was blamed. The CPU throttling counter from the container runtime is the culprit's own evidence and does not need traffic.
+4. **Quiet services were the main source of false alarms**, because three quiet samples are normal for them. Fixed by judging silence against each service's own longest quiet gap.
+
 ## Honest limits
 
 - Intervals are wide when the campaign is short. Read the whiskers.
