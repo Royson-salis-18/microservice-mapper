@@ -635,6 +635,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="28-mapper-technical-reference.html">Subsystem reference</option>
 <option value="ml-readme.html">ML subsystem readme</option>
 </optgroup>
+<optgroup label="Evidence">
+<option value="43-ml-engine.html">The ML engine</option>
+</optgroup>
 </select>
         <button id="theme-toggle-btn" class="tbtn" type="button">Theme</button>
         <a href="architecture-map.html" class="tbtn">Map</a>
@@ -652,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-green">SETUP</span>
                 <span class="meta-item"><code>README.md</code></span>
                 <span class="meta-item">~10 min read</span>
-                <span class="meta-item">2,041 words</span>
+                <span class="meta-item">2,081 words</span>
             </div>
             <nav class="toc">
   <a href="#what-it-does">What It Does</a>
@@ -673,7 +676,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         
     <div class="chapter-rail">
       <span class="chapter-part">Part I &middot; Understanding the system</span>
-      <span class="chapter-count">Chapter 9 of 51</span>
+      <span class="chapter-count">Chapter 9 of 52</span>
     </div>
     
         <div class="chapter-learn">
@@ -705,6 +708,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li><strong>Runtime observation</strong> - reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)</li>
   <li><strong>Live metrics</strong> - CPU (against the container's own allowance), memory, and exact network counters from <code>docker stats</code> and <code>/proc</code>, refreshed every 5 seconds</li>
   <li><strong>Root cause analysis</strong> - when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path</li>
+  <li><strong>ML engine (switchable)</strong> — a per-service Isolation Forest learns normal on a sliding window of healthy readings, and a random walk on the call graph ranks the root cause; switch Rules / ML in the top bar (see wiki/43-ml-engine.md)</li>
   <li><strong>Cascade risk</strong> - per-service health, criticality and risk; what-if failure simulation and blast radius</li>
   <li><strong>Anomaly detection</strong> - optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents</li>
   <li><strong>Traffic experiments</strong> - built-in load test runner with experiment tracking</li>

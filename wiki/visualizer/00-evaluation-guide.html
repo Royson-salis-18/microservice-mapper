@@ -635,6 +635,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <option value="28-mapper-technical-reference.html">Subsystem reference</option>
 <option value="ml-readme.html">ML subsystem readme</option>
 </optgroup>
+<optgroup label="Evidence">
+<option value="43-ml-engine.html">The ML engine</option>
+</optgroup>
 </select>
         <button id="theme-toggle-btn" class="tbtn" type="button">Theme</button>
         <a href="architecture-map.html" class="tbtn">Map</a>
@@ -651,8 +654,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-cyan">START HERE</span>
                 <span class="meta-item"><code>wiki/00-evaluation-guide.md</code></span>
-                <span class="meta-item">~15 min read</span>
-                <span class="meta-item">2,993 words</span>
+                <span class="meta-item">~17 min read</span>
+                <span class="meta-item">3,316 words</span>
             </div>
             <nav class="toc">
   <a href="#1-the-project-in-one-minute">1. The project in one minute</a>
@@ -662,11 +665,11 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#41-detector-is-this-service-abnormal-algorithmsdetectorpy">4.1 Detector: is this serv...</a>
   <a href="#42-root-cause-which-service-started-it-algorithmsroot-causepy">4.2 Root cause: which serv...</a>
   <a href="#43-cascade-who-is-next-algorithmscascading-failurepy">4.3 Cascade: who is next? ...</a>
+  <a href="#44-the-ml-engine-the-rules-ml-switch-in-the-top-bar">4.4 The ML engine (the Rul...</a>
   <a href="#5-how-the-python-maps-to-the-real-code">5. How the Python maps to ...</a>
   <a href="#6-learning-and-results-be-honest-here">6. Learning and results (b...</a>
   <a href="#7-demo-script-5-minutes">7. Demo script (5 minutes)</a>
   <a href="#8-likely-questions">8. Likely questions</a>
-  <a href="#9-commands">9. Commands</a>
 </nav>
         </header>
 
@@ -867,6 +870,13 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p>Because services can call each other in loops, the formula is repeated until the numbers stop changing (at most 200 rounds). The same function powers "what if service X failed?": start from a healthy system, set X to failed, read the result.</p>
 <p>Be honest about this one: the 0.7 and the weights are modelling choices, not measured frequencies. The tool says so on screen.</p>
 <hr class="rule">
+<h3 id="44-the-ml-engine-the-rules-ml-switch-in-the-top-bar">4.4 The ML engine (the Rules / ML switch in the top bar)</h3>
+<p>The same three questions can be answered by a learned engine instead of the rules (details: <code>wiki/43-ml-engine.md</code>, Python version: <code>algorithms/ml_engine.py</code>):</p>
+<ol>
+  <li><strong>Learn normal.</strong> Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency). They are trained on a sliding window of the last 120 <em>normal</em> readings. A new reading is scored by the forest built before it arrived; only readings under the alarm line are learned, so a fault never becomes "normal".</li>
+  <li><strong>Find the source.</strong> A random walk (personalised PageRank, as in MonitorRank) moves over the call graph towards the sickest dependency; the service where the walker spends most time is the root cause.</li>
+  <li><strong>Result on the same 34 faults</strong> (mean over 5 seeds): detected 99%, right service first 57%, 7.8 false alarms per hour. The rules: 97%, 58%, 12.4. So it finds as many faults with about half the false alarms, and names the right service about as often (less often on one of the two benches).</li>
+</ol>
 <h2 id="5-how-the-python-maps-to-the-real-code"><span class="id">5</span> How the Python maps to the real code</h2>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -988,6 +998,9 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <p><strong>What is the false alarm rate?</strong> About 6 per hour for the live system on the recorded runs (the fault injector keeps injecting, so many "false" alarms are right after a fault or during overlapping faults), 3 to 9 per hour for the re-scored variants. Mention the sample is small and that the learned model has the fewest (3.0) but misses half of the faults.</p>
 <p><strong>How is it different from Prometheus or Datadog?</strong> Those show metrics and need alert rules written by a person. This learns normal per service, ranks the cause, and predicts spread from the call graph, with no code changes.</p>
 <p><strong>Why is it written in TypeScript and not Python?</strong> The product is a web application: the dashboard must be JavaScript, so using TypeScript for the server and collector too gives one language and one set of data types (service, link, incident) that every part checks against. The logic runs every 5 seconds inside the live server, so keeping it in the same language avoids running a second program and passing data to it. Docker, SSH and WebSocket libraries are strong in Node. The same files are reused by the tests and the scoring tools. The maths itself is language independent, and every file has a simplified Python version in <code>algorithms/</code>. Python is used where it is the better tool: the machine learning experiments in <code>ml/</code>.</p>
+<p><strong>Where is the machine learning?</strong> Two places. The ML engine behind the Rules/ML switch learns each service's normal with Isolation Forests on a sliding window of normal readings and ranks the cause with a random walk on the call graph. Separately, we tested a supervised logistic model against the rules (it lost, so it is not used).</p>
+<p><strong>Why does the forest only learn from normal readings?</strong> If it learned during a fault, the fault would slowly become the new normal and stop being flagged. A long-lasting change with nothing broken (about half an hour) is accepted as a new normal.</p>
+<p><strong>Why PageRank for the root cause?</strong> Several services look bad at once. A walker that follows the trouble towards the services they depend on ends up spending most of its time where the trouble starts; victims pass it on.</p>
 <p><strong>What are the limits?</strong> Only Docker so far, small test set, overlapping faults confuse the ranking, the cascade weights are assumptions.</p>
 <p><strong>What would you do next?</strong> Collect many more labelled faults, retest the learned model, calibrate the cascade against recorded cascades, support Kubernetes.</p>
 <hr class="rule">
