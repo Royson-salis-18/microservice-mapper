@@ -16,6 +16,7 @@ Open **`wiki visualizer/index.html`** in a browser for the readable version (dia
 | Reach an EC2 host, check it, set up a bench, open the fault panel | SSH tools (scripts and the discovery algorithm) | `ssh-tools/README.md` | Operator |
 | Drive faults and traffic from a page, run the staged demo | Fault panel and staged demo | `wiki/40-faultlab-panel-and-demo.md` | Tester |
 | Know what the tests measure and what they found | Experiment report | `wiki/38-experiment-report.md` | Everyone |
+| See every chart, every hyperparameter and where the data is stored | The model lab | `reports/model-lab.html`, `wiki/42-model-lab.md` | Everyone |
 | See what is planned next | UI redesign, ML separation | `docs/UI_REDESIGN_PLAN.md`, `docs/ML_SEPARATION_PLAN.md` | Team |
 
 Rebuild the visual docs after editing any Markdown: `python3 scripts/build_wiki_visualizer.py`.

@@ -53,3 +53,11 @@ export function throttledPercent(cur: { periods?: number; throttled?: number } |
   if (dp <= 0 || dt < 0) return dp === 0 ? 0 : undefined;
   return Math.round((dt / dp) * 1000) / 10;
 }
+
+/** Collector tunables (printed by the experiment report). index.ts uses these same values. */
+export const COLLECTOR_PARAMS = {
+  /** Default pause between collection cycles (env POLLING_INTERVAL overrides). */
+  pollMs: 5000,
+  /** Request statistics are computed over the log lines of this rolling window, not one cycle. */
+  requestWindowMs: 60_000,
+} as const;

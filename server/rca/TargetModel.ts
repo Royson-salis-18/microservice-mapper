@@ -34,8 +34,19 @@ export interface TargetModel {
   prior: number | null;
 }
 
-const MIN_HISTORY = 14;      // samples a service needs before its own past can define "normal" (12 + the 2 judged)
-const MAX_MOMENTS = 150;     // bounds the cost of training
+/** Every tunable number of the per-target model (printed by the experiment report). */
+export const TARGET_MODEL_PARAMS = {
+  /** Samples a service needs before its own past can define "normal" (the detector's 12 plus the 2 judged). */
+  minHistory: 14,
+  /** Bounds the cost of training: at most this many moments of the baseline are scored. */
+  maxMoments: 150,
+  /** With at least this many moments, the top (1 - trimQuantile) share is trimmed before the ceiling is read. */
+  trimMinMoments: 100, trimQuantile: 0.99,
+  /** A gap between moments above this many typical gaps is an outage and does not count as baseline time. */
+  outageGapFactor: 3,
+} as const;
+const MIN_HISTORY = TARGET_MODEL_PARAMS.minHistory;
+const MAX_MOMENTS = TARGET_MODEL_PARAMS.maxMoments;
 
 const stamp = (s: MetricSnapshot) => Date.parse(s.timestamp);
 
@@ -86,10 +97,10 @@ export function trainTarget(input: TrainInput): TargetModel {
   // clean span: the sum of gaps between consecutive kept moments, ignoring outages (gaps far above the usual pace)
   const gaps = times.slice(1).map((t, k) => t - times[k]).sort((a, b) => a - b);
   const typical = gaps[Math.floor(gaps.length / 2)] || 1;
-  base.baselineSec = Math.round(gaps.filter((g) => g <= 3 * typical).reduce((a, b) => a + b, 0) / 1000);
+  base.baselineSec = Math.round(gaps.filter((g) => g <= TARGET_MODEL_PARAMS.outageGapFactor * typical).reduce((a, b) => a + b, 0) / 1000);
 
   const persistent = maxScore.slice(1).map((s, k) => Math.min(s, maxScore[k])).sort((a, b) => a - b);
-  const trim = persistent.length >= 100 ? Math.floor(0.99 * (persistent.length - 1)) : persistent.length - 1;
+  const trim = persistent.length >= TARGET_MODEL_PARAMS.trimMinMoments ? Math.floor(TARGET_MODEL_PARAMS.trimQuantile * (persistent.length - 1)) : persistent.length - 1;
   base.noiseCeiling = persistent[trim];
   // the shared prior is the floor: a quiet architecture keeps the cross-system threshold, a noisy one raises the bar
   base.threshold = Math.max(prior ?? 0, base.noiseCeiling);

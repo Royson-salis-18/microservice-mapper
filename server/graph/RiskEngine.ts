@@ -65,7 +65,7 @@ export interface BlastRadiusResult {
   affected: BlastRadiusEntry[];
 }
 
-const HEALTH_WEIGHTS = { status: 0.6, anomaly: 0.25, incident: 0.15 } as const;
+export const HEALTH_WEIGHTS = { status: 0.6, anomaly: 0.25, incident: 0.15 } as const;
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

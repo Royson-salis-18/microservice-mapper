@@ -29,10 +29,10 @@ export class TraceStore {
   private writeTimer: NodeJS.Timeout | null = null;
   private writing: Promise<void> = Promise.resolve();
 
-  private static readonly RETENTION_MS = 24 * 60 * 60 * 1000;
+  static readonly RETENTION_MS = 24 * 60 * 60 * 1000;
   /** Hard cap so a very chatty target cannot grow memory without bound. */
-  private static readonly MAX_EVENTS = 100_000;
-  private static readonly WRITE_DEBOUNCE_MS = 10_000;
+  static readonly MAX_EVENTS = 100_000;
+  static readonly WRITE_DEBOUNCE_MS = 10_000;
 
   constructor(targetId: string) {
     // Store in the project's data/ directory (same level as graph_db.json)

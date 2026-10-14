@@ -13,7 +13,7 @@
  * The constants below are measurement resolution (the smallest change worth noticing in each unit), not decision
  * thresholds: a 0.5% CPU step or a 2 kB/s network step is noise at the precision docker reports.
  */
-import { robustScore } from './AnomalyDetector.js';
+import { robustScore, DETECTOR_PARAMS } from './AnomalyDetector.js';
 import { containerFact } from './containerFacts.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
@@ -30,7 +30,7 @@ interface Signal {
   own: boolean;
 }
 
-const MIN_REQUESTS_FOR_A_RATE = 5;
+const MIN_REQUESTS_FOR_A_RATE = DETECTOR_PARAMS.minRequests;
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 const net = (h: MetricSnapshot) => { const a = num(h.networkRxRate), b = num(h.networkTxRate); return a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0); };
 

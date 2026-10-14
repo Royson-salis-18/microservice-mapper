@@ -25,7 +25,30 @@ import { DEFAULT_THRESHOLDS, type IncidentThresholds } from './thresholds.js';
  * can be inherited from a broken dependency (latency, errors, traffic, network). The RCA engine uses that split to
  * tell the source from its victims.
  */
-const MAD_TO_STD = 1.4826;
+/**
+ * Every tunable number of the detector, in one place, so the experiment report can print the values that are actually in use
+ * (tools/ml/report.ts imports this object). Changing a value here changes the detector.
+ */
+export const DETECTOR_PARAMS = {
+  /** 1.4826 x MAD equals the standard deviation for normally distributed data. */
+  madToStd: 1.4826,
+  /** Heavy tails: the spread is also at least the 90% deviation divided by 1.645 (the normal 90% point). */
+  tailQuantile: 0.9, tailZ: 1.645,
+  /** A past run of two or more samples above this z is an old incident and is left out of the baseline (self-healing). */
+  selfHealZ: 4.0,
+  /** Per-series noise normalisation: this quantile of the series' own healthy z is mapped to healthyZ. */
+  healthyQuantile: 0.995, healthyZ: 3,
+  /** Largest z reported. */
+  zCap: 50,
+  /** History the detector reads, and how many of the newest samples are judged (they must agree: persistence). */
+  historyRange: '15m' as const, judgedSamples: 2,
+  /** A p95 or an error share needs at least this many requests in each judged sample. */
+  minRequests: 5,
+  /** Silence on a service with counted requests: needs this many times the minimum history, an expected count of at least
+   *  silenceMinExpected requests, and a quiet stretch at least silenceGapFactor times its own longest quiet gap. */
+  silenceHistoryFactor: 3, silenceMinExpected: 5, silenceGapFactor: 2,
+} as const;
+const MAD_TO_STD = DETECTOR_PARAMS.madToStd;
 
 export type EvidenceKind = 'own' | 'symptom' | 'hard';
 
@@ -43,7 +66,7 @@ interface MetricSpec {
 }
 
 /** A p95 or an error share computed from fewer requests than this is one unlucky request, not a trend. */
-const MIN_REQUESTS = 5;
+const MIN_REQUESTS = DETECTOR_PARAMS.minRequests;
 
 const SPECS: MetricSpec[] = [
   { metric: 'cpu', pick: h => h.cpu, current: n => n.metrics?.cpu, direction: 1, scale: 'log', unit: 0.5, floor: 0.15, kind: 'own', minDelta: 0 },
@@ -84,14 +107,14 @@ export interface RobustScore {
  * Returns null when there is not enough history to say what normal is.
  */
 export function robustScore(baseline: number[], recent: number[], spec: Pick<MetricSpec, 'direction' | 'scale' | 'unit' | 'floor'>,
-  minHistory: number, excludeZ = 4.0): RobustScore | null {
+  minHistory: number, excludeZ: number = DETECTOR_PARAMS.selfHealZ): RobustScore | null {
   const tf = (v: number) => (spec.scale === 'log' ? Math.log(Math.max(v, 0) + (spec.unit || 1)) : v);
   let B = baseline.filter(finite).map(tf);
   if (B.length < minHistory || !recent.length) return null;
   const fit = (xs: number[], tail = true) => {
     const c = median(xs);
     const dev = xs.map(v => Math.abs(v - c));
-    const s = Math.max(median(dev) * MAD_TO_STD, tail ? quantile(dev, 0.9) / 1.645 : 0, spec.floor);
+    const s = Math.max(median(dev) * MAD_TO_STD, tail ? quantile(dev, DETECTOR_PARAMS.tailQuantile) / DETECTOR_PARAMS.tailZ : 0, spec.floor);
     return { c, s };
   };
   // The exclusion decision uses the plain MAD spread: if an old fault fills more than ~10% of the window, the
@@ -107,8 +130,8 @@ export function robustScore(baseline: number[], recent: number[], spec: Pick<Met
   ({ c, s } = fit(B));
   // per-series noise normalisation: the healthy extreme of this series is mapped to z = 3
   const healthyZ = B.map(v => Math.max(0, spec.direction * (v - c) / s));
-  const shrink = Math.max(1, quantile(healthyZ, 0.995) / 3);
-  const z = recent.map(v => (finite(v) ? Math.min(50, Math.max(0, spec.direction * (tf(v) - c) / s) / shrink) : NaN));
+  const shrink = Math.max(1, quantile(healthyZ, DETECTOR_PARAMS.healthyQuantile) / DETECTOR_PARAMS.healthyZ);
+  const z = recent.map(v => (finite(v) ? Math.min(DETECTOR_PARAMS.zCap, Math.max(0, spec.direction * (tf(v) - c) / s) / shrink) : NaN));
   const center = spec.scale === 'log' ? Math.exp(c) - (spec.unit || 1) : c;
   return { z, center, spread: s, noiseShrink: shrink };
 }
@@ -148,7 +171,7 @@ export class AnomalyDetector {
         anomalies.push(this.record(node.id, targetId, 'container-health', now, 0, 1, 0, null, 'container-restarting', 'HIGH', 'container-runtime', 'hard'));
       }
 
-      const history = this.metricStore.getHistory(node.id, '15m');
+      const history = this.metricStore.getHistory(node.id, DETECTOR_PARAMS.historyRange);
 
       // 2. A restart since the previous sample (crash loop): hard evidence, and the history around it is unreliable.
       const lastTwo = history.slice(-2);
@@ -212,20 +235,20 @@ export class AnomalyDetector {
     // stretch of W seconds is surprising only if lambda * W is large (P(none) = exp(-lambda*W)); on a service that sees one request
     // every ten seconds, three quiet samples are ordinary. Needs expected >= 5 (a 0.7% chance of none) before silence means anything.
     const counted = history.filter(h => finite(h.requestRate));
-    if (counted.length > 0 && counted.length < 3 * t.minHistorySamples + k) return null;   // gaps need a longer past than levels do
-    if (counted.length >= 3 * t.minHistorySamples + k) {
+    if (counted.length > 0 && counted.length < DETECTOR_PARAMS.silenceHistoryFactor * t.minHistorySamples + k) return null;   // gaps need a longer past than levels do
+    if (counted.length >= DETECTOR_PARAMS.silenceHistoryFactor * t.minHistorySamples + k) {
       const recent = history.slice(-k);
       if (!recent.every(h => finite(h.requestRate) && h.requestRate === 0)) return null;
       const stamps = history.map(h => Date.parse(h.timestamp)).filter(finite);
       const spacing = stamps.length > 1 ? (stamps[stamps.length - 1] - stamps[0]) / 1000 / (stamps.length - 1) : 5;
       const lambda = median(counted.slice(0, -k).map(h => h.requestRate as number));
       const expected = lambda * spacing * k;
-      if (expected < 5) return null;                                  // too quiet a service to call silence
+      if (expected < DETECTOR_PARAMS.silenceMinExpected) return null;                                  // too quiet a service to call silence
       // Traffic comes in bursts, so also compare with this service's own history: silence must outlast its longest quiet gap so far.
       let nowRun = 0; for (let i = history.length - 1; i >= 0 && finite(history[i].requestRate) && history[i].requestRate === 0; i--) nowRun++;
       let longest = 0, run = 0;
       for (const h of history.slice(0, history.length - nowRun)) { run = finite(h.requestRate) && h.requestRate === 0 ? run + 1 : 0; longest = Math.max(longest, run); }
-      if (nowRun < 2 * longest) return null;
+      if (nowRun < DETECTOR_PARAMS.silenceGapFactor * longest) return null;
       return this.record(node.id, targetId, 'silence', now, 0, Math.round(lambda * 100) / 100, 0, Math.round(expected * 100) / 100,
         'service-went-silent', expected >= 20 ? 'CRITICAL' : 'HIGH', 'activity', 'own');
     }

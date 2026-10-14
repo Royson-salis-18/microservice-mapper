@@ -23,6 +23,8 @@ import type { WebSocketManager } from '../api/websocket.js';
  * and painted them red before anything had been measured.
  */
 export const ANOMALY_SCORE_MAX_AGE_MS = 120_000;
+/** The graph state file is rewritten at most this often after a change. */
+export const GRAPH_SAVE_DEBOUNCE_MS = 2000;
 
 /** The score for one service if it is recent enough to stand for now, else null. */
 export function freshAnomalyScore(
@@ -230,7 +232,7 @@ export class GraphStore {
     this.saveTimeout = setTimeout(() => {
       this.saveTimeout = null;
       this.saveToDisk();
-    }, 2000);
+    }, GRAPH_SAVE_DEBOUNCE_MS);
   }
 
   private saveToDisk(): void {
@@ -330,12 +332,12 @@ export class GraphStore {
   // extra room to reconnect and reconfirm before treating nodes as gone.
   private static readonly STALE_NODE_MS = 900_000;
   /** Request metrics older than this with nothing newer are dropped. */
-  private static readonly REQUEST_METRICS_TTL_MS = 60_000;
+  static readonly REQUEST_METRICS_TTL_MS = 60_000;
   /**
    * An observed edge that the target has stopped reporting for this long,
    * while it keeps reporting others, is treated as no longer in use.
    */
-  private static readonly STALE_EDGE_MS = 600_000;
+  static readonly STALE_EDGE_MS = 600_000;
   /** Per target: when it last reported any observed edge at all. */
   private lastEdgeReportAt = new Map<string, number>();
   /** Coalescing state for graph-update broadcasts — see requestBroadcast(). */
@@ -344,9 +346,9 @@ export class GraphStore {
   private static readonly BROADCAST_MIN_INTERVAL_MS = 3_000;
   /** Slow reference level of each edge's traffic — see applyEdgeActivity. */
   private edgeBaselines = new Map<string, { value: number; at: number }>();
-  private static readonly BASELINE_RISE_MS = 60_000;
-  private static readonly BASELINE_FALL_MS = 600_000;
-  private static readonly BASELINE_MIN_WINDOW_MS = 20_000;
+  static readonly BASELINE_RISE_MS = 60_000;
+  static readonly BASELINE_FALL_MS = 600_000;
+  static readonly BASELINE_MIN_WINDOW_MS = 20_000;
 
   private pruneStaleNodes() {
     const now = Date.now();
@@ -641,9 +643,9 @@ export class GraphStore {
 
   /** How long a connection key is remembered after it was last seen. Longer
    *  than TIME_WAIT (~60s), so a closing connection is not counted twice. */
-  private static readonly CONN_MEMORY_MS = 150_000;
+  static readonly CONN_MEMORY_MS = 150_000;
   /** Sweeps averaged into an edge's connection figures. */
-  private static readonly CONN_WINDOW_MS = 120_000;
+  static readonly CONN_WINDOW_MS = 120_000;
 
   /**
    * One socket sweep of a target: every event in it carries the same

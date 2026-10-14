@@ -14,7 +14,11 @@ export interface Moment {
 export interface Run { name: string; subject: string; faults: LedgerFault[]; moments: Moment[]; t0: number; t1: number }
 export { FEATURE_NAMES };
 
-const HISTORY = 120;            // samples kept per service (~15 min at the collector's pace), as the live detector's window
+/** Samples kept per service when features are built (about 15 minutes at the collector's pace, like the live detector's window).
+ *  The report sweeps this: it is the sliding window of the baseline. */
+export const DEFAULT_HISTORY = 120;
+export const DEFAULT_MIN_HISTORY = 12;
+export interface BuildOptions { history?: number; minHistory?: number }
 
 /** One reading as the server's MetricSnapshot, from what observe.ts recorded off the API. */
 function toSnapshot(ts: number, m: Record<string, unknown>): MetricSnapshot {
@@ -29,7 +33,8 @@ function toSnapshot(ts: number, m: Record<string, unknown>): MetricSnapshot {
 /** The observer polls faster than the collector reports, so the same reading appears several times: keep one per change. */
 const key = (m: Record<string, unknown>) => JSON.stringify(m);
 
-export function buildRun(name: string, subject: string, ledgerText: string, observedText: string): Run {
+export function buildRun(name: string, subject: string, ledgerText: string, observedText: string, opts: BuildOptions = {}): Run {
+  const HISTORY = opts.history ?? DEFAULT_HISTORY, MINH = opts.minHistory ?? DEFAULT_MIN_HISTORY;
   const { faults } = parseLedger(ledgerText);
   const snaps: Snapshot[] = parseObserved(observedText).filter((s) => s.metrics && Object.keys(s.metrics).length);
   const hist = new Map<string, MetricSnapshot[]>(), last = new Map<string, string>();
@@ -46,7 +51,7 @@ export function buildRun(name: string, subject: string, ledgerText: string, obse
     }
     const nodes = services.map((id) => ({ id, name: id, project: subject, type: 'service', status: s.status[id] ?? 'unknown',
       metadata: { state: s.metrics![id].state ?? undefined, networkDetached: s.metrics![id].networkDetached === true, exitCode: s.metrics![id].exitCode } }) as any);
-    const signals = nodes.map((n: any) => nodeSignals(n, hist.get(n.id) ?? []));
+    const signals = nodes.map((n: any) => nodeSignals(n, hist.get(n.id) ?? [], MINH));
     const fv = featureVectors(signals, edges, (id) => id);
     const inc = s.incidents[0];
     moments.push({ ts: s.ts, services, X: services.map((id) => fv.get(id)!), live: { alarm: s.incidents.length > 0 && !inc?.monitoringGap, root: inc?.root ?? null, top3: (inc?.candidates ?? []).slice(0, 3) } });

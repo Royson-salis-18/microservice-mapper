@@ -59,8 +59,8 @@ export const STATUS_PROBABILITY: Record<string, number> = {
  * adds up to 0.8. A single above-threshold window counts for much less: the
  * persistence requirement exists precisely because one sample is often noise.
  */
-const ANOMALY_WEIGHT = 0.3;
-const PERSISTENT_ANOMALY_WEIGHT = 0.8;
+export const ANOMALY_WEIGHT = 0.3;
+export const PERSISTENT_ANOMALY_WEIGHT = 0.8;
 
 const MAX_ITERATIONS = 200;
 /** Inherited risk worth showing a route for. Below this a "via" would name a
