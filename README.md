@@ -25,6 +25,7 @@ SSH into EC2 → Read Docker socket + /proc/net/tcp → Build live dependency gr
 - **Runtime observation** - reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)
 - **Live metrics** - CPU (against the container's own allowance), memory, and exact network counters from `docker stats` and `/proc`, refreshed every 5 seconds
 - **Root cause analysis** - when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path
+- **ML engine (switchable)** — a per-service Isolation Forest learns normal on a sliding window of healthy readings, and a random walk on the call graph ranks the root cause; switch Rules / ML in the top bar (see wiki/43-ml-engine.md)
 - **Cascade risk** - per-service health, criticality and risk; what-if failure simulation and blast radius
 - **Anomaly detection** - optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents
 - **Traffic experiments** - built-in load test runner with experiment tracking

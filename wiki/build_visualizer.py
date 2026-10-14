@@ -452,6 +452,12 @@ DOCS_CONFIG = [
         "desc": 'Every chart behind the detection and learning, every hyperparameter, and where the data lives. Open model-lab.html for the live charts.',
     },
     {
+        "id": 'wiki-43-ml-engine', "filename": '43-ml-engine.html', "source": 'wiki/43-ml-engine.md',
+        "title": 'The ML engine', "part": 'VI', "category": 'Evidence',
+        "badge": 'ML', "badge_color": 'purple',
+        "desc": 'Isolation Forest per service on a sliding window of normal readings, random-walk root cause, and how it compares with the rules.',
+    },
+    {
         "id": 'docs-algorithms', "filename": 'mapper-algorithms.html', "source": 'wiki/MAPPER_ALGORITHMS.md',
         "title": 'Mapper algorithms', "part": 'IV', "category": 'Forming a judgement',
         "badge": 'MATH', "badge_color": 'purple',
