@@ -23,13 +23,16 @@ export interface EngineParams {
   hardFirst: boolean;       // a container fact (stopped, paused, restarting) ranks ahead of statistical evidence
   useWalk: boolean;
   useOwn: boolean;          // resource (own) anomalies keep the walker: they cannot be explained by a dependency
+  loopWindow: number;       // steps in which two separate outages make a crash loop (0: off)
+  loopHold: number;         // steps a crash-looping service stays down-ranked-first after its last outage
+  stoppedIsDown: boolean;   // exit code 0 after a minute of running counts as down (docker stop), not as a finished job
 }
-export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true };
+export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, stoppedIsDown: true };
 
 export interface EngineNode { id: string; name: string; type?: string; status?: string; metadata?: Record<string, any> }
 export interface EngineEdge { source: string; target: string; weight?: number }
 
-export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number }
+export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number; fact?: string }
 export interface EngineResult {
   services: Map<string, ServiceView>;
   rank: Map<string, number>;        // random-walk share, sums to 1 over services
@@ -77,22 +80,44 @@ export class MLEngine {
   private models = new Map<string, ServiceBaseline>();
   private last = new Map<string, ServiceView>();
   private streak = new Map<string, number>();
+  private sinceFact = new Map<string, number>();
+  private runningFor = new Map<string, number>();
+  private onsets = new Map<string, number[]>();
+  private wasHard = new Map<string, boolean>();
+  private clock = 0;
 
   constructor(private readonly p: EngineParams = ENGINE_DEFAULTS) {}
 
   /** Feed the readings that arrived since the previous step (per service, oldest first) and get the current verdict. */
   step(nodes: EngineNode[], edges: EngineEdge[], fresh: Map<string, MetricSnapshot[]>): EngineResult {
     const services = new Map<string, ServiceView>();
+    this.clock++;
     const watched = nodes.filter((n) => !isLoadGenerator(n.name));
     for (const n of watched) {
-      const fact = containerFact(n as any);
+      let fact = containerFact(n as any);
+      // `docker stop` exits with code 0, which reads like a one-shot job that finished. A service that had been running
+      // for a while and then exits is stopped, whatever the code.
+      const state = String(n.metadata?.state ?? '').toLowerCase();
+      if (state.startsWith('running')) this.runningFor.set(n.id, (this.runningFor.get(n.id) ?? 0) + 1);
+      let stopped = false;
+      if (fact === 'benign' && this.p.stoppedIsDown && state.startsWith('exited') && (this.runningFor.get(n.id) ?? 0) >= 12) { fact = 'down'; stopped = true; }
       if (fact === 'benign') { services.set(n.id, { level: 0, anomaly: 0, own: 0, hard: false, ready: false, score: 0, ownLevel: 0, symptomLevel: 0 }); continue; }
       let model = this.models.get(n.id);
       if (!model) { model = new ServiceBaseline(hash(n.id), this.p.baseline); this.models.set(n.id, model); }
       let view = this.last.get(n.id) ?? { level: 0, anomaly: 0, own: 0, hard: false, ready: false, score: 0, ownLevel: 0, symptomLevel: 0 };
       const readings = fresh.get(n.id) ?? [];
       const restarted = readings.some((r) => (r.restartDelta ?? 0) > 0);
-      const hard = fact === 'down' || fact === 'paused' || fact === 'restarting' || fact === 'detached' || restarted;
+      const hardNow = fact === 'down' || fact === 'paused' || fact === 'restarting' || fact === 'detached' || restarted;
+      // went down more than once in the last few minutes and has not been stable since: a crash loop or a flapping
+      // container. Between outages it looks fine, but it is still the prime suspect.
+      const since = hardNow ? 0 : (this.sinceFact.get(n.id) ?? Infinity) + 1;
+      this.sinceFact.set(n.id, since);
+      const ons = (this.onsets.get(n.id) ?? []).filter((t) => this.clock - t <= this.p.loopWindow);
+      if (hardNow && !this.wasHard.get(n.id)) ons.push(this.clock);
+      this.onsets.set(n.id, ons);
+      this.wasHard.set(n.id, hardNow);
+      const looping = this.p.loopWindow > 0 && !hardNow && ons.length >= 2 && since <= this.p.loopHold;
+      const hard = hardNow || looping;
       if (!hard) {
         for (const r of readings) {
           const v = model.observe(readingVector(r, this.p.baseline.minRequests));
@@ -107,7 +132,8 @@ export class MLEngine {
       const toA = (x: number) => (x < this.p.anomalyFloor ? 0 : Math.min(1, x / 2));
       const anomaly = hard ? 1 : toA(lvl);
       const own = hard ? 1 : persistent ? toA(view.ownLevel) : 0;
-      view = { ...view, level: lvl, anomaly, own, hard, ready: model.ready };
+      const label = looping ? 'crash loop' : stopped ? 'stopped' : restarted && !fact ? 'restarted' : hardNow ? fact ?? undefined : undefined;
+      view = { ...view, level: lvl, anomaly, own, hard, ready: model.ready, fact: label };
       this.last.set(n.id, view);
       services.set(n.id, view);
     }
@@ -126,5 +152,5 @@ export class MLEngine {
     return { services, rank, ranked, maxLevel, hot: maxLevel >= 1, ready: learned > 0, learnedServices: learned };
   }
 
-  forget(): void { this.models.clear(); this.last.clear(); this.streak.clear(); }
+  forget(): void { this.models.clear(); this.last.clear(); this.streak.clear(); this.sinceFact.clear(); this.runningFor.clear(); this.onsets.clear(); this.wasHard.clear(); }
 }

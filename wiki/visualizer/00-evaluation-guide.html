@@ -655,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-cyan">START HERE</span>
                 <span class="meta-item"><code>wiki/00-evaluation-guide.md</code></span>
                 <span class="meta-item">~17 min read</span>
-                <span class="meta-item">3,316 words</span>
+                <span class="meta-item">3,348 words</span>
             </div>
             <nav class="toc">
   <a href="#1-the-project-in-one-minute">1. The project in one minute</a>
@@ -875,7 +875,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
 <ol>
   <li><strong>Learn normal.</strong> Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency). They are trained on a sliding window of the last 120 <em>normal</em> readings. A new reading is scored by the forest built before it arrived; only readings under the alarm line are learned, so a fault never becomes "normal".</li>
   <li><strong>Find the source.</strong> A random walk (personalised PageRank, as in MonitorRank) moves over the call graph towards the sickest dependency; the service where the walker spends most time is the root cause.</li>
-  <li><strong>Result on the same 34 faults</strong> (mean over 5 seeds): detected 99%, right service first 57%, 7.8 false alarms per hour. The rules: 97%, 58%, 12.4. So it finds as many faults with about half the false alarms, and names the right service about as often (less often on one of the two benches).</li>
+  <li><strong>Facts first.</strong> A container that is down, stopped (<code>docker stop</code> exits with code 0, which used to be ignored) or crash-looping (two outages within 3 minutes) is ranked first.</li>
+  <li><strong>Result on the same 34 faults</strong> (mean over 5 seeds): detected 95%, right service first 77%, 2.6 false alarms per hour. The live rules: 97%, 58%, 12.4. On a synthetic bench with 178 held-out faults: 75% caught and named first, against 53% for the rules. ML is the default engine; the rules are one click away.</li>
 </ol>
 <h2 id="5-how-the-python-maps-to-the-real-code"><span class="id">5</span> How the Python maps to the real code</h2>
 <div class="scroll"><table class="t">

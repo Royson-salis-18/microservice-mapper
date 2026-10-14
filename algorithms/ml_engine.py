@@ -17,7 +17,15 @@ STEP 2  Isolation Forest score
   level = (score - typical) / (line - typical): 0 = typical, 1 = on the alarm line.
   A range guard adds: how far the value is outside anything seen in training.
 
-STEP 3  Find the source: random walk (personalised PageRank, MonitorRank style)
+STEP 3  Facts before guesses
+  A container that is down, paused, restarting or cut off from the network is a fact, not a guess: it goes first.
+  Two cases the plain state misses, both found by testing:
+    - `docker stop` exits with code 0, which looks like a finished one-shot job. A service that had been
+      running and then exits is stopped.
+    - A crash loop looks healthy between kills. Two outages within 3 minutes make it a crash loop, and it
+      stays the prime suspect for a minute after the last one.
+
+STEP 4  Find the source: random walk (personalised PageRank, MonitorRank style)
   A walker starts on anomalous services and keeps moving:
     to a service it calls      with weight  anomaly(callee)          (follow the trouble down)
     back to a caller           with weight  0.2 * anomaly(caller)    (do not get stuck)
@@ -110,6 +118,38 @@ class ServiceBaseline:
             if (not self.forest and len(self.window) >= MIN_TRAIN) or (self.forest and self.since >= RETRAIN_EVERY):
                 self.fit()
         return level
+
+
+# ---------------------------------------------------------------- facts: stopped and crash-looping containers
+LOOP_WINDOW, LOOP_HOLD, RAN_FOR = 36, 12, 12          # in readings of 5 s: 3 minutes, 1 minute, 1 minute
+
+
+class ContainerFacts:
+    def __init__(self):
+        self.running_for, self.outages, self.since_down, self.was_down, self.clock = {}, {}, {}, {}, 0
+
+    def tick(self):
+        self.clock += 1
+
+    def judge(self, name, state, exit_code=None):
+        """Returns None (no fact), 'down', 'stopped' or 'crash loop'. Call tick() once per reading round first."""
+        if state == "running":
+            self.running_for[name] = self.running_for.get(name, 0) + 1
+        down = state in ("exited", "dead", "paused", "restarting")
+        label = None
+        if down:
+            label = "down"
+            if state == "exited" and exit_code == 0:      # docker stop, or a one-shot job that finished
+                label = "stopped" if self.running_for.get(name, 0) >= RAN_FOR else None
+                down = label is not None
+        recent = [t for t in self.outages.get(name, []) if self.clock - t <= LOOP_WINDOW]
+        if down and not self.was_down.get(name):
+            recent.append(self.clock)
+        self.outages[name], self.was_down[name] = recent, down
+        self.since_down[name] = 0 if down else self.since_down.get(name, 10 ** 9) + 1
+        if not down and len(recent) >= 2 and self.since_down[name] <= LOOP_HOLD:
+            label = "crash loop"
+        return label
 
 
 # ---------------------------------------------------------------- random walk for the root cause

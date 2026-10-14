@@ -30,3 +30,6 @@ ml/logs/
 
 # Editor and tool folders
 .claude/
+
+# Synthetic fault runs (npm run ml:synth regenerates them)
+run/synthetic-runs/

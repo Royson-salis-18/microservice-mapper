@@ -3,7 +3,9 @@ import type { Node, Edge } from '@xyflow/react';
 import type { Incident } from '../types';
 import { pageRootStyle } from './ProjectSections';
 import { IncidentRulesPanel } from './IncidentRulesPanel';
+import { MLLivePanel } from './MLLivePanel';
 import { useModelStatus, learningText } from '../hooks/useModelStatus';
+import { useEngineStatus } from '../hooks/useEngineStatus';
 import { ArrowRight, Check, CheckCircle2, CircleDot, Copy, RadioTower } from 'lucide-react';
 
 interface RCAViewProps {
@@ -36,6 +38,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
     return incidents.find(i => i.targetId === targetId) || incidents[0] || null;
   }, [incidents, targetId]);
 
+  const engine = useEngineStatus();
   const selectedCandidate = useMemo(() => {
     if (!activeIncident || !activeIncident.candidateCauses.length) return null;
     if (selectedCandidateId) {
@@ -271,8 +274,30 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
             {selectedCandidate && (
               <section className="mm-card" style={card}>
                 <h3 style={h3}>Why {getCleanName(selectedCandidate.serviceName)} scores {selectedCandidate.score.toFixed(2)}</h3>
-                <div style={sub}>Every number is a z-score on the service's own noise scale. Hard evidence (paused, exited, restarted) adds a fixed bonus.</div>
-                {selectedCandidate.own !== undefined && (
+                {(() => {
+                  const row = engine.mode === 'ml' ? engine.targets.flatMap((t) => t.detail).find((r) => r.id === selectedCandidate.serviceId) : undefined;
+                  if (!row) return null;
+                  return (
+                    <>
+                      <div style={sub}>Decided by the ML engine. Each service has two Isolation Forests trained on its own recent normal readings; a level of 1 is that service's own alarm line. The share is how much of the random walk over the call graph ends on this service.{row.fact ? ` It is also ${row.fact}: a fact, so it is ranked first.` : ''}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, marginTop: 14, background: 'var(--color-border)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                        {([
+                          ['Own forest', row.own.toFixed(1), 'CPU, memory, throttling. A dependency cannot cause these'],
+                          ['Symptom forest', row.symptom.toFixed(1), 'Traffic, errors, latency. Can be inherited'],
+                          ['Walk share', `${Math.round(row.walk * 100)}%`, 'Where the random walk spends its time'],
+                        ] as const).map(([label, v, hint]) => (
+                          <div key={label} style={{ background: 'var(--color-bg-panel)', padding: '12px 14px' }}>
+                            <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{label}</div>
+                            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-dim)', marginTop: 2, lineHeight: 1.4 }}>{hint}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+                {engine.mode !== 'ml' && <div style={sub}>Every number is a z-score on the service's own noise scale. Hard evidence (paused, exited, restarted) adds a fixed bonus.</div>}
+                {engine.mode !== 'ml' && selectedCandidate.own !== undefined && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, marginTop: 14, background: 'var(--color-border)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
                     {[
                       ['Own evidence', selectedCandidate.own, 'Its own CPU, memory or silence'],
@@ -412,6 +437,7 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
         </div>
       )}
 
+      {engine.mode === 'ml' && <MLLivePanel selectedProject={selectedProject === 'ALL' ? null : selectedProject.toLowerCase()} />}
       {/* What actually fires an incident: visible and editable here rather than living as literals in the detector. */}
       <IncidentRulesPanel />
     </div>
