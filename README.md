@@ -62,7 +62,7 @@ npm start            # installs whatever is missing, then starts the server (:30
 
 Open http://localhost:5173. Nothing else has to be installed or configured. With Docker running, `npm run local` also starts a collector for every Docker Compose project on your machine.
 
-Short on time? Read [wiki/00-evaluation-guide.md](wiki/00-evaluation-guide.md) (one hour) and run `python3 core_logic/demo.py`. Step by step, including starting a test bench and injecting faults: [wiki/RUN_LOCAL.md](wiki/RUN_LOCAL.md). How the algorithms work: [wiki/MAPPER_ALGORITHMS.md](wiki/MAPPER_ALGORITHMS.md).
+Short on time? Read [wiki/00-evaluation-guide.md](wiki/00-evaluation-guide.md) (one hour) and run `python3 core_logic/demo.py`; every algorithm in Python is in [algorithms/](algorithms/README.md). Step by step, including starting a test bench and injecting faults: [wiki/RUN_LOCAL.md](wiki/RUN_LOCAL.md). How the algorithms work: [wiki/MAPPER_ALGORITHMS.md](wiki/MAPPER_ALGORITHMS.md).
 
 ### Prerequisites
 
@@ -266,7 +266,8 @@ microservice-mapper/
 │   ├── discovery/       # Discovery loop per target
 │   ├── telemetry-platform/src/  # SSH connection, Docker parsing, metric collection
 │   ├── telemetry-sources/       # Optional higher-tier sources (Prometheus)
-│   ├── rca/             # Incident manager, learned scorer, per-target models (the logic itself is in ../algorithms (server/algorithms))
+│   ├── algorithms/      # The real decision logic in TypeScript: detection, rca, graph (cascade), model, learning, evaluation
+│   ├── rca/             # Incident manager, learned scorer, per-target models
 │   ├── traces/          # TCP connection event storage
 │   ├── telemetry/       # MetricStore ring buffer
 │   ├── traffic/         # Load test execution + experiments
@@ -278,7 +279,7 @@ microservice-mapper/
 │       ├── components/  # UI components (2D graph, 3D scene, panels)
 │       ├── hooks/       # useGraphData - WebSocket + HTTP data hook
 │       └── types/       # Client-side TypeScript interfaces
-├── algorithms/          # The decision logic: detection, rca, graph (cascade), model, learning, evaluation
+├── algorithms/          # Every algorithm as simple Python plus a Markdown page per area (start at algorithms/README.md)
 ├── core_logic/          # The same logic as short, readable Python (+ demo and tests)
 ├── graphs/              # Report builders; generated pages in graphs/output
 ├── run/                 # scripts, tests, command line tools, recorded sample runs, ssh helpers
