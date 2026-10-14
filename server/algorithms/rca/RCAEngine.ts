@@ -77,7 +77,9 @@ export interface RCAParameters {
   learning?: { haveSec: number; needSec: number };
   /** Probabilities from the learned model (server/algorithms/learning), when one is installed: they decide whether there is an incident
    *  (alarm, already debounced over two cycles by the caller) and the order of the candidates. */
-  learned?: { p: Map<string, number>; why: Map<string, { feature: string; value: number }[]>; alarm: boolean; threshold: number; labels: Record<string, string> };
+  learned?: { p: Map<string, number>; why: Map<string, { feature: string; value: number }[]>; alarm: boolean; threshold: number; labels: Record<string, string>;
+    /** How a contribution is printed and the smallest one worth listing (defaults: log-odds of the logistic model, 0.25). */
+    unit?: string; minShow?: number };
 }
 
 /**
@@ -275,8 +277,8 @@ export class RCAEngine {
       if (p.blind) breakdown.push({ factor: 'blind_spot', score: round(r), reason: 'no telemetry from it, while the services calling it show errors nothing else explains' });
       if (L) {
         breakdown.length = 0;
-        for (const c of (L.why.get(n.id) ?? []).filter(c => Math.abs(c.value) >= 0.25).slice(0, 5))
-          breakdown.push({ factor: c.feature, score: round(c.value), reason: `${L.labels[c.feature] ?? c.feature} (${c.value >= 0 ? '+' : ''}${round(c.value)} log-odds)` });
+        for (const c of (L.why.get(n.id) ?? []).filter(c => Math.abs(c.value) >= (L.minShow ?? 0.25)).slice(0, 5))
+          breakdown.push({ factor: c.feature, score: round(c.value), reason: L.unit === '' ? `${L.labels[c.feature] ?? c.feature}: ${round(c.value)}` : `${L.labels[c.feature] ?? c.feature} (${c.value >= 0 ? '+' : ''}${round(c.value)} ${L.unit ?? 'log-odds'})` });
       }
       const isTop = n.id === top.id;
       let confidence: RCAConfidence = 'LOW';

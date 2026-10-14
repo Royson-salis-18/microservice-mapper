@@ -1,0 +1,93 @@
+{
+  "generatedAt": "2026-10-14T11:10:48.278Z",
+  "runs": [
+    {
+      "name": "runC/ledgerline",
+      "faults": 17
+    },
+    {
+      "name": "runC/shopflow",
+      "faults": 17
+    }
+  ],
+  "defaults": {
+    "baseline": {
+      "window": 120,
+      "minTrain": 30,
+      "retrainEvery": 10,
+      "quantile": 0.97,
+      "driftAfter": 360,
+      "trees": 100,
+      "sampleSize": 64,
+      "minRequests": 5,
+      "jitter": 0.5
+    },
+    "walk": {
+      "alpha": 0.15,
+      "rho": 0.2,
+      "iterations": 60
+    },
+    "anomalyFloor": 0.5,
+    "servicePersist": 2,
+    "hardFirst": true,
+    "useWalk": true,
+    "useOwn": true
+  },
+  "headline": {
+    "Rules (live, as recorded)": {
+      "faults": 34,
+      "detected": 0.9705882352941176,
+      "detectedN": 33,
+      "top1OfDetected": 0.5757575757575758,
+      "top1N": 19,
+      "caughtAndNamed": 0.5588235294117647,
+      "falseAlarmsPerHour": 12.438744679374079,
+      "falseAlarms": 33,
+      "medianDelaySec": 4.984
+    },
+    "Rules (re-scored, threshold 3)": {
+      "faults": 34,
+      "detected": 0.9705882352941176,
+      "detectedN": 33,
+      "top1OfDetected": 0.5454545454545454,
+      "top1N": 18,
+      "caughtAndNamed": 0.5294117647058824,
+      "falseAlarmsPerHour": 16.208061248881375,
+      "falseAlarms": 43,
+      "medianDelaySec": 9.851
+    },
+    "ML: forest only (rank by anomaly)": {
+      "faults": 34,
+      "detected": 1,
+      "detectedN": 34,
+      "top1OfDetected": 0.5,
+      "top1N": 17,
+      "caughtAndNamed": 0.5,
+      "falseAlarmsPerHour": 11.30794970852189,
+      "falseAlarms": 30,
+      "medianDelaySec": 4.544
+    },
+    "ML: forest + walk (no own/symptom split)": {
+      "faults": 34,
+      "detected": 1,
+      "detectedN": 34,
+      "top1OfDetected": 0.5588235294117647,
+      "top1N": 19,
+      "caughtAndNamed": 0.5588235294117647,
+      "falseAlarmsPerHour": 11.30794970852189,
+      "falseAlarms": 30,
+      "medianDelaySec": 4.544
+    },
+    "ML: forest + walk + own/symptom": {
+      "faults": 34,
+      "detected": 1,
+      "detectedN": 34,
+      "top1OfDetected": 0.5588235294117647,
+      "top1N": 19,
+      "caughtAndNamed": 0.5588235294117647,
+      "falseAlarmsPerHour": 11.30794970852189,
+      "falseAlarms": 30,
+      "medianDelaySec": 4.707
+    }
+  }
+}

@@ -5,6 +5,17 @@ import { RCAEngine } from '../algorithms/rca/RCAEngine.js';
 import { LearnedScorer, FEATURE_LABEL } from './LearnedScorer.js';
 import { TargetModels } from './TargetModels.js';
 import { loadThresholds } from './thresholdsStore.js';
+import { getEngineMode } from './engineMode.js';
+import { MLEngine, ENGINE_DEFAULTS } from '../algorithms/ml/mlEngine.js';
+import type { AnomalyRecord } from '../models/Incident.js';
+import type { MetricSnapshot } from '../models/MetricSnapshot.js';
+
+/** Labels for the ML engine's "why this score" list. */
+const ML_LABELS: Record<string, string> = {
+  anomaly: 'Isolation Forest anomaly against its own learned baseline (0 to 1)',
+  walk: 'share of the random walk on the call graph (root-cause score)',
+  fact: 'container fact (stopped, paused or restarting)',
+};
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
@@ -15,6 +26,8 @@ export class IncidentManager {
   public readonly models: TargetModels;
   /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
   private learnedHot = new Map<string, boolean>();
+  /** ML engine state per target: the learned baselines, the newest reading already fed in, last cycle's alarm. */
+  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number }>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
@@ -37,6 +50,8 @@ export class IncidentManager {
     const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
     const model = this.models.get(targetId);
     const learning = model.state === 'learning' ? { haveSec: model.baselineSec, needSec: model.needSec } : undefined;
+    if (getEngineMode() === 'ml') return this.finish(targetId, targetNodes, targetEdges, anomalies, this.mlAnalysis(targetId, targetNodes, targetEdges, anomalies, hostSilent, open), t);
+    this.graphStore.clearEngineScores?.();
     const scored = hostSilent || learning ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'), model.threshold);
     let learned: any;
     if (scored) {
@@ -56,6 +71,54 @@ export class IncidentManager {
       thresholds: t,
     });
 
+    return this.finish(targetId, targetNodes, targetEdges, anomalies, rcaResult, t);
+  }
+
+  /** The ML engine: per-service Isolation Forest (learned on a sliding window of normal readings) and a random walk on the
+   *  call graph. Its verdict goes through the same incident machinery as the rules (explanation, cascade, at-risk). */
+  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined) {
+    let st = this.ml.get(targetId);
+    if (!st) { st = { engine: new MLEngine(ENGINE_DEFAULTS), seen: new Map(), hot: false, ready: false, learned: 0, services: 0, readings: 0 }; this.ml.set(targetId, st); }
+    const fresh = new Map<string, MetricSnapshot[]>();
+    let readings = 0;
+    for (const n of nodes) {
+      const last = st.seen.get(n.id) ?? '';
+      const h = this.graphStore.metricStore.getHistory(n.id, '15m').filter((x) => x.timestamp > last);
+      if (h.length) { st.seen.set(n.id, h[h.length - 1].timestamp); fresh.set(n.id, h); readings += h.length; }
+    }
+    const r = st.engine.step(nodes, edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight?.value ?? 1 })), hostSilent ? new Map() : fresh);
+    const alarm = r.hot && st.hot;
+    st.hot = r.hot; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
+    this.graphStore.setEngineScores?.(new Map([...r.services].map(([id, v]) => [id, { score: v.anomaly, persistent: v.level >= 1 }])));
+
+    // evidence for the incident: container facts (from the detector) plus the forest's verdicts
+    const now = new Date().toISOString();
+    const anomalies: AnomalyRecord[] = ruleAnomalies.filter((a) => (a.evidence ?? '') === 'hard');
+    for (const [id, v] of r.services) {
+      if (v.hard || v.level < 1) continue;
+      anomalies.push({ id: `anomaly-${id}-iforest-${Date.now()}`, nodeId: id, targetId, metric: 'isolation-forest', timestamp: now, observedValue: Math.round(v.score * 1000) / 1000,
+        baselineMean: 0, baselineStdDev: 0, zScore: Math.round(v.level * 350) / 100, reason: `isolated quickly by its own forest (level ${v.level.toFixed(2)}, 1 = alarm line)`,
+        severity: v.level >= 4 ? 'CRITICAL' : v.level >= 2 ? 'HIGH' : 'MEDIUM', evidenceSource: 'isolation-forest', evidence: 'own' } as AnomalyRecord);
+    }
+    const why = new Map([...r.services].map(([id, v]) => [id, [
+      ...(v.hard ? [{ feature: 'fact', value: 1 }] : []), { feature: 'anomaly', value: v.anomaly }, { feature: 'walk', value: r.rank.get(id) ?? 0 }]]));
+    const learning = r.ready ? undefined : { haveSec: Math.round(st.readings * 5 / Math.max(1, nodes.length)), needSec: ENGINE_DEFAULTS.baseline.minTrain * 5 };
+    return this.rcaEngine.analyzeIncident({
+      targetId, nodes, edges, anomalies, thresholds: loadThresholds(), hostSilent, learning,
+      incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
+      learned: { p: r.rank, why, alarm: alarm || [...r.services.values()].some((v) => v.hard), threshold: 0.25, labels: ML_LABELS, unit: '', minShow: 0.01 },
+    });
+  }
+
+  /** What the ML engine has learned so far, per target (for the UI). */
+  public engineStatus() {
+    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
+  }
+
+  /** Close every open incident (used when the engine is switched, so the new engine starts from a clean slate). */
+  public resetIncidents(): void { this.activeIncidents.clear(); this.learnedHot.clear(); for (const s of this.ml.values()) s.hot = false; }
+
+  private finish(targetId: string, targetNodes: any[], targetEdges: any[], anomalies: AnomalyRecord[], rcaResult: ReturnType<RCAEngine['analyzeIncident']>, t: ReturnType<typeof loadThresholds>): Incident | null {
     const existing = this.activeIncidents.get(targetId);
     const now = new Date().toISOString();
     this.models.noteIncident(targetId, rcaResult.incidentDetected);
@@ -174,7 +237,7 @@ export class IncidentManager {
 
   /** Drop incidents (and the detector's onset memory) for one target, or for all. */
   public clear(targetId?: string): void {
-    if (targetId) this.activeIncidents.delete(targetId); else this.activeIncidents.clear();
+    if (targetId) { this.activeIncidents.delete(targetId); this.ml.delete(targetId); } else { this.activeIncidents.clear(); this.ml.clear(); }
     this.models.clear(targetId);
     this.anomalyDetector.forget(targetId);
   }
