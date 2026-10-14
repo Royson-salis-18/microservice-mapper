@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Docker from 'dockerode';
-import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from './requestStats.js';
+import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from '../algorithms/detection/requestStats.js';
 import axios from 'axios';
 
 // Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.

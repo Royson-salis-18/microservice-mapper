@@ -1,4 +1,4 @@
-import { linkStatus } from './linkThresholds.js';
+import { linkStatus } from '../../algorithms/graph/linkThresholds.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { Target, TelemetryEnvelope } from '../models/index.js';

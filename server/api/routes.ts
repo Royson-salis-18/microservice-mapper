@@ -1,4 +1,4 @@
-import { checkConsistency } from '../graph/consistency.js';
+import { checkConsistency } from '../../algorithms/graph/consistency.js';
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -13,7 +13,7 @@ import type { IncidentManager } from '../rca/IncidentManager.js';
 import type { TrafficController } from '../traffic/TrafficController.js';
 import type { ExperimentManager } from '../traffic/ExperimentManager.js';
 import type { RiskEngine } from '../graph/RiskEngine.js';
-import { thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../rca/thresholds.js';
+import { thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../../algorithms/detection/thresholds.js';
 import { loadThresholds, saveThresholds } from '../rca/thresholdsStore.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 import { config } from '../config.js';

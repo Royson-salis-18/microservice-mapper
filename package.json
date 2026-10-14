@@ -10,17 +10,17 @@
     "build": "cd client && npm run build",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
     "traffic-gen": "cd traffic-gen && npm start",
-    "export-telemetry": "node server/node_modules/tsx/dist/cli.mjs scripts/export_vectorized_telemetry.ts",
-    "test": "node server/node_modules/tsx/dist/cli.mjs --test \"tests/*.test.ts\"",
+    "export-telemetry": "node server/node_modules/tsx/dist/cli.mjs run/scripts/export_vectorized_telemetry.ts",
+    "test": "node server/node_modules/tsx/dist/cli.mjs --test \"run/tests/*.test.ts\"",
     "setup": "npm run install:all && npm run doctor",
-    "doctor": "node scripts/doctor.mjs",
+    "doctor": "node run/scripts/doctor.mjs",
     "start": "npm run dev",
-    "eval": "node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts",
-    "local": "node scripts/local.mjs",
-    "demo": "node scripts/demo.mjs",
-    "hosts": "node scripts/hosts.mjs",
-    "ml": "node server/node_modules/tsx/dist/cli.mjs tools/ml/run.ts",
-    "ml:report": "node server/node_modules/tsx/dist/cli.mjs tools/ml/report.ts"
+    "eval": "node server/node_modules/tsx/dist/cli.mjs run/cli/eval/run.ts",
+    "local": "node run/scripts/local.mjs",
+    "demo": "node run/scripts/demo.mjs",
+    "hosts": "node run/scripts/hosts.mjs",
+    "ml": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/run.ts",
+    "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
