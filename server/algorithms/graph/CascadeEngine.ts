@@ -1,5 +1,5 @@
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { DependencyEdge } from '../../server/models/DependencyEdge.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { DependencyEdge } from '../../models/DependencyEdge.js';
 
 /**
  * Cascading-failure prediction.

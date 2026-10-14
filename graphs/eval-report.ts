@@ -1,5 +1,5 @@
 // graphs/eval-report.ts: turn a Score into one self-contained HTML page (inline SVG, no dependencies).
-import type { Score, FaultResult } from '../algorithms/evaluation/score.ts';
+import type { Score, FaultResult } from '../server/algorithms/evaluation/score.ts';
 
 const esc = (s: unknown) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const pct = (x: number, d = 0) => (Number.isFinite(x) ? `${(x * 100).toFixed(d)}%` : 'n/a');

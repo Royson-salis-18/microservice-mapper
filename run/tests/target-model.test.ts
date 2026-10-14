@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { trainTarget } from '../../algorithms/model/TargetModel.ts';
-import { FEATURE_NAMES } from '../../algorithms/detection/features.ts';
+import { trainTarget } from '../../server/algorithms/model/TargetModel.ts';
+import { FEATURE_NAMES } from '../../server/algorithms/detection/features.ts';
 
 const T0 = Date.UTC(2026, 0, 1, 12, 0, 0);
 const node = (id: string) => ({ id, name: id.split(':')[1], project: 'p', type: 'service', status: 'healthy', metadata: { state: 'running' }, metrics: null }) as any;

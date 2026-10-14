@@ -6,9 +6,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AnomalyDetector } from '../../algorithms/detection/AnomalyDetector.ts';
-import { RCAEngine } from '../../algorithms/rca/RCAEngine.ts';
-import { DEFAULT_THRESHOLDS } from '../../algorithms/detection/thresholds.ts';
+import { AnomalyDetector } from '../../server/algorithms/detection/AnomalyDetector.ts';
+import { RCAEngine } from '../../server/algorithms/rca/RCAEngine.ts';
+import { DEFAULT_THRESHOLDS } from '../../server/algorithms/detection/thresholds.ts';
 
 const T = DEFAULT_THRESHOLDS;
 const ts = (i: number) => new Date(Date.UTC(2026, 0, 1, 0, 0, i * 10)).toISOString();

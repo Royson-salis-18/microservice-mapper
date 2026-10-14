@@ -124,7 +124,7 @@ It also has a slow companion, `baselinePerMin`: an exponential average that rise
 
 ## Latency and errors: one set of thresholds
 
-When a source provides request data (the gateway log at Tier 1, Prometheus at Tier 2), a link's status comes from `linkStatus()` in `algorithms/graph/linkThresholds.ts`:
+When a source provides request data (the gateway log at Tier 1, Prometheus at Tier 2), a link's status comes from `linkStatus()` in `server/algorithms/graph/linkThresholds.ts`:
 
 | | warn (orange, `degraded`) | severe (red, `failed`) |
 |---|---|---|

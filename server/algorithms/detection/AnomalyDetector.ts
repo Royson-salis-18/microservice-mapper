@@ -1,7 +1,7 @@
-import type { MetricStore } from '../../server/telemetry/MetricStore.js';
-import type { AnomalyRecord, IncidentSeverity } from '../../server/models/Incident.js';
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { MetricSnapshot } from '../../server/models/MetricSnapshot.js';
+import type { MetricStore } from '../../telemetry/MetricStore.js';
+import type { AnomalyRecord, IncidentSeverity } from '../../models/Incident.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
 import { containerFact } from './containerFacts.js';
 import { DEFAULT_THRESHOLDS, type IncidentThresholds } from './thresholds.js';
 

@@ -1,7 +1,7 @@
 /**
  * The model of ONE architecture, trained on its own baseline every time the app loads. PURE: history in, model out.
  *
- *   shared weights    how much each signal counts. Learned offline from labelled faults on several systems (algorithms/learning) and checked
+ *   shared weights    how much each signal counts. Learned offline from labelled faults on several systems (server/algorithms/learning) and checked
  *                     on a system they were not trained on, so they carry over to a new architecture.
  *   local calibration trained HERE, on this target's own recent fault-free history: where the alarm threshold sits. The
  *                     threshold is the highest persistent score this architecture produced while healthy. A score above
@@ -14,8 +14,8 @@
  * Until the baseline spans `needSec` the model is 'learning' and the target raises incidents only for container facts.
  */
 import { makeScorer, momentScores, type Weights } from '../detection/scoring.js';
-import type { ServiceNode } from '../../server/models/ServiceNode.js';
-import type { MetricSnapshot } from '../../server/models/MetricSnapshot.js';
+import type { ServiceNode } from '../../models/ServiceNode.js';
+import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
 
 export interface TargetModel {
   target: string;

@@ -1,4 +1,4 @@
-// algorithms/evaluation/infer.ts: from what the mapper SAW on the named root cause, say what kind of fault it looks like. PURE.
+// server/algorithms/evaluation/infer.ts: from what the mapper SAW on the named root cause, say what kind of fault it looks like. PURE.
 // This is the "output matches the input" check: the injector applied a fault class; the mapper never knew it; here we ask
 // whether the evidence it collected is the evidence that class leaves behind.
 //

@@ -275,7 +275,7 @@ The connection keys are recorded per sweep by `recordConnectionSweep()`. See [Me
 Two more things are written onto edges each cycle, outside the store:
 
 - **`edge.weight`**, by `RiskEngine.recomputeAll()` through `computeEdgeWeights()`: confidence × the caller's share of traffic, with shares summing to exactly 1 per caller and kind. See [Risk, cascades and blast radius](22-risk-engine.md).
-- **`edge.status`** from `linkStatus(errorRate, p95 ?? latency)` (`algorithms/graph/linkThresholds.ts`): `degraded` at ≥ 1% errors or ≥ 300 ms, `failed` at ≥ 5% or ≥ 1 s. Without request data, the link stays `active`, and its colour comes from activity and the callee's status.
+- **`edge.status`** from `linkStatus(errorRate, p95 ?? latency)` (`server/algorithms/graph/linkThresholds.ts`): `degraded` at ≥ 1% errors or ≥ 300 ms, `failed` at ≥ 5% or ≥ 1 s. Without request data, the link stays `active`, and its colour comes from activity and the callee's status.
 
 ## Broadcasts are coalesced
 

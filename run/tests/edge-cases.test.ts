@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { containerFact } from '../../algorithms/detection/containerFacts.ts';
-import { RCAEngine } from '../../algorithms/rca/RCAEngine.ts';
-import { AnomalyDetector } from '../../algorithms/detection/AnomalyDetector.ts';
+import { containerFact } from '../../server/algorithms/detection/containerFacts.ts';
+import { RCAEngine } from '../../server/algorithms/rca/RCAEngine.ts';
+import { AnomalyDetector } from '../../server/algorithms/detection/AnomalyDetector.ts';
 import { computeProjectRisk as computeRisk } from '../../server/graph/RiskEngine.ts';
 
 const node = (id: string, status: any = 'healthy', metadata: any = {}, metrics: any = null) => {

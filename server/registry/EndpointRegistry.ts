@@ -1,4 +1,4 @@
-import { isObservabilityService } from '../../algorithms/graph/serviceRoles.js';
+import { isObservabilityService } from '../algorithms/graph/serviceRoles.js';
 import type {
   DiscoveredService,
   DiscoveredEndpoint,

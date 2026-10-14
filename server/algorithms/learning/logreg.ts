@@ -1,4 +1,4 @@
-// algorithms/learning/logreg.ts: L2-regularised logistic regression fitted by Newton's method (IRLS). PURE, deterministic, no dependencies.
+// server/algorithms/learning/logreg.ts: L2-regularised logistic regression fitted by Newton's method (IRLS). PURE, deterministic, no dependencies.
 // Small on purpose: ~18 features, a few thousand rows. A linear model keeps every learned weight readable in the UI and the
 // wiki ("a paused container counts this much"), which matters more here than squeezing out the last point with a black box.
 

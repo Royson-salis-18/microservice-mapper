@@ -15,7 +15,7 @@ function listTs(dir: string): string[] {
   return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? listTs(path.join(dir, e.name)) : e.name.endsWith('.ts') ? [path.join(dir, e.name)] : []);
 }
-const CORE = [...listTs('algorithms'), 'client/src/components/shared/edgeHeat.ts', 'graphs/eval-report.ts'];
+const CORE = [...listTs('server/algorithms'), 'client/src/components/shared/edgeHeat.ts', 'graphs/eval-report.ts'];
 const FORBIDDEN = /^(node:)?(fs|fs\/promises|path|os|http|https|net|tls|dns|child_process|worker_threads|cluster|crypto|stream|zlib)$|^(express|ws|axios|dockerode|ssh2|cors|socket\.io)(\/.*)?$/;
 
 /** Value (non-type) static imports of a file. */

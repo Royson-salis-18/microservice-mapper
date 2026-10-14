@@ -6,7 +6,7 @@ Hand-tuned thresholds are guesses. This page describes how the mapper stops gues
 flowchart LR
   A[Bench with the blind injector] -->|ledger: what was broken, when| D[Dataset]
   B[Mapper API, recorded by the observer] -->|readings and container state per service| D
-  D --> F[Features<br/>algorithms/detection/features.ts]
+  D --> F[Features<br/>server/algorithms/detection/features.ts]
   F --> L[Learner<br/>tools/ml]
   L --> M[learned.json<br/>weights + threshold]
   M --> S[Live server<br/>LearnedScorer]
@@ -30,7 +30,7 @@ Every architecture is a different system, so each target (a bench, a project) ge
 
 | Step | What happens | Where |
 |---|---|---|
-| Train | Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems | `algorithms/model/TargetModel.ts` (pure) |
+| Train | Every moment of the baseline is scored with the shared weights; the alarm threshold is the highest score that held for two cycles in a row while the system was healthy (top 1% trimmed), and never below the threshold learned across systems | `server/algorithms/model/TargetModel.ts` (pure) |
 | Learning period | Until the baseline spans `MAPPER_BASELINE_MIN` minutes (default 30) the project shows **Learning baseline, N of 30 min**, and only stopped, paused, restarting or network-less containers raise an incident | `IncidentManager`, the top bar, the Incidents page |
 | Keep it honest | Moments while an incident was open (plus a minute of recovery) are left out of every retraining, so a fault is never learned as normal | `server/rca/TargetModels.ts` |
 | Inspect | `GET /api/models` and `server/data/models/<target>.json`: state, minutes of baseline, scorer, threshold, noise ceiling | |

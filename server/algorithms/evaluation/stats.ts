@@ -1,4 +1,4 @@
-// algorithms/evaluation/stats.ts: the statistics a results section needs, beyond proportions with intervals. PURE and seeded: the
+// server/algorithms/evaluation/stats.ts: the statistics a results section needs, beyond proportions with intervals. PURE and seeded: the
 // same inputs give the same numbers every time.
 const mean = (x: number[]) => (x.length ? x.reduce((a, b) => a + b, 0) / x.length : NaN);
 const sd = (x: number[]) => { if (x.length < 2) return NaN; const m = mean(x); return Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / (x.length - 1)); };

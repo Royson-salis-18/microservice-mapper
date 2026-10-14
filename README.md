@@ -162,7 +162,7 @@ State persists to `server/data/graph_db.json` (debounced 2-second write). Nodes 
 
 ## Root Cause Analysis
 
-Every service that is failing or shows a metric anomaly is scored on additive factors (`algorithms/rca/RCAEngine.ts`):
+Every service that is failing or shows a metric anomaly is scored on additive factors (`server/algorithms/rca/RCAEngine.ts`):
 
 | Factor | Points | Why |
 |---|---|---|
@@ -266,7 +266,7 @@ microservice-mapper/
 │   ├── discovery/       # Discovery loop per target
 │   ├── telemetry-platform/src/  # SSH connection, Docker parsing, metric collection
 │   ├── telemetry-sources/       # Optional higher-tier sources (Prometheus)
-│   ├── rca/             # Incident manager, learned scorer, per-target models (the logic itself is in ../algorithms)
+│   ├── rca/             # Incident manager, learned scorer, per-target models (the logic itself is in ../algorithms (server/algorithms))
 │   ├── traces/          # TCP connection event storage
 │   ├── telemetry/       # MetricStore ring buffer
 │   ├── traffic/         # Load test execution + experiments

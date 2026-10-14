@@ -1,4 +1,4 @@
-// algorithms/evaluation/score.ts: score a mapper against the fault injector's private ledger. PURE: files in, numbers out.
+// server/algorithms/evaluation/score.ts: score a mapper against the fault injector's private ledger. PURE: files in, numbers out.
 //
 // The mapper is observed only through its public API (observe.ts). The ledger is read only AFTER the run. Nothing here
 // can influence what the mapper did, which is the point.

@@ -1,4 +1,4 @@
-// algorithms/learning/experiment.ts: training, blocked cross-validation and cross-system testing, shared by `npm run ml` and the report. PURE.
+// server/algorithms/learning/experiment.ts: training, blocked cross-validation and cross-system testing, shared by `npm run ml` and the report. PURE.
 import { labelledRows, slice, FEATURE_NAMES, type Run } from './dataset.ts';
 import { fit, predict, type Model } from './logreg.ts';
 import { evaluatePrepared, prepare, tuneThreshold, type EvalOpts, type EventResult, type FaultOutcome, type Scores, type TuneResult } from './evaluate.ts';

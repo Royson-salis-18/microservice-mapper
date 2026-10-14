@@ -112,21 +112,21 @@ dockerContainerTcp: (containerId: string): RemoteCommand<string> => ({
 **A weight is two parts multiplied**, published with its basis:
 
 ```typescript
-// algorithms/graph/EdgeWeights.ts
+// server/algorithms/graph/EdgeWeights.ts
 value: round3(Math.min(Math.max(confidence * dependency * factor, 0), 1)),
 ```
 
 **A root cause has to explain something material:**
 
 ```typescript
-// algorithms/rca/RCAEngine.ts
+// server/algorithms/rca/RCAEngine.ts
 const material = (id: string) => { const r = reach.get(id) ?? 0; return r >= MATERIAL_REACH ? r : 0; };
 ```
 
 **The cascade is one line of probability**, iterated to a fixed point:
 
 ```typescript
-// algorithms/graph/CascadeEngine.ts
+// server/algorithms/graph/CascadeEngine.ts
 survive *= 1 - tau * e.weight!.value * (P.get(e.target) ?? 0);
 ```
 
@@ -146,7 +146,7 @@ if (errorRate != null && errorRate >= LINK_THRESHOLDS.errorCritical) return { he
 | a command run on targets | `RemoteCommand.ts` | `tests/security.test.ts` |
 | when a container counts as degraded | `containerHealth.ts` | wiki 31 |
 | incident sensitivity | the Incidents page, or `server/data/incident_thresholds.json` | (no code change needed) |
-| link slow or error thresholds | `algorithms/graph/linkThresholds.ts` **and** `client/.../edgeHeat.ts` | the equality test fails until both match |
+| link slow or error thresholds | `server/algorithms/graph/linkThresholds.ts` **and** `client/.../edgeHeat.ts` | the equality test fails until both match |
 | an RCA factor or weight | `RCAEngine.ts` constants | wiki 08 and its lab in `build_wiki_visualizer.py` |
 | health weights, τ, risk bands | `RiskEngine.ts`, `CascadeEngine.ts` | wiki 22 and its lab |
 | a published invariant | `consistency.ts` (and bump `RULES`) | wiki 32 |
@@ -163,7 +163,7 @@ if (errorRate != null && errorRate >= LINK_THRESHOLDS.errorCritical) return { he
 1. `server/models/ServiceNode.ts` and `DependencyEdge.ts`: the vocabulary.
 2. `server/index.ts`: the heartbeat.
 3. `server/graph/GraphStore.ts`, `ingestRemote()` and `getGraph()`: the centre.
-4. `algorithms/graph/EdgeWeights.ts`, then `RiskEngine.ts` and `CascadeEngine.ts`: the arithmetic.
-5. `algorithms/rca/RCAEngine.ts`: judgement.
+4. `server/algorithms/graph/EdgeWeights.ts`, then `RiskEngine.ts` and `CascadeEngine.ts`: the arithmetic.
+5. `server/algorithms/rca/RCAEngine.ts`: judgement.
 6. `client/src/hooks/useGraphData.ts`, then `components/shared/*`: how it becomes pixels.
 7. `tests/*.test.ts`: every claim above, pinned to a number.

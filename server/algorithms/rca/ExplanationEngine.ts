@@ -1,4 +1,4 @@
-import type { CandidateCause, EvidenceItem, RCAConfidence } from '../../server/models/Incident.js';
+import type { CandidateCause, EvidenceItem, RCAConfidence } from '../../models/Incident.js';
 
 export interface ExplanationInput {
   targetId: string;

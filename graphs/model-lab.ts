@@ -12,28 +12,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadRuns } from '../run/cli/ml/run.ts';
-import { buildRun, labelledRows, DEFAULT_HISTORY, DEFAULT_MIN_HISTORY, FEATURE_NAMES, type Run } from '../algorithms/learning/dataset.ts';
-import { crossSystem, crossValidate, summarise, train, scorer, LAMBDAS, METHODS, RULES_FIXED_THRESHOLD, type Method } from '../algorithms/learning/experiment.ts';
-import { evaluatePrepared, prepare } from '../algorithms/learning/evaluate.ts';
-import { predict, LOGREG_PARAMS } from '../algorithms/learning/logreg.ts';
-import { rulesScore } from '../algorithms/detection/scoring.ts';
+import { buildRun, labelledRows, DEFAULT_HISTORY, DEFAULT_MIN_HISTORY, FEATURE_NAMES, type Run } from '../server/algorithms/learning/dataset.ts';
+import { crossSystem, crossValidate, summarise, train, scorer, LAMBDAS, METHODS, RULES_FIXED_THRESHOLD, type Method } from '../server/algorithms/learning/experiment.ts';
+import { evaluatePrepared, prepare } from '../server/algorithms/learning/evaluate.ts';
+import { predict, LOGREG_PARAMS } from '../server/algorithms/learning/logreg.ts';
+import { rulesScore } from '../server/algorithms/detection/scoring.ts';
 import { PAL, bars, esc, f2, flow, heat, histogram, hbars, lines, pct, table } from './charts.ts';
-import { auc, parseObserved, wilson } from '../algorithms/evaluation/score.ts';
-import { moments, pearson } from '../algorithms/evaluation/stats.ts';
-import { DETECTOR_PARAMS } from '../algorithms/detection/AnomalyDetector.ts';
-import { SIGNALS } from '../algorithms/detection/features.ts';
-import { TARGET_MODEL_PARAMS } from '../algorithms/model/TargetModel.ts';
+import { auc, parseObserved, wilson } from '../server/algorithms/evaluation/score.ts';
+import { moments, pearson } from '../server/algorithms/evaluation/stats.ts';
+import { DETECTOR_PARAMS } from '../server/algorithms/detection/AnomalyDetector.ts';
+import { SIGNALS } from '../server/algorithms/detection/features.ts';
+import { TARGET_MODEL_PARAMS } from '../server/algorithms/model/TargetModel.ts';
 import { baselineNeededSec } from '../server/rca/TargetModels.ts';
-import { DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../algorithms/detection/thresholds.ts';
-import { COLLECTOR_PARAMS } from '../algorithms/detection/requestStats.ts';
+import { DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../server/algorithms/detection/thresholds.ts';
+import { COLLECTOR_PARAMS } from '../server/algorithms/detection/requestStats.ts';
 import { config } from '../server/config.ts';
 import { MetricStore } from '../server/telemetry/MetricStore.ts';
 import { TraceStore } from '../server/traces/TraceStore.ts';
 import { GraphStore, GRAPH_SAVE_DEBOUNCE_MS } from '../server/graph/GraphStore.ts';
-import { DEFAULT_TRANSMISSION, ANOMALY_WEIGHT, PERSISTENT_ANOMALY_WEIGHT, STATUS_PROBABILITY } from '../algorithms/graph/CascadeEngine.ts';
+import { DEFAULT_TRANSMISSION, ANOMALY_WEIGHT, PERSISTENT_ANOMALY_WEIGHT, STATUS_PROBABILITY } from '../server/algorithms/graph/CascadeEngine.ts';
 import { HEALTH_WEIGHTS } from '../server/graph/RiskEngine.ts';
-import { CONFIDENCE, TELEMETRY_FACTOR } from '../algorithms/graph/EdgeWeights.ts';
-import { LINK_THRESHOLDS } from '../algorithms/graph/linkThresholds.ts';
+import { CONFIDENCE, TELEMETRY_FACTOR } from '../server/algorithms/graph/EdgeWeights.ts';
+import { LINK_THRESHOLDS } from '../server/algorithms/graph/linkThresholds.ts';
 
 const args = process.argv.slice(2);
 const opt = (k: string, d: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -191,8 +191,8 @@ const storage = table(['What', 'Path', 'Written by', 'How often / how long', 'Re
   ['Per-architecture model', 'server/data/models/<target>.json', 'TargetModels.save', 'trained at every start, retrained every 5 min', 'inspection, /api/models'],
   ['Learned weights and threshold', 'server/rca/model/learned.json', 'npm run ml -- --install', 'when you install a trained model', 'LearnedScorer (reloaded on change)'],
   ['Incident rule overrides', 'server/data/incident_thresholds.json', 'POST /api/incidents/thresholds', 'on edit in the UI', 'AnomalyDetector (each cycle)'],
-  ['Recorded run: what the mapper showed', `${home}/<run>/observed-<subject>.jsonl`, 'npm run eval -- observe', 'one JSON line per ~5 s: incidents, status, per-service readings, edges', 'algorithms/learning, run/cli/eval'],
-  ['Recorded run: what was injected', `${home}/<run>/ledger-<subject>.jsonl`, 'the fault injector (bench repos)', 'one line per campaign, fault start and fault end', 'algorithms/learning, run/cli/eval only (never the mapper)'],
+  ['Recorded run: what the mapper showed', `${home}/<run>/observed-<subject>.jsonl`, 'npm run eval -- observe', 'one JSON line per ~5 s: incidents, status, per-service readings, edges', 'server/algorithms/learning, run/cli/eval'],
+  ['Recorded run: what was injected', `${home}/<run>/ledger-<subject>.jsonl`, 'the fault injector (bench repos)', 'one line per campaign, fault start and fault end', 'server/algorithms/learning, run/cli/eval only (never the mapper)'],
   ['Evaluation report', `${home}/eval-<subject>.html`, 'npm run eval -- all', 'on demand', 'you'],
   ['This report', outFile, 'npm run ml:report', 'on demand', 'you'],
 ]);
@@ -210,7 +210,7 @@ const hyper = `
   ['connection memory / window', `${GraphStore.CONN_MEMORY_MS / 1000} s / ${GraphStore.CONN_WINDOW_MS / 1000} s`, 'distinct-connection counting (TIME_WAIT-safe) and its averaging window'],
   ['edge activity baseline', `rise ${GraphStore.BASELINE_RISE_MS / 1000} s, fall ${GraphStore.BASELINE_FALL_MS / 1000} s, min window ${GraphStore.BASELINE_MIN_WINDOW_MS / 1000} s`, 'asymmetric exponential average of link activity (quick to rise, slow to fall)'],
 ])}
-<h3>Detector (algorithms/detection/AnomalyDetector.ts, DETECTOR_PARAMS)</h3>${hp([
+<h3>Detector (server/algorithms/detection/AnomalyDetector.ts, DETECTOR_PARAMS)</h3>${hp([
   ['history read', D.historyRange, 'sliding window of the baseline: the newest readings of each service'],
   ['judged samples', D.judgedSamples, 'the newest samples compared with the baseline; all must agree (persistence of the signal)'],
   ['min history samples', DEFAULT_THRESHOLDS.minHistorySamples, 'a signal with less past is not judged (cold start)'],
@@ -222,9 +222,9 @@ const hyper = `
   ['min requests', D.minRequests, 'a p95 or error share needs this many requests in each judged sample'],
   ['silence rule', `history ×${D.silenceHistoryFactor}, expected ≥ ${D.silenceMinExpected}, gap ×${D.silenceGapFactor}`, 'silence on a counted service needs a long past, enough expected requests, and a quiet stretch beyond its own longest gap'],
 ])}
-<h4>Signals (algorithms/detection/features.ts, SIGNALS)</h4>${table(['Signal', 'Trouble direction', 'Scale', 'Unit (resolution)', 'Floor', 'Evidence', 'Min requests'], SIGNALS.map((s) => [s.name, s.direction === 1 ? 'up' : 'down', s.scale, s.unit, s.floor, s.own ? 'own' : 'symptom (inheritable)', s.minRequests ?? '–']))}
-<h4>Incident thresholds (editable in the UI; algorithms/detection/thresholds.ts)</h4>${table(['Name', 'Default', 'Meaning'], Object.entries(DEFAULT_THRESHOLDS).map(([k, v]) => [k, String(v), (THRESHOLD_DOCS as Record<string, string>)[k] ?? '']))}
-<h3>Per-architecture model (algorithms/model/TargetModel.ts)</h3>${hp([
+<h4>Signals (server/algorithms/detection/features.ts, SIGNALS)</h4>${table(['Signal', 'Trouble direction', 'Scale', 'Unit (resolution)', 'Floor', 'Evidence', 'Min requests'], SIGNALS.map((s) => [s.name, s.direction === 1 ? 'up' : 'down', s.scale, s.unit, s.floor, s.own ? 'own' : 'symptom (inheritable)', s.minRequests ?? '–']))}
+<h4>Incident thresholds (editable in the UI; server/algorithms/detection/thresholds.ts)</h4>${table(['Name', 'Default', 'Meaning'], Object.entries(DEFAULT_THRESHOLDS).map(([k, v]) => [k, String(v), (THRESHOLD_DOCS as Record<string, string>)[k] ?? '']))}
+<h3>Per-architecture model (server/algorithms/model/TargetModel.ts)</h3>${hp([
   ['baseline needed', `${baselineNeededSec() / 60} min`, 'learning period; only container facts raise incidents until then (env MAPPER_BASELINE_MIN)'],
   ['retrain every', '5 min', 'moments inside an incident (plus 60 s) are left out of every retraining'],
   ['min history', TM.minHistory, 'samples a service needs before it contributes'],
@@ -233,7 +233,7 @@ const hyper = `
   ['outage gap', `${TM.outageGapFactor} × typical gap`, 'a longer gap between moments is an outage and does not count as baseline time'],
   ['threshold', 'max(shared prior, noise ceiling)', 'the shared threshold is the floor; a noisy architecture raises the bar'],
 ])}
-<h3>Learning pipeline (this report; algorithms/learning)</h3>${hp([
+<h3>Learning pipeline (this report; server/algorithms/learning)</h3>${hp([
   ['features', FEATURE_NAMES.length, FEATURE_NAMES.join(', ')],
   ['baseline window for features', `${DEFAULT_HISTORY} samples`, `≈ ${((DEFAULT_HISTORY * readingSpacing) / 60).toFixed(0)} min at ${readingSpacing.toFixed(0)} s per reading (swept below)`],
   ['min history for features', DEFAULT_MIN_HISTORY, 'swept below'],

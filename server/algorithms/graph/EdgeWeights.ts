@@ -1,4 +1,4 @@
-import type { DependencyEdge, EdgeWeight } from '../../server/models/DependencyEdge.js';
+import type { DependencyEdge, EdgeWeight } from '../../models/DependencyEdge.js';
 import { isObservabilityService } from './serviceRoles.js';
 
 /**

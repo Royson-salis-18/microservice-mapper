@@ -57,7 +57,7 @@
 > Tests: `tests/rca.test.ts` (9 tests; 7 fail on the old code).
 
 
-**Files:** `algorithms/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
+**Files:** `server/algorithms/rca/RCAEngine.ts`, `IncidentManager.ts`, `TemporalAnalyzer.ts`, `ExplanationEngine.ts`, `AnomalyDetector.ts`
 
 ---
 
@@ -282,7 +282,7 @@ Each of these used to be reported as a fault. The rules now, all in code with te
 | Service with **no data at all** (never measured) | health counted as 0.5, so it ranked as risky; blamed as a "blind spot" on one noisy caller | no data is no evidence: left out of the health score; inferred as a cause only when two callers have unexplained symptoms past the threshold, or one past the HIGH threshold |
 | **Job that finished** (`Exited (0)`), container **created but never started** | critical, hard evidence, root cause | not a failure: no anomaly, no incident |
 | **Load generator** stopped (traffic, locust, k6, stress…) | critical | not a failure: traffic is started and stopped by people |
-| **Crashed** container on the SSH path (`exited (137)`) | not hard evidence for the RCA engine (string mismatch) | hard evidence, like on the push path (`algorithms/detection/containerFacts.ts`, one rule for both) |
+| **Crashed** container on the SSH path (`exited (137)`) | not hard evidence for the RCA engine (string mismatch) | hard evidence, like on the push path (`server/algorithms/detection/containerFacts.ts`, one rule for both) |
 | **Isolated** service (no callers, no dependencies) that fails | HIGH | real failure, MEDIUM: there is no blast radius |
 | **Host unreachable** (SSH down, IP changed, instance stopped) | frozen readings kept services green or red and kept incidents open | after 2 minutes every service of that host shows unknown, and the incident says telemetry stopped; no service is blamed |
 | **Sparse traffic** | false "silent" and "slow" | see the section above |
