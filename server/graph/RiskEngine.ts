@@ -2,8 +2,8 @@ import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { Incident, ScoreContribution } from '../models/Incident.js';
 import type { GraphStore } from './GraphStore.js';
-import { computeEdgeWeights } from './EdgeWeights.js';
-import { predictCascade, simulateFailure, structuralCriticality, type CascadePrediction, type WhatIfResult } from './CascadeEngine.js';
+import { computeEdgeWeights } from '../../algorithms/graph/EdgeWeights.js';
+import { predictCascade, simulateFailure, structuralCriticality, type CascadePrediction, type WhatIfResult } from '../../algorithms/graph/CascadeEngine.js';
 
 /**
  * Current reliability exposure per service, recomputed every poll cycle.

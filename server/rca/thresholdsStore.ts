@@ -2,7 +2,7 @@
 // (defaults, limits, merge) are in thresholds.ts and are pure.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEFAULT_THRESHOLDS, mergeThresholds, type IncidentThresholds } from './thresholds.js';
+import { DEFAULT_THRESHOLDS, mergeThresholds, type IncidentThresholds } from '../../algorithms/detection/thresholds.js';
 
 function configPath(): string {
   return path.resolve(process.cwd(), 'data', 'incident_thresholds.json');

@@ -1,0 +1,1667 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>The four layers | Microservice Mapper Wiki</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+    <style>
+  /* Same language as the app: navy and indigo, warm colours only for trouble. */
+  :root {
+    --bg:        #f5f6fb;
+    --panel:     #ffffff;
+    --panel-2:   #eef0f8;
+    --ink:       #12142a;
+    --ink-2:     #363b5c;
+    --muted:     #6c7293;
+    --faint:     #9aa0bd;
+    --rule:      #dcdfee;
+    --rule-2:    #e9ebf5;
+
+    --sig:       #4f5bd5;
+    --sig-bg:    rgba(79, 91, 213, 0.10);
+    --ok:        #0b8a5c;
+    --warn:      #b5650a;
+    --err:       #c42443;
+    --t0:        #6c7293;
+    --t1:        #b5650a;
+    --t2:        #2f78c4;
+    --link-calm: #4f7dff; --link-busy: #2f9bff; --link-heavy: #1fd1ff; --link-sat: #9cf4ff;
+    --link-orange: #ff9a3c; --link-red: #ff3d5e; --link-idle: #5b6aa0;
+
+    --body: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:      #070914;
+      --panel:   #0d1122;
+      --panel-2: #131a30;
+      --ink:     #e7eaf8;
+      --ink-2:   #b0b6d4;
+      --muted:   #7a81a6;
+      --faint:   #4f5679;
+      --rule:    #1c2340;
+      --rule-2:  #151b33;
+      --sig:     #8f9cff;
+      --sig-bg:  rgba(143, 156, 255, 0.10);
+      --ok:      #25e3a3;
+      --warn:    #ffab40;
+      --err:     #ff5f7a;
+      --t0:      #7a81a6;
+      --t1:      #ffab40;
+      --t2:      #5fb4f0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:      #070914;  --panel:   #0d1122;  --panel-2: #131a30;
+    --ink:     #e7eaf8;  --ink-2:   #b0b6d4;  --muted:   #7a81a6;
+    --faint:   #4f5679;  --rule:    #1c2340;  --rule-2:  #151b33;
+    --sig:     #8f9cff;  --sig-bg:  rgba(143, 156, 255, 0.10);
+    --ok:      #25e3a3;  --warn:    #ffab40;  --err:     #ff5f7a;
+    --t0:      #7a81a6;  --t1:      #ffab40;  --t2:      #5fb4f0;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: radial-gradient(1200px 600px at 20% -10%, #121a3a 0%, transparent 60%), var(--bg); background-attachment: fixed; } }
+  :root[data-theme="dark"] body { background: radial-gradient(1200px 600px at 20% -10%, #121a3a 0%, transparent 60%), var(--bg); background-attachment: fixed; }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; margin: 0; padding: 0; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 0 90px; }
+
+  .hd { padding-block: 54px 26px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+  .hd .eye { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sig); margin-bottom: 14px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.03em; line-height: 1.05; margin: 0 0 14px; color: var(--ink); }
+  .hd p, .lead { color: var(--ink-2); max-width: 76ch; margin: 0 0 14px; font-size: 15px; }
+
+  .metadata-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; margin-bottom: 14px; }
+  .meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 7px; padding-block: 22px 8px; }
+  .toc a {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em;
+    color: var(--muted); text-decoration: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 5px 11px;
+    background: var(--panel); transition: all 0.2s;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--sig); border-color: var(--sig); outline: none; background: var(--panel-2); }
+
+  section { padding-block: 44px 0; scroll-margin-top: 20px; }
+  h2 {
+    font-size: 24px; font-weight: 700; letter-spacing: -.022em; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;
+    color: var(--ink); border-bottom: 1px solid var(--rule); padding-bottom: 8px;
+  }
+  h2 .id { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--sig); letter-spacing: .06em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 9px; letter-spacing: -.008em; color: var(--ink); }
+  h4 { font-size: 13.5px; font-weight: 600; margin: 18px 0 7px; color: var(--ink-2); }
+  p { margin: 0 0 14px; max-width: 76ch; color: var(--ink-2); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  a {
+    color: var(--sig);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--sig) 40%, transparent);
+    text-underline-offset: 3px;
+    font-weight: 500;
+  }
+  a:hover {
+    color: var(--sig);
+    text-decoration-color: var(--sig);
+  }
+
+  code {
+    font-family: var(--mono); font-size: .875em;
+    background: var(--panel-2); padding: 1.5px 5px; border-radius: 4px; color: var(--ink);
+  }
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.62;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 16px; color: var(--ink-2);
+  }
+  pre b { color: var(--sig); font-weight: 500; }
+  pre i { color: var(--muted); font-style: normal; }
+  pre .g { color: var(--ok); }
+  pre .r { color: var(--err); }
+
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; }
+
+  .t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .t th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+    padding: 0 14px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  .t td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; color: var(--ink-2); }
+  .t tr:last-child td { border-bottom: none; }
+  .t td:first-child { color: var(--ink); font-weight: 500; }
+  .t code { background: none; padding: 0; color: var(--sig); }
+  .scroll { overflow-x: auto; margin: 1rem 0; }
+
+  .box { border-radius: 9px; padding: 16px 19px; margin: 18px 0; border: 1px solid var(--rule); background: var(--panel); }
+  .box.why  { border-left: 3px solid var(--sig); }
+  .box.trap { border-left: 3px solid var(--err); }
+  .box.perf { border-left: 3px solid var(--ok); }
+  .box h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--mono); font-weight: 500; }
+  .box.why h4  { color: var(--sig); }
+  .box.trap h4 { color: var(--err); }
+  .box.perf h4 { color: var(--ok); }
+  .box p { font-size: 14px; margin-bottom: 10px; }
+  .box p:last-child { margin-bottom: 0; }
+
+  /* Plain English Code Explainer Box */
+  .code-explainer-box {
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--sig);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: -8px 0 20px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .code-explainer-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sig);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .code-explainer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12.5px;
+  }
+  .code-explainer-col {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .code-explainer-col strong {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0; }
+  .m { background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; padding: 15px 16px; }
+  .m .v { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-bottom: 3px; color: var(--ink); }
+  .m .v s { text-decoration: none; color: var(--faint); font-size: 14px; font-weight: 400; }
+  .m .k { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .m.ok .v { color: var(--ok); } .m.err .v { color: var(--err); }
+
+  figure { margin: 0 0 16px; }
+  figure:last-child { margin-bottom: 0; }
+  .fx { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; overflow-x: auto; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.55; max-width: 76ch; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+  .s-n { font-family: var(--body); font-size: 12px; font-weight: 500; fill: var(--ink); }
+  .s-m { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); }
+  .s-s { font-family: var(--body); font-size: 11px; fill: var(--muted); }
+
+  ul { margin: 0 0 14px; padding-left: 20px; color: var(--ink-2); max-width: 76ch; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--faint); }
+
+  .pill { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .pill.t0 { background: color-mix(in srgb, var(--t0) 15%, transparent); color: var(--t0); }
+  .pill.t1 { background: color-mix(in srgb, var(--t1) 15%, transparent); color: var(--t1); }
+  .pill.t2 { background: color-mix(in srgb, var(--t2) 15%, transparent); color: var(--t2); }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
+  .badge-cyan { background: var(--sig-bg); color: var(--sig); border: 1px solid color-mix(in srgb, var(--sig) 35%, transparent); }
+  .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--ok); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-orange { background: rgba(245, 158, 11, 0.15); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--err); border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-purple { background: rgba(192, 132, 252, 0.13); color: #a26be0; border: 1px solid rgba(192, 132, 252, 0.3); }
+  .badge-blue { background: rgba(56, 189, 248, 0.13); color: var(--t2); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+  /* Flowchart / Architecture Styles */
+  .flow-container { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .flow-layer { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+  .flow-layer-title { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+  .flow-node-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; }
+  .flow-node-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem; text-decoration: none; color: inherit; display: block; transition: all 0.2s; }
+  .flow-node-card:hover { border-color: var(--sig); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .flow-node-card.highlighted { border-color: var(--sig); box-shadow: 0 0 14px var(--sig); transform: scale(1.02); }
+  .flow-node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .flow-node-name { font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+  .flow-node-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-bottom: 0.6rem; }
+  .flow-node-footer { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); }
+  .flow-arrow-down { text-align: center; color: var(--sig); font-family: var(--mono); font-size: 0.8rem; margin: 0.6rem 0; font-weight: 600; letter-spacing: 0.1em; }
+
+  /* Interactive Lab Box */
+  .interactive-lab { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--sig); border-radius: 10px; padding: 1.5rem; margin: 2rem 0; }
+  .lab-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.6rem; }
+  .lab-btn { background: var(--sig); color: #fff; border: none; font-weight: 600; font-family: var(--mono); font-size: 0.85rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .lab-btn:hover { filter: brightness(1.2); box-shadow: 0 0 12px var(--sig-bg); transform: translateY(-1px); }
+  .lab-output { background: var(--panel-2); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); min-height: 60px; }
+
+  /* Grid Cards on Hub */
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+  .feature-card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+  .feature-card:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+  .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; }
+  .feature-card-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+  .feature-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+  .feature-card-footer { display: flex; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--sig); font-weight: 600; }
+
+  /* Chronological Stepper */
+  .chrono-timeline { position: relative; margin: 2rem 0; padding-left: 1.8rem; }
+  .chrono-timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: linear-gradient(to bottom, var(--sig), #c084fc, var(--ok)); }
+  .chrono-step { position: relative; margin-bottom: 1.6rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; transition: all 0.2s; }
+  .chrono-step:hover { border-color: var(--sig); transform: translateX(4px); }
+  .chrono-step::before { content: ''; position: absolute; top: 1.2rem; left: -2.15rem; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--sig); box-shadow: 0 0 8px var(--sig); }
+  .step-num { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--sig); letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  .step-title { font-size: 1.1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+
+  /* Page Navigation Footer */
+  .page-nav-footer { display: flex; justify-content: space-between; gap: 1.5rem; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
+  .page-nav-btn { flex: 1; min-width: 240px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.2rem; text-decoration: none; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; }
+  .page-nav-btn:hover { border-color: var(--sig); background: var(--panel-2); transform: translateY(-2px); }
+  .page-nav-btn.next { text-align: right; }
+  .page-nav-label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; }
+  .page-nav-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr !important; } }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.chapter-rail {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 10px 0 12px; margin: 0 0 18px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.chapter-part {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--sig);
+}
+.chapter-count {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+}
+.chapter-learn {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-left: 3px solid var(--sig);
+  border-radius: 10px; padding: 16px 20px; margin: 0 0 20px;
+}
+.chapter-learn-title {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--sig); margin-bottom: 8px;
+}
+.chapter-learn ul { margin: 0; padding-left: 18px; }
+.chapter-learn li { margin-bottom: 5px; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.chapter-learn li:last-child { margin-bottom: 0; }
+.chapter-figure { margin: 0 0 24px; }
+.chapter-figure .fx {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 10px; padding: 18px; overflow-x: auto;
+}
+.chapter-figure figcaption {
+  font-size: 13px; color: var(--muted); line-height: 1.6;
+  margin-top: 10px; max-width: 76ch;
+}
+
+/* Contents page */
+.part-block { margin: 0 0 30px; }
+.part-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.part-num {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+  color: var(--sig); text-transform: uppercase;
+}
+.part-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.part-blurb { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; max-width: 76ch; line-height: 1.6; }
+.chapter-row {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 11px 14px; border: 1px solid var(--rule); border-radius: 9px;
+  background: var(--panel); margin-bottom: 7px; text-decoration: none;
+}
+.chapter-row:hover { border-color: var(--sig); }
+.chapter-row .n {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  min-width: 26px; flex-shrink: 0;
+}
+.chapter-row .t { font-weight: 600; color: var(--ink); font-size: 14.5px; }
+.chapter-row .d { color: var(--muted); font-size: 12.5px; margin-left: auto; text-align: right; max-width: 46ch; }
+@media (max-width: 720px) { .chapter-row .d { display: none; } }
+
+/* Labs: a grid of labelled fields, live results. */
+.lab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 14px 0 12px; }
+.lab-field label { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.lab-field input, .lab-field select { width: 100%; background: var(--bg); border: 1px solid var(--rule); color: var(--ink); padding: 8px 9px; border-radius: 6px; font-family: var(--mono); font-size: 13px; }
+.lab-field input:focus, .lab-field select:focus { outline: none; border-color: var(--sig); }
+.lab-src { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: -2px; }
+.lab-note { color: var(--muted); font-size: 13px; margin: 6px 0 0; max-width: 80ch; }
+.lab-big { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--ink); letter-spacing: -.02em; }
+.lab-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.lab-row code { min-width: 170px; color: var(--sig); background: none; padding: 0; font-size: 12px; }
+.lab-bar { flex: 1; height: 7px; background: var(--rule-2); border-radius: 4px; overflow: hidden; }
+.lab-bar > div { height: 100%; border-radius: 4px; }
+.lab-why { font-size: 12px; color: var(--muted); margin: 1px 0 4px 180px; font-family: var(--body); }
+.lab-foot { font-size: 12px; color: var(--muted); margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; font-family: var(--body); }
+@media (max-width: 640px) { .lab-row code { min-width: 110px; } .lab-why { margin-left: 0; } }
+
+/* Contents page: reading paths */
+.paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin: 8px 0 34px; }
+.path { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.path h3 { margin: 0 0 8px; font-size: 14px; }
+.path ol { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.path li { margin-bottom: 3px; }
+.path a { font-weight: 500; }
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 18px 0 28px; }
+.stat { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+.stat .v { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--ink); }
+.stat .k { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+hr.rule { border: none; border-top: 1px solid var(--rule); margin: 2.2rem 0 0; }
+.t tr.sect td { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--sig); padding-top: 16px; }
+.t tr.sect td strong { color: var(--sig); font-weight: 600; }
+.box h4 + p { margin-top: 0; }
+
+/* On a phone, figures keep a readable size and scroll inside their frame. */
+@media (max-width: 700px) { .chapter-figure svg, figure .fx svg { min-width: 640px; } }
+
+
+/* ---- atmosphere: a slow, dim aurora and a dot grid, behind everything ---- */
+body::before { content: ""; position: fixed; inset: -20%; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 15% 10%, rgba(107,140,255,.10), transparent 70%),
+    radial-gradient(35% 30% at 85% 18%, rgba(45,212,191,.06), transparent 70%),
+    radial-gradient(45% 40% at 60% 95%, rgba(192,132,252,.06), transparent 70%);
+  animation: drift 40s ease-in-out infinite alternate; }
+body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(rgba(143,156,255,.08) 1px, transparent 1px); background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 75%); mask-image: linear-gradient(to bottom, #000, transparent 75%); }
+@keyframes drift { to { transform: translate3d(4%, 3%, 0) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
+
+/* ---- top bar: sticky glass ---- */
+[hidden] { display: none !important; }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; padding: 11px 0; margin: 0 0 24px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
+  /* Edge to edge without widening the page: shadows are painted, not laid out. */
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 80%, transparent), 0 1px 0 100vmax var(--rule);
+  clip-path: inset(0 -100vmax -1px); }
+.topbar .crumbs { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px;
+  min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; }
+.topbar .crumbs > * { flex: none; }
+.topbar .crumbs b { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.topbar .tools { flex: none; }
+@media (min-width: 900px) { .topbar { flex-wrap: nowrap; } }
+@media (max-width: 899px) {
+  .topbar .crumbs { flex-basis: 100%; }
+  .topbar .tools { flex: 1 1 100%; min-width: 0; }
+}
+@media (max-width: 640px) {
+  .quick-jump-select { display: none; }
+  .search-btn { min-width: 0; flex: 1 1 auto; }
+}
+h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
+.topbar .crumbs a { color: var(--ink); text-decoration: none; font-weight: 600; }
+.topbar .crumbs b { color: var(--sig); font-weight: 600; }
+.topbar .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tbtn { font-family: var(--mono); font-size: 11.5px; background: var(--panel); border: 1px solid var(--rule); color: var(--ink-2);
+  padding: 5px 11px; border-radius: 7px; text-decoration: none; cursor: pointer; font-weight: 500; }
+.tbtn:hover { border-color: var(--sig); color: var(--ink); }
+.search-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: 14px; min-width: 168px; color: var(--muted); }
+.quick-jump-select { max-width: 210px; }
+@media (min-width: 1200px) { .has-side-toc .hd .toc { display: none; } }
+.search-btn kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--rule); border-radius: 4px; padding: 0 5px; color: var(--muted); }
+.read-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; transform-origin: 0 50%; transform: scaleX(0); z-index: 40;
+  background: linear-gradient(90deg, var(--accent, var(--sig)), #2dd4bf); }
+
+/* ---- search palette ---- */
+.palette { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: flex-start;
+  padding: 12vh 16px 16px; background: rgba(4,6,14,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.palette[hidden] { display: none; }
+.palette-box { width: min(680px, 100%); background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 0 0 1px color-mix(in srgb, var(--sig) 25%, transparent); }
+.palette-box input { width: 100%; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink);
+  font-family: var(--body); font-size: 17px; padding: 16px 18px; outline: none; }
+.palette-results { max-height: 52vh; overflow-y: auto; padding: 6px; }
+.hit { display: grid; grid-template-columns: 70px 1fr; gap: 1px 10px; padding: 9px 12px; border-radius: 9px; text-decoration: none; color: var(--ink-2); font-weight: 400; }
+.hit.sel, .hit:hover { background: var(--sig-bg); }
+.hit-k { grid-row: span 2; align-self: center; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.k-chapter { color: var(--sig); } .k-section { color: var(--t2); } .k-term { color: #a26be0; }
+.hit-t { color: var(--ink); font-weight: 600; font-size: 14px; }
+.hit-s { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hit mark { background: color-mix(in srgb, var(--sig) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.palette-foot { display: flex; gap: 16px; padding: 8px 14px; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.palette-none { padding: 18px; color: var(--muted); font-size: 13px; }
+
+/* ---- chapter hero ---- */
+.hd { position: relative; }
+.hd > *:not(.bignum) { position: relative; z-index: 1; }
+.hd .bignum { position: absolute; right: -4px; top: 26px; z-index: 0; font-family: var(--body); font-weight: 700;
+  font-size: clamp(100px, 17vw, 210px); line-height: 1; letter-spacing: -.06em; color: transparent; pointer-events: none; user-select: none;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--accent, var(--sig)) 45%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent); mask-image: linear-gradient(to bottom, #000 30%, transparent); }
+.hd h1::after { content: ""; display: block; width: 120px; height: 3px; margin-top: 16px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent, var(--sig)), transparent); }
+.hero h1 { font-size: clamp(36px, 6vw, 60px); background: linear-gradient(95deg, var(--ink) 25%, var(--sig) 70%, #2dd4bf);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.chapter-rail { border-color: color-mix(in srgb, var(--accent, var(--sig)) 30%, var(--rule)); }
+.chapter-part { color: var(--accent, var(--sig)); }
+@media (max-width: 700px) { .hd .bignum { opacity: .55; } }
+
+/* ---- two columns: the chapter and "on this page" ---- */
+@media (min-width: 1200px) {
+  .doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 44px; align-items: start; }
+  .side-toc { position: sticky; top: 80px; max-height: calc(100vh - 110px); overflow: auto; padding-left: 14px; border-left: 1px solid var(--rule); }
+}
+@media (max-width: 1199px) { .side-toc { display: none; } }
+.side-toc-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 6px 0 10px; }
+.side-toc a { display: block; font-size: 12.5px; line-height: 1.4; color: var(--muted); text-decoration: none; font-weight: 400;
+  padding: 5px 0 5px 12px; margin-left: -15px; border-left: 2px solid transparent; transition: color .2s, border-color .2s; }
+.side-toc a:hover { color: var(--ink); }
+.side-toc a.on { color: var(--ink); border-left-color: var(--accent, var(--sig)); }
+.side-toc a.try { color: var(--sig); margin-top: 8px; }
+
+/* ---- motion, all of it optional ---- */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.chapter-figure .fx, .interactive-lab, .flow-container, .path, .stat { transition: box-shadow .3s, border-color .3s, transform .3s; }
+.chapter-figure .fx:hover, .interactive-lab:hover, .path:hover, .stat:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--sig)) 40%, var(--rule));
+  box-shadow: 0 18px 50px -30px color-mix(in srgb, var(--accent, var(--sig)) 75%, transparent); }
+.path:hover, .stat:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: no-preference) {
+  .chapter-figure path[stroke-dasharray], .chapter-figure line[stroke-dasharray] { animation: flowdash 1.6s linear infinite; }
+}
+@keyframes flowdash { to { stroke-dashoffset: -16; } }
+
+/* ---- contents rows ---- */
+.chapter-row { position: relative; transition: border-color .2s, transform .2s, box-shadow .2s, background .2s; }
+.chapter-row::before { content: ""; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: var(--pa, var(--sig)); opacity: 0; transition: opacity .2s; }
+.chapter-row:hover { transform: translateX(3px); border-color: color-mix(in srgb, var(--pa, var(--sig)) 45%, var(--rule));
+  box-shadow: 0 10px 30px -20px var(--pa, var(--sig)); }
+.chapter-row:hover::before { opacity: 1; }
+.chapter-row.visited .n::after { content: " ✓"; color: var(--ok); }
+.part-num { color: var(--pa, var(--sig)); }
+.continue { margin-left: 4px; }
+
+/* ---- the live system on the contents page ---- */
+.live { padding: 0; margin: 6px 0 34px; border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; position: relative;
+  background: radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--sig) 7%, var(--panel)), var(--panel) 60%);
+  box-shadow: 0 30px 80px -50px color-mix(in srgb, var(--sig) 80%, transparent); }
+.live-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--rule); }
+.live-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+.live-title span { font-family: var(--mono); font-size: 10.5px; color: var(--sig); letter-spacing: .1em; margin-right: 8px; text-transform: uppercase; }
+.live-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.live-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.live-btns button { font-family: var(--mono); font-size: 11px; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--rule); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+.live-btns button:hover, .live-btns button.on { border-color: var(--sig); color: var(--ink); box-shadow: 0 0 0 3px var(--sig-bg); }
+.live-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; }
+@media (max-width: 960px) { .live-grid { grid-template-columns: 1fr; } }
+.ls-stage { position: relative; min-height: 300px; }
+.ls-stage canvas { display: block; }
+.ls-tip { position: absolute; z-index: 2; pointer-events: none; max-width: 250px; padding: 8px 10px; border-radius: 9px; font-size: 12px; color: var(--ink-2);
+  background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--rule); box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); }
+.ls-tip b { color: var(--ink); }
+.ls-tip-hint { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.ls-panel { border-left: 1px solid var(--rule); padding: 14px 16px; font-size: 13px; background: color-mix(in srgb, var(--panel-2) 45%, transparent); }
+@media (max-width: 960px) { .ls-panel { border-left: none; border-top: 1px solid var(--rule); } }
+.ls-h { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 6px 0 8px; }
+.ls-h span { color: var(--faint); letter-spacing: .02em; text-transform: none; }
+.ls-root { display: flex; align-items: baseline; gap: 10px; }
+.ls-root b { font-size: 19px; color: var(--ink); }
+.ls-score { font-family: var(--mono); font-size: 18px; color: var(--ink); }
+.ls-conf { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+.ls-why { color: var(--muted); font-size: 12.5px; margin: 4px 0 10px; line-height: 1.5; }
+.ls-truth { font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 6px; margin-bottom: 10px; }
+.ls-truth.ok { background: rgba(37,227,163,.1); color: var(--ok); }
+.ls-truth.bad { background: rgba(255,61,94,.1); color: var(--err); }
+.ls-cand { padding: 7px 0; border-top: 1px solid var(--rule-2); }
+.ls-cand-h { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); }
+.ls-cand-h span:last-child { font-family: var(--mono); font-size: 11.5px; }
+.ls-cand.top .ls-cand-h span:first-child { color: var(--ink); font-weight: 600; }
+.ls-bar { display: flex; height: 6px; gap: 2px; margin: 5px 0 4px; }
+.ls-bar i { display: block; border-radius: 2px; }
+.f-first { background: #8f9cff; } .f-anomaly { background: #6b7bd8; } .f-down { background: #ff3d5e; } .f-degraded { background: #ffab40; }
+.f-observed { background: #1fd1ff; } .f-explains { background: #25e3a3; }
+.ls-bar i.neg { background: repeating-linear-gradient(45deg, #ff3d5e 0 3px, transparent 3px 6px); }
+.ls-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ls-chips span { font-family: var(--mono); font-size: 10px; color: var(--muted); background: var(--panel-2); border-radius: 4px; padding: 1px 5px; }
+.ls-chips span.neg { color: var(--err); }
+.ls-path { font-family: var(--mono); font-size: 11px; color: var(--ink-2); margin: 10px 0 14px; }
+.ls-path i { color: var(--err); font-style: normal; }
+.ls-kv, .ls-risk, .ls-w { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: var(--ink-2); }
+.ls-risk em { color: var(--muted); font-style: normal; font-size: 11.5px; }
+.ls-kv b, .ls-risk b, .ls-w b { font-family: var(--mono); }
+.b-high { color: var(--err); } .b-elevated { color: #ff9a3c; } .b-low { color: var(--warn); }
+.ls-empty { color: var(--ink-2); font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+.live-foot { padding: 10px 18px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+
+/* Swatches for colour legends */
+.sw { display: inline-block; width: 26px; height: 10px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+</style>
+</head>
+<body style="--accent: #8f9cff;">
+    <div class="wrap">
+        
+    <div class="topbar">
+      <div class="crumbs"><a href="index.html">Microservice Mapper</a><span>/</span><span>Understanding the system</span><span>/</span><b>The four layers</b></div>
+      <div class="tools">
+        <button class="tbtn search-btn" data-open-search type="button"><span>Search the book</span><kbd>Ctrl K</kbd></button>
+        <select id="quick-jump" class="tbtn quick-jump-select" title="Jump to a chapter">
+<option value="" disabled>Jump to a chapter…</option>
+<optgroup label="Contents">
+<option value="index.html">Contents</option>
+</optgroup>
+<optgroup label="Understanding the system">
+<option value="01-overview.html">What this is, and why</option>
+<option value="37-app-pages-guide.html">How each page works</option>
+<option value="run-local.html">Run it on your machine</option>
+<option value="19-how-it-all-works.html">How it all works</option>
+<option value="29-design-principles.html">The rules it is built on</option>
+<option value="02-architecture.html" selected>The four layers</option>
+<option value="30-tech-stack.html">Frameworks, and why each</option>
+<option value="architecture-map.html">The system, as one map</option>
+<option value="readme.html">Running it yourself</option>
+</optgroup>
+<optgroup label="Getting the data">
+<option value="21-connection-layer.html">Reaching the target</option>
+<option value="23-endpoint-discovery.html">Finding what is running</option>
+<option value="31-measurement-precision.html">Measuring precisely</option>
+<option value="25-telemetry-sources.html">Where numbers come from</option>
+<option value="18-telemetry-tiers-plan.html">The three tiers of evidence</option>
+</optgroup>
+<optgroup label="Building the graph">
+<option value="03-graphstore.html">The graph store</option>
+<option value="04-id-system.html">Identity</option>
+<option value="05-telemetry-ingestion.html">Ingestion</option>
+<option value="06-node-edge-lifecycle.html">Lifecycle and direction</option>
+</optgroup>
+<optgroup label="Forming a judgement">
+<option value="17-findings-vs-incidents.html">Two opinions, kept apart</option>
+<option value="08-rca-engine.html">Root cause</option>
+<option value="22-risk-engine.html">Risk, cascades and blast radius</option>
+<option value="11-ml-pipeline.html">The learning pipeline</option>
+<option value="26-ml-pipeline-deep-dive.html">The pipeline, at code level</option>
+<option value="41-learning-and-calibration.html">Learning from labelled faults</option>
+<option value="42-model-lab.html">The model lab</option>
+<option value="mapper-algorithms.html">Mapper algorithms</option>
+</optgroup>
+<optgroup label="Driving the system">
+<option value="20-traffic-experiments.html">Generating traffic</option>
+<option value="traffic-gen-readme.html">The load generator</option>
+<option value="38-experiment-report.html">Experiment report</option>
+<option value="39-ssh-tools.html">Reaching a host over SSH</option>
+<option value="40-faultlab-panel-and-demo.html">Fault panel and staged demo</option>
+<option value="fault-injection.html">Fault injection</option>
+</optgroup>
+<optgroup label="Seeing it">
+<option value="09-frontend.html">The frontend</option>
+<option value="33-visual-language.html">Reading the picture</option>
+<option value="24-client-frontend.html">Views, layouts and inspectors</option>
+<option value="10-websocket.html">Staying live</option>
+</optgroup>
+<optgroup label="Trusting it, and working on it">
+<option value="32-accuracy-and-self-check.html">Keeping the numbers honest</option>
+<option value="34-code-tour.html">A tour of the code</option>
+<option value="35-dev-workflow.html">Working on it</option>
+</optgroup>
+<optgroup label="Reference">
+<option value="36-glossary.html">Glossary</option>
+<option value="12-data-models.html">Data models</option>
+<option value="13-api-reference.html">API reference</option>
+<option value="14-configuration.html">Configuration</option>
+<option value="15-troubleshooting.html">Troubleshooting</option>
+<option value="16-change-log-and-rationale.html">Why things changed</option>
+<option value="07-remote-collector.html">The optional push collector</option>
+<option value="27-project-technical-reference.html">Engineering manual</option>
+<option value="ml-separation-plan.html">ML separation plan</option>
+<option value="ui-redesign-plan.html">UI redesign plan</option>
+<option value="28-mapper-technical-reference.html">Subsystem reference</option>
+<option value="ml-readme.html">ML subsystem readme</option>
+</optgroup>
+</select>
+        <button id="theme-toggle-btn" class="tbtn" type="button">Theme</button>
+        <a href="architecture-map.html" class="tbtn">Map</a>
+        <a href="index.html" class="tbtn">Contents</a>
+      </div>
+    </div>
+    
+
+        <header class="hd">
+            <div class="bignum" aria-hidden="true">6</div>
+            <div class="eye">Understanding the system</div>
+            <h1>The four layers</h1>
+            <p class="lead">Collection, server processing, intelligence, and the frontend, and what crosses between them.</p>
+            <div class="metadata-strip">
+                <span class="badge badge-cyan">CORE ARCH</span>
+                <span class="meta-item"><code>wiki/02-architecture.md</code></span>
+                <span class="meta-item">~6 min read</span>
+                <span class="meta-item">1,155 words</span>
+            </div>
+            <nav class="toc">
+  <a href="#component-map">Component Map</a>
+  <a href="#five-layers">Five Layers</a>
+  <a href="#layer-1-frontend-client-client">Frontend Client (/client)</a>
+  <a href="#layer-2-backend-server-server">Backend Server (/server)</a>
+  <a href="#layer-3-remote-collector-remote-collector">Remote Collector (/remote-...</a>
+  <a href="#layer-4-ml-pipeline-ml">ML Pipeline (/ml)</a>
+  <a href="#layer-5-target-workloads">Target Workloads</a>
+  <a href="#data-flow-step-by-step">Step by Step</a>
+  <a href="#1-initial-discovery-ssh">1. Initial Discovery (SSH)</a>
+  <a href="#2-telemetry-collection-5-second-cycle">2. Telemetry Collection (5...</a>
+  <a href="#3-read-path-every-5-seconds-server-side-interval">Every 5 seconds (server-si...</a>
+  <a href="#4-client-side-position-preservation">Position Preservation</a>
+</nav>
+        </header>
+
+        
+    <div class="chapter-rail">
+      <span class="chapter-part">Part I &middot; Understanding the system</span>
+      <span class="chapter-count">Chapter 6 of 51</span>
+    </div>
+    
+        <div class="chapter-learn">
+          <div class="chapter-learn-title">In this chapter</div>
+          <ul><li>What runs where: your machine, the target, and the browser</li><li>Which process owns which responsibility, and why traffic generation is separate</li><li>Every port and protocol in play</li></ul>
+        </div>
+    
+    <figure class="chapter-figure">
+      <div class="fx">
+        <svg viewBox="0 0 760 306" width="760" role="img" style="max-width:100%;height:auto;display:block;">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+            </marker>
+            <marker id="ars" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--sig)"/>
+            </marker>
+            <marker id="are" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--err)"/>
+            </marker>
+          </defs>
+          
+      <rect x="40" y="40" width="620" height="52" rx="8" fill="var(--panel)" stroke="var(--sig)" stroke-width="1.5"/>
+      <text x="62" y="62" style="font-family:var(--body);font-size:13px;font-weight:600;fill:var(--ink)">Collection</text>
+      <text x="62" y="80" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">runs against the target over SSH</text>
+      <line x1="350" y1="92" x2="350" y2="104" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="40" y="106" width="620" height="52" rx="8" fill="var(--panel)" stroke="var(--ok)" stroke-width="1.5"/>
+      <text x="62" y="128" style="font-family:var(--body);font-size:13px;font-weight:600;fill:var(--ink)">Server processing</text>
+      <text x="62" y="146" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">GraphStore, MetricStore, ingestion</text>
+      <line x1="350" y1="158" x2="350" y2="170" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="40" y="172" width="620" height="52" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.5"/>
+      <text x="62" y="194" style="font-family:var(--body);font-size:13px;font-weight:600;fill:var(--ink)">Intelligence</text>
+      <text x="62" y="212" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">incidents, RCA, risk, ML scoring</text>
+      <line x1="350" y1="224" x2="350" y2="236" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/>
+      <rect x="40" y="238" width="620" height="52" rx="8" fill="var(--panel)" stroke="var(--muted)" stroke-width="1.5"/>
+      <text x="62" y="260" style="font-family:var(--body);font-size:13px;font-weight:600;fill:var(--ink)">Frontend</text>
+      <text x="62" y="278" style="font-family:var(--body);font-size:11.5px;fill:var(--muted)">2D graph, 3D canvas, the analysis pages</text>
+      <text x="670" y="70" style="font-family:var(--mono);font-size:11px;fill:var(--sig)">ssh</text>
+      <text x="670" y="136" style="font-family:var(--mono);font-size:11px;fill:var(--sig)">memory</text>
+      <text x="670" y="202" style="font-family:var(--mono);font-size:11px;fill:var(--sig)">rules + models</text>
+      <text x="670" y="268" style="font-family:var(--mono);font-size:11px;fill:var(--sig)">ws + rest</text>
+        </svg>
+      </div>
+      <figcaption>Data only ever moves down this stack. Each layer depends on the one above it and knows nothing about the one below.</figcaption>
+    </figure>
+    
+    
+
+        
+
+        <div class="doc-layout">
+            <div class="doc-main">
+                <article class="doc-body">
+                    <h2 id="component-map">Component Map</h2>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">┌───────────────────────────────────────────────────────────────────────────┐
+│                         MICROSERVICE MAPPER                               │
+│                                                                           │
+│  ┌─────────────────────┐         ┌───────────────────────────────────┐   │
+│  │  React 19 Client    │◄──WS────│  Node.js/Express Server :3001     │   │
+│  │  Vite :5173         │──REST──►│                                   │   │
+│  │                     │         │  ┌─────────────────────────────┐  │   │
+│  │  2D Graph (XYFlow)  │         │  │         GraphStore           │  │   │
+│  │  3D View (Three.js) │         │  │  nodesByTarget Map&lt;id,Node&gt;  │  │   │
+│  │  Telemetry Table    │         │  │  edgesByTarget Map&lt;id,Edge&gt;  │  │   │
+│  │  Traces View        │         │  │  targets Map&lt;id,Target&gt;      │  │   │
+│  │  RCA Dashboard      │         │  └──────────┬────────────────── ┘  │   │
+│  │  ML Pipeline View   │         │             │                       │   │
+│  │  Terminal           │         │  MetricStore (ring buffer)          │   │
+│  └─────────────────────┘         │  TraceStore (per-target JSON)       │   │
+│                                  │  EndpointRegistry (routes)          │   │
+│                                  │  RCAEngine + IncidentManager        │   │
+│                                  │  TrafficController + Experiments    │   │
+│                                  │  WebSocketManager (broadcast+term)  │   │
+│                                  └───────────────┬───────────────────  │   │
+│                                                  │ SSH tcp/22          │   │
+│                                  ┌───────────────▼───────────────────  │   │
+│                                  │   Remote EC2 Instance               │   │
+│                                  │                                     │   │
+│                                  │  remote-collector (Node.js)         │   │
+│                                  │  ├ /var/run/docker.sock             │   │
+│                                  │  │  └ container stats               │   │
+│                                  │  │  └ container log streams         │   │
+│                                  │  │  └ container events              │   │
+│                                  │  └ /proc/net/tcp polling            │   │
+│                                  │                                     │   │
+│                                  │  Target App (Docker Compose)        │   │
+│                                  │  ├ Sock Shop (Traefik gateway)      │   │
+│                                  │  └ Vertikal (NGINX gateway)         │   │
+│                                  └─────────────────────────────────── ─│   │
+│                                                                         │   │
+│  ┌──────────────────┐  reads ml/data/latest_scores.json                │   │
+│  │  ML Pipeline     │──────────────────────────────────────────────►   │   │
+│  │  Python sidecar  │                                                   │   │
+│  └──────────────────┘                                                   │   │
+└───────────────────────────────────────────────────────────────────────────┘</pre>
+                    </div></figure>
+<h2 id="five-layers">Five Layers</h2>
+<h3 id="layer-1-frontend-client-client">Layer 1 — Frontend Client (<code>/client</code>)</h3>
+<p><strong>Tech:</strong> React 19, Vite 8, TypeScript 6, <code>@xyflow/react</code> v12, Three.js v0.186, Recharts v3, Framer Motion v13, Lucide React</p>
+<p><strong>Entry point:</strong> <code>client/src/main.tsx</code> → <code>App.tsx</code></p>
+<p>The client renders graph state it receives over WebSocket. It does no polling — all data arrives pushed from the server. The main views are:</p>
+<ul>
+  <li><strong>Default / 2D Graph</strong> — ReactFlow canvas with custom node + edge components</li>
+  <li><strong>3D Vision</strong> — react-three-fiber scene: the Islands layout (a district per project, a raised platform per role), rate-driven link pulses</li>
+  <li><strong>Telemetry</strong> — Sortable metrics table</li>
+  <li><strong>TRACES</strong> — Live TCP connection stream + aggregated call graph</li>
+  <li><strong>RCA / INCIDENTS</strong> — Root cause analysis results and incident timeline</li>
+  <li><strong>ML PIPELINE</strong> — Anomaly detection status, model info</li>
+  <li><strong>EXPERIMENTS</strong> — Traffic experiment history</li>
+  <li><strong>Analytics</strong> — Graph-level stats (centrality, health scores)</li>
+  <li><strong>Reliability</strong> — health, risk, cascade prediction, what-if and blast radius</li>
+  <li><strong>Findings</strong> — ML ensemble anomalies, kept apart from incidents</li>
+</ul>
+<h3 id="layer-2-backend-server-server">Layer 2 — Backend Server (<code>/server</code>)</h3>
+<p><strong>Tech:</strong> Node.js 18+, Express 5, TypeScript 5.7 (run with tsx), <code>ws</code> v8, <code>ssh2</code> v1. See <a href="30-tech-stack.html">Frameworks and why</a></p>
+<p><strong>Entry point:</strong> <code>server/index.ts</code></p>
+<p>The server is the brain. It owns all state and is the only component that writes to disk. Key subsystems:</p>
+<ul>
+  <li><code>GraphStore</code> — central state (nodes, edges, targets, metrics)</li>
+  <li><code>EndpointDiscoveryEngine</code> — SSH connection management + topology discovery</li>
+  <li><code>RCAEngine</code> / <code>IncidentManager</code> — failure analysis</li>
+  <li><code>WebSocketManager</code> — broadcast hub + embedded terminal</li>
+  <li><code>TrafficController</code> / <code>ExperimentManager</code> — load test execution</li>
+</ul>
+<h3 id="layer-3-remote-collector-remote-collector">Layer 3 — Remote Collector (<code>/remote-collector</code>)</h3>
+<p><strong>Tech:</strong> Node.js, <code>dockerode</code>, <code>axios</code></p>
+<p><strong>Optional; not the default path.</strong> By default the server collects over SSH itself (<code>EndpointDiscoveryEngine</code> → <code>MetricCollector</code>) and installs nothing on the target. This standalone process is for hosts where you choose to run an agent: it reads the Docker socket and <code>/proc/net/tcp</code>, packages <code>TelemetryEnvelope</code> payloads, and POSTs them to <code>/api/ingest</code>, the same entry point the ground-truth simulator uses. It is stateless and restartable at any time.</p>
+<h3 id="layer-4-ml-pipeline-ml">Layer 4 — ML Pipeline (<code>/ml</code>)</h3>
+<p><strong>Tech:</strong> Python 3, scikit-learn (Isolation Forest, LOF, one-class SVM) + a z-score detector, combined by majority vote; pandas</p>
+<p>A completely separate process. Reads from <code>/api/graph</code>, writes <code>ml/data/latest_scores.json</code>. The server reads this file; it never calls Python. Optional — the system works without it.</p>
+<h3 id="layer-5-target-workloads">Layer 5 — Target Workloads</h3>
+<p>Unmodified Docker Compose applications. No agents, no sidecars, no config changes required. The system works by observing from the outside.</p>
+<hr class="rule">
+<h2 id="data-flow-step-by-step">Data Flow — Step by Step</h2>
+<h3 id="1-initial-discovery-ssh">1. Initial Discovery (SSH)</h3>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">server/index.ts startup
+  └── new GraphStore(wsManager)
+       └── discoveryEngine.discoverAll()
+            └── for each target in remote_config.json:
+                 └── TargetAgent.start()
+                      ├── SSH connect (ssh2 via ConnectionManager)
+                      ├── &quot;docker ps --format json&quot; → container list
+                      ├── &quot;cat docker-compose.yml&quot; → declared deps
+                      └── GraphStore.handleTopologyDiscovered(targetId, services, deps)
+                           ├── upsert nodes (status from container state)
+                           ├── upsert edges (declared:true, observed:false)
+                           └── scheduleSave() + broadcast(&#x27;graph-update&#x27;)</pre>
+                    </div></figure>
+<h3 id="2-telemetry-collection-5-second-cycle">2. Telemetry Collection (5-second cycle)</h3>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">remote-collector (on EC2)
+  ├── docker stats → CPU/memory/network per container
+  ├── docker logs (since last cycle) → HTTP log parsing
+  └── /proc/net/tcp → established TCP connections
+
+  POST /api/ingest  { targetId, events: { nodes, edges, metrics, interactions, connectionEvents } }
+    └── GraphStore.ingestRemote(payload)
+         ├── events.nodes         → upsert nodes
+         ├── events.edges         → merge (never overwrite observed with declared)
+         ├── events.metrics       → MetricStore.push() + node.metrics inline
+         ├── events.interactions  → MetricStore.pushEvent() + edge upsert/upgrade
+         └── events.connectionEvents
+              ├── TraceStore.saveEvents() → disk + ring buffer
+              ├── broadcast(&#x27;trace-events&#x27;) → TracesView live feed
+              └── edgeActivity[id].count++</pre>
+                    </div></figure>
+<h3 id="3-read-path-every-5-seconds-server-side-interval">3. Read Path — Every 5 seconds (server-side interval)</h3>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">setInterval(5000):
+  ├── broadcast(&#x27;graph-update&#x27;, graphStore.getGraph())
+  │    └── getGraph()
+  │         ├── applyEdgeActivity() → edge.activity.samplesPerMin
+  │         ├── readAnomalyScores() → node.analytics.anomalyScore (mtime-cached)
+  │         └── return { nodes, edges, targets }
+  └── for each target:
+       └── incidentManager.evaluateTarget(targetId)
+            └── RCAEngine.analyzeIncident(...)
+                 └── broadcast(&#x27;incident.updated&#x27;, incident)</pre>
+                    </div></figure>
+<h3 id="4-client-side-position-preservation">4. Client Side — Position Preservation</h3>
+<figure><div class="fx" style="margin: 18px 0;">
+                        <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">WebSocket onmessage(&#x27;graph-update&#x27;, { nodes, edges, targets })
+  └── useGraphData hook
+       ├── If topology unchanged (same node IDs):
+       │    → preserve x,y positions, update node.data only
+       │    → nodes don&#x27;t jump during metric updates
+       └── If topology changed (node added/removed):
+            → recalculate layout, keep positions for existing nodes</pre>
+                    </div></figure>
+<hr class="rule">
+<h2 id="ports-network">Ports &amp; Network</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Port</th>
+    <th>Service</th>
+    <th>Protocol</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>3001</td>
+      <td>Backend server</td>
+      <td>HTTP + WebSocket (same port)</td>
+    </tr>
+    <tr>
+      <td>5173</td>
+      <td>Frontend (dev)</td>
+      <td>HTTP (Vite dev server)</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>EC2 SSH</td>
+      <td>SSH (outbound from server to EC2)</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>The remote collector on EC2 talks to <code>http://127.0.0.1:3001</code> — this works because the backend opens a <strong>reverse SSH tunnel</strong> (<code>-R 3001:localhost:3001</code>) when connecting to EC2. So the collector reaches the backend through the tunnel without any inbound firewall rules.</p>
+<hr class="rule">
+<h2 id="what-persists-across-restarts">What Persists Across Restarts</h2>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Data</th>
+    <th>File</th>
+    <th>Notes</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Graph state (nodes, edges, targets)</td>
+      <td><code>data/graph_db.json</code></td>
+      <td>Full state, loaded on startup</td>
+    </tr>
+    <tr>
+      <td>Target SSH configs</td>
+      <td><code>data/remote_config.json</code></td>
+      <td>Required to reconnect on restart</td>
+    </tr>
+    <tr>
+      <td>TCP connection events</td>
+      <td><code>data/traces_&lt;targetId&gt;.json</code></td>
+      <td>24-hour window per target</td>
+    </tr>
+    <tr>
+      <td>Experiment history</td>
+      <td><code>data/experiments.json</code></td>
+      <td>All past experiment runs</td>
+    </tr>
+    <tr>
+      <td>ML training data</td>
+      <td><code>ml/data/metrics_raw.csv</code></td>
+      <td>Grows indefinitely (append-only)</td>
+    </tr>
+  </tbody>
+</table></div>
+<p><strong>NOT persisted:</strong> MetricStore ring buffers (history resets on restart, current values re-populated in first telemetry cycle), edgeActivity counters (heat display starts cold).</p>
+                </article>
+                
+            </div>
+            <aside class="side-toc" aria-label="On this page"></aside>
+        </div>
+
+        <div class="page-nav-footer">
+<a href="29-design-principles.html" class="page-nav-btn prev">
+            <span class="page-nav-label">← Previous Document</span>
+            <span class="page-nav-title">The rules it is built on</span>
+        </a>
+<a href="30-tech-stack.html" class="page-nav-btn next">
+            <span class="page-nav-label">Next Document →</span>
+            <span class="page-nav-title">Frameworks, and why each</span>
+        </a>
+</div>
+
+        <footer>Microservice Mapper &mdash; built from <code>wiki/*.md</code> by <code>wiki/build_visualizer.py</code>. Every formula, threshold and worked example is checked against the code.</footer>
+    </div>
+    <script src="assets/search-index.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Theme Switcher matching Mapper Technical Reference
+    const initTheme = () => {
+        const saved = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', saved);
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.innerHTML = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+    };
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeBtn.innerHTML = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+        });
+    }
+    initTheme();
+
+    // 2. Quick Jump Dropdown
+    const quickJump = document.getElementById('quick-jump');
+    if (quickJump) {
+        quickJump.addEventListener('change', (e) => {
+            if (e.target.value) {
+                window.location.href = e.target.value;
+            }
+        });
+    }
+
+    // 3. Flowchart Path Tracing
+    const traceBtns = document.querySelectorAll('.flow-trace-btn');
+    const nodes = document.querySelectorAll('.flow-node');
+    if (traceBtns.length > 0 && nodes.length > 0) {
+        traceBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                traceBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const flow = btn.getAttribute('data-flow');
+                nodes.forEach(n => {
+                    n.classList.remove('highlighted');
+                    const tags = (n.getAttribute('data-tags') || '').split(',');
+                    if (flow === 'RESET') {
+                        n.style.opacity = '1';
+                    } else if (tags.includes(flow.toLowerCase())) {
+                        n.classList.add('highlighted');
+                        n.style.opacity = '1';
+                    } else {
+                        n.style.opacity = '0.35';
+                    }
+                });
+            });
+        });
+    }
+
+    // 4. Master Interactive Topology Canvas (Hub Page)
+    const canvas = document.getElementById('topo-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let currentMode = 'xyflow'; // 'xyflow', 'ring', '3d'
+        let hasFault = false;
+        let animFrameId = null;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = 420 * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const nodesData = [
+            { id: 'gateway', name: 'api-gateway', x: 0.15, y: 0.5, r: 24, col: '#00e5ff', status: 'HEALTHY', type: 'Gateway' },
+            { id: 'auth', name: 'auth-service', x: 0.38, y: 0.22, r: 20, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'orders', name: 'orders-service', x: 0.42, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Core' },
+            { id: 'payment', name: 'payment-svc', x: 0.68, y: 0.78, r: 22, col: '#38bdf8', status: 'HEALTHY', type: 'Payment' },
+            { id: 'postgres', name: 'orders-db', x: 0.88, y: 0.82, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Storage' },
+            { id: 'redis', name: 'session-cache', x: 0.62, y: 0.22, r: 18, col: '#a855f7', status: 'HEALTHY', type: 'Cache' },
+            { id: 'collector', name: 'collector-agent', x: 0.50, y: 0.50, r: 20, col: '#10b981', status: 'HEALTHY', type: 'Agent' }
+        ];
+
+        const edges = [
+            { from: 'gateway', to: 'auth', latency: 4 },
+            { from: 'gateway', to: 'orders', latency: 12 },
+            { from: 'auth', to: 'redis', latency: 2 },
+            { from: 'orders', to: 'payment', latency: 18 },
+            { from: 'payment', to: 'postgres', latency: 8 },
+            { from: 'collector', to: 'gateway', latency: 1 },
+            { from: 'collector', to: 'orders', latency: 1 }
+        ];
+
+        let packets = [
+            { edgeIdx: 0, progress: 0.1, speed: 0.012 },
+            { edgeIdx: 1, progress: 0.4, speed: 0.009 },
+            { edgeIdx: 3, progress: 0.7, speed: 0.007 },
+            { edgeIdx: 4, progress: 0.2, speed: 0.015 }
+        ];
+
+        let angle3D = 0;
+
+        function renderTopology() {
+            const w = canvas.getBoundingClientRect().width;
+            const h = 420;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 30) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 30) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            // Calculate Positions
+            let posMap = {};
+            if (currentMode === 'xyflow') {
+                nodesData.forEach(n => {
+                    posMap[n.id] = { x: n.x * w, y: n.y * h, z: 1 };
+                });
+            } else if (currentMode === 'ring') {
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.36;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 - Math.PI / 2;
+                        posMap[n.id] = { x: cx + Math.cos(theta) * radius, y: cy + Math.sin(theta) * radius, z: 1 };
+                    }
+                });
+            } else if (currentMode === '3d') {
+                angle3D += 0.006;
+                const cx = w / 2, cy = h / 2, radius = Math.min(w, h) * 0.34;
+                nodesData.forEach((n, idx) => {
+                    if (n.id === 'collector') {
+                        posMap[n.id] = { x: cx, y: cy, z: 1 };
+                    } else {
+                        const theta = ((idx) / (nodesData.length - 1)) * Math.PI * 2 + angle3D;
+                        const px = Math.cos(theta) * radius;
+                        const pz = Math.sin(theta) * radius;
+                        const scale = (pz + radius * 1.5) / (radius * 2.5);
+                        posMap[n.id] = {
+                            x: cx + px * scale,
+                            y: cy + (n.y - 0.5) * 160 * scale + Math.sin(theta * 2) * 20,
+                            z: scale
+                        };
+                    }
+                });
+            }
+
+            // Draw Edges
+            edges.forEach((e) => {
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (!p1 || !p2) return;
+
+                const isDegraded = hasFault && (e.to === 'payment' || e.from === 'payment');
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = isDegraded ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 229, 255, 0.25)';
+                ctx.lineWidth = isDegraded ? 2.5 : 1.5;
+                if (isDegraded) ctx.setLineDash([4, 4]);
+                else ctx.setLineDash([]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                ctx.fillStyle = isDegraded ? '#ef4444' : '#00e5ff';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const latText = isDegraded ? `${e.latency * 18}ms ⚠` : `${e.latency}ms`;
+                ctx.fillText(latText, midX + 4, midY - 4);
+            });
+
+            // Draw Packets
+            packets.forEach(p => {
+                p.progress += p.speed;
+                if (p.progress > 1) p.progress = 0;
+                const e = edges[p.edgeIdx];
+                const p1 = posMap[e.from];
+                const p2 = posMap[e.to];
+                if (p1 && p2) {
+                    const px = p1.x + (p2.x - p1.x) * p.progress;
+                    const py = p1.y + (p2.y - p1.y) * p.progress;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = hasFault && e.to === 'payment' ? '#ef4444' : '#00e5ff';
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Nodes
+            nodesData.forEach(n => {
+                const pos = posMap[n.id];
+                if (!pos) return;
+                const isTargetFault = hasFault && n.id === 'payment';
+                const nodeColor = isTargetFault ? '#ef4444' : n.col;
+                const radius = n.r * (pos.z || 1);
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius + (isTargetFault ? 8 : 4), 0, Math.PI * 2);
+                ctx.fillStyle = isTargetFault ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 229, 255, 0.08)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = isTargetFault ? 3 : 2;
+                ctx.strokeStyle = nodeColor;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '600 11.5px "IBM Plex Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(n.name, pos.x, pos.y + radius + 15);
+
+                ctx.fillStyle = isTargetFault ? '#f87171' : '#94a3b8';
+                ctx.font = '10px "IBM Plex Mono", monospace';
+                const statusStr = isTargetFault ? 'CPU: 98.4% [ANOMALY]' : n.type;
+                ctx.fillText(statusStr, pos.x, pos.y + radius + 27);
+                ctx.textAlign = 'left';
+            });
+
+            animFrameId = requestAnimationFrame(renderTopology);
+        }
+
+        animFrameId = requestAnimationFrame(renderTopology);
+
+        const btnFault = document.getElementById('topo-btn-fault');
+        const btnReset = document.getElementById('topo-btn-reset');
+        const statusText = document.getElementById('topo-status-text');
+
+        if (btnFault && btnReset && statusText) {
+            btnFault.addEventListener('click', () => {
+                hasFault = true;
+                statusText.innerHTML = '<span style="color: var(--err); font-weight: bold;">🚨 ANOMALY DETECTED:</span> <code>payment-svc</code> CPU Spike 98.4% &bull; RCA Score: 0.94 &bull; BFS Depth: 2';
+            });
+            btnReset.addEventListener('click', () => {
+                hasFault = false;
+                statusText.innerHTML = '<span style="color: var(--ok); font-weight: bold;">✓ ALL SYSTEMS NORMAL:</span> Zero-instrumentation continuous 5s telemetry pulse active.';
+            });
+        }
+    }
+
+    // 5. Interactive labs.
+    //
+    // Each re-implements a real function from the repository with the same
+    // constants and branch order. If one of them disagrees with its source
+    // file, the lab is the thing that is wrong.
+
+    const labVal = (id) => { const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
+    const labNum = (id) => {
+        const v = labVal(id).toLowerCase();
+        if (v === '' || v === 'none' || v === 'null' || v === '—') return null;
+        const n = parseFloat(v);
+        return isFinite(n) ? n : null;
+    };
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const r3 = (n) => Math.round(n * 1000) / 1000;
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const out = (fn, htmlText) => { const el = document.getElementById(fn + '-out'); if (el) el.innerHTML = htmlText; };
+    const row = (name, value, frac, colour, why) =>
+        '<div class="lab-row"><code>' + esc(name) + '</code>' +
+        '<div class="lab-bar"><div style="width:' + Math.max(0, Math.min(100, frac * 100)) + '%;background:' + colour + ';"></div></div>' +
+        '<strong style="font-family:var(--mono);min-width:52px;text-align:right;color:var(--ink);">' + value + '</strong></div>' +
+        (why ? '<div class="lab-why">' + why + '</div>' : '');
+    const big = (value, label, colour) =>
+        '<span class="lab-big" style="color:' + (colour || 'var(--ink)') + ';">' + value + '</span> ' +
+        '<span style="color:var(--muted);font-size:12px;margin-right:22px;">' + label + '</span>';
+
+    // normalizeId() in server/graph/GraphStore.ts
+    window.labCanonicalId = function () {
+        const raw = labVal('canon-input');
+        const tgt = labVal('canon-target') || 'sock-shop';
+        if (!raw || raw === 'external' || raw === 'unknown-upstream') {
+            out('labCanonicalId', big(esc(raw || '(empty)'), 'passed through unchanged') +
+                '<div class="lab-foot">Sentinel ids are exempt: prefixing them would invent a service that does not exist.</div>');
+            return;
+        }
+        let clean = raw;
+        for (const sep of ['-', ':', '/']) {
+            if (raw.indexOf(tgt + sep) === 0) { clean = raw.slice(tgt.length + 1); break; }
+        }
+        out('labCanonicalId', big(esc(tgt + ':' + clean), 'canonical id', 'var(--sig)') +
+            '<div class="lab-foot">' + (clean !== raw
+                ? 'An existing <code>' + esc(tgt) + '</code> prefix was stripped and re-applied, which is what makes this idempotent.'
+                : 'No existing prefix, so the target id was simply prepended.') + '</div>');
+    };
+
+    // The candidate loop in server/rca/RCAEngine.ts
+    window.labRca = function () {
+        const parts = [];
+        const t = labVal('rca-time'), st = labVal('rca-status'), ev = labVal('rca-evidence');
+        if (t === 'earliest') parts.push(['temporal_precedence', 0.30, 'earliest detected anomaly']);
+        else if (t === 'anomaly') parts.push(['anomaly_presence', 0.10, 'metric anomaly detected']);
+        if (st === 'critical') parts.push(['critical_status', 0.35, 'container down or crash-looping']);
+        else if (st === 'degraded') parts.push(['degraded_status', 0.15, 'degraded']);
+        const observed = ev === 'observed';
+        if (observed) parts.push(['observed_dependency', 0.20, 'observed runtime TCP/HTTP traffic confirmed']);
+        else if (ev === 'declared') parts.push(['declared_dependency', 0.05, 'declared dependency only']);
+
+        const others = Math.max(0, Math.round(labNum('rca-others') ?? 0));
+        const k = Math.min(others, Math.max(0, Math.round(labNum('rca-explained') ?? 0)));
+        const reach = Math.min(1, Math.max(0, labNum('rca-reach') ?? 0));
+        const material = reach >= 0.1 ? reach : 0;           // MATERIAL_REACH
+        const explained = material > 0 ? k : 0;
+        if (others > 0) {
+            const coverage = (explained * material) / others;
+            const pts = Math.round(0.25 * coverage * 100) / 100; // EXPLAINS_WEIGHT
+            if (pts >= 0.01) parts.push(['explains_failures', pts, 'explains ' + explained + ' of ' + others + ' other affected service(s): weighted coverage ' + Math.round(coverage * 100) + '%']);
+        }
+        const victim = Math.min(1, Math.max(0, labNum('rca-victim') ?? 0));
+        if (victim > 0) {
+            const pts = Math.round(0.25 * victim * 100) / 100;   // VICTIM_WEIGHT
+            parts.push(['dependency_failing', -pts, 'its own callees are failing (weighted share ' + Math.round(victim * 100) + '%): likely a victim, not the cause']);
+        }
+        const total = parts.reduce((a, p) => a + p[1], 0);
+        const score = Math.min(Math.max(Math.round(total * 100) / 100, 0), 1);
+        let conf = score >= 0.75 && observed ? 'HIGH' : score >= 0.5 ? 'MEDIUM' : score >= 0.25 ? 'LOW' : 'UNKNOWN';
+        const independent = others > 0 && explained === 0 && conf !== 'UNKNOWN';
+        const colour = conf === 'HIGH' ? 'var(--err)' : conf === 'MEDIUM' ? 'var(--warn)' : 'var(--muted)';
+        const rows = parts.map((p) => row(p[0], (p[1] >= 0 ? '+' : '−') + Math.abs(p[1]).toFixed(2), Math.abs(p[1]) / 0.35,
+            p[1] >= 0 ? 'var(--sig)' : 'var(--err)', p[2])).join('');
+        out('labRca', big(score.toFixed(2), 'score') + big(conf, 'confidence', colour) +
+            (rows || '<div class="lab-foot">No factor matched: this candidate scores 0.</div>') +
+            '<div class="lab-foot">' +
+            (total > 1 ? 'The raw sum was ' + r2(total).toFixed(2) + '; it is clamped to 1. ' : '') +
+            'HIGH needs 0.75+ <em>and</em> an observed edge. ' +
+            (independent ? '<strong>If this is the top candidate</strong>, it explains none of the others, so the incident is treated as independent failures and confidence is forced to LOW.' : '') +
+            '</div>');
+    };
+
+    // computeHealth() and the risk composite in server/graph/RiskEngine.ts
+    window.labHealth = function () {
+        const status = labVal('risk-status');
+        const parts = [];
+        const sv = status === 'healthy' ? 1 : status === 'degraded' ? 0.5 : status === 'critical' ? 0 : 0.5;
+        parts.push(['status', 0.60, sv, 'container status is ' + status]);
+        const a = labNum('risk-anomaly');
+        if (a !== null) { const c = Math.min(Math.max(a, 0), 1); parts.push(['anomaly', 0.25, 1 - c, 'model anomaly score ' + r2(c)]); }
+        const inc = labVal('risk-incident');
+        parts.push(['incident', 0.15, inc === 'root' ? 0 : inc === 'affected' ? 0.3 : 1,
+            inc === 'root' ? 'named as the root cause of an open incident' : inc === 'affected' ? 'among the affected services of an open incident' : 'not part of any open incident']);
+        const tw = parts.reduce((s, p) => s + p[1], 0);
+        const br = parts.map((p) => ({ f: p[0], w: p[1], score: r2((p[2] * p[1]) / tw), why: p[3] }));
+        const health = r2(br.reduce((s, b) => s + b.score, 0));
+        const crit = labNum('risk-crit');
+        const risk = crit !== null ? r2(0.5 * (1 - health) + 0.5 * Math.min(Math.max(crit, 0), 1)) : r2(1 - health);
+        const rc = risk > 0.8 ? 'var(--err)' : risk > 0.6 ? 'var(--warn)' : 'var(--ok)';
+        out('labHealth', big(health.toFixed(2), 'health') + big(risk.toFixed(2), 'risk', rc) +
+            br.map((b) => row(b.f + '  w ' + b.w.toFixed(2) + '→' + r2(b.w / tw).toFixed(2), b.score.toFixed(2), b.score, 'var(--ok)', b.why)).join('') +
+            '<div class="lab-foot">' + (parts.length === 2 ? 'No anomaly score, so status and incident renormalise from .60/.15 to .80/.20. ' : '') +
+            'The parts sum to exactly ' + health.toFixed(2) + '. ' +
+            (crit !== null ? 'Risk = 0.5 × (1 − health) + 0.5 × criticality.' : 'Criticality is null, so risk falls back to 1 − health.') + '</div>');
+    };
+
+    // intrinsicProbability() and one step of solve()/describe() in server/graph/CascadeEngine.ts
+    window.labCascade = function () {
+        const tau = labNum('cas-tau') ?? 0.7;
+        const status = labVal('cas-status');
+        const reasons = [];
+        let survive = 1;
+        const s = status === 'critical' ? 1 : status === 'degraded' ? 0.5 : 0;
+        if (s > 0) { survive *= 1 - s; reasons.push('status ' + status + ' (' + s + ')'); }
+        const a = labNum('cas-anom');
+        const persistent = labVal('cas-persist') === 'yes';
+        if (a !== null && a > 0) {
+            const c = Math.min(Math.max(a, 0), 1) * (persistent ? 0.8 : 0.3);
+            survive *= 1 - c;
+            reasons.push('anomaly ' + a + ' × ' + (persistent ? '0.8' : '0.3') + ' = ' + r3(c));
+        }
+        const p0 = 1 - survive;
+        let inhSurvive = 1, best = null;
+        const callees = [['A', labNum('cas-w1') ?? 0, labNum('cas-p1') ?? 0], ['B', labNum('cas-w2') ?? 0, labNum('cas-p2') ?? 0]];
+        const lines = [];
+        for (const [name, w, p] of callees) {
+            const contrib = tau * Math.min(Math.max(w, 0), 1) * Math.min(Math.max(p, 0), 1);
+            inhSurvive *= 1 - contrib;
+            if (contrib > 0 && (!best || contrib > best[1])) best = [name, contrib];
+            lines.push(row('via callee ' + name, r3(contrib).toFixed(3), contrib, 'var(--warn)', 'τ ' + tau + ' × w ' + w + ' × P ' + p));
+        }
+        const inherited = 1 - inhSurvive;
+        const P = 1 - (1 - p0) * inhSurvive;
+        const band = P >= 0.7 ? 'high' : P >= 0.4 ? 'elevated' : P >= 0.15 ? 'low' : 'minimal';
+        const bc = band === 'high' ? 'var(--err)' : band === 'elevated' ? 'var(--warn)' : 'var(--muted)';
+        const routed = (inherited >= 0.15 || inherited > p0) && best;
+        out('labCascade', big(r3(P).toFixed(3), 'P(failure)', bc) + big(band, 'band', bc) +
+            row('p0 (its own state)', r3(p0).toFixed(3), p0, 'var(--sig)', reasons.join(' · ') || 'no evidence of its own') +
+            lines.join('') +
+            '<div class="lab-foot">inherited = ' + r3(inherited).toFixed(3) + ' · P = 1 − (1 − ' + r3(p0) + ') × ' + r3(inhSurvive) +
+            (routed ? ' · <strong>via callee ' + best[0] + '</strong>' : ' · no via shown (inherited risk too small to name a route)') +
+            (p0 < 0.15 && P >= 0.15 ? ' · <strong>at risk</strong>: fine on its own, pulled down by its dependencies.' : '') + '</div>');
+    };
+
+    // cpuShareOfAllowance() + statusFromSample() in containerHealth.ts
+    window.labCpu = function () {
+        const cpu = labNum('cpu-raw');
+        const limit = labNum('cpu-limit');
+        const host = labNum('cpu-host');
+        const mem = labNum('cpu-mem') ?? 0;
+        const allowance = limit && limit > 0 ? limit : host && host > 0 ? host : null;
+        const share = cpu === null ? null : !allowance ? cpu : Math.min(100, cpu / allowance);
+        const c = share ?? 0;
+        let status = 'healthy', reason = 'running normally';
+        if (c > 80 || mem > 80) {
+            status = 'degraded';
+            reason = 'resource saturation: ' + (c > 80 ? 'CPU ' + Math.round(c) + '%' + (allowance ? ' of its ' + r2(allowance) + '-core allowance' : '') : 'memory ' + Math.round(mem) + '%');
+        }
+        out('labCpu', big(share === null ? '—' : r2(share).toFixed(1) + '%', 'cpuOfAllowance', 'var(--sig)') +
+            big(status, 'status', status === 'healthy' ? 'var(--ok)' : 'var(--warn)') +
+            '<div class="lab-foot">allowance = ' + (allowance ? r2(allowance) + ' cores (' + (limit ? 'its limit' : 'host nproc') + ')' : 'unknown, so the raw per-core figure is used') +
+            ' · ' + (cpu ?? '—') + '% of one core ÷ ' + (allowance ?? 1) + ' · ' + esc(reason) + '</div>');
+    };
+
+    // computeEdgeWeights() in server/graph/EdgeWeights.ts (activity path)
+    window.labShares = function () {
+        const CONF = { listen: 1.0, ephemeral: 0.85, legacy: 0.7, unresolved: 0.5, declared: 0.4, candidate: 0 };
+        const edges = [];
+        for (let i = 1; i <= 4; i++) {
+            const name = labVal('sh-n' + i);
+            if (!name) continue;
+            edges.push({ name, conf: CONF[labVal('sh-e' + i)] ?? 0, ref: Math.max(0, labNum('sh-a' + i) ?? 0), kind: labVal('sh-k' + i) });
+        }
+        const groups = {};
+        for (const e of edges) if (e.conf > 0) (groups[e.kind] = groups[e.kind] || []).push(e);
+        const sums = {};
+        for (const e of edges) {
+            const sib = e.conf > 0 ? groups[e.kind] : [];
+            let dep = 0, basis = 'none (candidate)';
+            if (sib.length) {
+                const total = sib.reduce((s, x) => s + x.ref, 0);
+                const unmeasured = sib.filter((x) => !(x.ref > 0)).length;
+                const pool = 1 - unmeasured / sib.length;
+                if (total > 0 && e.ref > 0) { dep = (e.ref / total) * pool; basis = 'activity'; }
+                else { dep = 1 / sib.length; basis = 'uniform'; }
+                sums[e.kind] = (sums[e.kind] || 0) + dep;
+            }
+            e.dep = dep; e.basis = basis;
+            e.weight = r3(Math.min(Math.max(e.conf * dep * (e.kind === 'telemetry' ? 0.1 : 1), 0), 1));
+        }
+        out('labShares', edges.map((e) => row(e.name, e.weight.toFixed(3), e.weight, e.kind === 'telemetry' ? 'var(--muted)' : 'var(--sig)',
+            'share ' + Math.round(e.dep * 1000) / 10 + '% (' + e.basis + ') × confidence ' + e.conf + (e.kind === 'telemetry' ? ' × 0.1' : ''))).join('') +
+            '<div class="lab-foot">Shares per kind: ' + Object.entries(sums).map(([k, v]) => k + ' ' + Math.round(v * 1000) / 10 + '%').join(' · ') +
+            '. Each must be 100%: that is the consistency rule <code>reliance-sums-to-one</code>.</div>');
+    };
+
+    // edgeAppearance() + edgeLook() + linkFlow()/pulsesFor()/svgPulses()
+    window.labLink = function () {
+        const RED = ['#ff3d5e', 1], ORANGE = ['#ff9a3c', 0.95];
+        const status = labVal('lk-status'), observed = labVal('lk-obs') === 'observed', callee = labVal('lk-callee');
+        const errPct = labNum('lk-err'), latency = labNum('lk-lat'), req = labNum('lk-req'), perMin = labNum('lk-act'), w = labNum('lk-weight');
+        const telemetry = labVal('lk-kind') === 'telemetry';
+        const err = errPct === null ? null : errPct / 100;
+        const measured = err !== null || latency !== null;
+        const msf = (v) => v >= 1000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms';
+        let a;
+        if (status === 'failed') a = { heat: 'failed', c: RED, label: 'failing', reason: 'marked failed' };
+        else if (err !== null && err >= 0.05) a = { heat: 'failed', c: RED, label: 'failing', reason: (err * 100).toFixed(1) + '% of requests failing' };
+        else if (latency !== null && latency >= 1000) a = { heat: 'failed', c: RED, label: 'very slow', reason: 'latency ' + msf(latency) };
+        else if (observed && !measured && callee === 'critical') a = { heat: 'failed', c: RED, label: 'failing', reason: 'calls a service that is down' };
+        else if (status === 'degraded') a = { heat: 'degraded', c: ORANGE, label: 'degraded', reason: 'marked degraded' };
+        else if (err !== null && err >= 0.01) a = { heat: 'degraded', c: ORANGE, label: 'erroring', reason: (err * 100).toFixed(1) + '% of requests failing' };
+        else if (latency !== null && latency >= 300) a = { heat: 'degraded', c: ORANGE, label: 'slow', reason: 'latency ' + msf(latency) };
+        else if (observed && !measured && callee === 'degraded') a = { heat: 'degraded', c: ORANGE, label: 'degraded', reason: 'calls a degraded service' };
+        else if (!observed) a = { heat: 'idle', c: ['#5b6aa0', 0.5], label: 'declared, not observed' };
+        else if (perMin === null) a = { heat: 'calm', c: ['#4f7dff', 0.85], label: 'observed' };
+        else if (perMin > 1200) a = { heat: 'saturated', c: ['#9cf4ff', 1], label: perMin + '/min, very heavy' };
+        else if (perMin > 250) a = { heat: 'heavy', c: ['#1fd1ff', 0.95], label: perMin + '/min, heavy' };
+        else if (perMin > 60) a = { heat: 'busy', c: ['#2f9bff', 0.9], label: perMin + '/min, busy' };
+        else a = { heat: 'calm', c: ['#4f7dff', 0.85], label: perMin + '/min' };
+
+        const width = telemetry ? 1 : w !== null ? 1.2 + 4.3 * Math.min(Math.max(w, 0), 1)
+            : !observed ? 1 : (a.heat === 'saturated' || a.heat === 'failed') ? 3.4 : (a.heat === 'heavy' || a.heat === 'busy' || a.heat === 'degraded') ? 2.6 : 2;
+        const pulsesFor = (x) => Math.min(5, Math.max(0.25, 0.3 + 1.6 * Math.log10(1 + Math.max(0, x))));
+        let flow = null;
+        if (req !== null && req > 0) flow = { basis: 'requests', rate: req, pulses: pulsesFor(req) };
+        else if (perMin !== null && perMin > 0) flow = { basis: 'activity', rate: perMin / 60, pulses: pulsesFor(perMin / 60) };
+
+        const len = 300;
+        let svg = '<svg viewBox="0 0 340 40" width="340" style="max-width:100%;margin:6px 0 4px;">' +
+            '<path id="lk-path" d="M14 20 H 314" stroke="' + a.c[0] + '" stroke-opacity="' + a.c[1] + '" stroke-width="' + width.toFixed(1) + '" fill="none" stroke-linecap="round"/>' +
+            '<path d="M306 14 L316 20 L306 26 z" fill="' + a.c[0] + '"/>';
+        let timing = '';
+        if (flow) {
+            const trip = Math.max(0.4, len / 110);
+            const count = Math.min(8, Math.max(1, Math.round(flow.pulses * trip)));
+            const dur = count / flow.pulses;
+            for (let i = 0; i < count; i++) {
+                svg += '<circle r="3" fill="#fff" fill-opacity="0.85"><animateMotion dur="' + dur.toFixed(2) + 's" begin="' + (-i * dur / count).toFixed(2) + 's" repeatCount="indefinite"><mpath href="#lk-path"/></animateMotion></circle>';
+            }
+            timing = count + ' on the path, one trip ' + dur.toFixed(2) + ' s → exactly ' + flow.pulses.toFixed(2) + ' arrive per second';
+        }
+        svg += '</svg>';
+        out('labLink', '<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">' +
+            big(a.heat, esc(a.label), a.c[0]) + big(width.toFixed(1) + ' px', 'width') +
+            big(flow ? flow.pulses.toFixed(2) : '0', 'pulses / s') + '</div>' + svg +
+            '<div class="lab-foot">' + (a.reason ? '<strong>Why:</strong> ' + esc(a.reason) + '. ' : '') +
+            (flow ? 'Pulse rate from ' + (flow.basis === 'requests' ? flow.rate + ' req/s (measured requests)' : 'the activity index ÷ 60 = ' + r2(flow.rate) + ' (not a request count)') + '; ' + timing + '.'
+                  : 'No rate measured, so no pulses.') + '</div>');
+    };
+
+    // detector_score() + combine() in ml/ensemble.py, persistence in score.py
+    window.labEnsemble = function () {
+        const names = ['iforest', 'lof', 'ocsvm', 'zscore'];
+        const used = [];
+        const lines = [];
+        for (const n of names) {
+            const raw = labNum('ml-' + n + '-raw'), c = labNum('ml-' + n + '-c'), t = labNum('ml-' + n + '-t');
+            if (raw === null || c === null || t === null || t - c <= 1e-9) {
+                lines.push(row(n, '—', 0, 'var(--muted)', 'unusable: missing statistics or no spread between centre and threshold'));
+                continue;
+            }
+            const r = (raw - c) / (t - c);
+            const score = Math.max(0, Math.min(1, r / 2));
+            const above = raw >= t;
+            used.push({ score, above });
+            lines.push(row(n, score.toFixed(2), score, above ? 'var(--warn)' : 'var(--sig)', 'r = ' + r2(r) + (above ? ' · above its threshold (votes yes)' : ' · below its threshold')));
+        }
+        if (!used.length) { out('labEnsemble', lines.join('') + '<div class="lab-foot">No usable detector: the service is left out of latest_scores.json, never given a made-up score.</div>'); return; }
+        const sorted = used.map((u) => u.score).sort((x, y) => x - y);
+        const n = sorted.length;
+        const median = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+        const votes = used.filter((u) => u.above).length;
+        const needed = Math.ceil(n / 2);
+        const anomalous = votes >= needed;
+        const prev = Math.max(0, Math.round(labNum('ml-prev') ?? 0));
+        const need = Math.max(1, Math.round(labNum('ml-need') ?? 3));
+        const consecutive = anomalous ? prev + 1 : 0;
+        const persistent = consecutive >= need;
+        out('labEnsemble', big(median.toFixed(2), 'anomaly_score (median)') +
+            big(votes + '/' + n, 'votes (need ' + needed + ')', anomalous ? 'var(--warn)' : 'var(--ok)') +
+            big(persistent ? 'persistent' : anomalous ? 'anomalous' : 'normal', consecutive + ' window(s) in a row', persistent ? 'var(--err)' : anomalous ? 'var(--warn)' : 'var(--ok)') +
+            lines.join('') +
+            '<div class="lab-foot">Only a persistent anomaly gets the ANOMALY badge, and it weighs 0.8 (not 0.3) in the cascade model.</div>');
+    };
+
+    // Run every lab once, then again on each edit.
+    document.querySelectorAll('.interactive-lab[data-lab]').forEach((lab) => {
+        const fn = window[lab.getAttribute('data-lab')];
+        if (typeof fn !== 'function') return;
+        lab.addEventListener('input', fn);
+        lab.addEventListener('change', fn);
+        try { fn(); } catch (e) { console.error(e); }
+    });
+
+    // 6. Reading progress, along the top edge.
+    const bar = document.createElement('div');
+    bar.className = 'read-progress';
+    document.body.appendChild(bar);
+    const onScroll = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, h.scrollTop / max) : 0) + ')';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // 7. "On this page": the chapter's sections, following the scroll.
+    const aside = document.querySelector('.side-toc');
+    const article = document.querySelector('.doc-body');
+    if (aside && article) {
+        const heads = Array.from(article.querySelectorAll('h2[id]'));
+        if (heads.length >= 3) {
+            aside.innerHTML = '<div class="side-toc-title">On this page</div>' + heads.map((h) =>
+                '<a href="#' + h.id + '" data-for="' + h.id + '">' + h.textContent.replace(/^\d+(\.\d+)?\s*/, '') + '</a>').join('') +
+                (document.getElementById('try-it') ? '<a href="#try-it" data-for="try-it" class="try">Try it</a>' : '');
+            const links = new Map(Array.from(aside.querySelectorAll('a')).map((a) => [a.getAttribute('data-for'), a]));
+            const targets = heads.concat(document.getElementById('try-it') ? [document.getElementById('try-it')] : []);
+            // The section you are in is the last heading above a line a third
+            // of the way down the screen, so a sub-section still lights its parent.
+            let current = null;
+            const spy = () => {
+                const line = window.innerHeight * 0.33;
+                let id = targets[0].id;
+                for (const t of targets) if (t.getBoundingClientRect().top <= line) id = t.id;
+                if (id === current) return;
+                current = id;
+                links.forEach((a) => a.classList.toggle('on', a.getAttribute('data-for') === id));
+            };
+            window.addEventListener('scroll', spy, { passive: true });
+            spy();
+            document.body.classList.add('has-side-toc');
+        } else {
+            aside.remove();
+        }
+    }
+
+    // 8. Search everything: Ctrl/Cmd+K or "/".
+    const INDEX = window.BOOK_INDEX || [];
+    const palette = document.createElement('div');
+    palette.className = 'palette';
+    palette.hidden = true;
+    palette.innerHTML = '<div class="palette-box" role="dialog" aria-label="Search the book">' +
+        '<input type="text" placeholder="Search chapters, sections, terms…" aria-label="Search" autocomplete="off" spellcheck="false">' +
+        '<div class="palette-results"></div>' +
+        '<div class="palette-foot"><span>↑↓ move</span><span>↵ open</span><span>esc close</span></div></div>';
+    document.body.appendChild(palette);
+    const pin = palette.querySelector('input');
+    const pres = palette.querySelector('.palette-results');
+    let hits = [], sel = 0;
+    const escHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const mark = (text, toks) => {
+        let out = escHtml(text);
+        for (const t of toks) if (t.length > 1) out = out.replace(new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>');
+        return out;
+    };
+    function search(q) {
+        const toks = q.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!toks.length) {
+            hits = INDEX.filter((d) => d.k === 'chapter').slice(0, 10).map((d) => ({ d, score: 0 }));
+        } else {
+            hits = [];
+            for (const d of INDEX) {
+                const hay = (d.t + ' ' + (d.s || '') + ' ' + (d.x || '')).toLowerCase();
+                if (!toks.every((t) => hay.includes(t))) continue;
+                let score = 0;
+                const tl = d.t.toLowerCase();
+                for (const t of toks) score += tl.startsWith(t) ? 6 : tl.includes(t) ? 4 : (d.s || '').toLowerCase().includes(t) ? 2 : 1;
+                if (d.k === 'chapter') score += 2;
+                hits.push({ d, score });
+            }
+            hits.sort((a, b) => b.score - a.score);
+            hits = hits.slice(0, 14);
+        }
+        sel = 0;
+        pres.innerHTML = hits.length ? hits.map((h, i) =>
+            '<a href="' + h.d.u + '" class="hit' + (i === 0 ? ' sel' : '') + '"><span class="hit-k k-' + h.d.k + '">' + h.d.k + '</span>' +
+            '<span class="hit-t">' + mark(h.d.t, toks) + '</span><span class="hit-s">' + mark(h.d.s || '', toks) + '</span></a>').join('')
+            : '<div class="palette-none">Nothing matches. Try a function name, a term or a number like 0.7.</div>';
+    }
+    const openPalette = () => { palette.hidden = false; pin.value = ''; search(''); setTimeout(() => pin.focus(), 0); };
+    const closePalette = () => { palette.hidden = true; };
+    pin.addEventListener('input', () => search(pin.value));
+    pin.addEventListener('keydown', (e) => {
+        const items = pres.querySelectorAll('.hit');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!items.length) return;
+            items[sel].classList.remove('sel');
+            sel = (sel + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+            items[sel].classList.add('sel');
+            items[sel].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && items[sel]) {
+            window.location.href = items[sel].getAttribute('href');
+        } else if (e.key === 'Escape') {
+            closePalette();
+        }
+    });
+    palette.addEventListener('click', (e) => { if (e.target === palette) closePalette(); });
+    document.addEventListener('keydown', (e) => {
+        const typing = /input|textarea|select/i.test((e.target && e.target.tagName) || '');
+        if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); palette.hidden ? openPalette() : closePalette(); }
+        else if (e.key === '/' && !typing && palette.hidden) { e.preventDefault(); openPalette(); }
+        else if (e.key === 'Escape' && !palette.hidden) closePalette();
+    });
+    document.querySelectorAll('[data-open-search]').forEach((b) => b.addEventListener('click', openPalette));
+
+    // 9. Sections arrive as you reach them. Off for reduced motion; anything
+    //    already on screen is shown at once.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+        const items = document.querySelectorAll('.doc-body > h2, .doc-body > .scroll, .doc-body > .box, .chapter-figure, .interactive-lab, .part-block, .path, .stat, .feature-card, .flow-layer');
+        const io = new IntersectionObserver((entries) => {
+            for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        }, { rootMargin: '0px 0px -6% 0px' });
+        items.forEach((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.top < window.innerHeight) return;
+            el.classList.add('reveal');
+            io.observe(el);
+        });
+    }
+
+    // 10. Where you have been. Kept in this browser only; the page works the
+    //     same without it.
+    const store = {
+        get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (_) { return d; } },
+        set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* private mode */ } },
+    };
+    const here = (location.pathname.split('/').pop() || 'index.html');
+    const visited = new Set(store.get('mm.book.visited', []));
+    if (here !== 'index.html' && document.querySelector('.chapter-rail')) {
+        visited.add(here);
+        store.set('mm.book.visited', Array.from(visited));
+        store.set('mm.book.last', { u: here, t: document.title.split(' | ')[0] });
+    }
+    document.querySelectorAll('.chapter-row').forEach((row) => {
+        if (visited.has(row.getAttribute('href'))) row.classList.add('visited');
+    });
+    const last = store.get('mm.book.last', null);
+    const cont = document.querySelector('[data-continue]');
+    if (cont && last && last.u) {
+        cont.href = last.u;
+        cont.textContent = 'Continue: ' + last.t + ' →';
+        cont.hidden = false;
+    }
+    const done = document.querySelector('[data-progress-count]');
+    if (done) done.textContent = String(document.querySelectorAll('.chapter-row.visited').length);
+});
+</script>
+    <script type="module">
+      if (document.querySelector('pre.mermaid')) {
+        const m = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        m.default.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral' });
+        await m.default.run({ querySelector: 'pre.mermaid' });
+      }
+    </script>
+</body>
+</html>

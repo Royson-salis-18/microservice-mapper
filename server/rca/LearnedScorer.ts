@@ -1,5 +1,5 @@
 /**
- * Live use of the model learned by tools/ml (server/rca/model/learned.json): for every service, the probability that it is
+ * Live use of the model learned by algorithms/learning (server/rca/model/learned.json): for every service, the probability that it is
  * the cause right now, and which features pushed that probability up or down.
  *
  * The features are computed by server/rca/features.ts, the same code the learner used, from the same metric history the
@@ -7,8 +7,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { featureVectors, nodeSignals, FEATURE_NAMES } from './features.js';
-import { isLoadGenerator } from './containerFacts.js';
+import { featureVectors, nodeSignals, FEATURE_NAMES } from '../../algorithms/detection/features.js';
+import { isLoadGenerator } from '../../algorithms/detection/containerFacts.js';
 import type { ServiceNode } from '../models/ServiceNode.js';
 import type { DependencyEdge } from '../models/DependencyEdge.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';

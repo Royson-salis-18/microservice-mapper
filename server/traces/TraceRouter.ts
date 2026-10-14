@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TraceStore } from '../traces/TraceStore.js';
-import { TraceGraphAggregator } from '../traces/TraceGraphAggregator.js';
+import { TraceStore } from './TraceStore.js';
+import { TraceGraphAggregator } from './TraceGraphAggregator.js';
 
 /**
  * API router for connection trace data. These are SSH-sampled TCP
