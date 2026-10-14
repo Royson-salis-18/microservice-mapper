@@ -1,6 +1,6 @@
 # Cascading failure: who fails next?
 
-One page with the whole idea. Code: `graph/cascade_engine.py` (full version, mirrors `server/algorithms/graph/CascadeEngine.ts`) and `../core_logic/cascade.py` (the 70-line teaching version). Details and more examples: `graph/graph.md`, section 4.
+One page with the whole idea. Code: **`cascading_failure.py`** next to this page (about 60 lines, run it to see the example below), `graph/cascade_engine.py` (the full version, mirrors `server/algorithms/graph/CascadeEngine.ts`) and `../core_logic/cascade.py`. Details and more examples: `graph/graph.md`, section 4.
 
 ## The problem
 
