@@ -1276,5 +1276,32 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
     }
   });
 
+  // Remove a saved project: stop watching it, drop its config entry and everything recorded about it.
+  router.delete('/config/remote/:targetId', (req, res) => {
+    const targetId = req.params.targetId;
+    try {
+      const current = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf8')) : {};
+      const existed = targetId in current || graphStore.targets.has(targetId);
+      delete current[targetId];
+      fs.writeFileSync(configPath, JSON.stringify(current, null, 2), 'utf8');
+      graphStore.removeProject(targetId);
+      incidentManager?.clear(targetId);
+      res.json({ success: true, removed: targetId, existed });
+    } catch (e) {
+      console.error('Error removing project:', e);
+      res.status(500).json({ error: 'Failed to remove project' });
+    }
+  });
+
+  // Clear cached data (learned baselines, metric history, links, traces, incidents) for one project, or for all of them.
+  // Saved projects and their connection settings are kept; collection starts again from scratch.
+  router.post('/data/clear', (req, res) => {
+    const targetId: string | undefined = req.body?.targetId || undefined;
+    const ids = targetId ? [targetId] : [...graphStore.targets.keys()];
+    for (const id of ids) graphStore.clearProjectData(id);
+    incidentManager?.clear(targetId);
+    res.json({ success: true, cleared: ids });
+  });
+
   return router;
 }

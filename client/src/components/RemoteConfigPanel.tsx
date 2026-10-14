@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Trash2, Eraser } from 'lucide-react';
 
 interface RemoteConfigPanelProps {
   onClose?: () => void;
@@ -45,8 +45,31 @@ export function RemoteConfigPanel({ onClose, editTargetId, onDiscoveryStart }: R
     }
   };
 
+  const [busy, setBusy] = useState<'' | 'remove' | 'clear'>('');
+  const removeProject = async () => {
+    if (!editTargetId || !window.confirm(`Remove "${editTargetId}"? The mapper stops watching it and forgets its history. The services themselves are not touched.`)) return;
+    setBusy('remove');
+    try {
+      const res = await fetch(`/api/config/remote/${encodeURIComponent(editTargetId)}`, { method: 'DELETE' });
+      setStatusMsg(res.ok ? { text: 'Project removed', type: 'success' } : { text: 'Could not remove the project', type: 'error' });
+      if (res.ok) setTimeout(() => onClose?.(), 900);
+    } catch { setStatusMsg({ text: 'Could not reach the server', type: 'error' }); }
+    setBusy('');
+  };
+  const clearData = async () => {
+    const scope = editTargetId ? `"${editTargetId}"` : 'every project';
+    if (!window.confirm(`Clear cached data for ${scope}? Learned baselines, metric history, links, traces and incidents are dropped and learned again from new data. Saved projects stay.`)) return;
+    setBusy('clear');
+    try {
+      const res = await fetch('/api/data/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editTargetId ? { targetId: editTargetId } : {}) });
+      setStatusMsg(res.ok ? { text: 'Cached data cleared; baselines are being learned again', type: 'success' } : { text: 'Could not clear data', type: 'error' });
+    } catch { setStatusMsg({ text: 'Could not reach the server', type: 'error' }); }
+    setBusy('');
+  };
+
   const handleSave = async () => {
-    const targetId = projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    // Editing keeps the project's id: renaming it used to create a second project instead of updating the first.
+    const targetId = editTargetId || projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     if (!projectName || !ec2PublicIp || !sshKeyPath) {
       setStatusMsg({ text: 'Please fill in all fields', type: 'error' });
       return;
@@ -188,6 +211,20 @@ export function RemoteConfigPanel({ onClose, editTargetId, onDiscoveryStart }: R
 
         <div style={{ fontSize: '12px', color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
           The backend connects to this host, reads its Docker Compose manifest and builds a baseline architecture graph. Use an absolute key path.
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <span className="mm-eyebrow" style={{ width: '100%' }}>Maintenance</span>
+          <button className="mm-btn" onClick={clearData} disabled={!!busy} style={{ cursor: 'pointer' }} title="Drop learned baselines, history, links, traces and incidents">
+            {busy === 'clear' ? <Loader2 size={14} className="mm-spin" /> : <Eraser size={14} strokeWidth={1.75} />}
+            {editTargetId ? 'Clear cached data' : 'Clear cached data (all projects)'}
+          </button>
+          {editTargetId && (
+            <button className="mm-btn" onClick={removeProject} disabled={!!busy} style={{ cursor: 'pointer', color: 'var(--color-critical)', borderColor: 'rgba(239,95,103,0.35)' }}>
+              {busy === 'remove' ? <Loader2 size={14} className="mm-spin" /> : <Trash2 size={14} strokeWidth={1.75} />}
+              Remove project
+            </button>
+          )}
         </div>
       </div>
 

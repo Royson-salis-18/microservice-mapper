@@ -73,6 +73,9 @@ export interface RCAParameters {
   incumbent?: string | null;
   /** The host itself stopped sending telemetry (target STALE or OFFLINE): judge nothing on frozen readings, blame no service. */
   hostSilent?: boolean;
+  /** Probabilities from the learned model (tools/ml), when one is installed: they decide whether there is an incident
+   *  (alarm, already debounced over two cycles by the caller) and the order of the candidates. */
+  learned?: { p: Map<string, number>; why: Map<string, { feature: string; value: number }[]>; alarm: boolean; threshold: number; labels: Record<string, string> };
 }
 
 /**
@@ -161,7 +164,8 @@ export class RCAEngine {
     const quietIds = targetNodes.filter(n => n.metadata?.vanished || (byNode.get(n.id) ?? []).some(a => a.metric === 'silence')).map(n => n.id);
     const monitoringGap = !!params.hostSilent || (targetNodes.length >= 3 && quietIds.length >= Math.max(3, Math.ceil(t.monitoringGapShare * targetNodes.length)));
 
-    const nothing = targetAnomalies.length === 0 && !targetNodes.some(n => hard.get(n.id) || n.status === 'degraded');
+    const nothing = params.learned ? !params.learned.alarm && !targetNodes.some(n => hard.get(n.id))
+      : targetAnomalies.length === 0 && !targetNodes.some(n => hard.get(n.id) || n.status === 'degraded');
     if (nothing || monitoringGap) {
       const explanation = this.explanationEngine.generateExplanation({
         targetId, incidentStartedAt: new Date().toISOString(), primaryRootCause: null, alternativeCandidates: [],
@@ -229,6 +233,15 @@ export class RCAEngine {
       // Scaled by gamma like explain-away, so gamma = 0 is still plain "most abnormal".
       raw.set(n.id, (raw.get(n.id) ?? 0) + share * t.zScoreAnomaly * Math.min(1, t.explainAwayGamma));
     }
+    // Learned model installed: its probability replaces the hand-weighted score for the ranking. Services it gives at least
+    // a fifth of the alarm threshold are candidates (plus any container fact), so the list stays short and meaningful.
+    const L = params.learned;
+    if (L) {
+      for (const n of targetNodes) raw.set(n.id, L.p.get(n.id) ?? 0);
+      const keep = targetNodes.filter(n => (L.p.get(n.id) ?? 0) >= L.threshold / 5 || hard.get(n.id));
+      ranked.length = 0; ranked.push(...keep);
+      for (const n of keep) if (!parts.has(n.id)) parts.set(n.id, { o: 0, s: 0, x: 0, blind: false });
+    }
     // Hysteresis: the open incident's cause stays on top unless another candidate beats it by a clear margin (15%),
     // so ordinary measurement noise between two near-equal candidates does not rewrite the verdict every few minutes.
     if (params.incumbent && raw.has(params.incumbent) && !hard.get(params.incumbent)) raw.set(params.incumbent, raw.get(params.incumbent)! * INCUMBENT_BONUS);
@@ -237,7 +250,7 @@ export class RCAEngine {
     const top = ranked[0], second = ranked[1];
     const rawTop = top ? raw.get(top.id)! : 0, rawSecond = second ? raw.get(second.id)! : 0;
     const margin = rawTop > 0 ? 1 - rawSecond / rawTop : 0;
-    const to01 = (r: number) => (r >= 100 ? Math.min(1, 0.9 + (r - 100) / 500) : Math.min(0.89, r / (r + 2 * t.zScoreAnomaly)));
+    const to01 = (r: number) => (L ? Math.min(1, r) : r >= 100 ? Math.min(1, 0.9 + (r - 100) / 500) : Math.min(0.89, r / (r + 2 * t.zScoreAnomaly)));
 
     const candidates: CandidateCause[] = [];
     const evidenceItems: EvidenceItem[] = [];
@@ -257,6 +270,11 @@ export class RCAEngine {
       }
       if (worse.length) breakdown.push({ factor: 'dependency_failing', score: -round(VICTIM_WEIGHT), reason: `it depends on ${worse.map(nameOf).join(', ')}, which ${worse.length > 1 ? 'are' : 'is'} failing at least as badly` });
       if (p.blind) breakdown.push({ factor: 'blind_spot', score: round(r), reason: 'no telemetry from it, while the services calling it show errors nothing else explains' });
+      if (L) {
+        breakdown.length = 0;
+        for (const c of (L.why.get(n.id) ?? []).filter(c => Math.abs(c.value) >= 0.25).slice(0, 5))
+          breakdown.push({ factor: c.feature, score: round(c.value), reason: `${L.labels[c.feature] ?? c.feature} (${c.value >= 0 ? '+' : ''}${round(c.value)} log-odds)` });
+      }
       const isTop = n.id === top.id;
       let confidence: RCAConfidence = 'LOW';
       if (isTop) {

@@ -18,7 +18,8 @@
     "eval": "node server/node_modules/tsx/dist/cli.mjs tools/eval/run.ts",
     "local": "node scripts/local.mjs",
     "demo": "node scripts/demo.mjs",
-    "hosts": "node scripts/hosts.mjs"
+    "hosts": "node scripts/hosts.mjs",
+    "ml": "node server/node_modules/tsx/dist/cli.mjs tools/ml/run.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

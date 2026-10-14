@@ -2,12 +2,16 @@ import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incid
 import type { GraphStore } from '../graph/GraphStore.js';
 import { AnomalyDetector } from './AnomalyDetector.js';
 import { RCAEngine } from './RCAEngine.js';
+import { LearnedScorer, FEATURE_LABEL } from './LearnedScorer.js';
 import { loadThresholds } from './thresholdsStore.js';
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
   private anomalyDetector: AnomalyDetector;
   private rcaEngine: RCAEngine;
+  private learned = new LearnedScorer();
+  /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
+  private learnedHot = new Map<string, boolean>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
@@ -27,7 +31,15 @@ export class IncidentManager {
     const open = this.activeIncidents.get(targetId);
     const hostStatus = String((this.graphStore as any).targets?.get?.(targetId)?.status ?? 'LIVE');
     const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
+    const scored = hostSilent ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'));
+    let learned: any;
+    if (scored) {
+      const hot = scored.maxP >= scored.threshold;
+      learned = { p: scored.p, why: scored.why, threshold: scored.threshold, labels: FEATURE_LABEL, alarm: hot && (this.learnedHot.get(targetId) ?? false) };
+      this.learnedHot.set(targetId, hot);
+    }
     const rcaResult = this.rcaEngine.analyzeIncident({
+      learned,
       hostSilent,
       incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
       targetId,
@@ -150,6 +162,12 @@ export class IncidentManager {
     if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker restart ${container}`];
     if (state === 'restarting') return [`docker logs --tail 200 ${container}`, `docker inspect --format '{{.State.ExitCode}} {{.State.Error}}' ${container}`];
     return [`docker logs --tail 100 ${container}`, `docker stats --no-stream ${container}`];
+  }
+
+  /** Drop incidents (and the detector's onset memory) for one target, or for all. */
+  public clear(targetId?: string): void {
+    if (targetId) this.activeIncidents.delete(targetId); else this.activeIncidents.clear();
+    this.anomalyDetector.forget(targetId);
   }
 
   public getIncidentForTarget(targetId: string): Incident | null {

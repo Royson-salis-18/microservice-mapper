@@ -54,3 +54,15 @@ test('no data is no evidence: an unmeasured service does not look riskier than a
   const of = (id: string) => risk.get(id)!;
   assert.ok(of('p:b').healthScore >= of('p:a').healthScore - 1e-9, `${of('p:b').healthScore} vs ${of('p:a').healthScore}`);
 });
+
+test('with a learned model, its probabilities decide the alarm and the order, and the breakdown names the features', () => {
+  const nodes = [node('p:api', 'healthy', { state: 'running' }, { cpu: 3 }), node('p:db', 'healthy', { state: 'running' }, { cpu: 3 })];
+  const p = new Map([['p:api', 0.2], ['p:db', 0.93]]);
+  const why = new Map([['p:db', [{ feature: 'throttle', value: 2.1 }, { feature: 'callersSymptomMax', value: 1.2 }]], ['p:api', [{ feature: 'latRise', value: 0.9 }]]]);
+  const quiet = new RCAEngine().analyzeIncident({ targetId: 'p', nodes, edges: [edge('p:api', 'p:db')], anomalies: [], learned: { p, why, alarm: false, threshold: 0.6, labels: {} } });
+  assert.equal(quiet.incidentDetected, false);
+  const r = new RCAEngine().analyzeIncident({ targetId: 'p', nodes, edges: [edge('p:api', 'p:db')], anomalies: [], learned: { p, why, alarm: true, threshold: 0.6, labels: { throttle: 'held back by its CPU limit' } } });
+  assert.equal(r.primaryRootCause?.serviceId, 'p:db');
+  assert.equal(r.primaryRootCause?.score, 0.93);
+  assert.match(r.primaryRootCause!.scoreBreakdown[0].reason, /CPU limit/);
+});
