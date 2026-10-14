@@ -1,7 +1,7 @@
 # core_logic
 
 The decision-making of the mapper in plain Python, standard library only. Nothing here needs a server, Docker or a package install.
-It is a simplified twin of the TypeScript in `../algorithms/` (same ideas, same numbers from `settings.py`), written so the whole thing can be read and explained in a few minutes.
+It is a simplified twin of the TypeScript in `../server/algorithms/` (same ideas, same numbers from `settings.py`; every file of it has a Python version in `../algorithms/`), written so the whole thing can be read and explained in a few minutes.
 
 ```
 python core_logic/demo.py               # a made-up shop, one broken service, all four steps printed

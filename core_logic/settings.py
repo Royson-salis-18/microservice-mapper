@@ -1,4 +1,4 @@
-"""All the numbers the logic uses, in one place. Same values as the TypeScript version in algorithms/."""
+"""All the numbers the logic uses, in one place. Same values as the TypeScript version in server/algorithms/."""
 
 # --- detector -------------------------------------------------------------
 MAD_TO_STD = 1.4826        # MAD * 1.4826 equals the standard deviation for bell-shaped data

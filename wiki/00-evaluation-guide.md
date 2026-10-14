@@ -40,6 +40,7 @@ flowchart LR
 | Server | `server/` | TypeScript (Express) | Stores graph and history, runs the logic every cycle, serves the API |
 | Dashboard | `client/` | React + Vite, 3D with three.js | Shows the map, incidents, cascade risk |
 | Decision logic | `server/algorithms/` | TypeScript | The real detector, root cause, cascade (used by the server) |
+| **Algorithms, every file in Python** | **`algorithms/`** | **Python** | **One simplified `.py` per TypeScript file, plus a Markdown page per area. Start with `algorithms/README.md`** |
 | **Core logic (explain this)** | **`core_logic/`** | **Python** | **The same ideas in about 300 readable lines, with a demo and tests** |
 | Graphs and reports | `graphs/` | TypeScript | Builds the model lab page and the evaluation report |
 | Running, testing | `run/` | TS / JS | Start scripts, tests, evaluation and learning commands, recorded sample runs |
@@ -222,6 +223,8 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 
 **How is it different from Prometheus or Datadog?** Those show metrics and need alert rules written by a person. This learns normal per service, ranks the cause, and predicts spread from the call graph, with no code changes.
 
+**Why is it written in TypeScript and not Python?** The product is a web application: the dashboard must be JavaScript, so using TypeScript for the server and collector too gives one language and one set of data types (service, link, incident) that every part checks against. The logic runs every 5 seconds inside the live server, so keeping it in the same language avoids running a second program and passing data to it. Docker, SSH and WebSocket libraries are strong in Node. The same files are reused by the tests and the scoring tools. The maths itself is language independent, and every file has a simplified Python version in `algorithms/`. Python is used where it is the better tool: the machine learning experiments in `ml/`.
+
 **What are the limits?** Only Docker so far, small test set, overlapping faults confuse the ranking, the cascade weights are assumptions.
 
 **What would you do next?** Collect many more labelled faults, retest the learned model, calibrate the cascade against recorded cascades, support Kubernetes.
@@ -235,6 +238,7 @@ git clone <repo-url> && cd microservice-mapper
 npm start                          # installs what is missing, starts server (:3001) and dashboard (:5173)
 python3 core_logic/demo.py         # the logic on a small made-up shop
 python3 core_logic/test_core_logic.py
+python3 algorithms/run_all_tests.py   # tests for every Python algorithm file
 npm test                           # the TypeScript tests
 npm run ml                         # compares rules and learned model on the recorded runs
 npm run ml:report                  # rebuilds graphs/output/model-lab.html
@@ -249,11 +253,12 @@ The Python commands need only Python 3. The npm commands need the dependencies o
 ## 10. Folder map
 
 ```
-algorithms/   decision logic (detection, rca, graph, model, learning, evaluation)
-core_logic/   the same ideas in simple Python (explain this)
+algorithms/   every algorithm as simple Python + a Markdown page per area (explain these)
+core_logic/   just the three core steps in Python, with a demo
 graphs/       report builders and the generated model lab page (graphs/output)
 run/          start scripts, tests (run/tests), CLIs (run/cli), sample recorded runs (run/recorded-runs)
 wiki/         documentation; this page is the short path
-server/ client/ remote-collector/ traffic-gen/ ml/    the applications
+server/       the backend; the real TypeScript logic is in server/algorithms/
+client/ remote-collector/ traffic-gen/ ml/    the other applications
 unused/       old material, not part of the running system
 ```
