@@ -6,9 +6,13 @@ synthetic benchmark (178 held-out faults).
 
 - `main.tex`   the paper (IEEEtran, conference mode)
 - `refs.bib`   bibliography
-- `main.pdf`   the built paper (7 pages)
+- `main.pdf`   the built paper (13 pages, IEEE journal format)
+- `figures/`   vector PDF figures, built by `plots.py` from `data/*.json`
+- `exp/`       experiment scripts that produce the data (curves, cascade calibration, detector ROC, amplification study, router)
 
-All figures are inline TikZ and pgfplots, so there are no external image files to manage.
+Not included because they were not run: sensitivity sweeps (`fig_sweep` in `plots.py`) and the scalability benchmark (`exp/scale.ts`); the ensemble detector on the synthetic set.
+
+Schematic figures are TikZ (`fig_arch.tex`, `fig_prop.tex`); data figures are matplotlib PDFs.
 
 ## Build
 

@@ -23,6 +23,8 @@ import path from 'node:path';
 const args = process.argv.slice(2);
 const opt = (k: string, d: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
 const CAMPAIGNS = Number(opt('campaigns', '12')), MINUTES = Number(opt('minutes', '60')), SEED = Number(opt('seed', '1'));
+const AMPLIFY = Number(opt('amplify', '1'));            // callers feel a fault this many times more strongly (retry storms)
+const ONLY = opt('classes', '').split(',').filter(Boolean);   // restrict to these fault classes, e.g. brownout,latency,memory
 const OUT = path.resolve(opt('out', path.resolve(import.meta.dirname, '..', '..', 'synthetic-runs')));
 const STEP = 5000;
 
@@ -80,7 +82,8 @@ function randomTopo(r: R, k: number): Topo {
 
 // ---------------------------------------------------------------- faults
 type FaultClass = 'crash' | 'stop' | 'pause' | 'crash-loop' | 'flap' | 'memory' | 'brownout' | 'latency' | 'partition';
-const CLASSES: [FaultClass, number][] = [['crash', 2], ['stop', 1.5], ['pause', 1], ['crash-loop', 1], ['flap', 1], ['memory', 2], ['brownout', 2.5], ['latency', 2], ['partition', 1]];
+const ALL_CLASSES: [FaultClass, number][] = [['crash', 2], ['stop', 1.5], ['pause', 1], ['crash-loop', 1], ['flap', 1], ['memory', 2], ['brownout', 2.5], ['latency', 2], ['partition', 1]];
+const CLASSES: [FaultClass, number][] = ONLY.length ? ALL_CLASSES.filter(([c]) => ONLY.includes(c)) : ALL_CLASSES;
 interface Fault { id: string; cls: FaultClass; target: string; a: number; b: number; sev: number; period: number; duty: number; oom: boolean; compoundOf?: string }
 
 function weighted<T>(r: R, xs: [T, number][]): T { const t = xs.reduce((s, [, w]) => s + w, 0); let u = r() * t; for (const [x, w] of xs) { u -= w; if (u <= 0) return x; } return xs[0][0]; }
@@ -169,7 +172,7 @@ function campaign(t: Topo, seed: number, minutes: number, t0: number) {
       // effects travel up the call graph (callers wait or fail) ...
       for (const [c, d] of upstream(t, f.target)) {
         const via = callersOf(t, f.target).includes(c) ? coupling.get(`${c}>${f.target}`) ?? 0.7 : 0.7;
-        const k = via * Math.pow(0.65, d - 1);
+        const k = via * Math.pow(0.65, d - 1) * AMPLIFY;
         const ce = eff.get(c)!;
         if (hard) { ce.errAdd += 0.55 * k; ce.latMul *= 1 + 1.5 * k; ce.cpuMul *= 1 - 0.15 * k; ce.netMul *= 1 - 0.3 * k; }
         else { ce.latMul *= 1 + (slow - 1) * 0.6 * k; ce.errAdd += (slow - 1) * 0.015 * k; }
