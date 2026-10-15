@@ -597,9 +597,9 @@ names the stopped containers first, as it should, and only a model of concurrent
 30\,s after its first kill and stays named between kills. In (c) a brownout on an almost idle service never raises an alarm, which is the open
 problem of Fig.~\ref{fig:class}.
 
-\begin{figure*}[!t]
+\begin{figure*}[p]
 \centering
-\includegraphics[width=\textwidth]{fig_case.pdf}
+\includegraphics[width=\textwidth,height=0.62\textheight,keepaspectratio]{fig_case.pdf}
 \caption{Three real incidents. Heat maps show the ML level of the most relevant services; the blue box is the fault, grey dashed boxes are other faults running
 at the same time, black squares mark container facts, the green line is the first alarm in the window (an alarm already ongoing from an earlier fault starts at the left
 edge), and the strip below each map shows whether the engine's top-ranked service was the true cause.}
