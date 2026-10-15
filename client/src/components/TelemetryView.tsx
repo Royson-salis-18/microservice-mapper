@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { Activity, ArrowDown, ArrowUp, MousePointerClick, Search } from 'lucide-react';
 import type { Node, Edge } from '@xyflow/react';
 import type { ServiceNode, MetricSnapshot } from '../types';
 import { pageRootStyle } from './ProjectSections';
@@ -166,123 +167,169 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const sentence = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
+  const num: CSSProperties = { fontVariantNumeric: 'tabular-nums' };
+  const kpiValue: CSSProperties = { fontSize: '26px', fontWeight: 600, letterSpacing: '-0.02em', marginTop: '8px', color: 'var(--color-text-main)', ...num };
+  const kpiSub: CSSProperties = { fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' };
+  const cardTitle: CSSProperties = { margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' };
+  const cardSub: CSSProperties = { fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' };
+  const th: CSSProperties = { padding: '0 12px', height: '36px', fontSize: '11.5px', fontWeight: 500, color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
+  const td: CSSProperties = { padding: '0 12px', height: '42px' };
+  const logBox: CSSProperties = {
+    background: 'var(--color-bg-body)',
+    borderRadius: '8px',
+    border: '1px solid var(--color-border)',
+    overflowY: 'auto',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '12px',
+    color: 'var(--color-text-main)',
+  };
+  const statusTone = (status: string) => {
+    if (status === 'healthy') return { fg: 'var(--color-healthy)', bg: 'rgba(62,207,142,.1)' };
+    if (status === 'degraded') return { fg: 'var(--color-degraded)', bg: 'rgba(232,163,61,.1)' };
+    if (status === 'critical' || status === 'down' || status === 'unhealthy') return { fg: 'var(--color-critical)', bg: 'rgba(239,95,103,.1)' };
+    return { fg: 'var(--color-unknown)', bg: 'rgba(255,255,255,.04)' };
+  };
+  const meter = (pct: number, color = '#9aa3b0') => (
+    <div style={{ width: '60px', height: '4px', background: 'rgba(255,255,255,.06)', borderRadius: '2px', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color }} />
+    </div>
+  );
+  const meterColor = (pct: number) => (pct >= 90 ? 'var(--color-critical)' : pct >= 75 ? 'var(--color-degraded)' : 'var(--color-healthy)');
+
   return (
     <div style={pageRootStyle(embedded)}>
-      {/* Top Telemetry KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Monitored Services</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: '#fff' }}>{summary.totalServices}</div>
-          <div style={{ fontSize: '12px', color: 'var(--color-healthy)', marginTop: '4px' }}>● Live Ingestion Active</div>
-        </div>
-
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Average CPU Load</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: 'var(--color-accent-cyan)' }}>{summary.avgCpu}%</div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Across all active nodes</div>
-        </div>
-
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Average Memory Usage</div>
-          <div style={{ fontSize: '28px', fontWeight: 700, marginTop: '8px', color: 'var(--color-accent-magenta)' }}>{summary.avgMem}%</div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Container RAM utilization</div>
-        </div>
-
-        <div style={{ background: 'var(--color-bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Network I/O Throughput</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '8px', color: '#fff' }}>
-            ↓ {summary.netRxMb} MB <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>/ ↑ {summary.netTxMb} MB</span>
+      {/* Top telemetry KPI cards */}
+      <div className="mm-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Monitored services</div>
+          <div style={kpiValue}>{summary.totalServices}</div>
+          <div style={{ ...kpiSub, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <i className="mm-dot" style={{ background: 'var(--color-healthy)' }} />
+            <span style={{ color: 'var(--color-healthy)' }}>Live ingestion active</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>Cumulative socket traffic</div>
+        </div>
+
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Average CPU load</div>
+          <div style={kpiValue}>{summary.avgCpu}%</div>
+          <div style={kpiSub}>Across all active nodes</div>
+        </div>
+
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Average memory usage</div>
+          <div style={kpiValue}>{summary.avgMem}%</div>
+          <div style={kpiSub}>Container RAM utilization</div>
+        </div>
+
+        <div className="mm-card" style={{ padding: '18px 20px' }}>
+          <div className="mm-eyebrow">Network I/O throughput</div>
+          <div style={{ ...kpiValue, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <ArrowDown size={16} strokeWidth={1.75} color="var(--color-text-dim)" />{summary.netRxMb} MB
+            </span>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <ArrowUp size={14} strokeWidth={1.75} />{summary.netTxMb} MB
+            </span>
+          </div>
+          <div style={kpiSub}>Cumulative socket traffic</div>
         </div>
       </div>
 
-      {/* Raw Traffic Stream */}
-      <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
-            <span style={{ color: 'var(--color-healthy)', marginRight: '8px' }}>●</span>
-            RAW TRAFFIC LOGS
-            <span style={{ marginLeft: '10px', fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 400 }}>
-              {rawEventKind === 'http' ? 'HTTP interactions (from access logs)' : 'observed socket connections'}
-            </span>
-          </h3>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{rawEvents.length} events</div>
+      {/* Traffic log */}
+      <div className="mm-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+          <div>
+            <h3 style={cardTitle}>Traffic log</h3>
+            <div style={cardSub}>
+              {rawEventKind === 'http' ? 'HTTP interactions from access logs' : 'Observed socket connections'}
+            </div>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-dim)', ...num }}>{rawEvents.length} events</div>
         </div>
-        <div style={{ 
-          background: '#010409', 
-          borderRadius: '8px', 
-          padding: '16px', 
-          height: '200px', 
-          overflowY: 'auto',
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          color: '#c9d1d9',
-          border: '1px solid #30363d'
-        }}>
+        <div style={{ ...logBox, height: '200px', padding: '6px 0' }}>
           {rawEvents.length === 0 ? (
-            <div style={{ color: '#8b949e', fontStyle: 'italic', lineHeight: 1.6 }}>
-              No traffic observed for this project yet.<br />
-              HTTP-level rows need a service that writes a parseable access log to stdout; otherwise this
-              falls back to socket connections seen by the /proc/net/tcp scanner, which needs a reachable
-              host and at least one discovery cycle.
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0 24px', textAlign: 'center', fontFamily: 'var(--font-family)' }}>
+              <Activity size={20} strokeWidth={1.75} color="var(--color-text-dim)" />
+              <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No traffic observed for this project yet</div>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', maxWidth: '72ch', lineHeight: 1.55 }}>
+                HTTP rows need a service that writes a parseable access log to stdout; otherwise this falls back to
+                socket connections seen by the /proc/net/tcp scanner after at least one discovery cycle.
+              </div>
             </div>
           ) : (
             rawEvents.map((evt, i) => (
-              <div key={i} style={{ marginBottom: '8px', display: 'flex', gap: '12px', borderBottom: '1px solid #21262d', paddingBottom: '4px' }}>
-                <span style={{ color: '#8b949e', whiteSpace: 'nowrap' }}>{new Date(evt.timestamp).toISOString().split('T')[1].replace('Z','')}</span>
-                <span style={{ color: '#58a6ff', width: '150px', flexShrink: 0, textOverflow: 'ellipsis', overflow: 'hidden' }}>{evt.source} ➔ {evt.target}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '26px', padding: '0 14px', borderBottom: '1px solid rgba(255,255,255,.03)', whiteSpace: 'nowrap', ...num }}>
+                <span style={{ color: 'var(--color-text-dim)', flexShrink: 0 }}>{new Date(evt.timestamp).toISOString().split('T')[1].replace('Z','')}</span>
+                <span
+                  title={`${evt.source} → ${evt.target}`}
+                  style={{ color: 'var(--color-text-main)', width: '220px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >{evt.source} <span style={{ color: 'var(--color-text-dim)' }}>→</span> {evt.target}</span>
                 {/* No status invented for a socket observation: the scanner
                     sees a connection, not a response. This used to print 200
                     for every TCP row, which reads as "the request succeeded"
                     when nothing observed a request at all. */}
-                <span style={{ color: evt.statusCode == null ? '#6e7681' : evt.statusCode >= 400 ? '#ff7b72' : '#3fb950', width: '50px' }}>
-                  {evt.statusCode ?? '—'}
+                <span style={{
+                  width: '36px', flexShrink: 0,
+                  color: evt.statusCode == null ? 'var(--color-text-dim)'
+                    : evt.statusCode >= 500 ? 'var(--color-critical)'
+                    : evt.statusCode >= 400 ? 'var(--color-degraded)'
+                    : 'var(--color-text-muted)',
+                }}>
+                  {evt.statusCode ?? '-'}
                 </span>
-                <span style={{ color: '#d2a8ff', width: '60px' }}>{evt.method || 'TCP'}</span>
-                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '—'}</span>
-                {evt.latency && <span style={{ color: '#e3b341', width: '60px', textAlign: 'right' }}>{Math.round(evt.latency)}ms</span>}
-                {evt.bytesSent && <span style={{ color: '#8b949e', width: '70px', textAlign: 'right' }}>{formatBytes(evt.bytesSent)}</span>}
+                <span style={{ color: 'var(--color-text-muted)', width: '52px', flexShrink: 0 }}>{evt.method || 'TCP'}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.route || '-'}</span>
+                {evt.latency && <span style={{ color: 'var(--color-text-muted)', width: '60px', flexShrink: 0, textAlign: 'right' }}>{Math.round(evt.latency)}ms</span>}
+                {evt.bytesSent && <span style={{ color: 'var(--color-text-dim)', width: '70px', flexShrink: 0, textAlign: 'right' }}>{formatBytes(evt.bytesSent)}</span>}
               </div>
             ))
           )}
         </div>
       </div>
 
-      {/* Main Telemetry Split View */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gridTemplateRows: 'minmax(450px, auto)', gap: '24px', flex: 1 }}>
-        {/* Left: Detailed Service Telemetry Table */}
-        <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, letterSpacing: '0.5px' }}>Service Telemetry Stream</h3>
-            <input 
-              type="text"
-              placeholder="Filter services..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                color: '#fff',
-                fontSize: '12px',
-                outline: 'none',
-                width: '200px'
-              }}
-            />
+      {/* Main telemetry split view */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gridTemplateRows: 'minmax(450px, auto)', gap: '16px', flex: 1 }}>
+        {/* Left: service telemetry table */}
+        <div className="mm-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <h3 style={cardTitle}>Service telemetry</h3>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Search size={14} strokeWidth={1.75} color="var(--color-text-dim)" style={{ position: 'absolute', left: '9px', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                placeholder="Filter services"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(138,180,255,.45)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+                style={{
+                  height: '30px',
+                  background: 'rgba(255,255,255,.03)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  padding: '0 10px 0 28px',
+                  color: 'var(--color-text-main)',
+                  fontSize: '12.5px',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  width: '200px',
+                  transition: 'border-color var(--transition-fast)',
+                }}
+              />
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto', flex: 1, minHeight: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 12px' }}>Service</th>
-                  <th style={{ padding: '10px 12px' }}>Type</th>
-                  <th style={{ padding: '10px 12px' }}>Status</th>
-                  <th style={{ padding: '10px 12px' }}>CPU Load</th>
-                  <th style={{ padding: '10px 12px' }}>Memory Usage</th>
-                  <th style={{ padding: '10px 12px' }}>Network RX / TX</th>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={th}>Service</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>CPU load</th>
+                  <th style={th}>Memory usage</th>
+                  <th style={th}>Network RX / TX</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,55 +340,48 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                   const memRaw = node.metrics?.memory || 0;
                   const rx = node.metrics?.networkRx || 0;
                   const tx = node.metrics?.networkTx || 0;
+                  const tone = statusTone(node.status);
 
                   return (
-                    <tr 
+                    <tr
                       key={node.id}
                       onClick={() => setSelectedNodeId(node.id)}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,.025)'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                       style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.03)',
-                        background: isSelected ? 'rgba(0, 212, 255, 0.08)' : 'transparent',
+                        borderBottom: '1px solid var(--color-border)',
+                        background: isSelected ? 'rgba(138,180,255,.07)' : 'transparent',
+                        boxShadow: isSelected ? 'inset 2px 0 0 var(--color-accent-cyan)' : undefined,
                         cursor: 'pointer',
-                        transition: 'background 0.2s'
+                        transition: 'background var(--transition-fast)'
                       }}
                     >
-                      <td style={{ padding: '12px', fontWeight: 600 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: node.status === 'healthy' ? 'var(--color-healthy)' : 'var(--color-critical)' }} />
-                          {node.name}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px', textTransform: 'uppercase', fontSize: '11px', color: 'var(--color-text-muted)' }}>{node.type}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          background: node.status === 'healthy' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 23, 68, 0.15)',
-                          color: node.status === 'healthy' ? 'var(--color-healthy)' : 'var(--color-critical)'
-                        }}>
-                          {node.status.toUpperCase()}
+                      <td style={{ ...td, fontWeight: 500, color: 'var(--color-text-main)' }}>{node.name}</td>
+                      <td style={{ ...td, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                          <i style={{ width: 8, height: 8, borderRadius: 2, background: '#5d636c', display: 'inline-block' }} />{sentence(node.type)}
                         </span>
                       </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '60px', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min(cpu, 100)}%`, background: 'var(--color-accent-cyan)' }} />
-                          </div>
+                      <td style={td}>
+                        <span className="mm-chip" style={{ background: tone.bg, color: tone.fg, border: 'none' }}>
+                          <i className="mm-dot" style={{ background: 'currentColor' }} />
+                          {sentence(node.status)}
+                        </span>
+                      </td>
+                      <td style={td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', ...num }}>
+                          {meter(cpu, meterColor(cpu))}
                           <span>{cpu.toFixed(1)}%</span>
                         </div>
                       </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '60px', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min(memPct, 100)}%`, background: 'var(--color-accent-magenta)' }} />
-                          </div>
-                          <span>{memPct.toFixed(1)}% <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>({formatBytes(memRaw)})</span></span>
+                      <td style={td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', ...num }}>
+                          {meter(memPct, meterColor(memPct))}
+                          <span>{memPct.toFixed(1)}% <span style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>({formatBytes(memRaw)})</span></span>
                         </div>
                       </td>
-                      <td style={{ padding: '12px', color: 'var(--color-text-muted)', fontSize: '12px' }}>
-                        ↓ {formatBytes(rx)} / ↑ {formatBytes(tx)}
+                      <td style={{ ...td, color: 'var(--color-text-muted)', fontSize: '12px', whiteSpace: 'nowrap', ...num }}>
+                        ↓ {formatBytes(rx)} <span style={{ color: 'var(--color-text-dim)' }}>/</span> ↑ {formatBytes(tx)}
                       </td>
                     </tr>
                   );
@@ -351,34 +391,26 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
           </div>
         </div>
 
-        {/* Right: Selected Node Telemetry Detail & Historical Chart */}
-        <div style={{ background: 'var(--color-bg-panel)', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Right: selected node detail and history chart */}
+        <div className="mm-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
           {selectedNode ? (
             <>
-              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Selected Node</div>
-                <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 700 }}>{selectedNode.name}</h2>
-                <div style={{ fontSize: '12px', color: 'var(--color-accent-cyan)', marginTop: '2px' }}>{selectedNode.project.toUpperCase()} • {selectedNode.type.toUpperCase()}</div>
+              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '14px' }}>
+                <div className="mm-eyebrow">Selected service</div>
+                <h2 style={{ margin: '6px 0 0 0', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.01em' }}>{selectedNode.name}</h2>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>{selectedNode.project} · {selectedNode.type}</div>
               </div>
 
-              {/* Time Range Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Metrics History</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
+              {/* Time range selector */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Metrics history</span>
+                <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '168px' }}>
                   {(['5m', '15m', '30m', '1h'] as const).map(range => (
                     <button
                       key={range}
+                      className={timeRange === range ? 'on' : undefined}
                       onClick={() => setTimeRange(range)}
-                      style={{
-                        background: timeRange === range ? 'var(--color-accent-cyan)' : 'rgba(255,255,255,0.05)',
-                        color: timeRange === range ? '#000' : 'var(--color-text-muted)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
+                      style={num}
                     >
                       {range}
                     </button>
@@ -386,125 +418,135 @@ export function TelemetryView({ nodes, edges: _edges, selectedProject, embedded 
                 </div>
               </div>
 
-              {/* Real-time Metric History Graph Visualizer */}
-              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)', height: '180px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>CPU Load Trend (%)</div>
-                {history.length > 0 ? (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
-                    {history.map((h, idx) => {
-                      const val = Math.min((h.cpu || 0), 100);
-                      return (
-                        <div key={idx} style={{ flex: 1, height: '100%', display: 'flex', alignItems: 'flex-end' }}>
-                          <div 
-                            style={{
-                              width: '100%',
-                              height: `${Math.max(val, 4)}%`,
-                              background: 'linear-gradient(180deg, var(--color-accent-cyan) 0%, rgba(0,212,255,0.1) 100%)',
-                              borderRadius: '2px 2px 0 0',
-                              transition: 'height 0.3s'
-                            }}
-                            title={`CPU: ${val.toFixed(1)}%`}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '12px', fontStyle: 'italic' }}>
-                    No historical telemetry data collected yet
-                  </div>
-                )}
+              {/* CPU history chart */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>CPU load (%)</div>
+                <div style={{
+                  height: '150px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                  backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px)',
+                  backgroundSize: '100% 25%',
+                  borderBottom: '1px solid rgba(255,255,255,.05)',
+                }}>
+                  {history.length > 0 ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: '3px' }}>
+                      {history.map((h, idx) => {
+                        const val = Math.min((h.cpu || 0), 100);
+                        return (
+                          <div key={idx} style={{ flex: 1, height: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                            <div
+                              style={{
+                                width: '100%',
+                                height: `${Math.max(val, 2)}%`,
+                                background: 'var(--color-accent-cyan)',
+                                opacity: 0.75,
+                                borderRadius: '2px 2px 0 0',
+                                transition: 'height 0.3s'
+                              }}
+                              title={`CPU: ${val.toFixed(1)}%`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', textAlign: 'center' }}>
+                      <Activity size={20} strokeWidth={1.75} color="var(--color-text-dim)" />
+                      <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No history yet</div>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Telemetry appears after the first samples are collected</div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Quick Metadata list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', marginTop: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px', gap: '8px' }}>
+              {/* Quick metadata list */}
+              <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12.5px', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', height: '34px', gap: '8px' }}>
                   <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>Container ID</span>
                   <span
                     title={selectedNode.metadata?.containerId || 'N/A'}
-                    style={{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontSize: '11px' }}
+                    style={{ fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontSize: '12px' }}
                   >
                     {selectedNode.metadata?.containerId ? selectedNode.metadata.containerId.slice(0, 12) : 'N/A'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '6px', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', height: '34px', gap: '8px' }}>
                   <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>Image</span>
                   <span
                     title={selectedNode.metadata?.image || 'N/A'}
-                    style={{ fontFamily: 'monospace', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}
                   >
                     {selectedNode.metadata?.image || 'N/A'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Container State</span>
-                  <span style={{ color: 'var(--color-healthy)', fontWeight: 600 }}>{selectedNode.metadata?.state || 'running'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '34px' }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Container state</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-main)' }}>
+                    <i className="mm-dot" style={{ background: (selectedNode.metadata?.state || 'running') === 'running' ? 'var(--color-healthy)' : 'var(--color-unknown)' }} />
+                    {sentence(selectedNode.metadata?.state || 'running')}
+                  </span>
                 </div>
               </div>
             </>
           ) : (
-            <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', margin: 'auto' }}>
-              Select a service from the table to view detailed telemetry
+            <div style={{ margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' }}>
+              <MousePointerClick size={20} strokeWidth={1.75} color="var(--color-text-dim)" />
+              <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No service selected</div>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Select a service from the table to view its telemetry</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Raw Service Logs */}
-      <div style={{ background: '#0d1117', borderRadius: '12px', border: '1px solid var(--color-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>
-            <span style={{ color: logsLoading ? 'var(--color-warning, #ffaa00)' : 'var(--color-healthy)', marginRight: '8px' }}>●</span>
-            RAW LOGS {selectedNode ? `— ${selectedNode.name.toUpperCase()}` : ''}
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{serviceLogs.length} lines</div>
+      {/* Service logs */}
+      <div className="mm-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={cardTitle}>Service logs</h3>
+            <div style={{ ...cardSub, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className="mm-dot" style={{ background: logsLoading ? 'var(--color-degraded)' : autoRefreshLogs ? 'var(--color-healthy)' : 'var(--color-unknown)' }} />
+              {selectedNode ? selectedNode.name : 'No service selected'}
+              <span style={{ color: 'var(--color-text-dim)', ...num }}>· {serviceLogs.length} lines</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <select
               value={logTail}
               onChange={(e) => setLogTail(parseInt(e.target.value))}
-              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', outline: 'none' }}
+              style={{ height: '30px', background: 'rgba(255,255,255,.03)', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0 8px', fontSize: '12.5px', fontFamily: 'inherit', outline: 'none' }}
             >
-              {[100, 200, 500, 1000].map(n => <option key={n} value={n}>last {n}</option>)}
+              {[100, 200, 500, 1000].map(n => <option key={n} value={n}>Last {n}</option>)}
             </select>
-            <button
-              onClick={() => setAutoRefreshLogs(v => !v)}
-              style={{
-                background: autoRefreshLogs ? 'rgba(0, 230, 118, 0.12)' : 'rgba(255,255,255,0.05)',
-                color: autoRefreshLogs ? 'var(--color-healthy)' : 'var(--color-text-muted)',
-                border: `1px solid ${autoRefreshLogs ? 'rgba(0,230,118,0.3)' : 'var(--color-border)'}`,
-                borderRadius: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer'
-              }}
-            >
-              {autoRefreshLogs ? 'LIVE' : 'PAUSED'}
-            </button>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+              <button
+                type="button"
+                aria-pressed={autoRefreshLogs}
+                className={`mm-switch${autoRefreshLogs ? ' on' : ''}`}
+                onClick={() => setAutoRefreshLogs(v => !v)}
+              />
+              {autoRefreshLogs ? 'Live' : 'Paused'}
+            </label>
           </div>
         </div>
         <div
           ref={logListRef}
           style={{
-            background: '#010409',
-            borderRadius: '8px',
-            padding: '16px',
+            ...logBox,
+            padding: '10px 14px',
             height: '320px',
-            overflowY: 'auto',
-            fontFamily: 'monospace',
-            fontSize: '11.5px',
             lineHeight: '1.6',
-            color: '#c9d1d9',
-            border: '1px solid #30363d',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all'
           }}
         >
           {!selectedNode ? (
-            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>Select a service to view its raw logs</div>
+            <div style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)' }}>Select a service to view its logs</div>
           ) : logsError ? (
-            <div style={{ color: '#ff7b72' }}>Failed to fetch logs: {logsError}</div>
+            <div style={{ color: 'var(--color-critical)' }}>Failed to fetch logs: {logsError}</div>
           ) : serviceLogs.length === 0 ? (
-            <div style={{ color: '#8b949e', fontStyle: 'italic' }}>{logsLoading ? 'Loading logs...' : 'No log lines returned'}</div>
+            <div style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)' }}>{logsLoading ? 'Loading logs…' : 'No log lines returned'}</div>
           ) : (
             serviceLogs.map((line, i) => (
-              <div key={i} style={{ borderBottom: '1px solid #161b22', padding: '2px 0' }}>
+              <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.03)', padding: '2px 0' }}>
                 {line}
               </div>
             ))

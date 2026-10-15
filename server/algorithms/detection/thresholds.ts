@@ -1,0 +1,164 @@
+
+/**
+ * The rules that decide what counts as an incident.
+ *
+ * Incidents are deliberately rule-based and completely separate from the ML
+ * pipeline. Nothing here loads a model, and the trained detectors never feed
+ * this path - that separation is the point. The models are a research
+ * artefact whose output belongs in Findings, and they need training data,
+ * a fitted artefact per service and a scorer process to say anything at all.
+ * An incident has to fire on a service that started five minutes ago, on a
+ * target whose models were never trained, while the scorer is stopped. A
+ * fixed rule on a live metric does that; an Isolation Forest does not.
+ *
+ * It also keeps the research honest. If incidents were driven by the models,
+ * every evaluation of those models would be scored against alerts the models
+ * themselves raised.
+ *
+ * These numbers were hardcoded across AnomalyDetector, where they could not
+ * be seen or changed without editing source. They are defaults now, not
+ * constants: data/incident_thresholds.json overrides any of them.
+ */
+export interface IncidentThresholds {
+  /** Samples of history required before z-scores mean anything. */
+  minHistorySamples: number;
+  /** |z| at or above this is an anomaly at all. */
+  zScoreAnomaly: number;
+  /** …and HIGH at or above this. */
+  zScoreHigh: number;
+  /** …and CRITICAL at or above this. */
+  zScoreCritical: number;
+  /** A z-score only counts if the metric also moved at least this many points from its baseline mean. */
+  minDeltaPercent: number;
+  /** Absolute percent that forces HIGH regardless of z. */
+  absoluteHighPercent: number;
+  /** Absolute percent that forces CRITICAL regardless of z. */
+  absoluteCriticalPercent: number;
+  /**
+   * Below this standard deviation a baseline is treated as flat. A z-score
+   * against a flat baseline divides by ~0 and explodes, so the flat case is
+   * judged on absolute movement instead.
+   */
+  flatlineStdDev: number;
+  /** On a flat baseline, a move this many points is the anomaly. */
+  flatlineDeltaPercent: number;
+  /** …and CRITICAL if the value itself is above this. */
+  flatlineCriticalPercent: number;
+  /** Critical services needed before an incident is CRITICAL rather than HIGH. */
+  criticalServicesForCritical: number;
+  /** Consecutive samples with no activity at all before a usually-active service counts as silent (frozen). */
+  silenceSamples: number;
+  /** If at least this share of a target's services go silent / vanish together, it is a monitoring outage, not N faults. */
+  monitoringGapShare: number;
+  /** How much a broken dependency's evidence explains its callers' symptoms (0 = plain "most abnormal"). */
+  explainAwayGamma: number;
+  /** Prior probability that a failure crosses one call edge, for cascade risk. */
+  cascadeEdgeProbability: number;
+}
+
+export const DEFAULT_THRESHOLDS: IncidentThresholds = {
+  minHistorySamples: 12,
+  // Scores are noise-normalised (a healthy series' extreme sits at 3), so the alarm line is above that. The research
+  // bench calibrated 3.25 at 15 s ticks for 2 false alarms/h; polling here is faster, so the default is a little higher.
+  zScoreAnomaly: 3.5,
+  zScoreHigh: 5.0,
+  zScoreCritical: 8.0,
+  minDeltaPercent: 5,
+  absoluteHighPercent: 70,
+  absoluteCriticalPercent: 85,
+  flatlineStdDev: 0.001,
+  flatlineDeltaPercent: 30,
+  flatlineCriticalPercent: 80,
+  criticalServicesForCritical: 2,
+  silenceSamples: 3,
+  monitoringGapShare: 0.8,
+  explainAwayGamma: 1.0,
+  cascadeEdgeProbability: 0.5,
+};
+
+/** Bounds that keep an edited value from producing nonsense. */
+const LIMITS: Record<keyof IncidentThresholds, [number, number]> = {
+  minHistorySamples: [2, 1000],
+  zScoreAnomaly: [0.5, 10],
+  zScoreHigh: [0.5, 15],
+  zScoreCritical: [0.5, 20],
+  minDeltaPercent: [0, 100],
+  absoluteHighPercent: [1, 100],
+  absoluteCriticalPercent: [1, 100],
+  flatlineStdDev: [0.0000001, 10],
+  flatlineDeltaPercent: [1, 100],
+  flatlineCriticalPercent: [1, 100],
+  criticalServicesForCritical: [1, 1000],
+  silenceSamples: [2, 60],
+  monitoringGapShare: [0.3, 1],
+  explainAwayGamma: [0, 2],
+  cascadeEdgeProbability: [0.05, 1],
+};
+
+/**
+ * Number(), but only for things that are genuinely numeric.
+ *
+ * Number(null) is 0 and Number([]) is 0, both finite, so a plain
+ * Number.isFinite guard lets `{"zScoreAnomaly": null}` through and clamps it
+ * to the minimum - which is the most sensitive possible setting, making every
+ * sample anomalous. Silently turning a malformed edit into an alert storm is
+ * the worst available failure, so anything not a number or a numeric string
+ * is rejected and the previous value stands.
+ */
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Apply overrides to a base set, clamped to each limit. Anything missing, non-numeric or out of range is ignored (base stands):
+ * a malformed override must not stop incident detection. Pure; reading and writing the overrides file is thresholdsStore.ts.
+ */
+export function mergeThresholds(base: IncidentThresholds, patch: Partial<Record<keyof IncidentThresholds, unknown>> | null | undefined): IncidentThresholds {
+  const next: IncidentThresholds = { ...base };
+  for (const key of Object.keys(DEFAULT_THRESHOLDS) as (keyof IncidentThresholds)[]) {
+    const value = toNumber(patch?.[key]);
+    if (value === null) continue;
+    const [lo, hi] = LIMITS[key];
+    next[key] = Math.min(Math.max(value, lo), hi);
+  }
+  return next;
+}
+
+export function thresholdLimits() {
+  return LIMITS;
+}
+
+/** Plain-English description of each rule, shown next to it in the UI. */
+export const THRESHOLD_DOCS: Record<keyof IncidentThresholds, string> = {
+  minHistorySamples:
+    'How many past samples a service needs before it is judged at all. Below this it is skipped rather than guessed at, so a service that just started does not alert on its first reading.',
+  zScoreAnomaly:
+    'How far from its own recent baseline a metric must move to count as anomalous, in noise-normalised standard deviations (a healthy series\' normal extreme is about 3). Lower fires more often.',
+  zScoreHigh: 'Deviation at or above this is HIGH rather than MEDIUM.',
+  zScoreCritical: 'Deviation at or above this is CRITICAL.',
+  minDeltaPercent:
+    'Even a large z-score is ignored unless the metric moved this many percentage points from its baseline. Stops an idle service going from 0.05% to 2% CPU from raising an incident.',
+  absoluteHighPercent:
+    'A CPU or memory reading above this is HIGH no matter how calm the baseline is - a service pinned at 75% is worth seeing even if it has been there long enough to look normal.',
+  absoluteCriticalPercent: 'A reading above this is CRITICAL regardless of deviation.',
+  flatlineStdDev:
+    'Below this standard deviation the baseline counts as flat. Dividing by a near-zero deviation makes z-scores explode, so the flat case is judged on absolute movement instead.',
+  flatlineDeltaPercent:
+    'On a flat baseline, how many points a metric must jump to be anomalous. This is the rule that catches an idle service suddenly doing work.',
+  flatlineCriticalPercent: 'On a flat baseline, a value above this is CRITICAL rather than HIGH.',
+  criticalServicesForCritical:
+    'How many services must be critical at once before the whole incident is CRITICAL rather than HIGH.',
+  silenceSamples:
+    'A service that is normally busy (CPU or network) and shows no activity at all for this many samples in a row is treated as frozen. This is how a hung service is caught: it sends no errors, it just goes quiet.',
+  monitoringGapShare:
+    'If at least this share of a target\'s services go silent or vanish at the same moment, the mapper reports a monitoring outage (collector or SSH problem) instead of blaming services.',
+  explainAwayGamma:
+    'How strongly a broken dependency explains its callers\' errors and slowness. 1 = fully; 0 = ignore the call graph and rank by how abnormal each service is.',
+  cascadeEdgeProbability:
+    'Assumed chance that a failure spreads across one call edge, used for the "at risk next" list. It ranks who to watch; it is not a calibrated probability.',
+};

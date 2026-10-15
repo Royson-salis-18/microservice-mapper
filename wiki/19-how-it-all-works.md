@@ -1,6 +1,6 @@
-# 19 — How it all works
+# 19 - How it all works
 
-Two passes over the same system. **Part 1** is the plain-language version —
+Two passes over the same system. **Part 1** is the plain-language version -
 no jargon, read it first. **Part 2** is the real architecture with file paths,
 intervals and data shapes.
 
@@ -8,14 +8,14 @@ Accurate as of 2026-09-24.
 
 ---
 
-# Part 1 — The plain version
+# Part 1 - The plain version
 
 ## The one-sentence version
 
 You give it an SSH key to a server running Docker containers. It logs in,
 looks around, works out which services exist and which ones talk to each
 other, watches them, generates traffic against them, and tells you when
-something looks wrong — **without installing anything on that server**.
+something looks wrong - **without installing anything on that server**.
 
 ## The doctor analogy
 
@@ -27,13 +27,13 @@ Think of a doctor examining a patient who cannot be opened up.
 | Listens for which organs are active | Watches which containers have network connections open to each other |
 | Asks the patient to walk on a treadmill | Sends synthetic traffic and watches what happens under load |
 | Learns what *normal* looks like for **this** patient | Trains an anomaly model per service on its own history |
-| "Your temperature is 39°C — that's a fever by any standard" | **Incidents**: fixed rules on live numbers |
+| "Your temperature is 39°C - that's a fever by any standard" | **Incidents**: fixed rules on live numbers |
 | "This is unusual *for you*" | **Findings**: what the trained models say |
 | Reads the patient's own fitness tracker if they wear one | **Tier 2**: reads the target's own Prometheus if it has one |
 
 The last row is the important recent addition. Most patients don't wear a
 fitness tracker, so the doctor must work from the outside. But if one
-*does*, ignoring it would be silly — you just have to be clear about which
+*does*, ignoring it would be silly - you just have to be clear about which
 readings came from which source.
 
 ## The five things it does
@@ -45,9 +45,9 @@ payment and so on.
 **2. Work out who talks to whom.** Two separate kinds of evidence, never
 mixed up:
 
-- **Declared** — the compose file *says* checkout depends on payment. That's
+- **Declared** - the compose file *says* checkout depends on payment. That's
   a claim on paper. Drawn as a dim grey line.
-- **Observed** — we actually caught an open network connection between them.
+- **Observed** - we actually caught an open network connection between them.
   That's a fact. Drawn as a bright line, coloured by how busy it is.
 
 This distinction is the backbone of the whole design. The system will never
@@ -63,10 +63,10 @@ find which endpoints actually answer, then drives load only at those.
 **5. Say when something's wrong.** Two independent opinions, deliberately
 kept apart:
 
-- **Incidents** — rules. "CPU is above 85%" or "this is 2.5 standard
+- **Incidents** - rules. "CPU is above 85%" or "this is 2.5 standard
   deviations from its own recent baseline". Works immediately, on any
   target, needs no setup.
-- **Findings** — machine learning. Four different detectors, each trained
+- **Findings** - machine learning. Four different detectors, each trained
   per service on its own history. Needs training data and a running scorer.
 
 ## Why two opinions instead of one
@@ -90,12 +90,12 @@ cannot see **what** the work was.
 
 CPU, memory and network bytes are exact. But there is no way to extract
 "this request took 82 ms and returned a 500" from `docker stats` and a
-socket table — requests simply aren't in there. That's physics, not a missing
+socket table - requests simply aren't in there. That's physics, not a missing
 feature.
 
 **Unless the target already measures itself.** The OpenTelemetry demo runs
 its own Prometheus with exact latency histograms. We were ignoring it and
-scraping sockets instead. Now, if a target publishes that data, we read it —
+scraping sockets instead. Now, if a target publishes that data, we read it -
 and every number is labelled with where it came from, so a rough outside
 estimate is never mistaken for an exact internal measurement.
 
@@ -113,7 +113,7 @@ available. Of the four current targets, only one has Tier 2.
 ## Why the models currently say very little
 
 An honest caveat. The detectors mostly report nothing, and it isn't the
-algorithms' fault — it's the data.
+algorithms' fault - it's the data.
 
 `sock-shop:front-end` has **1568 training rows containing 6 distinct
 values**. An idle container's CPU barely moves, and we sample it faster than
@@ -126,7 +126,7 @@ That's why Tier 1/2 matters beyond fidelity: latency and error rate actually
 
 ---
 
-# Part 2 — The detailed picture
+# Part 2 - The detailed picture
 
 ## Processes
 
@@ -163,15 +163,20 @@ runCycle()
   ├── connect over SSH (ConnectionManager, ssh2)
   ├── restartCrashedContainers()   ← on reconnect only
   ├── refreshDiscovery()           ← docker ps + compose parse
-  └── startPolling()               ← then every 5s, self-scheduling
-        ├── MetricCollector.collectOnce()
-        │     ├── docker stats            → CPU/memory/network
-        │     ├── docker inspect          → container IP map
-        │     ├── /proc/<hostPid>/net/tcp → observed edges + connections
-        │     └── docker logs             → HTTP interactions (Tier 1)
-        ├── collectRequestMetrics()       ← Tier 2, opt-in, wrapped
-        └── onTelemetryCollected(envelope) → GraphStore.ingestRemote()
+  ├── poll loop                    ← 5 s after the previous poll finished
+  │     ├── docker stats            → CPU (vs allowance), memory, status
+  │     ├── docker logs             → HTTP interactions (Tier 1, where a gateway logs)
+  │     ├── collectRequestMetrics() → Tier 2, opt-in, wrapped
+  │     └── onTelemetryCollected(envelope) → GraphStore.ingestRemote()
+  ├── sweep loop                   ← 5 s after the previous sweep finished
+  │     └── per container, ONE exec:
+  │           /proc/<hostPid>/net/tcp + tcp6 → connections, direction, connKey
+  │           /proc/<hostPid>/net/dev        → exact byte counters → bytes/s
+  └── rediscovery                  ← every 180 s (docker ps + inspect, CPU limits)
 ```
+
+What each of those figures means exactly, and how it is kept exact, is in
+[Measuring precisely](./31-measurement-precision.md).
 
 **Self-scheduling, not `setInterval`.** A cycle takes far longer than 5s
 (25 services × one SSH exec each). `setInterval` fired regardless, so cycles
@@ -179,7 +184,7 @@ overlapped and exhausted the SSH server's `MaxSessions`. Measured: 2.66
 refused scans per cycle before, **0.00 after**.
 
 **Socket reads come from the host, not the container.** `docker exec <id> sh
--c 'cat /proc/net/tcp'` fails on any image without a shell — the OTel demo's
+-c 'cat /proc/net/tcp'` fails on any image without a shell - the OTel demo's
 frontend is distroless, so its scan failed 100% of the time, silently. It
 now reads `/proc/<hostPid>/net/tcp` from the host, which needs nothing
 inside the container.
@@ -195,10 +200,12 @@ inside the container.
 declared: boolean        // a config file said so
 observed: boolean        // a live TCP connection was seen
 evidenceSources: string[]// compose, network-tcp, nginx-config, ...
-activity?: {             // socket observations per minute
-  samplesPerMin: number  // NOT requests — deliberately named
-  windowSec: number
+activity?: {             // socket-level, Tier 0
+  samplesPerMin: number         // sightings/min: a relative index, NOT requests
+  openConnections?: number      // distinct open connections (averaged)
+  newConnectionsPerMin?: number // distinct connections opened per minute
 }
+weight?: { value, dependency, confidence, … }   // confidence × caller's share
 metrics: { p95Latency, errorRate, requestRate, provenance } | null
 ```
 
@@ -225,9 +232,9 @@ UI → POST /api/experiments/start
 
 **`probeSurface` is two-phase** because one is not enough:
 
-1. **Origins** — one request per discovered `host:port`. On the OTel demo
+1. **Origins** - one request per discovered `host:port`. On the OTel demo
    this eliminated 19 of 20: only `:8080` is open in the security group.
-2. **Paths** — for each origin that answered, probe paths behind it. A
+2. **Paths** - for each origin that answered, probe paths behind it. A
    gateway fans one open port to every backend by path, so stopping at
    phase 1 reports "1 endpoint works" for a 25-service system.
 
@@ -238,7 +245,7 @@ workflow had the real paths all along.
 
 Timeouts adapt: phase 2 scales off the slowest origin and retries anything
 that only *timed out* at 25s. Sock-shop went from "23 of 41 dead" to
-**0 dead, 11 usable** — they were alive, just slower than a flat 6s budget.
+**0 dead, 11 usable** - they were alive, just slower than a flat 6s budget.
 
 ## The ML pipeline
 
@@ -262,7 +269,10 @@ carries information:
 | `zscore` | statistical | no fitting; the baseline the others must beat |
 
 All score *higher = more anomalous*, each with its own p99 threshold from
-its own training distribution.
+its own training distribution. Live, `score.py` puts all four on one scale
+(0.5 = at that detector's threshold) and **votes**: a sample is anomalous
+when at least half the usable detectors say so, scored by their median. It
+becomes *persistent* after 3 anomalous windows in a row.
 
 **LOF refuses rather than lies.** Fitted naively it produced thresholds of
 `3.37e9`, because with 1568 rows holding 47 distinct values a point's 20
@@ -288,7 +298,7 @@ editable in the UI, clamped to safe ranges, re-read each pass.
 ## Telemetry tiers
 
 `server/models/MetricProvenance.ts` records where every number came from,
-and `SOURCE_CAPABILITIES` enforces what each source may claim — a socket
+and `SOURCE_CAPABILITIES` enforces what each source may claim - a socket
 scan cannot populate a latency field.
 
 Tier 2 is opt-in per target:
@@ -300,7 +310,7 @@ Tier 2 is opt-in per target:
 `localhost` is correct: the query runs *on the target* via curl over the
 existing SSH connection, because Prometheus is bound to localhost there.
 
-The whole Tier 2 path is wrapped — a broken optional source logs once and
+The whole Tier 2 path is wrapped - a broken optional source logs once and
 returns empty, and the merge is additive so a failed cycle never wipes the
 Tier 0 metrics collected in the same cycle.
 
@@ -311,7 +321,7 @@ Two measured fixes worth remembering:
 **Tail-reading beats full-reading.** `/api/ml/features` returns the most
 recent 300 rows and was reading all 33 MB to do it: 114.9 ms reading,
 26.1 ms splitting into 152k strings, **0.3 ms** doing the actual work.
-`util/tailCsv.ts` seeks backwards from EOF and stops when it has enough —
+`util/tailCsv.ts` seeks backwards from EOF and stops when it has enough -
 **194 ms → 2.0 ms**, byte-identical output.
 
 **Cost should track the answer, not the history.** These files only grow.
@@ -326,6 +336,7 @@ Anything proportional to total history degrades on its own over time.
 | Telemetry | live per-service metrics + raw traffic feed |
 | Dependencies | edges with their evidence |
 | Analytics | graph-level analysis |
+| **Reliability** | health, risk, cascade prediction, what-if, blast radius |
 | ML Pipeline | the machine: processes, execution, config, progress |
 | **Findings** | what the models concluded |
 | Traces | observed connection events |
@@ -333,6 +344,14 @@ Anything proportional to total history degrades on its own over time.
 | Experiments | traffic run history |
 
 ## Where to read next
+
+- The rules behind every design choice → [29](./29-design-principles.md)
+- Frameworks and why → [30](./30-tech-stack.md)
+- Every measurement, and how it is kept exact → [31](./31-measurement-precision.md)
+- How the numbers are checked → [32](./32-accuracy-and-self-check.md)
+- What the colours, widths and pulses mean → [33](./33-visual-language.md)
+- The code, followed end to end → [34](./34-code-tour.md)
+- Risk and cascade prediction → [22](./22-risk-engine.md)
 
 - Evidence model and edge lifecycle → [06](./06-node-edge-lifecycle.md)
 - RCA scoring → [08](./08-rca-engine.md)

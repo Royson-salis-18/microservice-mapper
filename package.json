@@ -8,10 +8,24 @@
     "server": "cd server && npm run start",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "install:all": "cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ../remote-collector && npm install && cd ../traffic-gen && npm install",
     "traffic-gen": "cd traffic-gen && npm start",
-    "export-telemetry": "server/node_modules/.bin/tsx scripts/export_vectorized_telemetry.ts",
-    "test": "./server/node_modules/.bin/tsx --test tests/*.test.ts"
+    "export-telemetry": "node server/node_modules/tsx/dist/cli.mjs run/scripts/export_vectorized_telemetry.ts",
+    "test": "node server/node_modules/tsx/dist/cli.mjs --test \"run/tests/*.test.ts\"",
+    "setup": "npm run install:all && npm run doctor",
+    "doctor": "node run/scripts/doctor.mjs",
+    "start": "node run/scripts/local.mjs --no-collect",
+    "eval": "node server/node_modules/tsx/dist/cli.mjs run/cli/eval/run.ts",
+    "local": "node run/scripts/local.mjs",
+    "demo": "node run/scripts/demo.mjs",
+    "hosts": "node run/scripts/hosts.mjs",
+    "ml": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/run.ts",
+    "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts",
+    "ml:compare": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/compare.ts",
+    "ml:synth": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/synth.ts",
+    "ml:bench": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/bench.ts",
+    "ml:hybrid": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/hybrid.ts",
+    "ml:predict": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/predict.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -11,6 +11,8 @@ export interface EdgeAppearance {
   /** 0..1, drives opacity and thickness. */
   intensity: number;
   label: string;
+  /** Why it has this colour, when it is trouble. */
+  reason?: string;
 }
 
 /**
@@ -18,47 +20,80 @@ export interface EdgeAppearance {
  * looks calm in one view and hot in the other.
  *
  * Driven by observed TCP connection activity, because that is the only
- * real per-edge measurement available — `edge.metrics` (latency, error
+ * real per-edge measurement available - `edge.metrics` (latency, error
  * rate, request rate) is null on every edge in this deployment, so grading
  * by "load" in the HTTP sense would be inventing numbers. An explicit
  * failed/degraded status still wins over activity: a broken link matters
  * more than a busy one.
  *
- * Intensities are held 20% below full so links read as lighting rather
- * than glare.
+ * Colour is the link's state: green carrying traffic normally (brighter and
+ * thicker the busier it is), amber degraded, red failing, grey declared but
+ * never seen. Volume alone never turns a link amber or red. (It used to run yellow to orange to red with
+ * load, which made a healthy busy gateway look like an incident.)
  *
  * Thresholds are socket samples per minute, absolute rather than relative to
  * the busiest link, so a link's colour doesn't change meaning when an
  * unrelated service gets noisy.
  */
-export function edgeAppearance(edge: DependencyEdge | undefined): EdgeAppearance {
-  const errRate = edge?.metrics?.errorRate ?? 0;
-  const latency = edge?.metrics?.latency ?? 0;
+export interface EdgeContext {
+  /** Health of the service being called. */
+  targetStatus?: string;
+}
 
-  if (edge?.status === 'failed' || errRate > 5) {
-    return { heat: 'failed', color: '#ff1744', glow: '#ff5c7a', intensity: 0.8, label: 'failed' };
-  }
-  if (edge?.status === 'degraded' || latency > 500) {
-    return { heat: 'degraded', color: '#ff8a00', glow: '#ffb457', intensity: 0.72, label: 'degraded' };
-  }
+/**
+ * Where a link turns amber (slow or erroring) and red (severe). Shared with the
+ * server (server/graph/linkThresholds.ts) so status and colour always agree.
+ * Latency is the p95 when a source gives percentiles, the mean otherwise.
+ */
+export const LINK_THRESHOLDS = {
+  slowMs: 300,
+  verySlowMs: 1000,
+  errorWarn: 0.01,
+  errorCritical: 0.05,
+} as const;
 
-  if (!edge?.observed) {
-    // Declared by config, never seen carrying anything. Deliberately inert
-    // grey so it recedes behind links that are actually doing work.
-    return { heat: 'idle', color: '#5b6778', glow: '#7c8a9e', intensity: 0.34, label: 'declared, not observed' };
-  }
+const RED = { color: '#ef5f67', glow: '#f58a90', intensity: 1 };
+const AMBER = { color: '#e8a33d', glow: '#f0bd6a', intensity: 0.9 };
 
-  const perMin = edge.activity?.samplesPerMin;
-  if (perMin === undefined) {
-    // Seen at least once, but no rate measured yet.
-    return { heat: 'calm', color: '#22e4ff', glow: '#7df3ff', intensity: 0.64, label: 'observed' };
-  }
+function ms(v: number): string {
+  return v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${Math.round(v)} ms`;
+}
 
-  // Calibrated against the live spread across 47 measured links
-  // (median 112, p75 256, p90 1774, max 5571) so the four bands actually
-  // separate traffic instead of painting almost everything red.
-  if (perMin > 1200) return { heat: 'saturated', color: '#ff1744', glow: '#ff6b85', intensity: 0.8, label: `${perMin}/min — saturated` };
-  if (perMin > 250) return { heat: 'heavy', color: '#ff8a00', glow: '#ffc06b', intensity: 0.76, label: `${perMin}/min — heavy` };
-  if (perMin > 60) return { heat: 'busy', color: '#ffd400', glow: '#ffe873', intensity: 0.72, label: `${perMin}/min — busy` };
-  return { heat: 'calm', color: '#22e4ff', glow: '#7df3ff', intensity: 0.64, label: `${perMin}/min` };
+/**
+ * Colour is the link's state. Red: failing (marked failed, 5%+ errors, p95 of a
+ * second or more, or, with no request data, calling a service that is down).
+ * Amber: slow or erroring short of that, or calling a degraded service. Measured
+ * request data wins over the callee's status. Otherwise green, brighter and
+ * thicker with volume; grey when declared but never seen carrying anything.
+ */
+export function edgeAppearance(edge: DependencyEdge | undefined, ctx: EdgeContext = {}): EdgeAppearance {
+  const m = edge?.metrics as (DependencyEdge['metrics'] & { p95Latency?: number | null }) | null | undefined;
+  const errorRate = m?.errorRate;
+  const latency = m?.p95Latency ?? m?.latency;
+  const measured = errorRate != null || latency != null;
+  const observed = edge?.observed ?? false;
+
+  if (edge?.status === 'failed') return { heat: 'failed', ...RED, label: 'failing', reason: 'marked failed' };
+  if (errorRate != null && errorRate >= LINK_THRESHOLDS.errorCritical) {
+    return { heat: 'failed', ...RED, label: 'failing', reason: `${(errorRate * 100).toFixed(1)}% of requests failing` };
+  }
+  if (latency != null && latency >= LINK_THRESHOLDS.verySlowMs) return { heat: 'failed', ...RED, label: 'very slow', reason: `latency ${ms(latency)}` };
+  if (observed && !measured && ctx.targetStatus === 'critical') return { heat: 'failed', ...RED, label: 'failing', reason: 'calls a service that is down' };
+
+  if (edge?.status === 'degraded') return { heat: 'degraded', ...AMBER, label: 'degraded', reason: 'marked degraded' };
+  if (errorRate != null && errorRate >= LINK_THRESHOLDS.errorWarn) {
+    return { heat: 'degraded', ...AMBER, label: 'erroring', reason: `${(errorRate * 100).toFixed(1)}% of requests failing` };
+  }
+  if (latency != null && latency >= LINK_THRESHOLDS.slowMs) return { heat: 'degraded', ...AMBER, label: 'slow', reason: `latency ${ms(latency)}` };
+  if (observed && !measured && ctx.targetStatus === 'degraded') return { heat: 'degraded', ...AMBER, label: 'degraded', reason: 'calls a degraded service' };
+
+  if (!observed) return { heat: 'idle', color: '#4a4f57', glow: '#5d636c', intensity: 0.55, label: 'declared, not observed' };
+
+  const perMin = edge?.activity?.samplesPerMin;
+  if (perMin === undefined) return { heat: 'calm', color: '#2f9e6f', glow: '#3ecf8e', intensity: 0.82, label: 'observed' };
+  // Calibrated against the live spread across 47 measured links (median 112, p75 256, p90 1774, max 5571).
+  if (perMin > 1200) return { heat: 'saturated', color: '#7fe8b8', glow: '#c2f5dc', intensity: 0.95, label: `${perMin}/min, very heavy` };
+  if (perMin > 250) return { heat: 'heavy', color: '#4fdc9c', glow: '#9cefc6', intensity: 0.92, label: `${perMin}/min, heavy` };
+  if (perMin > 60) return { heat: 'busy', color: '#3ecf8e', glow: '#7fe8b8', intensity: 0.86, label: `${perMin}/min, busy` };
+  return { heat: 'calm', color: '#2f9e6f', glow: '#3ecf8e', intensity: 0.82, label: `${perMin}/min` };
 }

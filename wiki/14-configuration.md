@@ -2,22 +2,19 @@
 
 ---
 
-## Server — `server/config.ts`
+## Server - `server/config.ts`
 
 ```typescript
 export const config = {
-  PORT:                    3001,
-  POLLING_INTERVAL_MS:     5000,
-  METRIC_HISTORY_SIZE:     720,
-  INGEST_TOKEN:            'mapper-secret-token',
-  SOCK_SHOP_BASE_URL:      '',
-  SOCK_SHOP_COMPOSE_PATH:  './sock-shop-docker-compose.yml',
-  VERTIKAL_BASE_URL:       '',
-  VERTIKAL_COMPOSE_PATH:   '../vertikal/docker-compose.yml',
+  PORT:                 3001,
+  POLLING_INTERVAL_MS:  5000,
+  METRIC_HISTORY_SIZE:  720,
+  INGEST_TOKEN:         'mapper-secret-token',
+  PYTHON:               'python3',   // 'python' on Windows
 };
 ```
 
-Override any value with an environment variable:
+Override any value with an environment variable. The server reads only its environment; it does not load a `.env` file by itself (under systemd, use `EnvironmentFile=`).
 
 | Env Var | Default | Effect |
 |---|---|---|
@@ -25,12 +22,11 @@ Override any value with an environment variable:
 | `POLLING_INTERVAL_MS` | `5000` | RCA evaluation + graph broadcast interval |
 | `METRIC_HISTORY_SIZE` | `720` | Ring buffer depth per node (~1 hour at 5s) |
 | `INGEST_TOKEN` | `mapper-secret-token` | Bearer token for `POST /api/ingest` |
-| `SOCK_SHOP_BASE_URL` | `''` | Sock Shop HTTP endpoint for health pings |
-| `VERTIKAL_BASE_URL` | `''` | Vertikal HTTP endpoint for health pings |
+| `PYTHON` | `python3`, or `python` on Windows | Interpreter for the ML collector, scorer and retraining. On Windows `python3` is at most a Microsoft Store stub |
 
 ---
 
-## Remote Collector — Environment Variables
+## Remote Collector - Environment Variables
 
 Set on the EC2 instance before starting the collector:
 
@@ -45,7 +41,7 @@ Set on the EC2 instance before starting the collector:
 
 ---
 
-## Target SSH Config — `data/remote_config.json`
+## Target SSH Config - `server/data/remote_config.json`
 
 Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadTargetsFromConfig()` at startup.
 
@@ -68,11 +64,11 @@ Written by the UI (`RemoteConfigPanel`) or manually. Loaded by `GraphStore.loadT
 }
 ```
 
-**`sshKeyPath` supports `~/`** — expanded via `path.join(os.homedir(), ...)`. No passphrase-protected keys (would require `ssh-agent` integration).
+**`sshKeyPath` supports `~/`** - expanded via `path.join(os.homedir(), ...)`. No passphrase-protected keys (would require `ssh-agent` integration).
 
-**`baseUrl`** — used for HTTP health pings. Optional but recommended. If absent, `endpointStatus` stays `UNCONFIGURED`.
+**`baseUrl`** - used for HTTP health pings. Optional but recommended. If absent, `endpointStatus` stays `UNCONFIGURED`.
 
-**`trafficBaseUrl`** (optional) — pins the URL traffic is actually sent to,
+**`trafficBaseUrl`** (optional) - pins the URL traffic is actually sent to,
 overriding what discovery infers. Set it from the **Entry point** control in
 the Traffic panel, or via `POST /api/traffic/entrypoint`.
 
@@ -83,7 +79,7 @@ real cases:
 - A published port is closed in the security group, so the inferred URL
   times out forever while an SSH forward (`http://localhost:18080`) works.
 - Discovery picks the alphabetically-first endpoint, which can be a
-  telemetry port — a DeathStarBench box resolved to Jaeger's OTLP `:4318`
+  telemetry port - a DeathStarBench box resolved to Jaeger's OTLP `:4318`
   rather than the app's own entry.
 
 `GET /api/traffic/entrypoints` flags a pin whose host no longer matches the
@@ -96,7 +92,7 @@ erase this key.
 
 ---
 
-## ML Pipeline — `ml/config.json`
+## ML Pipeline - `ml/config.json`
 
 Defaults live in `ml/mlconfig.py`. `collector.py` and `score.py` re-read this
 file every cycle, so changes to their keys take effect within one cycle with
@@ -126,7 +122,7 @@ keys only apply on the next **Retrain**.
 | `collect_interval_sec` | `10` | live | How often `collector.py` polls `/api/graph` |
 | `min_samples_per_service` | `10` | retrain | Below this, a service is skipped when building features |
 | `min_training_samples` | `30` | retrain | Below this, a service gets no model |
-| `contamination` | `0.01` | retrain | Expected anomaly fraction. Must be `< 0.5` — an IsolationForest requirement |
+| `contamination` | `0.01` | retrain | Expected anomaly fraction, used by all four detectors (`nu` for the one-class SVM). Must be `< 0.5` |
 | `score_interval_sec` | `10` | live | How often `score.py` re-scores |
 | `persistence_windows` | `3` | live | Consecutive above-threshold windows before flagging a real anomaly |
 | `n_estimators` | `200` | retrain | Trees per forest |
@@ -145,34 +141,37 @@ never saw. A random split would leak adjacent samples across the boundary
 and flatter the result.
 
 The tail is unlabelled, so what comes back is a **firing rate**, not an error
-rate — "how often does this model fire on data it never saw". Compare it to
+rate - "how often does this model fire on data it never saw". Compare it to
 `contamination`: much higher suggests drift or a tail that was not actually
 normal. It is reported per model in `models/*.meta.json` and in the
 `Holdout flagged` column on the ML Pipeline page.
 
 ---
 
-## Data Files — Auto-Created at Runtime
+## Data Files - Auto-Created at Runtime
+
+The server's `data/` paths are relative to its working directory, which `npm run server` sets to `server/`, so they live in `server/data/` (git-ignored).
 
 | File | Created when | Description |
 |---|---|---|
-| `data/graph_db.json` | First time graph state is saved | Full graph snapshot |
-| `data/remote_config.json` | First target registered | SSH configs |
-| `data/traces_<targetId>.json` | First TCP events received for a target | 24-hour TCP event log |
-| `data/experiments.json` | First experiment started | Experiment history |
+| `server/data/graph_db.json` | First time graph state is saved | Full graph snapshot |
+| `server/data/remote_config.json` | First target registered | SSH configs |
+| `server/data/traces_<targetId>.json` | First TCP events received for a target | 24-hour TCP event log |
+| `server/data/experiments_db.json` | First experiment started | Experiment history |
 | `ml/data/metrics_raw.csv` | `ml/collector.py` first run | Raw metrics time series |
 | `ml/data/features.csv` | `ml/preprocess.py` first run | Normalized features |
 | `ml/data/normalization_stats.json` | `ml/preprocess.py` | Per-service normalization params |
 | `ml/data/latest_scores.json` | `ml/score.py` first run | Current anomaly scores |
-| `ml/models/*.joblib` | `ml/train.py` | Serialized IsolationForest per service |
+| `ml/models/<service>.joblib`, `.lof.joblib`, `.ocsvm.joblib`, `.meta.json` | `ml/train.py` | The four detectors per service (z-score lives in the meta), each with its training score statistics |
+| `server/data/incident_thresholds.json` | Editing thresholds on the Incidents page | Overrides for the rule-based incident detector |
 
-**To reset graph state completely:** `rm data/graph_db.json` — targets will be re-discovered from `remote_config.json` on next startup.
+**To reset graph state completely:** `rm server/data/graph_db.json` - targets will be re-discovered from `remote_config.json` on next startup.
 
-**To reset everything:** `rm -rf data/ ml/data/ ml/models/`
+**To reset everything:** `rm -rf server/data/ ml/data/ ml/models/`
 
 ---
 
-## Frontend — `client/vite.config.ts`
+## Frontend - `client/vite.config.ts`
 
 The Vite dev server proxies API calls to the backend:
 

@@ -15,31 +15,56 @@ from port `3001` by default.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/graph` | Whole graph: `{ nodes, edges, targets }`. Every project combined — filter client-side by `node.project`. |
+| GET | `/api/graph` | Whole graph: `{ nodes, edges, targets }`. Every project combined - filter client-side by `node.project`. |
 | GET | `/api/nodes/:id` | One service node. `:id` is the full `project:service` id, e.g. `sock-shop:catalogue`. |
 | GET | `/api/nodes/:id/metrics` | Metric history. Query: `range` (default `5m`). |
 | GET | `/api/nodes/:id/logs` | Container logs over SSH. Query: `tail` (default 200, max 2000). 404 if the node has no known container id. |
 | GET | `/api/analytics` | Derived graph analytics (centrality, criticality). |
 | GET | `/api/diagnostics` | Per-target node/edge counts. |
+| GET | `/api/diagnostics/consistency` | Runs the 12 invariants in `server/algorithms/graph/consistency.ts` over the live graph and open incidents. Returns `{ checkedAt, nodes, edges, incidents, rulesChecked, violations: [{ rule, subject, detail }] }`. An empty `violations` list is the claim; anything in it is a named bug. See [32-accuracy-and-self-check](32-accuracy-and-self-check.md). |
 | GET | `/api/status` | Server status summary. |
 | GET | `/api/traffic` | Recent interaction events. Query: `limit` (default 100). |
 
 ### Edge shape worth knowing
 
-`edge.metrics` is `null` for every edge in a Docker/SSH deployment — nothing
-collects HTTP-level latency or error rates. The real per-edge signal is:
+At Tier 0 (SSH only), `edge.metrics` request fields are `null`: nothing per-request is collected without a gateway log or Prometheus. The per-edge signals are:
 
 ```jsonc
 "activity": {
-  "samplesPerMin": 412.5,  // socket observations/min, NOT new connections
+  "samplesPerMin": 412.5,         // socket SIGHTINGS/min: a relative activity index, NOT requests
+  "baselinePerMin": 398.0,        // slow average used for dependency shares
+  "openConnections": 2,           // distinct ESTABLISHED connections, averaged over 120 s
+  "newConnectionsPerMin": 8.4,    // distinct connections opened per minute
+  "connectionSweeps": 23,
   "windowSec": 118,
-  "lastSeen": "2026-09-18T…"
+  "lastSeen": "2026-10-01T…"
+},
+"weight": {
+  "value": 0.75,                  // confidence × dependency (× 0.1 telemetry)
+  "dependency": 0.75,             // share of the caller's traffic; sums to 1 per caller and kind
+  "dependencyBasis": "activity",  // 'requests' | 'activity' | 'uniform'
+  "kind": "request",
+  "confidence": 1,
+  "confidenceBasis": "observed; direction from listening port",
+  "volume": 0.42, "stress": null
 }
 ```
 
-Absent entirely until a link has been observed at least once — it is never
-defaulted to `0`, because "never seen" and "measured as idle" are different
-claims. See [06-node-edge-lifecycle](06-node-edge-lifecycle.md).
+`activity` is absent until a link has been observed at least once. It is never defaulted to `0`, because "never seen" and "measured as idle" are different claims. See [31-measurement-precision](31-measurement-precision.md).
+
+---
+
+## Reliability
+
+All three are read-only computations over data already collected. None of them touch the target.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/reliability/cascade` | Cascade prediction per project (noisy-OR, τ = 0.7): `{ project, model, transmission, iterations, converged, expectedFailures, atRisk[], nodes[] }`. Query `targetId` for one project (404 until its first cycle). |
+| GET | `/api/reliability/whatif/:nodeId` | Re-solves the model with this node failed: each affected service's `baseline`, `probability`, `delta`, `via`, `path`; plus `expectedAdditionalFailures`. |
+| GET | `/api/reliability/blast-radius/:nodeId` | Callers-of-callers over observed edges: `hopDistance`, `outboundSamplesPerMin`, `shareOfItsDependencies` (null when unmeasured). |
+
+Per-service health, risk, criticality and cascade fields ride on `/api/graph` nodes (`analytics.*`). See [22-risk-engine](22-risk-engine.md).
 
 ---
 
@@ -69,7 +94,7 @@ claims. See [06-node-edge-lifecycle](06-node-edge-lifecycle.md).
 
 **Merge semantics matter here.** This handler merges onto the existing entry
 rather than replacing it, because the record also holds keys the edit form
-never sends — notably `trafficBaseUrl`. Replacing wholesale silently erased
+never sends - notably `trafficBaseUrl`. Replacing wholesale silently erased
 the pinned traffic entry point every time someone updated an IP.
 
 ---
@@ -109,7 +134,7 @@ fact discovery cannot observe.
 | POST | `/api/experiments/update_stats` | Push stats into a running experiment. |
 
 Records still marked `RUNNING` when the store loads are reconciled to
-`INTERRUPTED` — nothing survives a process restart, so a `RUNNING` record on
+`INTERRUPTED` - nothing survives a process restart, so a `RUNNING` record on
 load describes a run that is definitively over. They are marked, not deleted,
 so history stays intact.
 
@@ -134,7 +159,7 @@ so history stays intact.
 
 Config validation: all numeric keys must be positive; `contamination` must be
 `< 0.5` (an IsolationForest requirement); `holdout_fraction` must be `0 ≤ x <
-0.5` (0 is legal — train on everything); `feature_columns` must be a
+0.5` (0 is legal - train on everything); `feature_columns` must be a
 non-empty subset of the four `z_*` features.
 
 Process control reports instances started **outside** the app too, detected
@@ -191,5 +216,5 @@ Separate server on port `4400`, started alongside the app.
 A target whose workflow module exports `STUB: true` is **rejected** by
 `/api/start` unless the request supplies confirmed endpoints
 (`useDiscoveredEndpoints` plus a non-empty `endpointPaths`). This is why a
-new target can fail with HTTP 400 while looking correctly configured — see
+new target can fail with HTTP 400 while looking correctly configured - see
 [15-troubleshooting](15-troubleshooting.md).

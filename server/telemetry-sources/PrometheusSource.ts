@@ -7,7 +7,7 @@ import type {
 import type { MetricSourceKind } from '../models/MetricProvenance.js';
 
 /**
- * Tier 2 — reads the target's own Prometheus.
+ * Tier 2 - reads the target's own Prometheus.
  *
  * This is the source that fills the fields the agentless path structurally
  * cannot: exact latency quantiles and error rates. It adds no instrumentation
@@ -18,7 +18,7 @@ import type { MetricSourceKind } from '../models/MetricProvenance.js';
  * Queries run *on the target* via curl over the existing SSH connection, not
  * from here. Prometheus is bound to localhost on these boxes and only :8080
  * is open in the security group, so querying from outside would require
- * opening a port — a change to someone's infrastructure to read a metric,
+ * opening a port - a change to someone's infrastructure to read a metric,
  * which is not a trade worth making.
  *
  * Verified against the live open-telemetry target on 2026-09-18:
@@ -26,7 +26,7 @@ import type { MetricSourceKind } from '../models/MetricProvenance.js';
  *   histogram_quantile(0.95, sum(rate(demo_cart_get_cart_latency_seconds_bucket[1h])) by (le))
  *     -> 0.0829   (82.9 ms p95, service_name="cart", 2296 samples)
  *
- * Note that Prometheus there reports activeTargets: [] — it scrapes nothing,
+ * Note that Prometheus there reports activeTargets: [] - it scrapes nothing,
  * the OTel Collector pushes into it. So availability must be judged on
  * whether queries return data, never on scrape health.
  */
@@ -123,7 +123,7 @@ export class PrometheusSource implements TelemetrySource {
         return {
           kind: this.kind,
           available: false,
-          reason: `Prometheus is up with ${names.length} series but none is a known request-duration histogram — the target is not HTTP/RPC instrumented`,
+          reason: `Prometheus is up with ${names.length} series but none is a known request-duration histogram - the target is not HTTP/RPC instrumented`,
           checkedAt,
         };
       }
@@ -227,7 +227,7 @@ export class PrometheusSource implements TelemetrySource {
           const errRate = errors.get(name) ?? 0;
           const total = entry.requestRate;
           // A ratio needs a denominator. With no traffic in the window the
-          // error rate is unknown, not zero — "0% errors" on a service
+          // error rate is unknown, not zero - "0% errors" on a service
           // nobody called is a false reassurance.
           entry.errorRate = total && total > 0 ? errRate / total : null;
         }

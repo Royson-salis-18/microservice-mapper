@@ -1,4 +1,4 @@
-# Telemetry Ingestion — `ingestRemote()` Deep Dive
+# Telemetry Ingestion - `ingestRemote()` Deep Dive
 
 **File:** `server/graph/GraphStore.ts`, method `ingestRemote(payload, clientIp?)`
 
@@ -64,7 +64,7 @@ for (const node of (events.nodes || [])) {
 
 **Metadata merge (spread) not replace:** The remote collector may only send a subset of metadata in a given cycle (e.g., it has the container ID but not the restart count yet). Using spread preserves fields the current batch didn't include.
 
-**Server clock for `lastSeen`:** The collector's machine could have a clock skew of minutes. The server uses its own clock for `lastSeen` so that staleness detection (`checkTargetStaleness`) is consistent — it compares `lastSeen` against the server's own `Date.now()`.
+**Server clock for `lastSeen`:** The collector's machine could have a clock skew of minutes. The server uses its own clock for `lastSeen` so that staleness detection (`checkTargetStaleness`) is consistent - it compares `lastSeen` against the server's own `Date.now()`.
 
 ## Stage 3: Edge Events
 
@@ -126,7 +126,7 @@ for (const { nodeId, snapshot } of (events.metrics || [])) {
 }
 ```
 
-**Why two writes?** `MetricStore` is the historical store. `node.metrics` is the "latest value" fast path. Without the inline update, `getGraph()` would need to query MetricStore for every node on every broadcast — that's O(N) MetricStore lookups vs. O(1) already-on-the-node reads.
+**Why two writes?** `MetricStore` is the historical store. `node.metrics` is the "latest value" fast path. Without the inline update, `getGraph()` would need to query MetricStore for every node on every broadcast - that's O(N) MetricStore lookups vs. O(1) already-on-the-node reads.
 
 **Why is `latency` null here?** Docker stats don't know about HTTP latency. That data comes from log parsing (`events.interactions`). Setting it null here prevents stale values from a previous cycle from lingering.
 
@@ -152,7 +152,7 @@ for (const e of (events.interactions || [])) {
   // Push to MetricStore for edge metric aggregation
   this.metricStore.pushEvent(e);
 
-  // Skip sentinel sources — they don't map to a real edge
+  // Skip sentinel sources - they don't map to a real edge
   if (e.source === 'external' || e.source === 'unknown-upstream') continue;
 
   // Upgrade or create edge
@@ -239,7 +239,7 @@ for (const [edgeId, edge] of edgesMap.entries()) {
     else if (agg.avgLatency > 500) edge.status = 'degraded';
     else                           edge.status = 'active';
   } else if (edge.status === 'degraded' || edge.status === 'failed') {
-    // No current evidence — reset stale bad status
+    // No current evidence - reset stale bad status
     edge.status = edge.observed ? 'active' : 'unknown';
   }
 }
@@ -247,7 +247,7 @@ for (const [edgeId, edge] of edgesMap.entries()) {
 
 **Stale bad status reset:** If an edge was `degraded` or `failed` but has received no HTTP interactions in the current aggregation window, the status resets to `active` (for observed edges) or `unknown`. This prevents one-time spikes from permanently marking an edge as failed.
 
-**Edge-only evidence policy:** Edge status is computed only from data measured on that specific edge — not from the health of either endpoint node. See [06-edge-status.md](./06-edge-status.md) for the reasoning.
+**Edge-only evidence policy:** Edge status is computed only from data measured on that specific edge - not from the health of either endpoint node. See [06-node-edge-lifecycle.md](./06-node-edge-lifecycle.md) for the reasoning.
 
 ## Stage 8: Finalize
 

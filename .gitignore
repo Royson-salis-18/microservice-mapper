@@ -9,6 +9,42 @@ build/
 __pycache__/
 *.pyc
 
+# Secrets: SSH keys live next to the code on some machines; never commit them
+*.pem
+*.key
+*.ppk
+id_rsa*
+id_ed25519*
+
 # Local runtime data
 data/
 server/data/
+
+# Logs: written by the running server, collector, scorer and traffic-gen
+*.log
+ml/logs/
+
+# Packed build output (remote-collector bundles node_modules into a tarball)
+*.tar.gz
+*.tgz
+
+# Editor and tool folders
+.claude/
+
+# Synthetic fault runs (npm run ml:synth regenerates them)
+run/synthetic-runs/
+
+# v2 trace caches (rebuild with v2/core/trace.ts)
+v2/.cache/
+v2/reports/*.html
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.synctex.gz
+paper/build*.log
+paper/b.log
+paper/bibtex.log

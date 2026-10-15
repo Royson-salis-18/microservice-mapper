@@ -1,4 +1,4 @@
-# GraphStore — The Central Nervous System
+# GraphStore - The Central Nervous System
 
 **File:** `server/graph/GraphStore.ts`
 
@@ -9,7 +9,7 @@ GraphStore is the most important file in the project. Every node, edge, target, 
 ## Data Structures
 
 ```typescript
-// Primary state — three parallel Maps, all keyed by targetId
+// Primary state - three parallel Maps, all keyed by targetId
 public targets       = new Map<string, Target>();
 public nodesByTarget = new Map<string, Map<string, ServiceNode>>();
 public edgesByTarget = new Map<string, Map<string, DependencyEdge>>();
@@ -20,10 +20,10 @@ public endpointRegistry  = new EndpointRegistry();   // per-route HTTP stats
 public discoveryEngine   : EndpointDiscoveryEngine;
 private traceStores      = new Map<string, TraceStore>(); // lazy per-target
 
-// Rolling TCP observation count per edge — powers the heat display
+// Rolling TCP observation count per edge - powers the heat display
 private edgeActivity = new Map<string, { count: number; windowStart: number }>();
 
-// ML score mtime cache — avoids reparsing unchanged file
+// ML score mtime cache - avoids reparsing unchanged file
 private anomalyScoresCache: { mtimeMs: number; data: Record<string, any> } | null = null;
 
 // Debounce timer for disk writes
@@ -63,7 +63,7 @@ Note: `clearRuntimeState()` was called here in early versions and removed. Calli
 
 ---
 
-## Helper Accessors — Lazy Map Creation
+## Helper Accessors - Lazy Map Creation
 
 ```typescript
 private getTargetNodes(targetId: string): Map<string, ServiceNode> {
@@ -77,7 +77,7 @@ Same pattern for `getTargetEdges`. This eliminates `if (!map) create; map.set(..
 
 ---
 
-## `getGraph()` — The Read Path
+## `getGraph()` - The Read Path
 
 Called on every WebSocket broadcast and every `GET /api/graph` request.
 
@@ -111,17 +111,17 @@ getGraph(): { nodes: ServiceNode[], edges: DependencyEdge[], targets: Target[] }
 
 ### Design decision: ML scores applied at read time
 
-The ML pipeline writes `ml/data/latest_scores.json` every 10 seconds. The server could watch this file with `fs.watch()` and push updates, but that adds complexity. Instead, scores are applied fresh on every `getGraph()` call using a mtime cache — if the file hasn't changed, the cached parse result is returned in microseconds.
+The ML pipeline writes `ml/data/latest_scores.json` every 10 seconds. The server could watch this file with `fs.watch()` and push updates, but that adds complexity. Instead, scores are applied fresh on every `getGraph()` call using a mtime cache - if the file hasn't changed, the cached parse result is returned in microseconds.
 
 ---
 
-## `ingestRemote()` — The Write Path
+## `ingestRemote()` - The Write Path
 
 See [05-telemetry-ingestion.md](./05-telemetry-ingestion.md) for the full breakdown.
 
 ---
 
-## `handleTopologyDiscovered()` — From SSH Discovery
+## `handleTopologyDiscovered()` - From SSH Discovery
 
 Called by `EndpointDiscoveryEngine` when a discovery cycle completes.
 
@@ -130,7 +130,7 @@ handleTopologyDiscovered(targetId: string, services: any[], dependencies: any[])
   const nodesMap = this.getTargetNodes(targetId);
   const edgesMap = this.getTargetEdges(targetId);
 
-  // Upsert nodes — never overwrite a node that has richer runtime data
+  // Upsert nodes - never overwrite a node that has richer runtime data
   for (const svc of services) {
     const id = `${targetId}:${svc.name}`;
     const existing = nodesMap.get(id);
@@ -170,7 +170,7 @@ handleTopologyDiscovered(targetId: string, services: any[], dependencies: any[])
 
 ---
 
-## `readAnomalyScores()` — mtime Cache
+## `readAnomalyScores()` - mtime Cache
 
 ```typescript
 private readAnomalyScores(): Record<string, any> {
@@ -193,11 +193,11 @@ Checking `statSync().mtimeMs` before `readFileSync` costs ~0.1ms and saves the J
 
 ---
 
-## `scheduleSave()` — Debounced Disk Write
+## `scheduleSave()` - Debounced Disk Write
 
 ```typescript
 private scheduleSave(): void {
-  if (this.saveTimeout) return;  // Already pending — don't stack up
+  if (this.saveTimeout) return;  // Already pending - don't stack up
   this.saveTimeout = setTimeout(() => {
     this.saveTimeout = null;
     this.saveToDisk();
@@ -211,7 +211,7 @@ The 2-second window is a balance: short enough that state isn't lost if the proc
 
 ---
 
-## `applyEdgeActivity()` — Heat Map Calculation
+## `applyEdgeActivity()` - Heat Map Calculation
 
 ```typescript
 private applyEdgeActivity(edges: DependencyEdge[]) {
@@ -229,7 +229,7 @@ private applyEdgeActivity(edges: DependencyEdge[]) {
       lastSeen: new Date().toISOString(),
     };
 
-    // Window reset every ~2 minutes — carry half to avoid snap-to-zero
+    // Window reset every ~2 minutes - carry half to avoid snap-to-zero
     if (elapsedMs > 120_000) {
       this.edgeActivity.set(edge.id, {
         count: Math.floor(bucket.count / 2),
@@ -254,3 +254,29 @@ Carrying half the count forward means the rate smoothly decays rather than reset
 - A recently-added edge with no history yet
 
 Showing `samplesPerMin: 0` would imply we measured it and confirmed it's quiet. We didn't. Omitting the field is more honest.
+
+---
+
+## What `applyEdgeActivity()` adds on top
+
+The snippet above is the core. The full function also publishes:
+
+| Field | How | Why |
+|---|---|---|
+| `baselinePerMin` | exponential average of `samplesPerMin`; rises with τ = 60 s, falls with τ = 600 s; fed only once the window is ≥ 20 s | Dependency weights use it, so a link that went quiet *because its callee died* keeps counting for what it normally carries |
+| `openConnections` | distinct `ESTABLISHED` connection keys per sweep, averaged over 120 s | an exact count, unlike sightings |
+| `newConnectionsPerMin` | distinct keys never seen before (memory 150 s, longer than `TIME_WAIT`) per minute | counts each connection once, however many sweeps saw it linger |
+| `connectionSweeps` | sweeps behind the two above (published from 2) | |
+
+The connection keys are recorded per sweep by `recordConnectionSweep()`. See [Measuring precisely](31-measurement-precision.md).
+
+## Edge weights and status
+
+Two more things are written onto edges each cycle, outside the store:
+
+- **`edge.weight`**, by `RiskEngine.recomputeAll()` through `computeEdgeWeights()`: confidence × the caller's share of traffic, with shares summing to exactly 1 per caller and kind. See [Risk, cascades and blast radius](22-risk-engine.md).
+- **`edge.status`** from `linkStatus(errorRate, p95 ?? latency)` (`server/algorithms/graph/linkThresholds.ts`): `degraded` at ≥ 1% errors or ≥ 300 ms, `failed` at ≥ 5% or ≥ 1 s. Without request data, the link stays `active`, and its colour comes from activity and the callee's status.
+
+## Broadcasts are coalesced
+
+`requestBroadcast()` sends at most one `graph-update` every 3 s, however many targets report in between. Several targets ingesting every few seconds used to fan out a full graph frame per ingest.

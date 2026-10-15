@@ -1,4 +1,4 @@
-# Frontend — Architecture, Hooks & Design Decisions
+# Frontend - Architecture, Hooks & Design Decisions
 
 **Directory:** `client/src/`
 
@@ -11,11 +11,11 @@ client/src/main.tsx   → renders <App /> into #root
 client/src/App.tsx    → root orchestrator (465 lines)
 ```
 
-`App.tsx` owns all UI state and consumes the `useGraphData` hook. It does not fetch data directly — all data flows through the hook.
+`App.tsx` owns all UI state and consumes the `useGraphData` hook. It does not fetch data directly - all data flows through the hook.
 
 ---
 
-## `useGraphData` Hook — The Data Layer
+## `useGraphData` Hook - The Data Layer
 
 **File:** `client/src/hooks/useGraphData.ts`
 
@@ -24,12 +24,12 @@ This hook is the **single data source** for the entire frontend. It manages:
 - WebSocket connection + auto-reconnect
 - All graph state (`nodes`, `edges`, `targets`, `isConnected`, `status`)
 - Terminal state (`terminalLogs`, `sendTerminalCommand`)
-- `reloadGraph(targetId)` — triggers server-side discovery refresh
+- `reloadGraph(targetId)` - triggers server-side discovery refresh
 
 ### Position Preservation Logic
 
 When a `graph-update` WebSocket message arrives, the hook must decide whether to:
-1. **Keep existing positions** (if topology is the same — just metrics changed)
+1. **Keep existing positions** (if topology is the same - just metrics changed)
 2. **Recalculate layout** (if nodes were added or removed)
 
 Without position preservation: nodes jump to recalculated positions every 5 seconds, making the graph unusable.
@@ -42,13 +42,13 @@ setNodes(prevNodes => {
                   [...newIds].every(id => prevIds.has(id));
 
   if (sameSet && prevNodes.length > 0) {
-    // Same topology — preserve positions, update data only
+    // Same topology - preserve positions, update data only
     return prevNodes.map(prev => {
       const updated = newNodes.find(n => n.id === prev.id);
       return updated ? { ...prev, data: updated } : prev;
     });
   } else {
-    // Topology changed — new nodes need layout positions
+    // Topology changed - new nodes need layout positions
     // But keep positions for nodes that already existed
     return newNodes.map(newNode => {
       const existing = prevNodes.find(p => p.id === newNode.id);
@@ -150,7 +150,7 @@ useEffect(() => {
 
 ---
 
-## App State — What Lives Where
+## App State - What Lives Where
 
 ```typescript
 // Project filter
@@ -225,11 +225,11 @@ Unhighlighted nodes render at `opacity: 0.2`. This focuses attention on the sele
 |---|---|---|
 | `Sidebar` | `Sidebar.tsx` | Tab navigation, global status LED |
 | `TopBar` | `TopBar.tsx` | Project selector, search, WS badge, Traffic button |
-| `GraphCanvas` | `GraphCanvas.tsx` | ReactFlow wrapper — registers `customServiceNode` + `customDependencyEdge` types |
+| `GraphCanvas` | `GraphCanvas.tsx` | ReactFlow wrapper - registers `customServiceNode` + `customDependencyEdge` types |
 | `ServiceNode` | `ServiceNode.tsx` | Custom ReactFlow node: health LED, CPU/mem gauges, type icon |
 | `DependencyEdge` | `DependencyEdge.tsx` | Custom ReactFlow edge: animated/solid, color by status |
 | `Scene3D` | `3d/Scene3D.tsx` | Three.js canvas with orbit controls, lighting, 3D layout |
-| `Node3D` | `3d/Node3D.tsx` | Sphere per service — glow/pulse based on health status |
+| `Node3D` | `3d/Node3D.tsx` | Sphere per service - glow/pulse based on health status |
 | `Edge3D` | `3d/Edge3D.tsx` | Tube/cylinder between spheres |
 | `InspectionPanel` | `InspectionPanel.tsx` | Slide-in panel: node details, metric charts, log viewer |
 | `EdgeInspectionPanel` | `EdgeInspectionPanel.tsx` | Slide-in panel: edge metrics, evidence sources |
@@ -249,27 +249,27 @@ Unhighlighted nodes render at `opacity: 0.2`. This focuses attention on the sele
 
 **File:** `client/src/components/DependencyEdge.tsx`
 
-| `declared` | `observed` | `status` | Visual |
-|---|---|---|---|
-| `true` | `false` | any | Solid grey — declared but no confirmed runtime traffic |
-| `false` | `true` | `active` | Animated cyan "marching ants" |
-| `true` | `true` | `active` | Animated cyan "marching ants" |
-| any | any | `degraded` | Animated yellow |
-| any | any | `failed` | Animated red |
+Colour, thickness and moving light each encode one measurement. The full legend is in [Reading the picture](33-visual-language.md); in short:
 
-The animation is pure CSS — `stroke-dasharray` + `stroke-dashoffset` with a CSS keyframe animation. Speed and color update reactively based on `edge.status`.
+| Channel | Encodes | Rule |
+|---|---|---|
+| colour | trouble first, then volume | `edgeAppearance()`: red at ≥ 5% errors, ≥ 1 s p95, or a down callee; orange at ≥ 1%, ≥ 300 ms, or a degraded callee; else blues by activity band; slate if declared only |
+| thickness | dependency weight | `1.2 + 4.3 × weight` px; telemetry links 1 px |
+| pulses | traffic rate | `0.3 + 1.6·log10(1 + rate)` pulses/s, from req/s where measured, else the activity index ÷ 60 |
+| weight pill | caller's share over this link | shown on hover or when selected |
+| arrowhead | direction: caller → callee | from listening ports |
 
-Edge **thickness/opacity** is driven by `edge.activity?.samplesPerMin`. Higher observation rate → thicker/brighter edge. This is the "heat map" effect.
+The same `edgeAppearance()` and `linkFlow()` drive the 3D scene, so a link never looks different in the two views.
 
 ---
 
-## `TracesView` — What It Actually Is
+## `TracesView` - What It Actually Is
 
 `client/src/components/TracesView.tsx` has a prominent comment at the top:
 
 ```typescript
 /**
- * Connection Traces View — SSH-sampled TCP connection events.
+ * Connection Traces View - SSH-sampled TCP connection events.
  *
  * This is NOT distributed tracing (no OpenTelemetry/Zipkin spans).
  * It shows raw TCP connections between containers, captured by reading
@@ -283,7 +283,7 @@ Edge **thickness/opacity** is driven by `edge.activity?.samplesPerMin`. Higher o
 ```
 
 The view has two modes:
-1. **Live feed** — real-time `ConnectionEvent` objects arriving via WebSocket `trace-events`
-2. **Historical graph** — aggregated call graph from `GET /api/traces/:targetId/graph?windowSec=300`
+1. **Live feed** - real-time `ConnectionEvent` objects arriving via WebSocket `trace-events`
+2. **Historical graph** - aggregated call graph from `GET /api/traces/:targetId/graph?windowSec=300`
 
 The `shortName(serviceId)` helper strips the `targetId:` prefix for display: `"sock-shop:catalogue"` → `"catalogue"`.

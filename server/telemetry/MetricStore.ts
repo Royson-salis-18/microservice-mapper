@@ -39,12 +39,20 @@ export class MetricStore {
     }
   }
 
+  /**
+   * The file is crash recovery for metric history, not the live store, so it
+   * does not need writing every couple of seconds. Every poll pushes samples,
+   * so a 2s debounce meant serialising a multi-megabyte object (4.3 MB
+   * observed, ~18 ms of blocking JSON work) almost continuously.
+   */
+  static readonly SAVE_DEBOUNCE_MS = 15_000;
+
   private scheduleSave(): void {
     if (this.saveTimeout) return;
     this.saveTimeout = setTimeout(() => {
       this.saveTimeout = null;
       this.saveToDisk();
-    }, 2000);
+    }, MetricStore.SAVE_DEBOUNCE_MS);
   }
 
   private saveToDisk(): void {
@@ -62,6 +70,11 @@ export class MetricStore {
     } catch (e) {
       console.error('[MetricStore] Failed to save telemetry state to disk:', e);
     }
+  }
+
+  /** Everything held for a node (the ring buffer: about 90 minutes at the usual pace), oldest first. */
+  getAll(nodeId: string): MetricSnapshot[] {
+    return this.store.get(nodeId) ?? [];
   }
 
   push(nodeId: string, snapshot: MetricSnapshot): void {
@@ -88,9 +101,16 @@ export class MetricStore {
 
   pushEvent(event: InteractionEvent): void {
     this.events.push(event);
-    // Keep last 10,000 events or within a time window (e.g., 1 hour)
+    // Keep the last hour, capped at 10,000. Events arrive in time order, so
+    // expiry only ever trims the front - this used to re-filter the whole
+    // array, parsing up to 10,000 dates, on every single event, which is
+    // quadratic in the size of each ingested batch.
     const cutoff = Date.now() - 60 * 60 * 1000;
-    this.events = this.events.filter(e => new Date(e.timestamp).getTime() > cutoff).slice(-10000);
+    let drop = 0;
+    while (drop < this.events.length && !(new Date(this.events[drop].timestamp).getTime() > cutoff)) drop++;
+    const over = this.events.length - drop - 10_000;
+    if (over > 0) drop += over;
+    if (drop > 0) this.events.splice(0, drop);
     this.scheduleSave();
   }
 

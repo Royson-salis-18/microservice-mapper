@@ -1,0 +1,484 @@
+{
+  "generatedAt": "2026-10-15T01:45:27.694Z",
+  "runs": [
+    {
+      "name": "runC/ledgerline",
+      "faults": 31
+    },
+    {
+      "name": "runC/shopflow",
+      "faults": 31
+    }
+  ],
+  "defaults": {
+    "baseline": {
+      "window": 120,
+      "minTrain": 30,
+      "retrainEvery": 10,
+      "quantile": 0.97,
+      "driftAfter": 360,
+      "mildLevel": 3,
+      "mildDriftAfter": 24,
+      "trees": 100,
+      "sampleSize": 64,
+      "minRequests": 5,
+      "jitter": 0.5,
+      "seed": 0,
+      "lineK": 3,
+      "rangeK": 5,
+      "floors": [
+        0.15,
+        0.05,
+        0.15,
+        0.15,
+        0.15,
+        0.02,
+        0.15,
+        3
+      ],
+      "detector": "iforest",
+      "ensemble": [
+        "iforest",
+        "knn",
+        "mahalanobis",
+        "hbos"
+      ],
+      "oneSided": true,
+      "forecastWindow": 24,
+      "forecastHorizon": 24,
+      "forecastR2": 0.6
+    },
+    "walk": {
+      "alpha": 0.15,
+      "rho": 0.2,
+      "iterations": 60
+    },
+    "anomalyFloor": 0.5,
+    "servicePersist": 2,
+    "hardFirst": true,
+    "useWalk": true,
+    "useOwn": true,
+    "loopWindow": 36,
+    "loopHold": 12,
+    "rca": "walk",
+    "alarmLevel": 2,
+    "warnAt": 2,
+    "stoppedIsDown": true
+  },
+  "headline": {
+    "Rules (live, as recorded)": {
+      "faults": 62,
+      "detected": 0.8870967741935484,
+      "detectedN": 55,
+      "top1OfDetected": 0.6,
+      "top1N": 33,
+      "caughtAndNamed": 0.532258064516129,
+      "falseAlarmsPerHour": 4.6128977903578905,
+      "falseAlarms": 6,
+      "alarmShare": 0.10589099081841136,
+      "medianDelaySec": 9.851
+    },
+    "Rules (re-scored, threshold 3)": {
+      "faults": 62,
+      "detected": 0.9032258064516129,
+      "detectedN": 56,
+      "top1OfDetected": 0.5357142857142857,
+      "top1N": 30,
+      "caughtAndNamed": 0.4838709677419355,
+      "falseAlarmsPerHour": 9.225795580715781,
+      "falseAlarms": 12,
+      "alarmShare": 0.08556498280948112,
+      "medianDelaySec": 15.058
+    },
+    "ML: two-sided features, alarm at the line": {
+      "faults": 62,
+      "detected": 0.9580645161290324,
+      "detectedN": 60,
+      "top1OfDetected": 0.7710734463276836,
+      "top1N": 46,
+      "caughtAndNamed": 0.7387096774193548,
+      "falseAlarmsPerHour": 2.4602121548575413,
+      "falseAlarms": 2,
+      "alarmShare": 0.8613928858438069,
+      "medianDelaySec": 4.792,
+      "spread": {
+        "detected": 0.0079015798154296,
+        "top1OfDetected": 0.007158885451506071,
+        "falseAlarmsPerHour": 0.5753294363908598
+      },
+      "seeds": 5
+    },
+    "ML: forest only (rank by anomaly)": {
+      "faults": 62,
+      "detected": 0.8806451612903226,
+      "detectedN": 54,
+      "top1OfDetected": 0.7876094276094275,
+      "top1N": 43,
+      "caughtAndNamed": 0.6935483870967742,
+      "falseAlarmsPerHour": 1.9989223758217523,
+      "falseAlarms": 3,
+      "alarmShare": 0.04856650997763384,
+      "medianDelaySec": 10.517,
+      "spread": {
+        "detected": 0.0079015798154296,
+        "top1OfDetected": 0.007092798581796381,
+        "falseAlarmsPerHour": 0.37664152739962803
+      },
+      "seeds": 5
+    },
+    "ML: forests + random walk (default)": {
+      "faults": 62,
+      "detected": 0.8806451612903226,
+      "detectedN": 54,
+      "top1OfDetected": 0.8096296296296297,
+      "top1N": 45,
+      "caughtAndNamed": 0.7129032258064518,
+      "falseAlarmsPerHour": 1.9989223758217523,
+      "falseAlarms": 3,
+      "alarmShare": 0.04856650997763384,
+      "medianDelaySec": 10.517,
+      "spread": {
+        "detected": 0.0079015798154296,
+        "top1OfDetected": 0.013167695433060123,
+        "falseAlarmsPerHour": 0.37664152739962803
+      },
+      "seeds": 5
+    }
+  },
+  "sweeps": {
+    "window": [
+      {
+        "value": 60,
+        "s": {
+          "faults": 62,
+          "detected": 0.9193548387096774,
+          "detectedN": 57,
+          "top1OfDetected": 0.7719298245614035,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 7.688162983929817,
+          "falseAlarms": 10,
+          "alarmShare": 0.058832172313942714,
+          "medianDelaySec": 10.101
+        }
+      },
+      {
+        "value": 120,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      },
+      {
+        "value": 240,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8148148148148148,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 1.5376325967859634,
+          "falseAlarms": 2,
+          "alarmShare": 0.04065180245777757,
+          "medianDelaySec": 10.101
+        }
+      }
+    ],
+    "lineK": [
+      {
+        "value": 2,
+        "s": {
+          "faults": 62,
+          "detected": 0.9516129032258065,
+          "detectedN": 59,
+          "top1OfDetected": 0.7627118644067796,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 13.83869337107367,
+          "falseAlarms": 18,
+          "alarmShare": 0.11873812472464097,
+          "medianDelaySec": 9.207
+        }
+      },
+      {
+        "value": 3,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      },
+      {
+        "value": 4,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8148148148148148,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      }
+    ],
+    "rangeK": [
+      {
+        "value": 0,
+        "s": {
+          "faults": 62,
+          "detected": 0.8225806451612904,
+          "detectedN": 51,
+          "top1OfDetected": 0.8235294117647058,
+          "top1N": 42,
+          "caughtAndNamed": 0.6774193548387096,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 12.063
+        }
+      },
+      {
+        "value": 3,
+        "s": {
+          "faults": 62,
+          "detected": 0.8870967741935484,
+          "detectedN": 55,
+          "top1OfDetected": 0.8181818181818182,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 5.381714088750872,
+          "falseAlarms": 7,
+          "alarmShare": 0.2021640897439265,
+          "medianDelaySec": 9.859
+        }
+      },
+      {
+        "value": 5,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      },
+      {
+        "value": 8,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8148148148148148,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 1.5376325967859634,
+          "falseAlarms": 2,
+          "alarmShare": 0.027817268596438287,
+          "medianDelaySec": 10.517
+        }
+      }
+    ],
+    "threshold": [
+      {
+        "value": 1,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      },
+      {
+        "value": 1.5,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 1.5376325967859634,
+          "falseAlarms": 2,
+          "alarmShare": 0.034233681286776375,
+          "medianDelaySec": 10.542
+        }
+      },
+      {
+        "value": 2,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 0.7688162983929817,
+          "falseAlarms": 1,
+          "alarmShare": 0.012837737262582586,
+          "medianDelaySec": 10.542
+        }
+      }
+    ],
+    "trees": [
+      {
+        "value": 50,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8148148148148148,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 4.6128977903578905,
+          "falseAlarms": 6,
+          "alarmShare": 0.06418292019067498,
+          "medianDelaySec": 10.101
+        }
+      },
+      {
+        "value": 100,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8333333333333334,
+          "top1N": 45,
+          "caughtAndNamed": 0.7258064516129032,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05134753208900415,
+          "medianDelaySec": 10.517
+        }
+      },
+      {
+        "value": 200,
+        "s": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.8148148148148148,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.04920851429880856,
+          "medianDelaySec": 10.517
+        }
+      }
+    ]
+  },
+  "cross": [
+    {
+      "train": "ledgerline",
+      "test": "shopflow",
+      "chosen": {
+        "baseline": {
+          "lineK": 3,
+          "rangeK": 5
+        },
+        "threshold": 1
+      },
+      "ml": {
+        "faults": 31,
+        "detected": 0.8709677419354838,
+        "detectedN": 27,
+        "top1OfDetected": 0.8518518518518519,
+        "top1N": 23,
+        "caughtAndNamed": 0.7419354838709677,
+        "falseAlarmsPerHour": 2.1503642179394133,
+        "falseAlarms": 2,
+        "alarmShare": 0.049585777559328074,
+        "medianDelaySec": 14.762,
+        "spread": {
+          "detected": 1.1102230246251565e-16,
+          "top1OfDetected": 0,
+          "falseAlarmsPerHour": 0.7524707278700806
+        },
+        "seeds": 5
+      },
+      "rules": {
+        "faults": 31,
+        "detected": 0.9032258064516129,
+        "detectedN": 28,
+        "top1OfDetected": 0.6428571428571429,
+        "top1N": 18,
+        "caughtAndNamed": 0.5806451612903226,
+        "falseAlarmsPerHour": 1.5359744413852954,
+        "falseAlarms": 1,
+        "alarmShare": 0.05769887989063862,
+        "medianDelaySec": 11.353
+      }
+    },
+    {
+      "train": "shopflow",
+      "test": "ledgerline",
+      "chosen": {
+        "baseline": {
+          "lineK": 3,
+          "rangeK": 8
+        },
+        "threshold": 1.5
+      },
+      "ml": {
+        "faults": 31,
+        "detected": 0.8709677419354838,
+        "detectedN": 27,
+        "top1OfDetected": 0.7777777777777778,
+        "top1N": 21,
+        "caughtAndNamed": 0.6774193548387096,
+        "falseAlarmsPerHour": 1.53929433616649,
+        "falseAlarms": 1,
+        "alarmShare": 0.01927923397872524,
+        "medianDelaySec": 10.101,
+        "spread": {
+          "detected": 1.1102230246251565e-16,
+          "top1OfDetected": 0,
+          "falseAlarmsPerHour": 0
+        },
+        "seeds": 5
+      },
+      "rules": {
+        "faults": 31,
+        "detected": 0.8709677419354839,
+        "detectedN": 27,
+        "top1OfDetected": 0.5555555555555556,
+        "top1N": 15,
+        "caughtAndNamed": 0.4838709677419355,
+        "falseAlarmsPerHour": 7.69647168083245,
+        "falseAlarms": 5,
+        "alarmShare": 0.15418726541795688,
+        "medianDelaySec": 8
+      }
+    }
+  ]
+}

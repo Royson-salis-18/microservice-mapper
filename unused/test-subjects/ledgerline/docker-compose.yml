@@ -1,0 +1,164 @@
+# LedgerLine -- retail-banking transfers, 12 containers. HEALTHY BASELINE; scenarios in ./scenarios layer one
+# production condition on top:  docker compose -f docker-compose.yml -f scenarios/<id>/compose.override.yml up
+#
+# Baseline topology is a clean DAG (no cycles) and depends_on matches the real call graph exactly.
+name: ledgerline
+
+x-node: &node
+  restart: always
+x-logging: &logging
+  logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+services:
+  edge:
+    image: nginx:1.27-alpine
+    restart: always
+    ports: ["8081:8081"]
+    environment:
+      EDGE_READ_TIMEOUT: ${EDGE_READ_TIMEOUT:-10s}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    volumes: ["./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro"]
+    depends_on: [accounts, transfers, statements-worker]
+    mem_limit: 128m
+    <<: *logging
+
+  accounts:
+    <<: [*node, *logging]
+    image: ledgerline/accounts:dev
+    build: { context: ., dockerfile: services/accounts/Dockerfile }
+    environment:
+      SERVICE_NAME: accounts
+      ACCOUNTS_DB_HOST: accounts-db
+      ACCOUNTS_DB_USER: app
+      ACCOUNTS_DB_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-accounts-secret}
+      ACCOUNTS_DB_POOL_MAX: ${ACCOUNTS_DB_POOL_MAX:-10}
+      FRAUD_URL: http://fraud-screening:3104
+    depends_on:
+      accounts-db: { condition: service_healthy }
+      fraud-screening: { condition: service_started }
+    mem_limit: 192m
+
+  accounts-db:
+    image: postgres:16-alpine
+    restart: always
+    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: "${ACCOUNTS_DB_PASSWORD:-accounts-secret}", POSTGRES_DB: accounts, SEED_ACCOUNTS: "${SEED_ACCOUNTS:-20000}" }
+    volumes: ["./db/accounts-db:/docker-entrypoint-initdb.d:ro", "accounts-db-data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U app -d accounts"], interval: 5s, timeout: 3s, retries: 30 }
+    mem_limit: 384m
+    <<: *logging
+
+  transfers:
+    <<: [*node, *logging]
+    image: ledgerline/transfers:dev
+    build: { context: ., dockerfile: services/transfers/Dockerfile }
+    environment:
+      SERVICE_NAME: transfers
+      STATE_STORE_HOST: state-store
+      NATS_URL: nats://event-bus:4222
+      ACCOUNTS_URL: http://accounts:3101
+      FRAUD_URL: http://fraud-screening:3104
+      FX_URL: http://fx-rates:3105
+      LEDGER_URL: http://ledger:3103
+    depends_on: [state-store, event-bus, accounts, fraud-screening, fx-rates, ledger]
+    mem_limit: 192m
+
+  ledger:
+    <<: [*node, *logging]
+    image: ledgerline/ledger:dev
+    build: { context: ., dockerfile: services/ledger/Dockerfile }
+    environment:
+      SERVICE_NAME: ledger
+      LEDGER_DB_HOST: ledger-db
+      LEDGER_DB_USER: app
+      LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:-ledger-secret}
+      LEDGER_DB_POOL_MAX: ${LEDGER_DB_POOL_MAX:-20}
+      FEE_POSTING: ${FEE_POSTING:-deferred}
+    depends_on:
+      ledger-db: { condition: service_healthy }
+    mem_limit: 192m
+
+  ledger-db:
+    image: postgres:16-alpine
+    restart: always
+    command: ["postgres", "-c", "max_connections=${LEDGER_DB_MAX_CONNECTIONS:-100}"]
+    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: "${LEDGER_DB_PASSWORD:-ledger-secret}", POSTGRES_DB: ledger, SEED_ACCOUNTS: "${SEED_ACCOUNTS:-20000}", SEED_FEE_ENTRIES: "${SEED_FEE_ENTRIES:-2000}" }
+    volumes: ["./db/ledger-db:/docker-entrypoint-initdb.d:ro", "ledger-db-data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U app -d ledger"], interval: 5s, timeout: 3s, retries: 90 }
+    mem_limit: 768m
+    <<: *logging
+
+  fraud-screening:
+    <<: [*node, *logging]
+    image: ledgerline/fraud-screening:dev
+    build: { context: ., dockerfile: services/fraud-screening/Dockerfile }
+    environment:
+      SERVICE_NAME: fraud-screening
+      STATE_STORE_HOST: state-store
+      FRAUD_ENRICH_FROM_ACCOUNTS: ${FRAUD_ENRICH_FROM_ACCOUNTS:-false}
+      ACCOUNTS_URL: http://accounts:3101
+    depends_on: [state-store]
+    mem_limit: 128m
+
+  fx-rates:
+    <<: [*node, *logging]
+    image: ledgerline/fx-rates:dev
+    build: { context: ., dockerfile: services/fx-rates/Dockerfile }
+    environment:
+      SERVICE_NAME: fx-rates
+      FX_PROVIDER_URL: http://fx-provider:4100
+      FX_BREAKER_FAILURES: ${FX_BREAKER_FAILURES:-5}
+      FX_BREAKER_OPEN_MS: ${FX_BREAKER_OPEN_MS:-15000}
+    depends_on: [fx-provider]
+    mem_limit: 128m
+
+  fx-provider:
+    <<: [*node, *logging]
+    image: ledgerline/fx-provider:dev
+    build: { context: ., dockerfile: services/fx-provider/Dockerfile }
+    environment: { SERVICE_NAME: fx-provider, FX_PROVIDER_MODE: "${FX_PROVIDER_MODE:-ok}" }
+    mem_limit: 96m
+
+  statements-worker:
+    <<: [*node, *logging]
+    image: ledgerline/statements-worker:dev
+    build: { context: ., dockerfile: services/statements-worker/Dockerfile }
+    environment:
+      SERVICE_NAME: statements-worker
+      STATEMENTS_DB_HOST: ledger-db
+      STATEMENTS_DB_USER: reporting
+      STATEMENTS_DB_PASSWORD: ${REPORTING_DB_PASSWORD:-reporting-secret}
+      STATEMENTS_DB_POOL_MAX: ${STATEMENTS_DB_POOL_MAX:-5}
+      NATS_URL: nats://event-bus:4222
+      ACCOUNTS_URL: http://accounts:3101
+      STATEMENT_BATCH_INTERVAL_S: ${STATEMENT_BATCH_INTERVAL_S:-60}
+    depends_on:
+      ledger-db: { condition: service_healthy }
+      event-bus: { condition: service_started }
+      accounts: { condition: service_started }
+    mem_limit: ${STATEMENTS_MEM_LIMIT:-384m}
+
+  state-store:
+    image: redis:7-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "96mb", "--maxmemory-policy", "volatile-lru"]
+    volumes: ["state-store-data:/data"]
+    mem_limit: 160m
+
+  event-bus:
+    image: nats:2.10-alpine
+    restart: always
+    command: ["-js", "-sd", "/data"]
+    volumes: ["event-bus-data:/data"]
+    mem_limit: 192m
+
+  # Always-on realistic traffic so the bench has live data without an external client:  --profile traffic  (make bench)
+  traffic:
+    profiles: [traffic]
+    image: ledgerline/traffic:dev
+    build: { context: ., dockerfile: loadgen/Dockerfile }
+    restart: always
+    environment: { BASE_URL: "http://edge:8081", CONCURRENCY: "${TRAFFIC_CONCURRENCY:-4}", THINK_MS: "${TRAFFIC_THINK_MS:-300}", USERS: "100" }
+    depends_on: [edge]
+    mem_limit: 96m
+
+volumes: { accounts-db-data: {}, ledger-db-data: {}, state-store-data: {}, event-bus-data: {} }

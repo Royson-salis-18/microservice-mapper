@@ -63,7 +63,7 @@ export interface TargetTrafficOptions {
  * never assumptions: a path only ends up in a run because it answered.
  *
  * The /api/* entries are how the OpenTelemetry demo's Envoy frontend-proxy
- * reaches its backends — verified against a live instance, where :8080 is
+ * reaches its backends - verified against a live instance, where :8080 is
  * the only open port and /api/products, /api/cart, /api/data, /api/currency
  * and /api/shipping each land on a different service.
  */
@@ -96,7 +96,7 @@ export interface ProbeResult {
   serviceName: string;
   endpointId: string;
   port: number;
-  /** The origin answered at all — the port is open and something is listening. */
+  /** The origin answered at all - the port is open and something is listening. */
   reachable: boolean;
   /** It answered AND the answer means a real handler ran (see classify()). */
   usable: boolean;
@@ -142,7 +142,7 @@ export class TrafficController {
   private graphStore?: GraphStore;
   public onStatsCallback?: (targetId: string, stats: any) => void;
   /**
-   * Fires when traffic-gen ends a run on its own — durationSec elapsing, or
+   * Fires when traffic-gen ends a run on its own - durationSec elapsing, or
    * (in principle) a crash. Before durationSec was wired through from the
    * UI, every EXTERNAL/SWEEP run was unlimited and only ever ended via an
    * explicit stop, which already clears `tracked`, so this path was dead
@@ -179,7 +179,7 @@ export class TrafficController {
    * DeathStarBench box publishes nginx-thrift on :8080, but if that port
    * isn't open in the security group the inferred URL times out forever;
    * the working entry point might be an SSH forward on localhost. Pinning
-   * is the honest fix — it records a fact discovery cannot observe.
+   * is the honest fix - it records a fact discovery cannot observe.
    */
   public getConfiguredEntryPoint(targetId: string): string | null {
     try {
@@ -220,8 +220,8 @@ export class TrafficController {
   // Spawns traffic-gen if it's not already running. Safe to call repeatedly.
   //
   // The in-flight promise is cleared once it settles. Caching it forever
-  // meant that after traffic-gen died — which it does whenever the parent
-  // server is restarted, since it's spawned as a child — every later call
+  // meant that after traffic-gen died - which it does whenever the parent
+  // server is restarted, since it's spawned as a child - every later call
   // returned the stale resolved promise and skipped the restart entirely.
   // The symptom was that traffic could never be started again: the UI
   // reported success while every proxied call failed with "fetch failed".
@@ -243,7 +243,7 @@ export class TrafficController {
 
       const trafficGenDir = path.resolve(process.cwd(), '../traffic-gen');
       console.log(`[TrafficController] traffic-gen not reachable on :${TRAFFIC_GEN_PORT}, starting it from ${trafficGenDir}`);
-      const child = spawn('node', ['server.js'], {
+      const child = spawn(process.execPath, ['server.js'], {
         cwd: trafficGenDir,
         env: { ...process.env, PORT: TRAFFIC_GEN_PORT },
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -293,7 +293,7 @@ export class TrafficController {
   }
 
   /** Live health check + a straight proxy of traffic-gen's own per-project
-   * state — not Node's own tracked belief, which can go stale if traffic-gen
+   * state - not Node's own tracked belief, which can go stale if traffic-gen
    * crashes mid-run without Node finding out. */
   public async getHealth(): Promise<{ reachable: boolean; url: string; projects: any[] }> {
     try {
@@ -366,12 +366,12 @@ export class TrafficController {
    *
    * Two phases, because one is not enough:
    *
-   *   1. ORIGINS — one request per discovered host:port. On a real target
+   *   1. ORIGINS - one request per discovered host:port. On a real target
    *      this usually eliminates most of them: measured against the
    *      OpenTelemetry demo, 19 of 20 published ports time out because only
    *      :8080 is open in the security group.
    *
-   *   2. PATHS — for each origin that answered, probe the paths *behind* it.
+   *   2. PATHS - for each origin that answered, probe the paths *behind* it.
    *      This is the phase that matters. A gateway like the demo's Envoy
    *      frontend-proxy fans one open port out to every backend service by
    *      path (/api/cart -> cart, /api/products -> product-catalog), so
@@ -381,7 +381,7 @@ export class TrafficController {
    * Path candidates are *hypotheses* until probed: discovered routes when
    * the registry has them, otherwise conventional shapes derived from
    * discovered service names. Nothing reaches the result set on the
-   * strength of its name — a URL is reported usable only because a real
+   * strength of its name - a URL is reported usable only because a real
    * response came back, and the status that came back is reported with it.
    */
   public async probeSurface(
@@ -416,7 +416,7 @@ export class TrafficController {
     // be in phase 1, because a fixed budget lies about struggling hosts.
     // Measured on sock-shop (909MB box, load 26): at a flat 6s the probe
     // called /catalogue, /cart, /customers and /tags dead, when in fact they
-    // answer in 3-15s — /catalogue?size=5 takes 15.1s. Reporting a live
+    // answer in 3-15s - /catalogue?size=5 takes 15.1s. Reporting a live
     // endpoint as dead is worse than waiting for it, since the sweep then
     // silently drops it and generates no load against that service at all.
     const slowestOrigin = Math.max(0, ...liveOrigins.map((r) => r.ms));
@@ -428,8 +428,8 @@ export class TrafficController {
 
     // One retry for anything that only *timed out*, at the full budget.
     // Scaling off the origin is not enough on its own: sock-shop's index is
-    // static and answers in 0.17s while /catalogue?size=5 — which really
-    // does work — takes 15.1s, so the origin measurement says "fast host"
+    // static and answers in 0.17s while /catalogue?size=5 - which really
+    // does work - takes 15.1s, so the origin measurement says "fast host"
     // and the backends still blow the budget. A timeout is the one failure
     // mode that might just be slowness; a refused connection or a 404 is an
     // answer, and is not retried.
@@ -470,7 +470,7 @@ export class TrafficController {
   /**
    * The GET paths this target's traffic-gen workflows declare.
    *
-   * Declared evidence, not inference — the same standard the graph holds
+   * Declared evidence, not inference - the same standard the graph holds
    * itself to. The probe then decides whether each one actually answers, so
    * a stale workflow path is dropped rather than trusted.
    */
@@ -510,8 +510,8 @@ export class TrafficController {
    *
    * Discovered routes come first because they are declared facts read out
    * of the target (nginx/Envoy config, compose files, OpenAPI). When the
-   * registry has none — the normal state before any traffic has ever run,
-   * since routes are also learned *from* traffic — fall back to shapes
+   * registry has none - the normal state before any traffic has ever run,
+   * since routes are also learned *from* traffic - fall back to shapes
    * built from the service names discovery did find, plus the handful of
    * conventional ones a path-routed gateway almost always answers.
    *
@@ -529,7 +529,7 @@ export class TrafficController {
 
     // First, because these are not guesses: they were written against the
     // real system in its workflow file. Without them a sweep of
-    // DeathStarBench found 2 usable URLs out of 53 — its API is
+    // DeathStarBench found 2 usable URLs out of 53 - its API is
     // /wrk2-api/*, and every conventional path 404s.
     for (const p of declaredPaths) add(p);
 
@@ -560,7 +560,7 @@ export class TrafficController {
     };
 
     // The pinned/resolved entry point always gets probed, even if discovery
-    // never produced an endpoint record for it — it is the one URL the
+    // never produced an endpoint record for it - it is the one URL the
     // operator asserted is real.
     const primary = this.resolveBaseUrl(targetId);
     if (primary) push(primary, 'configured-entry-point', 'pinned', this.portOf(primary));
@@ -628,10 +628,10 @@ export class TrafficController {
    * Is this status worth generating load against?
    *
    * 2xx/3xx: obviously. 401/403: a real auth handler ran, so the service is
-   * doing work and emitting telemetry — exactly what the per-service model
+   * doing work and emitting telemetry - exactly what the per-service model
    * needs. 405/429: routed and handled, just not by GET / not right now.
    * 404: the origin is alive but this path isn't a route, so hammering it
-   * measures the router, not the service. 5xx: keep it — a service that is
+   * measures the router, not the service. 5xx: keep it - a service that is
    * failing is the most interesting thing an RCA run can observe.
    */
   private classify(status: number): boolean {
@@ -704,7 +704,7 @@ export class TrafficController {
         const detail = report.dead.slice(0, 3).map((d) => `${d.url} (${d.error})`).join('; ');
         return {
           targetId, isRunning: false, profileName: profile, mode, startTime: null, pid: null, resolvedUrl, workloadSource,
-          error: `sweep found no responding endpoints out of ${report.totalCandidates} candidates${detail ? ` — e.g. ${detail}` : ''}`,
+          error: `sweep found no responding endpoints out of ${report.totalCandidates} candidates${detail ? ` - e.g. ${detail}` : ''}`,
         };
       }
     } else if (mode === 'ENDPOINT' && options.routeId) {
@@ -800,7 +800,7 @@ export class TrafficController {
   }
 
   /**
-   * Stops every synthetic run this system can reach — not just the ones
+   * Stops every synthetic run this system can reach - not just the ones
    * this server instance started. `tracked` only holds runs started
    * through this process, so a run started directly against traffic-gen,
    * or one that outlived a server restart, used to survive "stop all" and

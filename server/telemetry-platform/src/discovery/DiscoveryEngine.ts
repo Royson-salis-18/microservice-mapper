@@ -50,10 +50,11 @@ export class DiscoveryEngine {
 
     const services = await this.discoverServices(warnings);
     console.log(`[DISCOVERY] target=${this.targetId} services=${services.length}`);
-    const networkDependencies: Dependency[] = []; // disabled to prevent false-positive mesh from shared network
+    // Shared Docker network membership is deliberately not used as evidence:
+    // it drew every service on a network as depending on every other.
     const composeDependencies = await this.discoverComposeDependencies(services, warnings);
     const appConfigDependencies = await this.discoverApplicationConfigDependencies(services, warnings);
-    const dependencies = mergeDependencies(networkDependencies, [...composeDependencies, ...appConfigDependencies]);
+    const dependencies = mergeDependencies([], [...composeDependencies, ...appConfigDependencies]);
     for (const dep of dependencies) {
       console.log(`[EDGE] ${dep.sourceServiceId} -> ${dep.targetServiceId} type=${dep.declared ? "declared" : "candidate"} evidence=${dep.evidenceSources.join(",")}`);
     }
@@ -155,6 +156,7 @@ export class DiscoveryEngine {
         networks: inspected?.networks.map((n) => n.networkName) ?? [],
         addresses: inspected?.networks.map((n) => n.ipAddress).filter((a): a is string => !!a) ?? [],
         metadata: {
+          containerName: String(entry.Names ?? "").split(",")[0].replace(/^\//, "").trim() || null,
           composeProject: mergedLabels["com.docker.compose.project"] ?? null,
           composeConfigFiles: mergedLabels["com.docker.compose.project.config_files"] ?? null,
           restartCount: inspected?.restartCount ?? null,
@@ -170,51 +172,9 @@ export class DiscoveryEngine {
   }
 
   /**
-   * Candidate edges from shared network membership. NEVER declared,
-   * NEVER observed — network membership alone is not proof of anything
-   * beyond "these two containers could reach each other" (spec section 9).
-   */
-  private buildNetworkCandidateDependencies(services: Service[]): Dependency[] {
-    const nowIso = new Date().toISOString();
-    const byNetwork = new Map<string, Service[]>();
-    for (const service of services) {
-      for (const network of service.networks) {
-        const list = byNetwork.get(network) ?? [];
-        list.push(service);
-        byNetwork.set(network, list);
-      }
-    }
-
-    const seen = new Set<string>();
-    const dependencies: Dependency[] = [];
-    for (const [network, members] of byNetwork) {
-      for (const source of members) {
-        for (const target of members) {
-          if (source.serviceId === target.serviceId) continue;
-          const key = `${source.serviceId}->${target.serviceId}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          dependencies.push({
-            targetId: this.targetId,
-            sourceServiceId: source.serviceId,
-            targetServiceId: target.serviceId,
-            declared: false,
-            observed: false,
-            evidenceSources: ["docker-network"],
-            firstSeen: nowIso,
-            lastSeen: nowIso,
-            metadata: { sharedNetwork: network },
-          });
-        }
-      }
-    }
-    return dependencies;
-  }
-
-  /**
    * Best-effort: if a compose project label points at a config file we
    * can read, parse its depends_on into declared=true dependencies.
-   * Silently yields nothing if the file isn't found/readable — this
+   * Silently yields nothing if the file isn't found/readable - this
    * must never block discovery of everything else.
    */
   private async discoverComposeDependencies(
@@ -278,14 +238,14 @@ export class DiscoveryEngine {
    * and turns URL host references that match another *real, discovered*
    * service name into declared=true edges. This is the source most
    * microservice-in-a-monorepo stacks actually use instead of Compose
-   * `depends_on` (Train Ticket declares none at all — see spec section 9/61
+   * `depends_on` (Train Ticket declares none at all - see spec section 9/61
    * on why we don't fabricate edges from that absence).
    *
    * The repo root is derived from the compose file's own real path
    * (never guessed): walk its ancestor directories until one is found
    * containing "<service>/src/main/resources/application.y*ml" for a real
    * service, cache that ancestor, reuse it for the rest. If nothing is
-   * found nearby, this silently contributes zero edges — never blocks the
+   * found nearby, this silently contributes zero edges - never blocks the
    * rest of discovery, same tolerance policy as discoverComposeDependencies.
    */
   private async discoverApplicationConfigDependencies(
@@ -324,7 +284,7 @@ export class DiscoveryEngine {
         const res = await this.connection.execute(REMOTE_COMMANDS.catFile(candidatePath));
         if (res.exitCode === 0 && !res.error && res.stdout.trim().length > 0) return res.stdout;
       } catch {
-        // fall through — try the next candidate
+        // fall through - try the next candidate
       }
       return null;
     };
@@ -346,7 +306,7 @@ export class DiscoveryEngine {
 
     if (!repoRoot) {
       warnings.push(
-        "application-config: no <service>/src/main/resources/application.y*ml found near the compose file — skipping this evidence source",
+        "application-config: no <service>/src/main/resources/application.y*ml found near the compose file - skipping this evidence source",
       );
       return dependencies;
     }
@@ -365,7 +325,7 @@ export class DiscoveryEngine {
       for (const ref of refs) {
         if (ref.targetHostname === service.name) continue; // no self-edges
         const target = byName.get(ref.targetHostname);
-        if (!target) continue; // only edges to real, discovered services — never fabricated
+        if (!target) continue; // only edges to real, discovered services - never fabricated
         console.log(`[DEPENDENCY] ${service.name} -> ${target.name} source=application.yml (${ref.yamlPath})`);
         dependencies.push({
           targetId: this.targetId,

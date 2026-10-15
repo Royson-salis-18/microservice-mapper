@@ -1,0 +1,29 @@
+id: ll-04-connection-budget
+title: Pools that are each reasonable add up to more than the database allows
+class: capacity planning / connection exhaustion
+verified: local-process (exhaustion reproduced; the restart/failover amplification is documented but NOT reproduced locally)
+summary: >
+  ledger-db accepts 40 connections (37 usable; 3 reserved for superusers). ledger's pool is 25 and the statements worker's is 20
+  (25 + 20 = 45). Whoever connects first wins; whoever connects second gets 'remaining connection slots are reserved for roles with the
+  SUPERUSER attribute'. In steady state the reporting worker is the loser (its on-demand API returns 500s and batch runs fail
+  silently, 'statements are late'). In an incident -- failover, or a ledger redeploy while a batch is running -- the order flips and
+  the transfer path can be the loser.
+why_code_review_and_tests_pass: "Each pool size is defensible alone; nobody owns the sum."
+production_condition: "ledger-db max_connections=40, LEDGER_DB_POOL_MAX=25, STATEMENTS_DB_POOL_MAX=20 with STATEMENT_CONCURRENCY=20"
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 50 --duration 300 --think-ms 0 --mix transfer=90,statement=10,fx-transfer=0,profile=0", note: "restart ledger while a batch is running to see the flip (not reproduced here)" }
+measured_locally:
+  statements_api_5xx_pct: 7.3
+  postgres_fatal_slot_errors: 146
+  transfer_5xx_pct: 0.0
+ground_truth: { root_cause: ledger-db, mechanism: "connection slots exhausted", symptomatic: [statements-worker, ledger] }
+mapper_signals:
+  - { signal: "ledger-db has OBSERVED edges from BOTH ledger and statements-worker with high connection activity", where: edge, strength: strong, note: "this is the only way an outside observer sees that two clients share one limit" }
+  - { signal: "statements-worker 5xx via the edge /api/statements/*; transfers healthy", where: Tier-1 edge log, strength: partial }
+mapper_blind_spots:
+  - "Slot exhaustion is a database-side error string; nothing in CPU/memory changes. The mapper surfaces the shared-limit topology and the affected edge."
+expect:
+  edges:
+    - { source: ledger,            target: ledger-db, declared: true, observed: true }
+    - { source: statements-worker, target: ledger-db, declared: true, observed: true }
+  incident: { optional: true }
+fix: "PgBouncer (transaction pooling), a connection budget table in the runbook, alert on pg_stat_activity count / max_connections"

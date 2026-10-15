@@ -17,6 +17,9 @@ export interface AnomalyRecord {
   reason?: string;
   severity: IncidentSeverity;
   evidenceSource?: string;
+  /** own = about the service itself (cpu, memory, silence); symptom = can be inherited from a broken dependency
+   * (latency, errors, traffic); hard = a fact (container stopped / paused / restarted). */
+  evidence?: 'own' | 'symptom' | 'hard';
 }
 
 export interface PropagationStep {
@@ -44,6 +47,18 @@ export interface CandidateCause {
   scoreBreakdown: ScoreContribution[];
   earliestAnomalyTimestamp?: string;
   primaryAnomalyMetric?: string;
+  /** Raw attribution parts (noise-normalised z scale): own evidence, symptoms, how much a broken callee explains. */
+  own?: number;
+  symptoms?: number;
+  explained?: number;
+}
+
+/** A service not yet failing that is likely to be pulled in next (noisy-OR over its failing dependencies). */
+export interface AtRiskService {
+  serviceId: string;
+  serviceName: string;
+  risk: number;            // 0..1, a ranking of who to watch, not a calibrated probability
+  via: string[];           // the failing dependencies it calls
 }
 
 export interface EvidenceItem {
@@ -92,4 +107,8 @@ export interface Incident {
   evidence: EvidenceItem[];
   explanation: RCAExplanation;
   remediationGuide: string[];
+  /** Services likely to be pulled in next. */
+  atRisk?: AtRiskService[];
+  /** True when most services went silent at once: a monitoring/collector outage, not a fault in the services. */
+  monitoringGap?: boolean;
 }

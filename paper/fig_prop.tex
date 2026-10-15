@@ -1,0 +1,15 @@
+\begin{tikzpicture}[font=\scriptsize,node distance=11mm,
+  n/.style={circle,draw,minimum size=6.2mm,inner sep=0pt,line width=0.5pt},
+  root/.style={circle,draw,minimum size=6.2mm,inner sep=0pt,fill=red!18,line width=0.7pt},
+  ar/.style={-{Latex[length=1.6mm]},line width=0.5pt},
+  lab/.style={font=\tiny,fill=white,inner sep=0.6pt}]
+\node[root] (d) at (0,0) {db};
+\node[n] (o) at (1.55,0.75) {ord};
+\node[n] (c) at (1.55,-0.75) {cart};
+\node[n] (g) at (3.2,0) {gw};
+\draw[ar] (d) -- node[lab,above left] {$0.82$} (o);
+\draw[ar] (d) -- node[lab,below left] {$0.31$} (c);
+\draw[ar] (o) -- node[lab,above right] {$0.64$} (g);
+\draw[ar] (c) -- node[lab,below right] {$0.12$} (g);
+\node[align=left,font=\scriptsize] at (5.35,0.15) {$P(\mathrm{ord})=0.82$\\$P(\mathrm{cart})=0.31$\\$P(\mathrm{gw})=1-(1-0.82\!\cdot\!0.64)$\\\hphantom{$P(\mathrm{gw})=1$}$(1-0.31\!\cdot\!0.12)=0.54$};
+\end{tikzpicture}

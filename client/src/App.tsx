@@ -12,6 +12,7 @@ import { TelemetryView } from './components/TelemetryView';
 import { DependenciesView } from './components/DependenciesView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { RCAView } from './components/RCAView';
+import { ReliabilityView } from './components/ReliabilityView';
 import { ExperimentHistoryPanel } from './components/ExperimentHistoryPanel';
 import { RemoteConfigPanel } from './components/RemoteConfigPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -42,7 +43,7 @@ export default function App() {
   const [isTrafficPanelOpen, setIsTrafficPanelOpen] = useState(false);
   const [isAwsPanelOpen, setIsAwsPanelOpen] = useState(false);
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
-  const [isTerminalVisible, setIsTerminalVisible] = useState(true);
+  const [isTerminalVisible, setIsTerminalVisible] = useState(false);
   const [terminalPosition, setTerminalPosition] = useState({ x: window.innerWidth - 340, y: window.innerHeight - 440 });
   
   const [filters, setFilters] = useState<Record<string, boolean>>({
@@ -120,6 +121,10 @@ export default function App() {
     });
   }, [nodes, selectedProjectId, searchQuery, filters, viewMode, highlightedNodeIds]);
 
+  const statusById = useMemo(
+    () => new Map(filteredNodes.map(n => [n.id, (n.data as unknown as ServiceNode).status])),
+    [filteredNodes]
+  );
   const filteredEdges = useMemo(() => {
     const validNodeIds = new Set(filteredNodes.map(n => n.id));
     return edges.filter(edge => {
@@ -138,8 +143,14 @@ export default function App() {
           isHighlighted = edge.source === selectedNodeId || edge.target === selectedNodeId;
         }
       }
+      // A call into a broken service is a broken call: the link takes the callee's health
+      // (critical -> failed, degraded -> degraded) unless the edge already reports worse.
+      const data = edge.data as unknown as DependencyEdge;
+      const calleeStatus = statusById.get(edge.target);
+      const derived = calleeStatus === 'critical' ? 'failed' : calleeStatus === 'degraded' && data.status !== 'failed' ? 'degraded' : null;
       return {
         ...edge,
+        data: derived && data.status !== 'failed' ? { ...edge.data, status: derived } : edge.data,
         style: {
           ...edge.style,
           opacity: isHighlighted ? 1 : 0.2,
@@ -147,7 +158,7 @@ export default function App() {
         }
       };
     });
-  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode]);
+  }, [edges, filteredNodes, highlightedNodeIds, selectedNodeId, selectedEdgeId, viewMode, statusById]);
 
   // Projects that actually have nodes right now, so the per-project stack
   // never renders an empty section for a target that's down or not yet
@@ -190,7 +201,7 @@ export default function App() {
 
   // Positions come from the selected arrangement rather than from the data
   // fetch, so switching layout rearranges the canvas without waiting for the
-  // next poll — and a poll can't silently snap nodes back to a different shape.
+  // next poll - and a poll can't silently snap nodes back to a different shape.
   const arrangedNodes = useMemo(() => {
     return filteredNodes.map((n) => {
       const p = layoutPositions2d[n.id];
@@ -222,7 +233,7 @@ export default function App() {
    * The sidebar docks against the right edge and takes real layout width
    * (main-content is a flex row, so the canvas shrinks to make room). The
    * terminal floats above everything at z-index 1000 and defaults to
-   * `window.innerWidth - 340`, which is inside that same column — so it
+   * `window.innerWidth - 340`, which is inside that same column - so it
    * landed squarely on top of the sidebar, opaque, every time. Clicking a
    * node did open the sidebar; it was just behind the terminal, which is
    * indistinguishable from nothing happening.
@@ -243,12 +254,21 @@ export default function App() {
 
 
 
+  // /api/status counts every target on the host; when one project is selected, count that project's services only.
+  const scopedStatus = useMemo(() => {
+    if (!status || selectedProjectId === 'ALL') return status;
+    const mine = nodes.filter((n) => (n.data as unknown as ServiceNode).project === selectedProjectId);
+    const count = (k: string) => mine.filter((n) => (n.data as unknown as ServiceNode).status === k).length;
+    const critical = count('critical'), degraded = count('degraded'), healthy = count('healthy'), unknown = count('unknown');
+    return { ...status, healthy, degraded, critical, unknown, status: (critical ? 'critical' : degraded ? 'degraded' : healthy ? 'healthy' : 'unknown') as typeof status.status };
+  }, [status, nodes, selectedProjectId]);
+
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'row', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <Sidebar 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
-        status={status}
+        status={scopedStatus}
         onAddProject={() => {
           setEditingProjectId(null);
           setIsAwsPanelOpen(true);
@@ -256,7 +276,7 @@ export default function App() {
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <TopBar 
-          status={status}
+          status={scopedStatus}
           targets={targets}
           isConnected={isConnected}
           lastUpdate={lastUpdate}
@@ -269,6 +289,7 @@ export default function App() {
           onToggleTerminal={() => setIsTerminalVisible(!isTerminalVisible)}
           isTerminalOpen={isTerminalVisible}
           onReloadGraph={reloadGraph}
+          activeTab={activeTab}
           onEditProject={(projectId) => { 
             setEditingProjectId(projectId);
             setIsAwsPanelOpen(true); 
@@ -278,8 +299,8 @@ export default function App() {
         
         <div className="main-content" style={{ flex: 1, position: 'relative' }}>
         {isLoading ? (
-          <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-cyan)' }}>
-            LOADING TELEMETRY...
+          <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
+            Loading telemetry…
           </div>
         ) : targets.length === 0 && !error ? (
           <WelcomeScreen onAddProject={() => { setEditingProjectId(null); setIsAwsPanelOpen(true); }} />
@@ -339,6 +360,8 @@ export default function App() {
               />
             )}
           </ProjectSections>
+        ) : activeTab === 'RELIABILITY' ? (
+          <ReliabilityView selectedProject={selectedProjectId} nodes={filteredNodes} />
         ) : activeTab === 'EXPERIMENTS' ? (
           <ExperimentHistoryPanel />
         ) : activeTab === 'ML PIPELINE' ? (
@@ -410,22 +433,22 @@ export default function App() {
         )}
       </div>
       
-      {/* GLOBAL TERMINAL PANEL (Draggable Card) */}
-      <div style={{
+      {/* Terminal: opened from the top bar, draggable, closed by its header. */}
+      {isTerminalVisible && <div style={{
         position: 'absolute',
         left: terminalLeft,
         top: terminalPosition.y,
         width: `${TERMINAL_WIDTH}px`,
         height: isTerminalVisible ? '400px' : '40px',
-        background: 'rgba(12, 12, 24, 0.95)',
-        backdropFilter: 'blur(24px)',
-        border: '1px solid var(--color-border)',
+        background: 'rgba(17, 19, 23, 0.97)',
+                border: '1px solid var(--color-border)',
         borderRadius: '12px',
+        overflow: 'hidden',
         zIndex: 1000,
         transition: 'height 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        boxShadow: 'var(--shadow-pop)'
       }} onMouseDown={isTerminalVisible ? (e => {
         if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('terminal-content')) {
           const startX = e.clientX - terminalPosition.x;
@@ -465,8 +488,8 @@ export default function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--color-accent-cyan)' }}>_</span>
-            <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '1px' }}>GLOBAL TERMINAL</span>
+            <span style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>$</span>
+            <span style={{ fontSize: '12px', fontWeight: 550 }}>Terminal</span>
           </div>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>{isTerminalVisible ? '▼' : '▲'}</span>
         </div>
@@ -481,7 +504,7 @@ export default function App() {
             />
           </div>
         )}
-      </div>
+      </div>}
       
       {error && (
         <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'var(--color-critical)', color: '#fff', padding: '8px 16px', borderRadius: '4px', zIndex: 100 }}>

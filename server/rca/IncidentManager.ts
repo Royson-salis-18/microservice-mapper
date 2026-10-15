@@ -1,17 +1,41 @@
 import type { Incident, IncidentStatus, IncidentSeverity } from '../models/Incident.js';
 import type { GraphStore } from '../graph/GraphStore.js';
-import { AnomalyDetector } from './AnomalyDetector.js';
-import { RCAEngine } from './RCAEngine.js';
-import { loadThresholds } from './thresholds.js';
+import { AnomalyDetector } from '../algorithms/detection/AnomalyDetector.js';
+import { RCAEngine } from '../algorithms/rca/RCAEngine.js';
+import { LearnedScorer, FEATURE_LABEL } from './LearnedScorer.js';
+import { TargetModels } from './TargetModels.js';
+import { loadThresholds } from './thresholdsStore.js';
+import { getEngineMode } from './engineMode.js';
+import { MLEngine, ENGINE_DEFAULTS } from '../algorithms/ml/mlEngine.js';
+import { fuseMoment, HYBRID_DEFAULTS } from '../algorithms/ml/hybrid.js';
+import { momentScores, makeScorer } from '../algorithms/detection/scoring.js';
+import { RULES_LINE } from '../algorithms/detection/scoring.js';
+import type { AnomalyRecord } from '../models/Incident.js';
+import type { MetricSnapshot } from '../models/MetricSnapshot.js';
+
+/** Labels for the ML engine's "why this score" list. */
+const ML_LABELS: Record<string, string> = {
+  anomaly: 'Isolation Forest anomaly against its own learned baseline (0 to 1)',
+  walk: 'share of the random walk on the call graph (root-cause score)',
+  fact: 'container fact (stopped, paused or restarting)',
+};
 
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
   private anomalyDetector: AnomalyDetector;
   private rcaEngine: RCAEngine;
+  private learned = new LearnedScorer();
+  /** One model per architecture, trained on its own baseline at every start (call models.start() once the server is up). */
+  public readonly models: TargetModels;
+  /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
+  private learnedHot = new Map<string, boolean>();
+  /** ML engine state per target: the learned baselines, the newest reading already fed in, last cycle's alarm. */
+  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; rulesTop?: number; warnings?: { id: string; feature: string; inSec: number | null }[]; cascade?: { id: string; risk: number }[]; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
 
   constructor(private graphStore: GraphStore) {
-    this.anomalyDetector = new AnomalyDetector(graphStore.metricStore);
+    this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
     this.rcaEngine = new RCAEngine();
+    this.models = new TargetModels(graphStore, this.learned);
   }
 
   public evaluateTarget(targetId: string): Incident | null {
@@ -19,19 +43,104 @@ export class IncidentManager {
     const targetNodes = nodes.filter(n => n.project === targetId);
     const targetEdges = edges.filter(e => e.id.startsWith(targetId) || targetNodes.some(n => n.id === e.source));
 
+    const t = loadThresholds();
     // 1. Detect Anomaly Records for Target
     const anomalies = this.anomalyDetector.detectAnomaliesForTarget(targetId, targetNodes);
 
     // 2. Execute RCA Analysis
+    const open = this.activeIncidents.get(targetId);
+    const hostStatus = String((this.graphStore as any).targets?.get?.(targetId)?.status ?? 'LIVE');
+    const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
+    const model = this.models.get(targetId);
+    const learning = model.state === 'learning' ? { haveSec: model.baselineSec, needSec: model.needSec } : undefined;
+    const mode = getEngineMode();
+    if (mode !== 'rules') return this.finish(targetId, targetNodes, targetEdges, anomalies, this.mlAnalysis(targetId, targetNodes, targetEdges, anomalies, hostSilent, open, mode === 'hybrid'), t);
+    this.graphStore.clearEngineScores?.();
+    const scored = hostSilent || learning ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'), model.threshold);
+    let learned: any;
+    if (scored) {
+      const hot = scored.maxP >= scored.threshold;
+      learned = { p: scored.p, why: scored.why, threshold: scored.threshold, labels: FEATURE_LABEL, alarm: hot && (this.learnedHot.get(targetId) ?? false) };
+      this.learnedHot.set(targetId, hot);
+    }
     const rcaResult = this.rcaEngine.analyzeIncident({
+      learning,
+      learned,
+      hostSilent,
+      incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
       targetId,
       nodes: targetNodes,
       edges: targetEdges,
-      anomalies
+      anomalies,
+      thresholds: t,
     });
 
+    return this.finish(targetId, targetNodes, targetEdges, anomalies, rcaResult, t);
+  }
+
+  /** The ML engine: per-service Isolation Forest (learned on a sliding window of normal readings) and a random walk on the
+   *  call graph. Its verdict goes through the same incident machinery as the rules (explanation, cascade, at-risk).
+   *  Hybrid: the rule engine scores the same moment too, and either engine can raise the alarm (server/algorithms/ml/hybrid.ts). */
+  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined, hybrid = false) {
+    let st = this.ml.get(targetId);
+    if (!st) { st = { engine: new MLEngine(ENGINE_DEFAULTS), seen: new Map(), hot: false, ready: false, learned: 0, services: 0, readings: 0, detail: [] }; this.ml.set(targetId, st); }
+    const fresh = new Map<string, MetricSnapshot[]>();
+    let readings = 0;
+    for (const n of nodes) {
+      const last = st.seen.get(n.id) ?? '';
+      const h = this.graphStore.metricStore.getHistory(n.id, '15m').filter((x) => x.timestamp > last);
+      if (h.length) { st.seen.set(n.id, h[h.length - 1].timestamp); fresh.set(n.id, h); readings += h.length; }
+    }
+    const r = st.engine.step(nodes, edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight?.value ?? 1 })), hostSilent ? new Map() : fresh);
+    let hotNow = r.hot;
+    if (hybrid && !hostSilent) {
+      const history = (id: string) => this.graphStore.metricStore.getHistory(id, '15m');
+      const rules = momentScores(nodes, history, edges.map((e) => [e.source, e.target] as [string, string]), makeScorer(null));
+      const ids = [...r.services.keys()];
+      const fused = fuseMoment({ services: ids, rules: new Map(ids.map((id) => [id, (rules.get(id) ?? 0) / RULES_LINE])), level: new Map(ids.map((id) => [id, r.services.get(id)!.level / ENGINE_DEFAULTS.alarmLevel])),
+        hard: new Set(ids.filter((id) => r.services.get(id)!.hard)), walk: r.rank, mlRanked: r.ranked }, HYBRID_DEFAULTS);
+      hotNow = fused.max >= 1;
+      st.rulesTop = Math.max(0, ...ids.map((id) => (rules.get(id) ?? 0) / RULES_LINE));
+    }
+    const alarm = hotNow && st.hot;
+    st.hot = hotNow; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
+    st.warnings = r.warnings.map((w) => ({ id: w.id, feature: w.feature, inSec: w.inSec }));
+    st.cascade = [...r.atRisk].filter(([, p]) => p >= 0.5).sort((a, b) => b[1] - a[1]).map(([id, risk]) => ({ id, risk: Math.round(risk * 100) / 100 }));
+    st.detail = [...r.services].map(([id, v]) => ({ id, level: +v.level.toFixed(2), own: +v.ownLevel.toFixed(2), symptom: +v.symptomLevel.toFixed(2), anomaly: +v.anomaly.toFixed(2), walk: +(r.rank.get(id) ?? 0).toFixed(3), hard: v.hard, ready: v.ready, fact: v.fact }))
+      .sort((a, b) => b.walk - a.walk || b.level - a.level);
+    this.graphStore.setEngineScores?.(new Map([...r.services].map(([id, v]) => [id, { score: v.anomaly, persistent: v.level >= 1 }])));
+
+    // evidence for the incident: container facts (from the detector) plus the forest's verdicts
+    const now = new Date().toISOString();
+    const anomalies: AnomalyRecord[] = hybrid ? [...ruleAnomalies] : ruleAnomalies.filter((a) => (a.evidence ?? '') === 'hard');
+    for (const [id, v] of r.services) {
+      if (v.hard || v.level < 1) continue;
+      anomalies.push({ id: `anomaly-${id}-iforest-${Date.now()}`, nodeId: id, targetId, metric: 'isolation-forest', timestamp: now, observedValue: Math.round(v.score * 1000) / 1000,
+        baselineMean: 0, baselineStdDev: 0, zScore: Math.round(v.level * 350) / 100, reason: `isolated quickly by its own forest (level ${v.level.toFixed(2)}, 1 = alarm line)`,
+        severity: v.level >= 4 ? 'CRITICAL' : v.level >= 2 ? 'HIGH' : 'MEDIUM', evidenceSource: 'isolation-forest', evidence: 'own' } as AnomalyRecord);
+    }
+    const why = new Map([...r.services].map(([id, v]) => [id, [
+      ...(v.hard ? [{ feature: 'fact', value: 1 }] : []), { feature: 'anomaly', value: v.anomaly }, { feature: 'walk', value: r.rank.get(id) ?? 0 }]]));
+    const learning = r.ready ? undefined : { haveSec: Math.round(st.readings * 5 / Math.max(1, nodes.length)), needSec: ENGINE_DEFAULTS.baseline.minTrain * 5 };
+    return this.rcaEngine.analyzeIncident({
+      targetId, nodes, edges, anomalies, thresholds: loadThresholds(), hostSilent, learning,
+      incumbent: open && open.status !== 'RESOLVED' ? open.rootCauseServiceId : null,
+      learned: { p: r.rank, why, alarm: alarm || [...r.services.values()].some((v) => v.hard), threshold: 0.25, labels: ML_LABELS, unit: '', minShow: 0.01 },
+    });
+  }
+
+  /** What the ML engine has learned so far, per target (for the UI). */
+  public engineStatus() {
+    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, detail: s.detail, rulesTop: s.rulesTop ?? null, warnings: s.warnings ?? [], cascade: s.cascade ?? [], needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
+  }
+
+  /** Close every open incident (used when the engine is switched, so the new engine starts from a clean slate). */
+  public resetIncidents(): void { this.activeIncidents.clear(); this.learnedHot.clear(); for (const s of this.ml.values()) s.hot = false; }
+
+  private finish(targetId: string, targetNodes: any[], targetEdges: any[], anomalies: AnomalyRecord[], rcaResult: ReturnType<RCAEngine['analyzeIncident']>, t: ReturnType<typeof loadThresholds>): Incident | null {
     const existing = this.activeIncidents.get(targetId);
     const now = new Date().toISOString();
+    this.models.noteIncident(targetId, rcaResult.incidentDetected);
 
     if (!rcaResult.incidentDetected) {
       if (existing && existing.status !== 'RESOLVED') {
@@ -49,11 +158,22 @@ export class IncidentManager {
     let severity: IncidentSeverity = 'LOW';
     let status: IncidentStatus = 'DEGRADED';
 
-    const t = loadThresholds();
-    if (criticalCount > 0) {
+    if (rcaResult.monitoringGap) {
+      severity = 'MEDIUM';
+      status = 'DEGRADED';
+    } else if (criticalCount > 0) {
       severity = criticalCount > t.criticalServicesForCritical ? 'CRITICAL' : 'HIGH';
       status = 'INCIDENT';
+      // A service nothing depends on and that depends on nothing: a real failure, but with no blast radius.
+      const rootId = rcaResult.primaryRootCause?.serviceId;
+      if (severity === 'HIGH' && rootId && !targetEdges.some(e => e.source === rootId || e.target === rootId)) severity = 'MEDIUM';
     } else if (degradedCount > 0) {
+      severity = 'MEDIUM';
+      status = 'DEGRADED';
+    } else if (anomalies.some(a => a.severity === 'CRITICAL')) {
+      severity = 'HIGH';
+      status = 'INCIDENT';
+    } else if (anomalies.some(a => a.severity === 'HIGH')) {
       severity = 'MEDIUM';
       status = 'DEGRADED';
     }
@@ -72,8 +192,10 @@ export class IncidentManager {
       existing.affectedServices = rcaResult.affectedServices;
       existing.candidateCauses = rcaResult.candidateCauses;
       existing.evidence = rcaResult.evidence;
-      existing.explanation = rcaResult.explanation;
-      existing.remediationGuide = primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : [];
+      existing.explanation = this.withRemediation(rcaResult.explanation, primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap);
+      existing.remediationGuide = existing.explanation.recommendedInvestigation;
+      existing.atRisk = rcaResult.atRisk;
+      existing.monitoringGap = rcaResult.monitoringGap;
       return existing;
     }
 
@@ -97,12 +219,46 @@ export class IncidentManager {
       affectedServices: rcaResult.affectedServices,
       candidateCauses: rcaResult.candidateCauses,
       evidence: rcaResult.evidence,
-      explanation: rcaResult.explanation,
-      remediationGuide: primaryRC ? [`docker start docker-compose-${primaryRC.serviceName.replace(/^(sock-shop|vertikal)-/, '')}-1`] : []
+      explanation: this.withRemediation(rcaResult.explanation, primaryRC?.serviceId, targetNodes, !!rcaResult.monitoringGap),
+      remediationGuide: [],
+      atRisk: rcaResult.atRisk,
+      monitoringGap: rcaResult.monitoringGap,
     };
 
+    newIncident.remediationGuide = newIncident.explanation.recommendedInvestigation;
     this.activeIncidents.set(targetId, newIncident);
     return newIncident;
+  }
+
+  /**
+   * What to type, based on what is actually wrong. The old guide was always `docker start docker-compose-<name>-1`,
+   * a container name that only existed on one host and the wrong command for a paused or running container.
+   */
+  /** One list of steps: the concrete command for what is actually wrong first, then the explanation's own checks.
+   *  The incident's remediation guide is exactly this list, so the panel and the report never disagree. */
+  private withRemediation(explanation: any, serviceId: string | undefined, nodes: any[], monitoringGap: boolean) {
+    const steps = [...this.remediation(serviceId, nodes, monitoringGap), ...(explanation.recommendedInvestigation ?? [])];
+    return { ...explanation, recommendedInvestigation: [...new Set(steps)] };
+  }
+
+  private remediation(serviceId: string | undefined, nodes: any[], monitoringGap: boolean): string[] {
+    if (monitoringGap) return ['Check the SSH session / collector on the host', 'docker ps', 'docker stats --no-stream'];
+    const n = nodes.find(x => x.id === serviceId);
+    if (!n) return [];
+    const container = n.metadata?.containerName || n.metadata?.containerId?.slice(0, 12) || n.name;
+    const state = String(n.metadata?.state ?? '');
+    if (n.metadata?.networkDetached) return [`docker inspect --format '{{json .NetworkSettings.Networks}}' ${container}`, `docker network connect <project>_default ${container}`];
+    if (state === 'paused') return [`docker unpause ${container}`, `docker logs --tail 100 ${container}`];
+    if (state === 'exited' || state === 'dead' || n.metadata?.vanished) return [`docker logs --tail 100 ${container}`, `docker restart ${container}`];
+    if (state === 'restarting') return [`docker logs --tail 200 ${container}`, `docker inspect --format '{{.State.ExitCode}} {{.State.Error}}' ${container}`];
+    return [`docker logs --tail 100 ${container}`, `docker stats --no-stream ${container}`];
+  }
+
+  /** Drop incidents (and the detector's onset memory) for one target, or for all. */
+  public clear(targetId?: string): void {
+    if (targetId) { this.activeIncidents.delete(targetId); this.ml.delete(targetId); } else { this.activeIncidents.clear(); this.ml.clear(); }
+    this.models.clear(targetId);
+    this.anomalyDetector.forget(targetId);
   }
 
   public getIncidentForTarget(targetId: string): Incident | null {

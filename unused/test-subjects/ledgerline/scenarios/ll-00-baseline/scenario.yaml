@@ -1,0 +1,29 @@
+id: ll-00-baseline
+title: Healthy baseline (control group)
+class: control
+summary: >
+  LedgerLine as designed: a clean DAG, accurate depends_on, correct double-entry bookkeeping. Verified locally: after
+  3,000+ transfers the ledger sums to exactly 0, total money is conserved, and there are no errors. Keep this run as the
+  mapper's false-positive reference.
+load: { command: "node lab/loadgen.mjs ledgerline --concurrency 20 --duration 600" }
+ground_truth: { root_cause: null }
+expect:
+  edges:
+    - { source: edge,              target: accounts,          declared: true, observed: true }
+    - { source: edge,              target: transfers,         declared: true, observed: true }
+    - { source: edge,              target: statements-worker, declared: true, observed: true }
+    - { source: accounts,          target: accounts-db,       declared: true, observed: true }
+    - { source: accounts,          target: fraud-screening,   declared: true, observed: true }
+    - { source: transfers,         target: accounts,          declared: true, observed: true }
+    - { source: transfers,         target: fraud-screening,   declared: true, observed: true }
+    - { source: transfers,         target: fx-rates,          declared: true, observed: true }
+    - { source: transfers,         target: ledger,            declared: true, observed: true }
+    - { source: transfers,         target: state-store,       declared: true, observed: true }
+    - { source: transfers,         target: event-bus,         declared: true, observed: true }
+    - { source: ledger,            target: ledger-db,         declared: true, observed: true }
+    - { source: fraud-screening,   target: state-store,       declared: true, observed: true }
+    - { source: fx-rates,          target: fx-provider,       declared: true, observed: true }
+    - { source: statements-worker, target: ledger-db,         declared: true, observed: true }
+    - { source: statements-worker, target: event-bus,         declared: true, observed: true }
+    - { source: statements-worker, target: accounts,          declared: true, observed: true }
+  incident: null

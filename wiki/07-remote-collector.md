@@ -1,8 +1,11 @@
-# Remote Collector — Telemetry Sources & Design
+# Remote Collector - Telemetry Sources & Design
 
 **File:** `remote-collector/index.ts`
 
-The remote collector is a standalone Node.js process deployed on each EC2 instance. It runs alongside the target application and requires access to `/var/run/docker.sock`.
+> [!IMPORTANT]
+> **This is the optional push path, not the default.** The mapper's normal collection runs from the server over SSH and installs nothing on the target: `EndpointDiscoveryEngine` and `MetricCollector` run `docker stats`, read `/proc/<pid>/net/tcp`, `tcp6` and `net/dev` remotely, and decide connection direction from listening ports. That path is described in [Measuring precisely](31-measurement-precision.md) and [Reaching the target](21-connection-layer.md). The server never deploys this collector. It exists for hosts where you *choose* to run an agent, and it feeds the same `POST /api/ingest` that the ground-truth simulator uses.
+
+The remote collector is a standalone Node.js process that can be deployed on an EC2 instance. It runs alongside the target application and requires access to `/var/run/docker.sock`.
 
 ---
 
@@ -25,14 +28,14 @@ POLLING_INTERVAL=5000               # ms between collection cycles
 
 ---
 
-## Telemetry Source 1 — Docker Socket
+## Telemetry Source 1 - Docker Socket
 
 ### Container Stats (CPU, Memory, Network)
 
 ```typescript
 const stats = await container.stats({ stream: false });  // one-shot snapshot
 
-// CPU calculation — Docker provides deltas:
+// CPU calculation - Docker provides deltas:
 const cpuDelta    = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
 const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
 const numCPUs     = stats.cpu_stats.online_cpus || stats.cpu_stats.cpu_usage.percpu_usage?.length || 1;
@@ -51,7 +54,7 @@ for (const iface of Object.values(stats.networks || {})) {
 }
 ```
 
-**Note:** `networkRx`/`networkTx` are **cumulative** counters, not rates. The ML pipeline's `preprocess.py` converts them to rates (Δ bytes/second) during feature engineering.
+**Note:** `networkRx`/`networkTx` are **cumulative** counters, not rates. The ML pipeline's `preprocess.py` converts them to rates (Δ bytes/second) during feature engineering. On the default SSH path the server also publishes `networkRxRate`/`networkTxRate` (bytes/s from exact `/proc/<pid>/net/dev` counters). See [Measuring precisely](31-measurement-precision.md).
 
 ### Container Events (Real-time State Changes)
 
@@ -65,11 +68,11 @@ stream.on('data', (chunk) => {
 });
 ```
 
-This gives near-instantaneous node status updates when containers start/stop — much faster than waiting for the next polling cycle.
+This gives near-instantaneous node status updates when containers start/stop - much faster than waiting for the next polling cycle.
 
 ---
 
-## Telemetry Source 2 — Container Log Parsing
+## Telemetry Source 2 - Container Log Parsing
 
 ### Docker Log Framing
 
@@ -99,7 +102,7 @@ function demuxDockerLogs(buffer: Buffer): string[] {
 }
 ```
 
-**Why is this important?** Without stripping the header, the first 8 bytes of every log line are binary garbage. Regex patterns fail silently — no HTTP events are extracted, edge observability is blind.
+**Why is this important?** Without stripping the header, the first 8 bytes of every log line are binary garbage. Regex patterns fail silently - no HTTP events are extracted, edge observability is blind.
 
 ### Standard Access Log Format (Apache/NGINX combined)
 
@@ -143,7 +146,7 @@ Matching a log line's `remote_addr` or `upstream_addr` against this map converts
 
 ---
 
-## Telemetry Source 3 — `/proc/net/tcp` Polling
+## Telemetry Source 3 - `/proc/net/tcp` Polling
 
 Linux's `/proc/net/tcp` contains the kernel's TCP connection table. The collector reads it at each polling interval.
 
@@ -249,3 +252,8 @@ function determineType(name: string, image: string): string {
 ```
 
 Heuristic-based on container name and image name. Works well for Sock Shop and Vertikal. For custom setups, the type can be overridden in a future target adapter.
+
+
+## Request statistics from service logs
+
+Each cycle the collector also reads every container's log lines since the previous cycle and sends request rate, error rate and latency percentiles (`remote-collector/requestStats.ts`, pure and unit-tested), plus network bytes per second and restart counts. See [40](40-faultlab-panel-and-demo.md) for how each fault class shows up in them. Per-container work runs in parallel, so a cycle takes about 8 seconds instead of one second per container.

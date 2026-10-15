@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { X, Play, Square, AlertTriangle, Info, Loader2, Radar, Pin } from 'lucide-react';
 
 // Mirrors ABSOLUTE_MAX_USERS in traffic-gen/server.js. Kept in sync by hand;
 // the server clamps regardless, so a drift here only affects the hint text.
 const MAX_USERS = 200;
 
 // Each workflow file declares its own per-profile user counts, so this is a
-// hint for the placeholder only — the server uses the real value.
+// hint for the placeholder only - the server uses the real value.
 const PROFILE_USER_HINT: Record<string, number> = {
   baseline: 5, moderate: 15, heavy: 40, stress: 80, ramp: 20,
 };
@@ -31,6 +33,64 @@ interface SurfaceReport {
   dead: ProbeResult[];
 }
 import type { Target, DiscoveredService, DiscoveredEndpoint, DiscoveredRoute, TargetDiscoverySummary } from '../types';
+
+const sentence = (v: string) => {
+  const t = String(v ?? '').replace(/_/g, ' ');
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+};
+
+const labelStyle: CSSProperties = { fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '6px', fontWeight: 500 };
+const hintStyle: CSSProperties = { fontSize: '11.5px', color: 'var(--color-text-dim)', marginTop: '6px', lineHeight: 1.45 };
+
+function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <div style={{ padding: '16px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', minHeight: '22px' }}>
+        <span className="mm-eyebrow">{title}</span>
+        {aside}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Note({ tone, icon, children }: { tone: 'warn' | 'error' | 'info'; icon: ReactNode; children: ReactNode }) {
+  const palette = {
+    warn: { bg: 'rgba(232,163,61,0.08)', border: 'rgba(232,163,61,0.22)', icon: 'var(--color-degraded)' },
+    error: { bg: 'rgba(239,95,103,0.08)', border: 'rgba(239,95,103,0.25)', icon: 'var(--color-critical)' },
+    info: { bg: 'rgba(255,255,255,0.02)', border: 'var(--color-border)', icon: 'var(--color-text-dim)' },
+  }[tone];
+  return (
+    <div style={{
+      display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 12px', borderRadius: '8px',
+      background: palette.bg, border: `1px solid ${palette.border}`, fontSize: '12px', lineHeight: 1.5,
+      color: tone === 'info' ? 'var(--color-text-muted)' : 'var(--color-text-main)',
+    }}>
+      <span style={{ color: palette.icon, display: 'flex', marginTop: '2px', flexShrink: 0 }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+const PANEL_CSS = `
+  .mm-tc-input { width: 100%; height: 30px; background-color: rgba(255,255,255,0.03); color: var(--color-text-main); border: 1px solid var(--color-border);
+    border-radius: 8px; padding: 0 10px; font: inherit; font-size: 12.5px; outline: none; transition: border-color var(--transition-fast); }
+  .mm-tc-input::placeholder { color: var(--color-text-dim); }
+  .mm-tc-input:hover:not(:disabled) { border-color: var(--color-border-hover); }
+  .mm-tc-input:focus { border-color: rgba(138,180,255,0.45); }
+  .mm-tc-input:disabled { color: var(--color-text-dim); cursor: not-allowed; }
+  .mm-tc-input.mono { font-family: var(--font-mono); font-size: 12px; }
+  select.mm-tc-input { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235d636c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; }
+  select.mm-tc-input option { background: var(--color-bg-raised); color: var(--color-text-main); }
+  .mm-tc .mm-btn { cursor: pointer; }
+  .mm-tc .mm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .mm-tc .mm-btn.danger { background: rgba(239,95,103,0.1); border-color: rgba(239,95,103,0.3); color: #ffb3b7; }
+  .mm-tc .mm-btn.danger:hover:not(:disabled) { background: rgba(239,95,103,0.16); }
+  .mm-tc .mm-btn.ghost { background: transparent; color: var(--color-text-muted); }
+  .mm-tc .mm-btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,0.04); color: var(--color-text-main); }
+`;
 
 interface TrafficControlPanelProps {
   onClose?: () => void;
@@ -223,9 +283,9 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         : reachabilityStatus === 'CHECKING'
           ? 'Still checking whether the entry point responds…'
           : reachabilityStatus !== 'REACHABLE'
-            ? `Entry point ${activeUrl || ''} is ${reachabilityStatus}. Pick a different endpoint, or pin one that responds — telemetry UIs (Grafana, Jaeger) are often not reachable from here. Or switch Traffic Mode to Sweep to probe every endpoint.`
+            ? `Entry point ${activeUrl || ''} is ${reachabilityStatus.toLowerCase()}. Pick a different endpoint, or pin one that responds - telemetry UIs (Grafana, Jaeger) are often not reachable from here. Or switch traffic mode to Sweep to probe every endpoint.`
             : !isSelectedServiceCapable
-              ? 'The selected service has no traffic-capable routes. Choose another service, or switch Traffic Mode to User Journey.'
+              ? 'The selected service has no traffic-capable routes. Choose another service, or switch traffic mode to User journey.'
               : null;
 
   const handleStart = async () => {
@@ -235,7 +295,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     try {
       const durationSec = parseInt(duration, 10) || 0;
       // If the surface was already probed for this target, reuse that result
-      // rather than making the server probe again — the operator has seen
+      // rather than making the server probe again - the operator has seen
       // exactly which URLs it contains and is starting against those.
       const sweepPaths =
         mode === 'SWEEP' && surface?.targetId === selectedTargetId && surface.usable.length > 0
@@ -280,7 +340,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
   /**
    * Probe every discovered endpoint and report which ones answer.
    *
-   * This is read-only — one GET per endpoint, no load generated. It exists
+   * This is read-only - one GET per endpoint, no load generated. It exists
    * because discovery can only report what a container publishes, which is
    * not the same as what is reachable from here.
    */
@@ -360,7 +420,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
         body: JSON.stringify({ url }),
       });
       const d = await res.json();
-      setEntryMsg(d.reachable ? `OK — HTTP ${d.status} in ${d.ms}ms` : `Unreachable: ${d.error}`);
+      setEntryMsg(d.reachable ? `OK - HTTP ${d.status} in ${d.ms}ms` : `Unreachable: ${d.error}`);
     } catch (e: any) {
       setEntryMsg(`Probe failed: ${e.message}`);
     } finally {
@@ -379,7 +439,7 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `HTTP ${res.status}`);
-      setEntryMsg(d.pinned ? `OK — pinned to ${d.pinned}` : 'OK — pin cleared, using discovery');
+      setEntryMsg(d.pinned ? `OK - pinned to ${d.pinned}` : 'OK - pin cleared, using discovery');
       await fetchEntryPoints();
     } catch (e: any) {
       setEntryMsg(e.message);
@@ -388,502 +448,479 @@ export function TrafficControlPanel({ onClose }: TrafficControlPanelProps) {
     }
   };
 
+  const entry = entryPoints[selectedTargetId];
+  const engineTone: CSSProperties = trafficHealth === null
+    ? {}
+    : trafficHealth.reachable
+      ? { background: 'rgba(62,207,142,.1)', color: 'var(--color-healthy)', borderColor: 'transparent' }
+      : { background: 'rgba(239,95,103,.1)', color: 'var(--color-critical)', borderColor: 'transparent' };
+  const reachColor = reachabilityStatus === 'REACHABLE'
+    ? 'var(--color-healthy)'
+    : reachabilityStatus === 'CHECKING' || reachabilityStatus === 'UNKNOWN'
+      ? 'var(--color-text-muted)'
+      : 'var(--color-critical)';
+  const canStart = !isCurrentRunning && !blockedReason;
+
   return (
     <div
+      className="mm-tc"
       style={{
         position: 'fixed',
         bottom: '24px',
         right: '24px',
-        width: '450px',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        background: 'rgba(12, 12, 24, 0.95)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        maxHeight: 'calc(100vh - 48px)',
+        background: 'rgba(17, 19, 23, 0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         border: '1px solid var(--color-border)',
-        borderRadius: '16px',
-        padding: '20px',
+        borderRadius: '14px',
         zIndex: 100,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.65), 0 0 24px rgba(0, 212, 255, 0.15)',
+        boxShadow: 'var(--shadow-pop)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '14px',
         fontFamily: 'var(--font-family)',
+        color: 'var(--color-text-main)',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: 'var(--color-accent-cyan)', fontSize: '16px' }}>⚡</span>
-          <span style={{ fontWeight: 700, fontSize: '13px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#fff' }}>
-            Workload Experiment Control
-          </span>
+      <style>{PANEL_CSS}</style>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', padding: '16px 16px 14px 20px', flexShrink: 0 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', letterSpacing: '-0.005em' }}>Traffic generator</div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '3px' }}>
+            Run synthetic workloads against a target and watch how it responds.
+          </div>
         </div>
         {onClose && (
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '16px', cursor: 'pointer' }}>✕</button>
+          <button className="mm-icon-btn" onClick={onClose} aria-label="Close" style={{ cursor: 'pointer', flexShrink: 0, marginTop: '-4px' }}>
+            <X size={16} strokeWidth={1.75} />
+          </button>
         )}
       </div>
 
-      {/* Traffic-gen live status — makes it obvious whether the engine is
-          actually up, since Node's own "isRunning" belief can go stale if
-          traffic-gen crashes mid-run without Node finding out. */}
-      <div style={{
-        background: 'rgba(0,0,0,0.3)', border: '1px solid var(--color-border)', borderRadius: '10px',
-        padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Traffic Engine</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{
-              width: '7px', height: '7px', borderRadius: '50%',
-              background: trafficHealth?.reachable ? 'var(--color-healthy)' : 'var(--color-critical)',
-              boxShadow: trafficHealth?.reachable ? '0 0 6px var(--color-healthy)' : '0 0 6px var(--color-critical)',
-            }} />
-            <span style={{ fontSize: '11px', fontWeight: 700, color: trafficHealth?.reachable ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
-              {trafficHealth === null ? 'CHECKING...' : trafficHealth.reachable ? 'ONLINE' : 'OFFLINE'}
+      <div className="mm-tc-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        {/* Traffic-gen live status - makes it obvious whether the engine is
+            actually up, since Node's own "isRunning" belief can go stale if
+            traffic-gen crashes mid-run without Node finding out. */}
+        <Section
+          title="Traffic engine"
+          aside={
+            <span className="mm-chip" style={engineTone}>
+              {trafficHealth === null
+                ? <Loader2 size={12} strokeWidth={1.75} className="mm-spin" />
+                : <i className="mm-dot" style={{ background: 'currentColor' }} />}
+              {trafficHealth === null ? 'Checking' : trafficHealth.reachable ? 'Online' : 'Offline'}
             </span>
-          </div>
-        </div>
-        {trafficHealth?.reachable && trafficHealth.projects.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-            {trafficHealth.projects.map(p => (
-              <div key={p.projectId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: p.running ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)', fontWeight: p.running ? 700 : 400 }}>
-                  {p.running ? '● ' : '○ '}{p.projectId}
-                </span>
-                <span style={{ color: 'var(--color-text-muted)' }}>
-                  {p.running && p.stats
-                    ? `${p.stats.currentUsers} users, ${p.stats.currentRate.toFixed(1)} req/s, ${(p.stats.errorRate * 100).toFixed(0)}% err`
-                    : 'idle'}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-        {trafficHealth?.reachable === false && (
-          <div style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>
-            not reachable at {trafficHealth.url || 'localhost:4400'} — it should auto-start with the server; check server logs if this persists
-          </div>
-        )}
-
-        {/* Global kill switch. Stops every run the system can reach, including
-            ones started outside this app or before the last server restart —
-            not just whatever this panel happens to be showing. */}
-        <button
-          onClick={handleStopAll}
-          disabled={isLoading}
-          title="Stops synthetic traffic for every project, from any source"
-          style={{
-            marginTop: '8px',
-            width: '100%',
-            padding: '7px',
-            background: anyProjectRunning ? 'rgba(255, 23, 68, 0.15)' : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${anyProjectRunning ? 'rgba(255,23,68,0.45)' : 'var(--color-border)'}`,
-            color: anyProjectRunning ? 'var(--color-critical)' : 'var(--color-text-muted)',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-          }}
+          }
         >
-          {anyProjectRunning ? 'STOP ALL TRAFFIC (ALL PROJECTS)' : 'STOP ALL — nothing running'}
-        </button>
-      </div>
-
-      {/* Entry point: what traffic is actually sent to. Discovery can only
-          see what a container publishes, which isn't always reachable from
-          here, so this can be pinned per project and proven with a probe. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-            Entry point — {selectedTargetId}
-          </span>
-          {entryPoints[selectedTargetId]?.pinned && (
-            <span style={{ fontSize: '9px', color: 'var(--color-accent-cyan)', fontWeight: 700 }}>PINNED</span>
-          )}
-        </div>
-        <input
-          value={entryDraft}
-          onChange={(e) => setEntryDraft(e.target.value)}
-          placeholder={entryPoints[selectedTargetId]?.resolved || 'http://host:port'}
-          style={{
-            width: '100%', background: 'rgba(0,0,0,0.35)', border: '1px solid var(--color-border)',
-            borderRadius: '5px', padding: '5px 7px', fontSize: '11px', color: '#fff', outline: 'none',
-          }}
-        />
-        <div style={{ fontSize: '9px', color: 'var(--color-text-muted)' }}>
-          in use: {entryPoints[selectedTargetId]?.resolved || 'none resolved'}
-          {!entryPoints[selectedTargetId]?.pinned && ' (inferred from discovery)'}
-        </div>
-        {entryPoints[selectedTargetId]?.staleHost && (
-          <div style={{ fontSize: '9px', color: 'var(--color-degraded)', lineHeight: 1.4 }}>
-            ⚠ This pin doesn't match the target's current IP ({entryPoints[selectedTargetId]!.staleHost}) — the instance
-            likely restarted with a new address. Probe it, then update or clear the pin.
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={handleProbeEntry}
-            disabled={entryBusy}
-            style={{ flex: 1, padding: '5px', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.3)', color: 'var(--color-accent-cyan)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
-          >
-            {entryBusy ? '...' : 'PROBE'}
-          </button>
-          <button
-            onClick={() => handleSaveEntry()}
-            disabled={entryBusy}
-            style={{ flex: 1, padding: '5px', background: 'rgba(0,230,118,0.12)', border: '1px solid rgba(0,230,118,0.3)', color: 'var(--color-healthy)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
-          >
-            SAVE
-          </button>
-          <button
-            onClick={() => { setEntryDraft(''); handleSaveEntry(''); }}
-            disabled={entryBusy}
-            title="Clear the pin and fall back to discovery"
-            style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', borderRadius: '5px', fontSize: '10px', fontWeight: 700, cursor: entryBusy ? 'not-allowed' : 'pointer' }}
-          >
-            CLEAR
-          </button>
-        </div>
-        {entryMsg && (
-          <div style={{ fontSize: '10px', color: entryMsg.startsWith('OK') ? 'var(--color-healthy)' : 'var(--color-critical)' }}>{entryMsg}</div>
-        )}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div>
-          <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET AWS APP</label>
-          <select
-            value={selectedTargetId} disabled={isAnyRunning}
-            onChange={(e) => {
-              // Endpoint/service/route ids are namespaced per target, so
-              // carrying them across a target switch sends traffic to the
-              // previous project's URL. Observed in the log as a death-star
-              // experiment resolving an open-telemetry endpoint id.
-              setSelectedTargetId(e.target.value);
-              setSelectedEndpointId('');
-              setSelectedServiceId('');
-              setSelectedRouteId('');
-              // A probe report belongs to the target it was taken against.
-              setSurface(null);
-              setStartError(null);
-            }}
-            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: isAnyRunning ? 'var(--color-text-dim)' : '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', outline: 'none', cursor: isAnyRunning ? 'not-allowed' : 'pointer' }}
-          >
-            {targets.length > 0 ? targets.map(t => <option key={t.targetId} value={t.targetId}>{t.displayName || t.targetId}</option>) : <><option value="sock-shop">Sock Shop AWS</option><option value="vertikal">Vertikal AWS</option></>}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>WORKLOAD SOURCE</label>
-          <select
-            value={workloadSource}
-            onChange={(e) => setWorkloadSource(e.target.value as any)}
-            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', outline: 'none' }}
-          >
-            <option value="EXTERNAL">External Traffic Engine</option>
-            <option value="USER_SIM" disabled>UNCONTROLLABLE (REMOTE USER_SIM)</option>
-          </select>
-          {selectedTargetId.includes('sock') && (
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '4px' }}>
-              Native User-Sim Status: OBSERVE ONLY (Via Telemetry)
+          {trafficHealth?.reachable && trafficHealth.projects.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {trafficHealth.projects.map(p => (
+                <div key={p.projectId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', height: '28px', fontSize: '12.5px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, color: p.running ? 'var(--color-text-main)' : 'var(--color-text-muted)' }}>
+                    <i className="mm-dot" style={{ background: p.running ? 'var(--color-accent-cyan)' : 'var(--color-unknown)' }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.projectId}</span>
+                  </span>
+                  <span style={{ color: p.running ? 'var(--color-text-muted)' : 'var(--color-text-dim)', fontSize: '12px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    {p.running && p.stats
+                      ? `${p.stats.currentUsers} users · ${p.stats.currentRate.toFixed(1)} req/s · ${(p.stats.errorRate * 100).toFixed(0)}% err`
+                      : 'Idle'}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div>
-          <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>EXPERIMENT PROFILE</label>
-          <select
-            value={profile}
-            onChange={(e) => setProfile(e.target.value)}
-            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-          >
-            <option value="baseline">BASELINE (2 req/s)</option>
-            <option value="moderate">MODERATE (10 req/s)</option>
-            <option value="heavy">HEAVY (25 req/s)</option>
-            <option value="stress">STRESS (50 req/s, risk of crash)</option>
-            <option value="ramp">RAMP (Dynamic increment)</option>
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>DURATION (SECONDS)</label>
-          <input
-            type="number" value={duration} onChange={e => setDuration(e.target.value)}
-            style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-          />
-          <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>0 = run until stopped (max 1800)</div>
-        </div>
-      </div>
-
-      <div>
-        <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
-          VIRTUAL USERS {users.trim() ? '(OVERRIDE)' : '(PROFILE DEFAULT)'}
-        </label>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <input
-            type="number" min={1} max={MAX_USERS} value={users}
-            placeholder={`profile default — e.g. ${PROFILE_USER_HINT[profile] ?? 5}`}
-            onChange={e => setUsers(e.target.value)}
-            style={{ flex: 1, background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-          />
-          {[10, 25, 50, 100].map(n => (
-            <button
-              key={n} type="button" onClick={() => setUsers(String(n))}
-              style={{
-                background: users === String(n) ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${users === String(n) ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-                color: users === String(n) ? '#fff' : 'var(--color-text-dim)',
-                borderRadius: '6px', padding: '5px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 600,
-              }}
-            >{n}</button>
-          ))}
-          {users.trim() && (
-            <button
-              type="button" onClick={() => setUsers('')}
-              title="Back to the profile's own default"
-              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-dim)', borderRadius: '6px', padding: '5px 8px', fontSize: '10px', cursor: 'pointer' }}
-            >clear</button>
+          {trafficHealth?.reachable === false && (
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              Not reachable at <code style={{ color: 'var(--color-text-main)' }}>{trafficHealth.url || 'localhost:4400'}</code>. It should start with the server; check the server logs if this persists.
+            </div>
           )}
-        </div>
-        <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>
-          Concurrent simulated users. Hard ceiling {MAX_USERS} — these are small EC2 boxes.
-        </div>
-      </div>
 
-      {workloadSource === 'EXTERNAL' && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>ENTRY POINT</label>
-              <select
-                value={selectedEndpointId} onChange={(e) => setSelectedEndpointId(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-              >
-                {publicEndpoints.map(ep => <option key={ep.endpointId} value={ep.endpointId}>{ep.serviceName} :{ep.port}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TRAFFIC MODE</label>
-              <select
-                value={mode} onChange={(e) => setMode(e.target.value as any)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-              >
-                <option value="USER_JOURNEY">User Journey Scenario</option>
-                <option value="SWEEP">Sweep — every working endpoint</option>
-                <option value="ENDPOINT">Specific Discovered Route</option>
-                <option value="SERVICE">Service Public Workflow</option>
-              </select>
-            </div>
-          </div>
-          
-          {mode === 'SWEEP' && (
-            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '10px', background: 'rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
-                Sweep drives one virtual-user loop across <strong>every discovered HTTP endpoint that answers a live probe</strong>,
-                so every service emits telemetry in the same window — which is what the per-service Isolation Forest needs.
-                Endpoints that do not respond are left out rather than counted as failures.
-              </div>
+          {/* Global kill switch. Stops every run the system can reach, including
+              ones started outside this app or before the last server restart -
+              not just whatever this panel happens to be showing. */}
+          <button
+            className={`mm-btn${anyProjectRunning ? ' danger' : ' ghost'}`}
+            onClick={handleStopAll}
+            disabled={isLoading}
+            title="Stops synthetic traffic for every project, from any source"
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            <Square size={13} strokeWidth={1.75} />
+            {anyProjectRunning ? 'Stop all traffic (all projects)' : 'Stop all · nothing running'}
+          </button>
+        </Section>
 
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button" onClick={handleProbeSurface} disabled={probing}
-                  style={{
-                    background: probing ? 'rgba(255,255,255,0.05)' : 'rgba(0,212,255,0.15)',
-                    border: '1px solid var(--color-accent-cyan)',
-                    color: probing ? 'var(--color-text-dim)' : '#fff',
-                    borderRadius: '6px', padding: '6px 12px', fontSize: '10px',
-                    cursor: probing ? 'wait' : 'pointer', fontWeight: 700, letterSpacing: '0.04em',
-                  }}
-                >{probing ? 'PROBING…' : 'PROBE ALL ENDPOINTS'}</button>
-                <span style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
-                  Read-only: one GET per endpoint, no load generated.
+        {/* Entry point: what traffic is actually sent to. Discovery can only
+            see what a container publishes, which isn't always reachable from
+            here, so this can be pinned per project and proven with a probe. */}
+        <Section
+          title="Entry point"
+          aside={
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', color: 'var(--color-text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedTargetId}</span>
+              {entry?.pinned && (
+                <span className="mm-chip" style={{ background: 'rgba(138,180,255,.1)', color: 'var(--color-accent-cyan)', borderColor: 'transparent' }}>
+                  <Pin size={11} strokeWidth={1.75} />Pinned
                 </span>
-              </div>
-
-              {surface && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '10px', fontWeight: 600 }}>
-                    <span style={{ color: 'var(--color-healthy)' }}>{surface.usable.length} working</span>
-                    <span style={{ color: 'var(--color-degraded)' }}>{surface.reachableButUnusable.length} answered but unusable</span>
-                    <span style={{ color: 'var(--color-critical)' }}>{surface.dead.length} no response</span>
-                    <span style={{ color: 'var(--color-text-dim)', fontWeight: 400 }}>of {surface.totalCandidates} discovered</span>
-                  </div>
-
-                  <div style={{ maxHeight: '170px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {[...surface.usable, ...surface.reachableButUnusable, ...surface.dead].map(r => (
-                      <div key={r.url} style={{ display: 'flex', gap: '6px', alignItems: 'baseline', fontSize: '9px', fontFamily: 'monospace' }}>
-                        <span style={{
-                          width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                          background: r.usable ? 'var(--color-healthy)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)',
-                        }} />
-                        <span style={{ color: 'var(--color-text-muted)', minWidth: '90px', flexShrink: 0 }}>{r.serviceName}</span>
-                        <span style={{ color: 'var(--color-text-dim)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</span>
-                        <span style={{ color: r.usable ? 'var(--color-healthy)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)', flexShrink: 0 }}>
-                          {r.reachable ? `${r.status} · ${r.ms}ms` : r.error}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {surface.usable.length === 0 && (
-                    <div style={{ fontSize: '9px', color: 'var(--color-critical)' }}>
-                      Nothing responded. The host may be down, or its ports may not be open in the security group.
-                    </div>
-                  )}
-                </div>
               )}
-
-              {!surface && !probing && (
-                <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
-                  Not probed yet — starting now will probe first and use whatever answers.
-                </div>
-              )}
+            </span>
+          }
+        >
+          <div>
+            <input
+              className="mm-tc-input mono"
+              value={entryDraft}
+              onChange={(e) => setEntryDraft(e.target.value)}
+              placeholder={entry?.resolved || 'http://host:port'}
+            />
+            <div style={hintStyle}>
+              In use: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>{entry?.resolved || 'none resolved'}</span>
+              {!entry?.pinned && ' (inferred from discovery)'}
             </div>
-          )}
-
-          {mode === 'SERVICE' && (
-            <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET SERVICE</label>
-              <select
-                value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-              >
-                <option value="">All Services</option>
-                {services.map(svc => <option key={svc.serviceId} value={svc.serviceId}>{svc.name}</option>)}
-              </select>
-            </div>
-          )}
-
-          {mode === 'ENDPOINT' && (
-            <div>
-              <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px', fontWeight: 600 }}>TARGET ROUTE</label>
-              <select
-                value={selectedRouteId} onChange={(e) => setSelectedRouteId(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', outline: 'none' }}
-              >
-                <option value="">Auto / All Discovered Routes</option>
-                {routes.map(rt => <option key={rt.routeId} value={rt.routeId}>{rt.method} {rt.path}</option>)}
-              </select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Discovery Status Note */}
-      <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {summary && (
-          <div style={{ textAlign: 'right' }}>
-            Registry: {summary.servicesCount} services | {summary.publicEndpointsCount} endpoints
           </div>
+          {entry?.staleHost && (
+            <Note tone="warn" icon={<AlertTriangle size={14} strokeWidth={1.75} />}>
+              This pin doesn't match the target's current IP (<code>{entry.staleHost}</code>). The instance likely restarted with a new
+              address. Probe it, then update or clear the pin.
+            </Note>
+          )}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button className="mm-btn" onClick={handleProbeEntry} disabled={entryBusy}>
+              {entryBusy ? <Loader2 size={14} strokeWidth={1.75} className="mm-spin" /> : <Radar size={14} strokeWidth={1.75} />}
+              Probe
+            </button>
+            <button className="mm-btn" onClick={() => handleSaveEntry()} disabled={entryBusy}>
+              Save pin
+            </button>
+            <button
+              className="mm-btn ghost"
+              onClick={() => { setEntryDraft(''); handleSaveEntry(''); }}
+              disabled={entryBusy}
+              title="Clear the pin and fall back to discovery"
+            >
+              Clear
+            </button>
+          </div>
+          {entryMsg && (
+            <div style={{ fontSize: '12px', color: entryMsg.startsWith('OK') ? 'var(--color-healthy)' : 'var(--color-critical)' }}>{entryMsg}</div>
+          )}
+        </Section>
+
+        <Section title="Workload">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Target</label>
+              <select
+                className="mm-tc-input"
+                value={selectedTargetId} disabled={isAnyRunning}
+                onChange={(e) => {
+                  // Endpoint/service/route ids are namespaced per target, so
+                  // carrying them across a target switch sends traffic to the
+                  // previous project's URL. Observed in the log as a death-star
+                  // experiment resolving an open-telemetry endpoint id.
+                  setSelectedTargetId(e.target.value);
+                  setSelectedEndpointId('');
+                  setSelectedServiceId('');
+                  setSelectedRouteId('');
+                  // A probe report belongs to the target it was taken against.
+                  setSurface(null);
+                  setStartError(null);
+                }}
+              >
+                {targets.length > 0 ? targets.map(t => <option key={t.targetId} value={t.targetId}>{t.displayName || t.targetId}</option>) : <><option value="sock-shop">Sock Shop AWS</option><option value="vertikal">Vertikal AWS</option></>}
+              </select>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Workload source</label>
+              <select
+                className="mm-tc-input"
+                value={workloadSource}
+                onChange={(e) => setWorkloadSource(e.target.value as any)}
+              >
+                <option value="EXTERNAL">External traffic engine</option>
+                <option value="USER_SIM" disabled>Remote user sim (uncontrollable)</option>
+              </select>
+              {selectedTargetId.includes('sock') && (
+                <div style={hintStyle}>Native user sim: observe only, via telemetry</div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Profile</label>
+              <select
+                className="mm-tc-input"
+                value={profile}
+                onChange={(e) => setProfile(e.target.value)}
+              >
+                <option value="baseline">Baseline (2 req/s)</option>
+                <option value="moderate">Moderate (10 req/s)</option>
+                <option value="heavy">Heavy (25 req/s)</option>
+                <option value="stress">Stress (50 req/s, may crash)</option>
+                <option value="ramp">Ramp (dynamic increment)</option>
+              </select>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Duration (seconds)</label>
+              <input
+                className="mm-tc-input"
+                type="number" value={duration} onChange={e => setDuration(e.target.value)}
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              />
+              <div style={hintStyle}>0 runs until stopped (max 1800)</div>
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              Virtual users <span style={{ color: 'var(--color-text-dim)' }}>{users.trim() ? '· override' : '· profile default'}</span>
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                className="mm-tc-input"
+                type="number" min={1} max={MAX_USERS} value={users}
+                placeholder={`Default, e.g. ${PROFILE_USER_HINT[profile] ?? 5}`}
+                onChange={e => setUsers(e.target.value)}
+                style={{ flex: 1, minWidth: 0, fontVariantNumeric: 'tabular-nums' }}
+              />
+              <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(4, 34px)', flexShrink: 0 }}>
+                {[10, 25, 50, 100].map(n => (
+                  <button
+                    key={n} type="button" onClick={() => setUsers(String(n))}
+                    className={users === String(n) ? 'on' : ''}
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                  >{n}</button>
+                ))}
+              </div>
+              {users.trim() && (
+                <button
+                  type="button" className="mm-btn ghost" onClick={() => setUsers('')}
+                  title="Back to the profile's own default"
+                  style={{ padding: '0 8px' }}
+                >Clear</button>
+              )}
+            </div>
+            <div style={hintStyle}>
+              Concurrent simulated users. Hard ceiling {MAX_USERS} - these are small EC2 boxes.
+            </div>
+          </div>
+        </Section>
+
+        {workloadSource === 'EXTERNAL' && (
+          <Section title="Routing">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <label style={labelStyle}>Endpoint</label>
+                <select
+                  className="mm-tc-input"
+                  value={selectedEndpointId} onChange={(e) => setSelectedEndpointId(e.target.value)}
+                >
+                  {publicEndpoints.map(ep => <option key={ep.endpointId} value={ep.endpointId}>{ep.serviceName} :{ep.port}</option>)}
+                </select>
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <label style={labelStyle}>Traffic mode</label>
+                <select
+                  className="mm-tc-input"
+                  value={mode} onChange={(e) => setMode(e.target.value as any)}
+                >
+                  <option value="USER_JOURNEY">User journey scenario</option>
+                  <option value="SWEEP">Sweep - every working endpoint</option>
+                  <option value="ENDPOINT">Specific discovered route</option>
+                  <option value="SERVICE">Service public workflow</option>
+                </select>
+              </div>
+            </div>
+
+            {mode === 'SWEEP' && (
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px', background: 'rgba(255,255,255,0.015)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                  Sweep drives one virtual-user loop across <span style={{ color: 'var(--color-text-main)' }}>every discovered HTTP endpoint that answers a live probe</span>,
+                  so every service emits telemetry in the same window - which is what the per-service Isolation Forest needs.
+                  Endpoints that do not respond are left out rather than counted as failures.
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button
+                    type="button" className="mm-btn" onClick={handleProbeSurface} disabled={probing}
+                    style={{ cursor: probing ? 'wait' : 'pointer' }}
+                  >
+                    {probing ? <Loader2 size={14} strokeWidth={1.75} className="mm-spin" /> : <Radar size={14} strokeWidth={1.75} />}
+                    {probing ? 'Probing…' : 'Probe all endpoints'}
+                  </button>
+                  <span style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>
+                    Read-only: one GET per endpoint, no load.
+                  </span>
+                </div>
+
+                {surface && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', fontSize: '12px', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><i className="mm-dot" style={{ background: 'var(--color-healthy)' }} />{surface.usable.length} working</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><i className="mm-dot" style={{ background: 'var(--color-degraded)' }} />{surface.reachableButUnusable.length} unusable</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><i className="mm-dot" style={{ background: 'var(--color-critical)' }} />{surface.dead.length} no response</span>
+                      <span style={{ color: 'var(--color-text-dim)' }}>of {surface.totalCandidates}</span>
+                    </div>
+
+                    <div style={{ maxHeight: '170px', overflowY: 'auto', display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--color-border)' }}>
+                      {[...surface.usable, ...surface.reachableButUnusable, ...surface.dead].map(r => (
+                        <div key={r.url} style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '26px', fontSize: '11.5px', fontFamily: 'var(--font-mono)', borderBottom: '1px solid var(--color-border)' }}>
+                          <i className="mm-dot" style={{
+                            width: '6px', height: '6px',
+                            background: r.usable ? 'var(--color-healthy)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)',
+                          }} />
+                          <span style={{ color: 'var(--color-text-main)', width: '96px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.serviceName}</span>
+                          <span style={{ color: 'var(--color-text-dim)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</span>
+                          <span style={{ color: r.usable ? 'var(--color-text-muted)' : r.reachable ? 'var(--color-degraded)' : 'var(--color-critical)', flexShrink: 0 }}>
+                            {r.reachable ? `${r.status} · ${r.ms}ms` : r.error}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {surface.usable.length === 0 && (
+                      <div style={{ fontSize: '12px', color: 'var(--color-critical)' }}>
+                        Nothing responded. The host may be down, or its ports may not be open in the security group.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!surface && !probing && (
+                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>
+                    Not probed yet - starting now will probe first and use whatever answers.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === 'SERVICE' && (
+              <div>
+                <label style={labelStyle}>Target service</label>
+                <select
+                  className="mm-tc-input"
+                  value={selectedServiceId} onChange={(e) => setSelectedServiceId(e.target.value)}
+                >
+                  <option value="">All services</option>
+                  {services.map(svc => <option key={svc.serviceId} value={svc.serviceId}>{svc.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {mode === 'ENDPOINT' && (
+              <div>
+                <label style={labelStyle}>Target route</label>
+                <select
+                  className="mm-tc-input mono"
+                  value={selectedRouteId} onChange={(e) => setSelectedRouteId(e.target.value)}
+                >
+                  <option value="">Auto / all discovered routes</option>
+                  {routes.map(rt => <option key={rt.routeId} value={rt.routeId}>{rt.method} {rt.path}</option>)}
+                </select>
+              </div>
+            )}
+          </Section>
         )}
-        <div style={{ 
-          textAlign: 'right', 
-          color: reachabilityStatus === 'REACHABLE' ? 'var(--color-healthy)' : reachabilityStatus === 'CHECKING' ? 'var(--color-accent-cyan)' : 'var(--color-critical)',
-          fontWeight: 600
-        }}>
-          {activeUrl ? `${activeUrl} [${reachabilityStatus}]` : 'ENDPOINT UNAVAILABLE'}
+
+        <div style={{ padding: '14px 20px 16px', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Discovery status */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', fontSize: '12px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <i className="mm-dot" style={{ background: reachColor }} />
+              <span style={{ fontFamily: activeUrl ? 'var(--font-mono)' : undefined, fontSize: activeUrl ? '11.5px' : '12px', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {activeUrl || 'Endpoint unavailable'}
+              </span>
+              {activeUrl && <span style={{ color: reachColor, whiteSpace: 'nowrap' }}>{sentence(reachabilityStatus)}</span>}
+            </span>
+            {summary && (
+              <span style={{ color: 'var(--color-text-dim)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                {summary.servicesCount} services · {summary.publicEndpointsCount} endpoints
+              </span>
+            )}
+          </div>
+
+          {blockedReason && (
+            <Note tone="warn" icon={<AlertTriangle size={14} strokeWidth={1.75} />}>
+              <span style={{ fontWeight: 550 }}>Can't start yet.</span>{' '}
+              <span style={{ color: 'var(--color-text-muted)' }}>{blockedReason}</span>
+            </Note>
+          )}
+
+          {startError && (
+            <Note tone="error" icon={<AlertTriangle size={14} strokeWidth={1.75} />}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                <span><span style={{ fontWeight: 550 }}>Start failed.</span> <span style={{ color: 'var(--color-text-muted)' }}>{startError}</span></span>
+                <button
+                  type="button" onClick={() => setStartError(null)} aria-label="Dismiss"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text-dim)', cursor: 'pointer', padding: 0, display: 'flex', height: '16px' }}
+                ><X size={14} strokeWidth={1.75} /></button>
+              </div>
+            </Note>
+          )}
+
+          {/* No auto-abort notice - these are failure-injection experiments;
+              services are supposed to break, so nothing here auto-stops on
+              high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
+          <Note tone="info" icon={<Info size={14} strokeWidth={1.75} />}>
+            <span style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>No auto-abort.</span> Experiments run until you stop them, even under heavy CPU, memory or error rate - that's the point, for RCA and cascading-failure research.
+          </Note>
+
+          {isCurrentRunning && runningDiag && runningDiag.trafficStatistics && (
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="mm-dot" style={{ background: 'var(--color-accent-cyan)' }} />
+                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Live generator statistics</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { label: 'Attempted', value: runningDiag.trafficStatistics.requestsAttempted },
+                  { label: 'Successful', value: runningDiag.trafficStatistics.requestsSuccessful },
+                  { label: 'Failed', value: runningDiag.trafficStatistics.requestsFailed },
+                  { label: 'Rate', value: `${runningDiag.trafficStatistics.peakRate}/s` },
+                ].map(stat => (
+                  <div key={stat.label}>
+                    <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)' }}>{stat.label}</div>
+                    <div style={{
+                      fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: '2px',
+                      color: stat.label === 'Failed' && Number(stat.value) > 0 ? 'var(--color-critical)' : 'var(--color-text-main)',
+                    }}>{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {blockedReason && (
-        <div style={{
-          background: 'rgba(255, 171, 0, 0.1)',
-          border: '1px solid rgba(255, 171, 0, 0.35)',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          fontSize: '10px',
-          lineHeight: 1.45,
-          color: 'var(--color-degraded)',
-        }}>
-          <strong>Can't start yet:</strong> {blockedReason}
-        </div>
-      )}
-
-      {startError && (
-        <div style={{
-          background: 'rgba(255, 82, 82, 0.1)',
-          border: '1px solid rgba(255, 82, 82, 0.4)',
-          borderRadius: '8px',
-          padding: '8px 10px',
-          fontSize: '10px',
-          lineHeight: 1.45,
-          color: 'var(--color-critical)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '8px',
-        }}>
-          <span><strong>Start failed:</strong> {startError}</span>
-          <button
-            type="button" onClick={() => setStartError(null)}
-            style={{ background: 'transparent', border: 'none', color: 'var(--color-text-dim)', cursor: 'pointer', fontSize: '12px', lineHeight: 1, padding: 0 }}
-          >×</button>
-        </div>
-      )}
-
-      {/* No auto-abort notice — these are failure-injection experiments;
-          services are supposed to break, so nothing here auto-stops on
-          high CPU/memory/error-rate. See ExperimentManager.checkSafetyLimits(). */}
-      <div style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)', padding: '8px', borderRadius: '8px', fontSize: '10px', color: 'var(--color-accent-cyan)' }}>
-        <strong>No auto-abort:</strong> experiments run until you stop them, even under heavy CPU/memory/error-rate — that's the point, for RCA and cascading-failure research.
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+      {/* Footer actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '12px 16px', borderTop: '1px solid var(--color-border)', flexShrink: 0, background: 'rgba(255,255,255,0.01)' }}>
         <button
+          className="mm-btn primary"
           onClick={handleStart}
           disabled={isLoading || isCurrentRunning || !!blockedReason}
           title={blockedReason || 'Start the experiment'}
-          style={{
-            background: !isCurrentRunning && !blockedReason ? 'linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,230,118,0.25))' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${!isCurrentRunning && !blockedReason ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-            color: !isCurrentRunning && !blockedReason ? '#fff' : 'var(--color-text-dim)',
-            padding: '8px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',
-            cursor: !isCurrentRunning && !blockedReason ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
-          }}
+          style={{ justifyContent: 'center', height: '32px', cursor: canStart ? 'pointer' : 'not-allowed' }}
         >
-          ▶ START EXPERIMENT
+          <Play size={14} strokeWidth={1.75} />
+          Start experiment
         </button>
 
         <button
+          className={`mm-btn${isCurrentRunning ? ' danger' : ''}`}
           onClick={handleStop}
           disabled={isLoading || !isCurrentRunning}
-          style={{
-            background: isCurrentRunning ? 'linear-gradient(135deg, rgba(255,23,68,0.25), rgba(224,64,251,0.25))' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${isCurrentRunning ? 'var(--color-critical)' : 'var(--color-border)'}`,
-            color: isCurrentRunning ? '#fff' : 'var(--color-text-dim)',
-            padding: '8px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', letterSpacing: '1px',
-            cursor: isCurrentRunning ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
-          }}
+          style={{ justifyContent: 'center', height: '32px' }}
         >
-          ⏹ STOP EXPERIMENT
+          <Square size={13} strokeWidth={1.75} />
+          Stop experiment
         </button>
       </div>
-
-      {isCurrentRunning && runningDiag && runningDiag.trafficStatistics && (
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '11px', color: 'var(--color-accent-cyan)', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', marginBottom: '4px' }}>
-            Live Generator Statistics
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
-            <div>
-              <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>Attempted</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{runningDiag.trafficStatistics.requestsAttempted}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', color: 'var(--color-healthy)' }}>Success</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{runningDiag.trafficStatistics.requestsSuccessful}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', color: 'var(--color-critical)' }}>Failed</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{runningDiag.trafficStatistics.requestsFailed}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', color: 'var(--color-accent-cyan)' }}>Current Rate</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{runningDiag.trafficStatistics.peakRate}/s</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

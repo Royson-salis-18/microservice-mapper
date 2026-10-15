@@ -13,8 +13,8 @@ export interface RawCpuSample {
 }
 
 export interface ContainerMetricSample {
-  timestamp: string; // ISO-8601 UTC — event time
-  collectorReceivedAt: string; // ISO-8601 UTC — when the collector observed it
+  timestamp: string; // ISO-8601 UTC - event time
+  collectorReceivedAt: string; // ISO-8601 UTC - when the collector observed it
   targetId: string;
   serviceId: string;
   containerId?: string;
@@ -23,15 +23,15 @@ export interface ContainerMetricSample {
   cpuPercent: number | null; // derived from deltas, see cpu.ts
   cpuRaw: RawCpuSample | null;
 
-  // Memory (raw bytes only — never store only human formatted strings)
+  // Memory (raw bytes only - never store only human formatted strings)
   memoryBytes: number | null;
   memoryLimitBytes: number | null;
   memoryPercent: number | null;
 
-  // Network — cumulative counters as reported
+  // Network - cumulative counters as reported
   networkRxBytes: number | null;
   networkTxBytes: number | null;
-  // Derived rates — only computed when 2+ time-separated samples exist
+  // Derived rates - only computed when 2+ time-separated samples exist
   networkRxBytesPerSecond: number | null;
   networkTxBytesPerSecond: number | null;
 

@@ -1,0 +1,35 @@
+id: ec-05-cache-down
+title: The projection cache is down and catalog/order reads hang
+class: dependency failure / missing timeouts
+verified: docker
+summary: 'redis-projection backs the read model''s cache. With it stopped, catalog list and order list calls hang to the client timeout instead
+  of falling back to Postgres: a cache outage becomes a read outage. Purchases (write path) keep working.'
+run: './run-scenario.sh ec-05-cache-down   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment provider
+
+  then: scenarios/ec-05-cache-down/inject.sh'
+production_condition: redis-projection stopped
+measured_in_docker:
+  probe: catalog_list and my_orders time out (6 s curl limit) while purchase stays 202
+  load: throughput 122 -> 41 rps as closed-loop clients stall; 69 timed-out requests; 0 purchases failed
+ground_truth:
+  root_cause: redis-projection
+  symptomatic:
+  - projection-service
+  - api-gateway
+mapper_signals:
+- signal: redis-projection container exits; projection-service -> redis-projection observed connection disappears
+  where: container state + edge
+  strength: strong
+- signal: projection-service CPU/latency shift (threads blocked on a dead dependency)
+  where: node metric
+  strength: partial
+mapper_blind_spots:
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+- The hang (rather than fast failure) means error-rate metrics stay low; latency, not errors, is the symptom.
+expect:
+  nodes_unhealthy_at_some_point:
+  - redis-projection
+  incident:
+    root_cause_any_of:
+    - redis-projection
+fix: command/connect timeouts and a cache-miss fallback path, circuit breaker around the cache

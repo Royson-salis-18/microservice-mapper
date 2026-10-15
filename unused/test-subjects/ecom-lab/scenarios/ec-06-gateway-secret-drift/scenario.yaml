@@ -1,0 +1,37 @@
+id: ec-06-gateway-secret-drift
+title: One backend rejects the gateway after a secret rotation
+class: configuration drift
+verified: docker
+summary: The shared gateway secret was rotated everywhere except inventory-service. The gateway forwards purchases correctly; inventory refuses
+  them with 403. Browsing, login and orders are fine. The failure is a 4xx, so any monitor keyed on 5xx sees nothing.
+run: './run-scenario.sh ec-06-gateway-secret-drift   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment
+  provider'
+production_condition: GATEWAY_SECRET differs between api-gateway and inventory-service
+measured_in_docker:
+  purchases: 413 of 413 returned 403
+  everything_else: 200, 0 errors, p95 31 ms
+  processes: all containers healthy, no restarts
+ground_truth:
+  root_cause: inventory-service
+  mechanism: secret mismatch
+  symptomatic:
+  - api-gateway
+mapper_signals:
+- signal: inventory-service receives gateway traffic (observed edge) but its request mix collapses to one status code
+  where: Tier 2 status label (needs the mapper additions)
+  strength: partial
+- signal: 'nothing at container level: no restart, no resource change'
+  where: node metric
+  strength: strong
+  note: rules out infrastructure
+mapper_blind_spots:
+- A pure configuration failure with a healthy footprint. Without request-status telemetry (Tier 1 blind here; Tier 2 not yet matched) the mapper
+  cannot see it.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+- Tier 2 needs three additions to the mapper (family http_server_requests_seconds, label 'application', status label 'status'); see ecom-lab/README.md
+expect:
+  incident:
+    optional: true
+    root_cause_any_of:
+    - inventory-service
+fix: rotate secrets atomically, a startup self-test of the gateway handshake, alert on 4xx ratio per route

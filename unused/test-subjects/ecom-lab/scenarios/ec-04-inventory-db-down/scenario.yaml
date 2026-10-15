@@ -1,0 +1,43 @@
+id: ec-04-inventory-db-down
+title: The inventory database stops; purchases hang instead of failing
+class: dependency failure / slow failure
+verified: docker
+summary: With postgres-inventory stopped, browsing (served from the projection database) is untouched, but every purchase hangs until the client
+  gives up (Hikari's 30 s connection timeout, here cut by a 15 s load-generator timeout). inventory-service's own healthcheck keeps reporting
+  healthy. Closed-loop clients stall one by one and total throughput collapses.
+run: './run-scenario.sh ec-04-inventory-db-down   # 60 s, 20 concurrent clients, mix browse 75 / orders 15 / purchase 10, 200 ms mock payment
+  provider
+
+  then: scenarios/ec-04-inventory-db-down/inject.sh'
+production_condition: postgres-inventory stopped
+measured_in_docker:
+  browse: 200, p95 ~150 ms
+  purchase: hangs to client timeout (p95 15,001 ms; 27.6% of purchases end as timeouts/5xx); throughput 122 -> 55 rps
+  inventory_service_health: still "healthy" with its database down
+  orders: frozen (128 delivered, 17 cancelled, 0 processing)
+ground_truth:
+  root_cause: postgres-inventory
+  symptomatic:
+  - inventory-service
+  - api-gateway
+mapper_signals:
+- signal: postgres-inventory container exits
+  where: container state
+  strength: strong
+- signal: inventory-service -> postgres-inventory and connect -> postgres-inventory lose observed connections
+  where: edge
+  strength: strong
+- signal: inventory-service CPU falls (threads blocked) although the service looks healthy to docker
+  where: node metric
+  strength: partial
+mapper_blind_spots:
+- Hung requests produce no 5xx until timeouts; with Tier 1 blind the user-facing symptom is only visible as throughput collapse in load-generator
+  stats.
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+expect:
+  nodes_unhealthy_at_some_point:
+  - postgres-inventory
+  incident:
+    root_cause_any_of:
+    - postgres-inventory
+fix: short connection/statement timeouts with fail-fast, a readiness probe that checks the database, a circuit breaker on the purchase path

@@ -1,0 +1,630 @@
+/* 3D scene HUD (from the bharath-ui branch), retuned to the app tokens */
+:root { --color-bg-card: #15171b; --color-accent-indigo-glow: rgba(191,191,193, 0.22); }
+/* ---------------------------------------------------------------------------
+   3D scene: HUD and in-scene callouts.
+
+   Graphite panels floating over the scene, one indigo accent for whatever is
+   selected, warm colours only for services in trouble. Classes rather than
+   inline styles because the pills and buttons need real :hover and
+   :focus-visible states.
+   --------------------------------------------------------------------------- */
+
+.scene-wrap {
+  /* The HUD adapts to the canvas, not the window: the inspection panel
+     takes 400px beside it, and the terminal can take more. */
+  container-type: inline-size;
+  container-name: scene;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(90% 75% at 62% 38%, #262628 0%, #19191b 38%, #0c0c0e 72%, #05060b 100%);
+}
+
+/* Vignette: the edges of the view fall into darkness, so the eye settles on
+   the lit middle of the floor. Above the canvas, below the HUD. */
+.scene-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 56% 52%, transparent 40%, rgba(3, 4, 10, 0.72) 100%);
+}
+
+.scene-panel {
+  background: rgba(20, 22, 30, 0.9);
+  border: 1px solid rgba(189,189,191, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.scene-overview {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  width: 272px;
+  padding: 14px;
+}
+
+.scene-overview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  letter-spacing: -0.01em;
+}
+
+.scene-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.scene-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(189,189,191, 0.08);
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.scene-chip-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: #3a3e45;
+}
+
+.scene-chip-count.hot {
+  background: #ef5f67;
+  box-shadow: none;
+}
+
+.scene-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.scene-stat {
+  background: var(--color-bg-card);
+  border: 1px solid rgba(189,189,191, 0.06);
+  border-radius: 11px;
+  padding: 10px;
+  min-width: 0;
+}
+
+.scene-stat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.scene-stat-body {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.scene-stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.scene-stat-value {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-stat-sub {
+  font-size: 9px;
+  color: var(--color-text-dim);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Spans the gap between the overview panel and the alarm, centred in it,
+   so it never slides under either when the canvas narrows. */
+.scene-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 304px;
+  right: 76px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.scene-toolbar > * { pointer-events: auto; }
+
+.scene-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(20, 22, 30, 0.9);
+  border: 1px solid rgba(189,189,191, 0.1);
+}
+
+.scene-pill {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.scene-pill:hover {
+  color: var(--color-text-main);
+  background: rgba(189,189,191, 0.07);
+}
+
+.scene-pill:focus-visible {
+  outline: 2px solid var(--color-accent-cyan);
+  outline-offset: 1px;
+}
+
+.scene-pill-select {
+  appearance: none;
+  padding-right: 22px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) 52%, calc(100% - 8px) 52%;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+
+.scene-pill-select option {
+  background: #16181f;
+  color: var(--color-text-main);
+}
+
+.scene-pill.active {
+  color: #0b0c0e;
+  background: #8ab4ff;
+  box-shadow: none;
+}
+
+/* The fill above would wipe the select's arrow; layer it back on top. */
+.scene-pill-select.active {
+  background:
+    linear-gradient(45deg, transparent 50%, #0b0c0e 50%) calc(100% - 12px) 52% / 4px 4px no-repeat,
+    linear-gradient(135deg, #0b0c0e 50%, transparent 50%) calc(100% - 8px) 52% / 4px 4px no-repeat,
+    #8ab4ff;
+}
+
+.scene-focus {
+  position: absolute;
+  top: 76px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 18px;
+  background: rgba(20, 22, 30, 0.9);
+  border: 1px solid rgba(189,189,191, 0.1);
+  max-height: calc(100% - 200px);
+  overflow-y: auto;
+}
+
+.scene-focus .scene-pill {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10.5px;
+  padding: 6px 11px;
+}
+
+.scene-focus-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scene-alarm-wrap {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.scene-alarm {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #353537;
+  transition: transform var(--transition-fast);
+}
+
+.scene-alarm:hover { transform: scale(1.06); }
+
+.scene-alarm:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.scene-alarm.hot {
+  background: radial-gradient(circle at 50% 40%, #f58a90 0%, #ef5f67 70%);
+  box-shadow: 0 0 0 8px rgba(255, 61, 94, 0.14), 0 0 0 16px rgba(255, 61, 94, 0.07), 0 0 26px rgba(255, 61, 94, 0.6);
+  animation: scene-alarm-pulse 1.8s ease-in-out infinite;
+}
+
+/* Degraded: amber, steady. Only ML flags or predictions: calm violet. */
+.scene-alarm.warn {
+  background: radial-gradient(circle at 50% 40%, #f0bd6a 0%, #e8a33d 75%);
+  box-shadow: 0 0 0 6px rgba(255, 171, 64, 0.12), 0 0 20px rgba(255, 171, 64, 0.35);
+}
+
+.scene-alarm.info {
+  background: radial-gradient(circle at 50% 40%, #acacae 0%, #8ab4ff 75%);
+  box-shadow: 0 0 0 6px rgba(159,159,161, 0.12), 0 0 18px rgba(159,159,161, 0.3);
+}
+
+.scene-alarm-panel {
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(19,19,21, 0.94);
+  border: 1px solid rgba(173,173,175, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(173,173,175, 0.06);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  animation: scene-alarm-in 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) { .scene-alarm-panel { animation: none; } }
+
+.scene-alarm-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-bottom: 1px solid rgba(173,173,175, 0.14);
+  font-size: 12px; font-weight: 700; letter-spacing: 0; color: #e6e8ec;
+}
+
+.scene-alarm-head b { margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: rgba(173,173,175, 0.18); font-size: 11px; }
+
+.scene-alarm-next {
+  border: 1px solid rgba(173,173,175, 0.3); background: transparent; color: #dbdbdd;
+  border-radius: 7px; padding: 3px 9px; font-size: 11px; cursor: pointer;
+}
+
+.scene-alarm-next:hover { border-color: #b9b9bb; color: #fff; }
+
+.scene-alarm-list { overflow-y: auto; padding: 6px 6px 8px; }
+
+.scene-alarm-group { margin-top: 6px; }
+
+.scene-alarm-group-head {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: uppercase;
+}
+
+.scene-alarm-group-head span { margin-left: auto; opacity: 0.8; }
+
+.scene-alarm-item {
+  display: grid; grid-template-columns: 10px 1fr; column-gap: 9px; row-gap: 1px;
+  width: 100%; text-align: left; padding: 7px 8px; border: none; border-radius: 9px;
+  background: transparent; color: inherit; cursor: pointer;
+}
+
+.scene-alarm-item:hover, .scene-alarm-item:focus-visible { background: rgba(173,173,175, 0.1); outline: none; }
+
+.scene-alarm-dot { grid-row: span 2; align-self: center; width: 7px; height: 7px; border-radius: 50%; }
+
+.scene-alarm-name { font-size: 12.5px; font-weight: 600; color: #f5f5f7; }
+
+.scene-alarm-name em { margin-left: 6px; font-style: normal; font-weight: 400; font-size: 10.5px; color: var(--color-text-muted); }
+
+.scene-alarm-why { font-size: 11px; color: #acacae; line-height: 1.35; }
+
+.scene-alarm-empty { padding: 16px 14px; font-size: 12px; color: var(--color-text-muted); }
+
+.scene-alarm-foot {
+  padding: 9px 14px; border-top: 1px solid rgba(173,173,175, 0.14);
+  font-size: 10.5px; line-height: 1.45; color: var(--color-text-muted);
+}
+
+.scene-alarm-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #fff;
+  color: #ef5f67;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-legend {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10;
+  padding: 10px 12px;
+  display: flex;
+  gap: 18px;
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+}
+
+.scene-legend-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--color-text-dim);
+  margin-bottom: 6px;
+}
+
+.scene-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+}
+
+.scene-legend-swatch {
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+/* In-scene callouts. The outer element is positioned by the 3D projection;
+   this box hangs above that point on a short stem. */
+.scene-callout {
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 10px;
+  background: rgba(18, 20, 28, 0.94);
+  border: 1px solid rgba(189,189,191, 0.14);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-family);
+}
+
+.scene-callout::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 1px;
+  height: 10px;
+  background: rgba(189,189,191, 0.35);
+}
+
+.scene-callout:hover { border-color: rgba(189,189,191, 0.35); }
+
+.scene-callout-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.scene-callout-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.scene-callout-sub {
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+.scene-card {
+  transform: translate(-50%, calc(-100% - 12px));
+  width: 228px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(20, 22, 30, 0.95);
+  border: 1px solid rgba(163,163,165, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(139,139,141, 0.18);
+  font-family: var(--font-family);
+  color: var(--color-text-main);
+  pointer-events: none;
+}
+
+.scene-card::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  width: 1px;
+  height: 12px;
+  background: rgba(163,163,165, 0.6);
+}
+
+.scene-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scene-card-label {
+  font-size: 9px;
+  color: var(--color-text-dim);
+  margin-bottom: 2px;
+}
+
+.scene-card-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(189,189,191, 0.1);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.scene-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+@container scene (max-width: 1150px) {
+  .scene-legend { display: none; }
+}
+
+/* Narrow canvas: the toolbar moves to the bottom edge, out of the way of
+   the overview panel and the focus column. */
+@container scene (max-width: 980px) {
+  .scene-toolbar { top: auto; bottom: 16px; left: 16px; right: 16px; }
+  .scene-overview { width: 232px; }
+  .scene-stat-sub { display: none; }
+}
+
+@container scene (max-width: 640px) {
+  .scene-overview { width: auto; right: 80px; }
+  .scene-stat-grid { display: none; }
+  .scene-chip-row { margin-bottom: 0; }
+  .scene-focus { top: 72px; }
+}
+
+/* Floating info card over an island (3D islands arrangement). */
+.island-card {
+  transform: translate(calc(-100% - 14px), -50%);
+  min-width: 128px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(16, 18, 26, 0.9);
+  border: 1px solid rgba(189,189,191, 0.16);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-family);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.island-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #e6e8ec;
+}
+
+.island-card-title span {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.island-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+}
+
+.island-card-row b { font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
+
+.island-card-row em { margin-left: auto; padding-left: 10px; font-style: normal; font-weight: 600; font-size: 10px; white-space: nowrap; }
+
+.island-card-states { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-top: 3px; max-width: 170px; }
+
+.island-card-states em { font-style: normal; font-weight: 600; font-size: 10px; white-space: nowrap; }
+
+@keyframes scene-alarm-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+@keyframes scene-alarm-pulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(255, 61, 94, 0.16), 0 0 0 13px rgba(255, 61, 94, 0.07), 0 0 22px rgba(255, 61, 94, 0.5); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 61, 94, 0.12), 0 0 0 20px rgba(255, 61, 94, 0.05), 0 0 32px rgba(255, 61, 94, 0.7); }
+}
+
+/* Live overview: header with a minimise button; a one-line summary when minimised; nothing may overflow the card. */
+.scene-overview { box-sizing: border-box; overflow: hidden; max-height: calc(100% - 140px); overflow-y: auto; }
+.scene-overview.min { width: auto; min-width: 200px; max-width: 272px; }
+.scene-overview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.scene-overview-sum { margin-top: 3px; font-size: 11.5px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-overview-sum b { font-weight: 600; color: var(--color-text-main); }
+.scene-overview-sum b.bad { color: #ef5f67; }
+.scene-overview-sum b.warn { color: #e8a33d; }
+.scene-collapse { flex-shrink: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; border: 1px solid transparent;
+  background: transparent; color: var(--color-text-muted); cursor: pointer; transition: background 0.14s, color 0.14s; }
+.scene-collapse:hover { background: rgba(255, 255, 255, 0.06); color: var(--color-text-main); }
+.scene-stat-sub, .scene-stat-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

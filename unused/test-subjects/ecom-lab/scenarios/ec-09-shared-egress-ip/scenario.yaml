@@ -1,0 +1,38 @@
+id: ec-09-shared-egress-ip
+title: Everyone behind one IP is rate-limited as a single client
+class: protective control misfire / capacity
+verified: docker
+summary: The gateway rate-limits by client IP (default 100 requests/min). Behind a corporate NAT, CDN or carrier gateway, thousands of customers
+  share one source IP, so the limiter treats them as one very busy client. Almost every request is answered 429 while every service is idle and
+  healthy.
+run: './run-scenario.sh ec-09-shared-egress-ip   # runs WITHOUT the loadtest overlay so the limiter stays on'
+production_condition: RATE_LIMIT_ENABLED=true (default), RATE_LIMIT_DEFAULT=100, all clients from one IP
+measured_in_docker:
+  requests: 7,993 in 60 s
+  status:
+    '429': 7796
+    '200': 185
+    '202': 12
+  p95_ms: 14
+  errors_5xx: 0
+  services: all healthy, CPU idle
+ground_truth:
+  root_cause: api-gateway
+  mechanism: per-IP rate limit shared by many users
+  symptomatic: []
+mapper_signals:
+- signal: 'backend traffic collapses: downstream edge activity and CPU drop while client demand is high'
+  where: edge + node metric
+  strength: partial
+- signal: gateway CPU low, redis-gateway (limiter state) busy
+  where: node metric
+  strength: partial
+mapper_blind_spots:
+- 'A functioning protection mechanism doing exactly what it was configured to do: no failure, no resource anomaly, no 5xx. Only per-status request
+  telemetry shows it, and Tier 1 is blind here.'
+- 'Tier 1 (gateway access log) is blind on this system: Spring Cloud Gateway writes no per-request lines.'
+- Tier 2 needs three additions to the mapper (family http_server_requests_seconds, label 'application', status label 'status'); see ecom-lab/README.md
+expect:
+  incident:
+    optional: true
+fix: key limits by authenticated user or trusted X-Forwarded-For, size limits from real per-client traffic, alert on 429 ratio

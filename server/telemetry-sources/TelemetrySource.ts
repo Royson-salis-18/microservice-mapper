@@ -3,7 +3,7 @@ import type { MetricSourceKind } from '../models/MetricProvenance.js';
 /**
  * A place per-request telemetry can come from.
  *
- * The existing SSH collector is Tier 0 and is not replaced by this — it stays
+ * The existing SSH collector is Tier 0 and is not replaced by this - it stays
  * the default and the fallback, because it is the only source that works on
  * an uninstrumented box in thirty seconds. What this adds is somewhere for
  * Tier 1 and Tier 2 to plug in without turning MetricCollector into a
@@ -52,7 +52,7 @@ export interface TelemetrySourceStatus {
   kind: MetricSourceKind;
   available: boolean;
   /**
-   * Why it is unavailable, in terms someone can act on — "nothing listening
+   * Why it is unavailable, in terms someone can act on - "nothing listening
    * on :9090", not "error". An unavailable source is the normal case, not a
    * failure: three of four targets have no Prometheus at all.
    */

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { 
-  Activity, Zap, Play, Square, Clock, ArrowRight, ShieldAlert, 
-  WifiOff, Circle, Search, Filter, RefreshCw, Layers, Grid3X3, 
+import type { CSSProperties } from 'react';
+import {
+  Activity, Play, Square, Clock, ArrowRight, ShieldAlert,
+  WifiOff, Search, Filter, RefreshCw, Layers, Grid3X3,
   ListFilter, X, Eye, EyeOff, Columns3, Maximize2
 } from 'lucide-react';
 
@@ -29,11 +30,11 @@ export interface TraceGraph {
 }
 
 const WINDOW_OPTIONS = [
-  { value: 60, label: '1 Minute' },
-  { value: 300, label: '5 Minutes' },
-  { value: 900, label: '15 Minutes' },
-  { value: 3600, label: '1 Hour' },
-  { value: 86400, label: '24 Hours' },
+  { value: 60, label: 'Last 1 minute' },
+  { value: 300, label: 'Last 5 minutes' },
+  { value: 900, label: 'Last 15 minutes' },
+  { value: 3600, label: 'Last 1 hour' },
+  { value: 86400, label: 'Last 24 hours' },
 ];
 
 /** Strip target prefix: "open-telemetry:checkout" -> "checkout" */
@@ -47,28 +48,28 @@ function shortName(serviceId: string): string {
 function getServiceTier(name: string): { tier: number; label: string } {
   const n = name.toLowerCase();
   if (n.includes('load-generator') || n.includes('proxy') || n.includes('gateway') || n.includes('ingress')) {
-    return { tier: 0, label: 'Gateway & Ingress' };
+    return { tier: 0, label: 'Gateway & ingress' };
   }
   if (n.includes('frontend') || n.includes('ui') || n.includes('web')) {
-    return { tier: 1, label: 'Frontend Tier' };
+    return { tier: 1, label: 'Frontend tier' };
   }
   if (n.includes('db') || n.includes('postgres') || n.includes('mysql') || n.includes('mongo') || n.includes('redis') || n.includes('valkey')) {
-    return { tier: 3, label: 'Data & Storage' };
+    return { tier: 3, label: 'Data & storage' };
   }
   if (n.includes('otel') || n.includes('collector') || n.includes('jaeger') || n.includes('prometheus') || n.includes('grafana') || n.includes('opensearch') || n.includes('flagd') || n.includes('opamp')) {
-    return { tier: 4, label: 'Observability & Infra' };
+    return { tier: 4, label: 'Observability & infra' };
   }
-  return { tier: 2, label: 'Core Microservices' };
+  return { tier: 2, label: 'Core microservices' };
 }
 
-/** Stable color palette generator */
+/** Muted categorical palette (style guide); stable per service name */
+const SERVICE_PALETTE = ['#8ab4ff', '#b4a5ff', '#7dc4c4', '#c9a46b', '#9aa3b0'];
 function serviceColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 65%)`;
+  return SERVICE_PALETTE[Math.abs(hash) % SERVICE_PALETTE.length];
 }
 
 function relativeTime(iso: string) {
@@ -77,6 +78,72 @@ function relativeTime(iso: string) {
   if (diffSec < 60) return `${diffSec}s ago`;
   if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
   return `${Math.round(diffSec / 3600)}h ago`;
+}
+
+/** Display-only: "TIME_WAIT" -> "Time wait" */
+function sentenceCase(s: string): string {
+  if (!s) return '';
+  const t = s.replace(/_/g, ' ').toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+const ICON = { strokeWidth: 1.75 } as const;
+const MONO = 'var(--font-mono)';
+
+const inputStyle: CSSProperties = {
+  height: '30px',
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid var(--color-border)',
+  borderRadius: '8px',
+  color: 'var(--color-text-main)',
+  fontSize: '12.5px',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const tooltipStyle: CSSProperties = {
+  background: 'var(--color-bg-raised)',
+  border: '1px solid var(--color-border-hover)',
+  borderRadius: '8px',
+  padding: '10px 12px',
+  fontSize: '12px',
+  color: 'var(--color-text-main)',
+  pointerEvents: 'none',
+  boxShadow: 'var(--shadow-2)',
+  minWidth: '170px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+  fontVariantNumeric: 'tabular-nums',
+};
+
+const kpiValueStyle: CSSProperties = {
+  fontSize: '26px',
+  fontWeight: 600,
+  letterSpacing: '-0.02em',
+  color: 'var(--color-text-main)',
+  fontVariantNumeric: 'tabular-nums',
+  lineHeight: 1.1,
+};
+
+const emptyStateStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '6px',
+  textAlign: 'center',
+};
+
+function TooltipRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+      <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+      <span>{children}</span>
+    </div>
+  );
 }
 
 export function TracesView({ targetId, embedded = false }: { targetId: string; embedded?: boolean }) {
@@ -299,12 +366,12 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: '14px',
-      padding: embedded ? '8px 24px 20px 24px' : '18px 28px 24px 28px',
+      gap: '16px',
+      padding: embedded ? '8px 24px 20px 24px' : '24px',
       color: 'var(--color-text-main)',
       height: embedded ? '740px' : '100%',
       boxSizing: 'border-box',
-      background: 'radial-gradient(ellipse at 85% 15%, rgba(0, 212, 255, 0.04) 0%, rgba(5, 6, 12, 0.8) 70%)',
+      background: 'var(--color-bg-body)',
       overflow: 'hidden'
     }}>
       {/* Top Header & Quick Actions */}
@@ -315,165 +382,79 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
         flexWrap: 'wrap',
         gap: '12px'
       }}>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(168, 85, 247, 0.2))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid rgba(0, 212, 255, 0.3)'
-            }}>
-              <Zap size={18} color="var(--color-accent-cyan)" />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, letterSpacing: '-0.4px', textTransform: 'capitalize' }}>
-                  Connection Tracing & Live Flow
-                </h1>
-                {/* Live Status Pill */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '3px 10px',
-                  borderRadius: '16px',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.6px',
-                  background: isReceivingData ? 'rgba(0, 230, 118, 0.12)' : 'rgba(255, 171, 0, 0.12)',
-                  color: isReceivingData ? 'var(--color-healthy)' : 'var(--color-degraded)',
-                  border: `1px solid ${isReceivingData ? 'rgba(0, 230, 118, 0.35)' : 'rgba(255, 171, 0, 0.35)'}`,
-                }}>
-                  <Circle size={6} fill="currentColor" style={{
-                    animation: isReceivingData ? 'pulse-critical 1.8s infinite' : 'none'
-                  }} />
-                  {isReceivingData ? 'LIVE INGESTION' : 'READY / IDLE'}
-                </div>
-              </div>
-              <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                Target: <span style={{ color: 'var(--color-accent-cyan)', fontWeight: 600 }}>{targetId}</span> · Real-time kernel TCP socket inspection (/proc/net/tcp)
-              </p>
-            </div>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.01em' }}>
+              Connection tracing
+            </h1>
+            {/* Live Status Pill */}
+            <span
+              className="mm-chip"
+              style={{
+                background: isReceivingData ? 'rgba(62,207,142,0.1)' : 'rgba(255,255,255,0.03)',
+                color: isReceivingData ? 'var(--color-healthy)' : 'var(--color-text-muted)',
+                borderColor: isReceivingData ? 'rgba(62,207,142,0.25)' : 'var(--color-border)',
+              }}
+            >
+              <i className="mm-dot" style={{ background: isReceivingData ? 'currentColor' : 'var(--color-unknown)' }} />
+              {isReceivingData ? 'Live' : 'Idle'}
+            </span>
           </div>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            <span style={{ fontFamily: MONO, color: 'var(--color-text-main)' }}>{targetId}</span>
+            <span style={{ color: 'var(--color-text-dim)' }}> · </span>
+            Kernel TCP socket inspection via <span style={{ fontFamily: MONO }}>/proc/net/tcp</span>
+          </p>
         </div>
 
         {/* Global Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* View Modes */}
-          <div style={{
-            display: 'flex',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '10px',
-            padding: '3px',
-            border: '1px solid var(--color-border)'
-          }}>
+          <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(3, auto)' }}>
             <button
+              className={viewMode === 'TOPOLOGY' ? 'on' : ''}
               onClick={() => setViewMode('TOPOLOGY')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
-                borderRadius: '7px',
-                border: 'none',
-                background: viewMode === 'TOPOLOGY' ? 'rgba(0, 212, 255, 0.18)' : 'transparent',
-                color: viewMode === 'TOPOLOGY' ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                fontSize: '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px' }}
             >
-              <Layers size={13} />
+              <Layers size={14} {...ICON} />
               Topology
             </button>
             <button
+              className={viewMode === 'MATRIX' ? 'on' : ''}
               onClick={() => setViewMode('MATRIX')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
-                borderRadius: '7px',
-                border: 'none',
-                background: viewMode === 'MATRIX' ? 'rgba(0, 212, 255, 0.18)' : 'transparent',
-                color: viewMode === 'MATRIX' ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                fontSize: '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px' }}
             >
-              <Grid3X3 size={13} />
+              <Grid3X3 size={14} {...ICON} />
               Matrix
             </button>
             <button
+              className={viewMode === 'EVENTS' ? 'on' : ''}
               onClick={() => setViewMode('EVENTS')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
-                borderRadius: '7px',
-                border: 'none',
-                background: viewMode === 'EVENTS' ? 'rgba(0, 212, 255, 0.18)' : 'transparent',
-                color: viewMode === 'EVENTS' ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                fontSize: '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px' }}
             >
-              <ListFilter size={13} />
-              Event Stream
+              <ListFilter size={14} {...ICON} />
+              Event stream
             </button>
           </div>
 
           {/* Topology Layout Selector (Circular vs Tiered) */}
           {viewMode === 'TOPOLOGY' && (
-            <div style={{
-              display: 'flex',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '10px',
-              padding: '3px',
-              border: '1px solid var(--color-border)'
-            }}>
+            <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(2, auto)' }}>
               <button
+                className={topoLayout === 'CIRCULAR' ? 'on' : ''}
                 onClick={() => setTopoLayout('CIRCULAR')}
-                title="Circular network ring layout from previous version"
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  background: topoLayout === 'CIRCULAR' ? 'rgba(168, 85, 247, 0.22)' : 'transparent',
-                  color: topoLayout === 'CIRCULAR' ? '#c084fc' : 'var(--color-text-muted)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
+                title="Circular ring layout"
+                style={{ padding: '0 10px' }}
               >
-                Circular Ring
+                Ring
               </button>
               <button
+                className={topoLayout === 'TIERED' ? 'on' : ''}
                 onClick={() => setTopoLayout('TIERED')}
                 title="Architectural multi-column flow layout"
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '7px',
-                  border: 'none',
-                  background: topoLayout === 'TIERED' ? 'rgba(0, 212, 255, 0.18)' : 'transparent',
-                  color: topoLayout === 'TIERED' ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
+                style={{ padding: '0 10px' }}
               >
-                Tiered Flow
+                Tiered
               </button>
             </div>
           )}
@@ -481,38 +462,25 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
           {/* Split Screen / Side Stream Toggle */}
           {viewMode === 'TOPOLOGY' && (
             <button
+              className={`mm-btn${showSideStream ? ' active' : ''}`}
               onClick={() => setShowSideStream(!showSideStream)}
-              title={showSideStream ? 'Hide Side Event Stream (Full View)' : 'Show Side Event Stream (Split View)'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: showSideStream ? 'rgba(0, 212, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                border: `1px solid ${showSideStream ? 'rgba(0, 212, 255, 0.3)' : 'var(--color-border)'}`,
-                color: showSideStream ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
+              title={showSideStream ? 'Hide side event stream' : 'Show side event stream'}
+              style={{ cursor: 'pointer' }}
             >
-              {showSideStream ? <Columns3 size={13} /> : <Maximize2 size={13} />}
-              {showSideStream ? 'Split Feed' : 'Full Canvas'}
+              {showSideStream ? <Columns3 size={14} {...ICON} /> : <Maximize2 size={14} {...ICON} />}
+              {showSideStream ? 'Split view' : 'Full canvas'}
             </button>
           )}
 
           {/* Time Window */}
           <div style={{
+            ...inputStyle,
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            padding: '5px 10px',
-            borderRadius: '10px',
-            border: '1px solid var(--color-border)'
+            padding: '0 8px 0 10px',
           }}>
-            <Clock size={12} color="var(--color-text-muted)" />
+            <Clock size={14} {...ICON} color="var(--color-text-dim)" />
             <select
               value={windowSec}
               onChange={(e) => setWindowSec(parseInt(e.target.value))}
@@ -520,187 +488,94 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
                 background: 'transparent',
                 color: 'var(--color-text-main)',
                 border: 'none',
-                fontSize: '11px',
-                fontWeight: 600,
+                fontSize: '12.5px',
+                fontFamily: 'inherit',
                 cursor: 'pointer',
                 outline: 'none'
               }}
             >
               {WINDOW_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value} style={{ background: '#0a0d18' }}>{opt.label}</option>
+                <option key={opt.value} value={opt.value} style={{ background: 'var(--color-bg-raised)' }}>{opt.label}</option>
               ))}
             </select>
           </div>
 
           {/* Refresh */}
           <button
+            className="mm-btn"
             onClick={() => fetchData()}
-            title="Refresh Trace Data"
-            style={{
-              padding: '7px 9px',
-              borderRadius: '8px',
-              border: '1px solid var(--color-border)',
-              background: 'rgba(255,255,255,0.03)',
-              color: 'var(--color-text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
+            title="Refresh trace data"
+            style={{ width: '30px', padding: 0, justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-muted)' }}
           >
-            <RefreshCw size={13} className={isLoading ? 'spin' : ''} />
+            <RefreshCw size={14} {...ICON} className={isLoading ? 'mm-spin' : ''} />
           </button>
 
           {/* Toggle Collection */}
           <button
+            className={`mm-btn${isCollecting ? '' : ' primary'}`}
             onClick={toggleCollection}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: isCollecting ? 'rgba(255, 23, 68, 0.12)' : 'rgba(0, 212, 255, 0.12)',
-              color: isCollecting ? 'var(--color-critical)' : 'var(--color-accent-cyan)',
-              border: `1px solid ${isCollecting ? 'rgba(255,23,68,0.35)' : 'rgba(0,212,255,0.35)'}`,
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '11px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}
+            style={{ cursor: 'pointer' }}
           >
-            {isCollecting ? <Square size={11} fill="currentColor" /> : <Play size={11} fill="currentColor" />}
-            {isCollecting ? 'Pause' : 'Resume'}
+            {isCollecting ? <Square size={12} {...ICON} /> : <Play size={12} {...ICON} />}
+            {isCollecting ? 'Pause collection' : 'Resume collection'}
           </button>
         </div>
       </div>
 
       {/* KPI Stats Bar */}
-      <div style={{
+      <div className="mm-kpis" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-        gap: '12px'
+        gap: '16px'
       }}>
-        <div style={{
-          background: 'rgba(14, 18, 34, 0.6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Captured Events
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-accent-cyan)' }}>
-              {stats.totalEvents.toLocaleString()}
-            </span>
-            <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>
-              in buffer
-            </span>
+        <div className="mm-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span className="mm-eyebrow">Captured events</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={kpiValueStyle}>{stats.totalEvents.toLocaleString()}</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>in buffer</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'rgba(14, 18, 34, 0.6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Connected Services
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#38bdf8' }}>
-              {stats.activeServicesCount}
-            </span>
-            <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>
-              nodes
-            </span>
+        <div className="mm-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span className="mm-eyebrow">Connected services</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={kpiValueStyle}>{stats.activeServicesCount}</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>nodes</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'rgba(14, 18, 34, 0.6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Active TCP Streams
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-healthy)' }}>
-              {stats.activeStreamsCount}
-            </span>
-            <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>
-              directed links
-            </span>
+        <div className="mm-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span className="mm-eyebrow">Active TCP streams</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={kpiValueStyle}>{stats.activeStreamsCount}</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>directed links</span>
           </div>
         </div>
 
-        <div style={{
-          background: 'rgba(14, 18, 34, 0.6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Top Interaction
-          </span>
-          <div style={{ marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-magenta)' }}>
+        <div className="mm-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
+          <span className="mm-eyebrow">Top interaction</span>
+          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minHeight: '29px', display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 550, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {stats.topPair}
             </span>
             {stats.topPairCount > 0 && (
-              <span style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginLeft: '6px' }}>
-                ({stats.topPairCount}×)
+              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>
+                {stats.topPairCount}×
               </span>
             )}
           </div>
         </div>
 
-        <div style={{
-          background: 'rgba(14, 18, 34, 0.6)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-            Common Ports
-          </span>
-          <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+        <div className="mm-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span className="mm-eyebrow">Common ports</span>
+          <div style={{ display: 'flex', gap: '6px', minHeight: '29px', alignItems: 'center', flexWrap: 'wrap' }}>
             {stats.topPorts.map(port => (
-              <span key={port} style={{
-                background: 'rgba(255,255,255,0.06)',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--color-text-main)',
-                fontFamily: 'monospace'
-              }}>
+              <span key={port} className="mm-chip" style={{ fontFamily: MONO, color: 'var(--color-text-main)' }}>
                 :{port}
               </span>
             ))}
             {stats.topPorts.length === 0 && (
-              <span style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>None</span>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>None</span>
             )}
           </div>
         </div>
@@ -713,90 +588,76 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '10px',
-        padding: '6px 12px',
-        background: 'rgba(10, 13, 24, 0.5)',
-        borderRadius: '10px',
-        border: '1px solid var(--color-border)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '240px', flexWrap: 'wrap' }}>
           <div style={{
+            ...inputStyle,
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: 'rgba(0,0,0,0.3)',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            border: '1px solid var(--color-border)',
+            padding: '0 10px',
             flex: 1,
-            maxWidth: '300px'
+            maxWidth: '300px',
+            minWidth: '180px'
           }}>
-            <Search size={13} color="var(--color-text-muted)" />
+            <Search size={14} {...ICON} color="var(--color-text-dim)" />
             <input
               type="text"
-              placeholder="Filter by service name or port..."
+              placeholder="Filter by service or port"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: '#fff',
-                fontSize: '11px',
+                color: 'var(--color-text-main)',
+                fontSize: '12.5px',
+                fontFamily: 'inherit',
                 width: '100%'
               }}
             />
             {searchQuery && (
-              <button 
+              <button
                 onClick={() => setSearchQuery('')}
-                style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 0 }}
+                title="Clear search"
+                style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
               >
-                <X size={12} />
+                <X size={14} {...ICON} />
               </button>
             )}
           </div>
 
           {/* Service Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Filter size={12} color="var(--color-text-muted)" />
+            <Filter size={14} {...ICON} color="var(--color-text-dim)" />
             <select
               value={selectedService || ''}
               onChange={(e) => setSelectedService(e.target.value || null)}
               style={{
-                background: 'rgba(0,0,0,0.3)',
-                color: selectedService ? 'var(--color-accent-cyan)' : 'var(--color-text-main)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '11px',
-                outline: 'none',
-                cursor: 'pointer'
+                ...inputStyle,
+                padding: '0 8px',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                borderColor: selectedService ? 'rgba(138,180,255,0.45)' : 'var(--color-border)',
               }}
             >
-              <option value="" style={{ background: '#0a0d18' }}>All Services</option>
+              <option value="" style={{ background: 'var(--color-bg-raised)' }}>All services</option>
               {allServiceNames.map(svc => (
-                <option key={svc} value={svc} style={{ background: '#0a0d18' }}>{svc}</option>
+                <option key={svc} value={svc} style={{ background: 'var(--color-bg-raised)' }}>{svc}</option>
               ))}
             </select>
           </div>
 
           {/* State Filter */}
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(3, auto)' }}>
             {(['ALL', 'ESTABLISHED', 'TIME_WAIT'] as const).map(st => (
               <button
                 key={st}
+                className={selectedState === st ? 'on' : ''}
                 onClick={() => setSelectedState(st)}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '5px',
-                  border: 'none',
-                  background: selectedState === st ? 'rgba(0, 212, 255, 0.15)' : 'transparent',
-                  color: selectedState === st ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                style={{ padding: '0 10px' }}
               >
-                {st}
+                {sentenceCase(st)}
               </button>
             ))}
           </div>
@@ -805,34 +666,23 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
         {/* Clear filter */}
         {(selectedService || searchQuery || selectedState !== 'ALL') && (
           <button
+            className="mm-btn"
             onClick={() => { setSelectedService(null); setSearchQuery(''); setSelectedState('ALL'); }}
-            style={{
-              background: 'rgba(255, 23, 68, 0.1)',
-              border: '1px solid rgba(255, 23, 68, 0.25)',
-              borderRadius: '6px',
-              padding: '3px 8px',
-              color: 'var(--color-critical)',
-              fontSize: '10px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+            style={{ cursor: 'pointer', color: 'var(--color-text-muted)' }}
           >
-            Reset Filters
+            <X size={14} {...ICON} />
+            Reset filters
           </button>
         )}
       </div>
 
       {/* Main Content Area */}
-      <div style={{
+      <div className="mm-card" style={{
         flex: 1,
         minHeight: 0,
         position: 'relative',
         display: 'flex',
-        borderRadius: '16px',
         overflow: 'hidden',
-        border: '1px solid var(--color-border)',
-        background: 'rgba(10, 13, 24, 0.85)',
-        backdropFilter: 'blur(20px)'
       }}>
         {viewMode === 'TOPOLOGY' && (
           <div style={{
@@ -852,8 +702,8 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
                   selectedNode={inspectedNode}
                 />
               ) : (
-                <TieredTopologyMap 
-                  graph={graph} 
+                <TieredTopologyMap
+                  graph={graph}
                   maxEventCount={maxEventCount}
                   onSelectNode={(node) => setInspectedNode(node)}
                   selectedNode={inspectedNode}
@@ -867,7 +717,6 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
             {showSideStream && (
               <div style={{
                 borderLeft: '1px solid var(--color-border)',
-                background: 'rgba(5, 7, 16, 0.8)',
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
@@ -886,12 +735,12 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
         )}
 
         {viewMode === 'MATRIX' && (
-          <TraceMatrixView 
-            graph={graph} 
+          <TraceMatrixView
+            graph={graph}
             onSelectCell={(src, dst) => {
               setSearchQuery(`${shortName(src)} ${shortName(dst)}`);
               setViewMode('EVENTS');
-            }} 
+            }}
           />
         )}
 
@@ -922,112 +771,90 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
 
       {/* Event Details Modal */}
       {selectedEvent && (
-        <div 
+        <div
           onClick={() => setSelectedEvent(null)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0,0,0,0.6)',
             zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#0a0d18',
-              border: '1px solid var(--color-border-glow)',
-              borderRadius: '14px',
-              padding: '24px',
+              background: 'var(--color-bg-raised)',
+              border: '1px solid var(--color-border-hover)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '20px',
               maxWidth: '520px',
               width: '90%',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
+              boxShadow: 'var(--shadow-pop)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Zap size={18} color="var(--color-accent-cyan)" />
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Connection Event Details</h3>
-              </div>
-              <button 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Connection event</h3>
+              <button
+                className="mm-icon-btn"
                 onClick={() => setSelectedEvent(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                title="Close"
               >
-                <X size={16} />
+                <X size={16} {...ICON} />
               </button>
             </div>
 
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
-              fontSize: '12px',
-              fontFamily: 'monospace'
+              fontSize: '13px',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Source Service</span>
-                <span style={{ color: serviceColor(shortName(selectedEvent.sourceServiceId)), fontWeight: 700 }}>{selectedEvent.sourceServiceId}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Destination Service</span>
-                <span style={{ color: serviceColor(shortName(selectedEvent.destServiceId)), fontWeight: 700 }}>{selectedEvent.destServiceId}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Destination Port</span>
-                <span style={{ color: '#fff', fontWeight: 700 }}>{selectedEvent.destPort}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>TCP State</span>
-                <span style={{ 
-                  color: selectedEvent.state === 'ESTABLISHED' ? 'var(--color-healthy)' : 'var(--color-degraded)', 
-                  fontWeight: 700 
-                }}>{selectedEvent.state}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Timestamp</span>
-                <span style={{ color: 'var(--color-text-main)' }}>{new Date(selectedEvent.timestamp).toLocaleString()}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Target Host ID</span>
-                <span style={{ color: 'var(--color-accent-cyan)' }}>{selectedEvent.targetId}</span>
-              </div>
+              {([
+                ['Source service', <span style={{ fontFamily: MONO, fontSize: '12px' }}>{selectedEvent.sourceServiceId}</span>],
+                ['Destination service', <span style={{ fontFamily: MONO, fontSize: '12px' }}>{selectedEvent.destServiceId}</span>],
+                ['Destination port', <span style={{ fontFamily: MONO, fontSize: '12px' }}>{selectedEvent.destPort}</span>],
+                ['TCP state', (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <i className="mm-dot" style={{ background: selectedEvent.state === 'ESTABLISHED' ? 'var(--color-healthy)' : 'var(--color-unknown)' }} />
+                    {sentenceCase(selectedEvent.state)}
+                  </span>
+                )],
+                ['Timestamp', <span style={{ fontFamily: MONO, fontSize: '12px' }}>{new Date(selectedEvent.timestamp).toLocaleString()}</span>],
+                ['Target host', <span style={{ fontFamily: MONO, fontSize: '12px' }}>{selectedEvent.targetId}</span>],
+              ] as const).map(([label, value], i, arr) => (
+                <div key={label} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '16px',
+                  minHeight: '36px',
+                  borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none'
+                }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+                  <span style={{ color: 'var(--color-text-main)', textAlign: 'right', wordBreak: 'break-all' }}>{value}</span>
+                </div>
+              ))}
             </div>
 
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
+                className="mm-btn"
                 onClick={() => {
                   setSelectedService(shortName(selectedEvent.sourceServiceId));
                   setSelectedEvent(null);
                   setViewMode('EVENTS');
                 }}
-                style={{
-                  background: 'rgba(0, 212, 255, 0.15)',
-                  border: '1px solid var(--color-accent-cyan)',
-                  color: 'var(--color-accent-cyan)',
-                  borderRadius: '6px',
-                  padding: '6px 12px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                style={{ cursor: 'pointer' }}
               >
-                Filter by Source
+                <Filter size={14} {...ICON} />
+                Filter by source
               </button>
               <button
+                className="mm-btn primary"
                 onClick={() => setSelectedEvent(null)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid var(--color-border)',
-                  color: '#fff',
-                  borderRadius: '6px',
-                  padding: '6px 14px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                style={{ cursor: 'pointer' }}
               >
                 Close
               </button>
@@ -1041,15 +868,16 @@ export function TracesView({ targetId, embedded = false }: { targetId: string; e
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        fontSize: '10px',
+        gap: '12px',
+        flexWrap: 'wrap',
+        fontSize: '11px',
         color: 'var(--color-text-dim)',
-        padding: '0 4px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ShieldAlert size={11} color="var(--color-text-muted)" />
-          <span>Kernel-level TCP snapshots sampled via SSH every ~5s. Micro-connections under 5s may be aggregated or missed.</span>
+          <ShieldAlert size={14} {...ICON} />
+          <span>Kernel-level TCP snapshots sampled via SSH every ~5s. Connections shorter than 5s may be aggregated or missed.</span>
         </div>
-        <span>Microservice Mapper v1.0 · OpenTelemetry Engine</span>
+        <span>Microservice Mapper v1.0</span>
       </div>
     </div>
   );
@@ -1125,19 +953,10 @@ function CircularTopologyMap({
 
   if (!graph || nodes.length === 0) {
     return (
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--color-text-muted)',
-        opacity: 0.5
-      }}>
-        <WifiOff size={44} style={{ marginBottom: '12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 600 }}>No connections observed yet</div>
-        <div style={{ fontSize: '11px', marginTop: '4px' }}>Awaiting TCP connection events from host</div>
+      <div style={emptyStateStyle}>
+        <WifiOff size={20} {...ICON} color="var(--color-text-dim)" />
+        <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No connections observed yet</div>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Waiting for TCP connection events from the host</div>
       </div>
     );
   }
@@ -1160,15 +979,8 @@ function CircularTopologyMap({
             orient="auto"
             markerUnits="strokeWidth"
           >
-            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(0, 212, 255, 0.75)" />
+            <path d="M0,0 L8,3 L0,6 Z" fill="rgba(138,180,255,0.7)" />
           </marker>
-          <filter id="trace-node-glow-orig">
-            <feGaussianBlur stdDeviation="3.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Central Ambient Ring */}
@@ -1177,9 +989,9 @@ function CircularTopologyMap({
           cy={dimensions.height / 2}
           r={Math.min(dimensions.width / 2, dimensions.height / 2) * 0.72}
           fill="none"
-          stroke="rgba(255, 255, 255, 0.03)"
+          stroke="rgba(255,255,255,0.04)"
           strokeWidth="1"
-          strokeDasharray="4 6"
+          strokeDasharray="3 5"
         />
 
         {/* Edges */}
@@ -1191,8 +1003,8 @@ function CircularTopologyMap({
           const isDimmed = !!activeFocus && !(highlighted!.has(edge.sourceServiceId) && highlighted!.has(edge.destServiceId));
           const isEdgeHovered = hoveredEdge === edge;
 
-          const thickness = 1 + (edge.eventCount / Math.max(1, maxEventCount)) * 4;
-          const baseOpacity = 0.3 + (edge.eventCount / Math.max(1, maxEventCount)) * 0.5;
+          const thickness = 1 + (edge.eventCount / Math.max(1, maxEventCount)) * 3;
+          const baseOpacity = 0.25 + (edge.eventCount / Math.max(1, maxEventCount)) * 0.45;
           const opacity = isDimmed ? baseOpacity * 0.12 : isEdgeHovered ? 1 : baseOpacity;
 
           const dx = dst.x - src.x;
@@ -1228,8 +1040,8 @@ function CircularTopologyMap({
                 y1={startY}
                 x2={endX}
                 y2={endY}
-                stroke={isEdgeHovered ? 'rgba(0, 230, 255, 0.95)' : 'rgba(0, 212, 255, 0.5)'}
-                strokeWidth={isEdgeHovered ? thickness + 1 : thickness}
+                stroke="#8ab4ff"
+                strokeWidth={isEdgeHovered ? thickness + 0.75 : thickness}
                 strokeOpacity={opacity}
                 markerEnd="url(#trace-arrowhead-orig)"
                 style={{ transition: 'stroke-width 0.15s ease, stroke-opacity 0.25s ease', pointerEvents: 'none' }}
@@ -1238,12 +1050,10 @@ function CircularTopologyMap({
               <text
                 x={(startX + endX) / 2}
                 y={(startY + endY) / 2 - 6}
-                fill={isDimmed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.45)'}
-                fontSize="9"
+                fill={isDimmed ? 'rgba(255,255,255,0.08)' : '#5d636c'}
+                fontSize="10"
                 textAnchor="middle"
-                fontFamily="monospace"
-                fontWeight="600"
-                style={{ pointerEvents: 'none', transition: 'fill 0.25s ease' }}
+                style={{ pointerEvents: 'none', transition: 'fill 0.25s ease', fontVariantNumeric: 'tabular-nums' }}
               >
                 {edge.eventCount}×
               </text>
@@ -1270,44 +1080,44 @@ function CircularTopologyMap({
               onMouseLeave={() => setHoveredNode(null)}
               opacity={isDimmed ? 0.22 : 1}
             >
-              {/* Outer Glow */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={isHovered || isSelected ? 24 : 18}
-                fill={color}
-                opacity={isHovered || isSelected ? 0.22 : 0.08}
-                filter="url(#trace-node-glow-orig)"
-                style={{ transition: 'r 0.2s ease, opacity 0.2s ease' }}
-              />
+              {/* Selection ring */}
+              {(isHovered || isSelected) && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={21}
+                  fill="none"
+                  stroke={isSelected ? '#8ab4ff' : 'rgba(255,255,255,0.15)'}
+                  strokeWidth={1}
+                />
+              )}
               {/* Main Node Circle */}
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r={isHovered || isSelected ? 18 : 16}
-                fill="rgba(12, 12, 24, 0.92)"
+                r={16}
+                fill="#111317"
                 stroke={color}
-                strokeWidth={isSelected ? 3 : (isHovered ? 2.5 : 1.5)}
-                style={{ transition: 'all 0.2s ease' }}
+                strokeOpacity={isHovered || isSelected ? 1 : 0.7}
+                strokeWidth={1.5}
+                style={{ transition: 'stroke-opacity 0.2s ease' }}
               />
               {/* Inner Dot */}
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r="4"
+                r="3.5"
                 fill={color}
-                opacity={0.85}
               />
               {/* Service Label */}
               <text
                 x={pos.x}
-                y={pos.y + 28}
-                fill={color}
-                fontSize={isHovered || isSelected ? 11 : 10}
-                fontWeight={isHovered || isSelected ? 800 : 600}
+                y={pos.y + 30}
+                fill={isHovered || isSelected ? '#ecedef' : '#969ca5'}
+                fontSize="11"
+                fontWeight={isHovered || isSelected ? 600 : 500}
                 textAnchor="middle"
-                fontFamily="'Inter', system-ui, sans-serif"
-                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.85)', transition: 'font-size 0.15s ease' }}
+                style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)', pointerEvents: 'none' }}
               >
                 {name}
               </text>
@@ -1319,27 +1129,18 @@ function CircularTopologyMap({
       {/* Edge Hover Tooltip */}
       {hoveredEdge && (
         <div style={{
+          ...tooltipStyle,
           position: 'absolute',
           left: Math.min(tooltipPos.x + 14, dimensions.width - 190),
           top: Math.max(tooltipPos.y - 10, 8),
-          background: 'rgba(10, 12, 20, 0.96)',
-          border: '1px solid rgba(0, 212, 255, 0.35)',
-          borderRadius: '8px',
-          padding: '10px 12px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
-          color: '#e6edf3',
-          pointerEvents: 'none',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          minWidth: '160px',
           zIndex: 10,
         }}>
-          <div style={{ fontWeight: 700, marginBottom: '6px', color: 'var(--color-accent-cyan)' }}>
+          <div style={{ fontWeight: 600, marginBottom: '2px' }}>
             {shortName(hoveredEdge.sourceServiceId)} → {shortName(hoveredEdge.destServiceId)}
           </div>
-          <div style={{ opacity: 0.85 }}>events: <b>{hoveredEdge.eventCount}</b></div>
-          <div style={{ opacity: 0.85 }}>ports: :{hoveredEdge.destPorts?.join(', ')}</div>
-          <div style={{ opacity: 0.85 }}>last seen: {relativeTime(hoveredEdge.lastSeen)}</div>
+          <TooltipRow label="Events">{hoveredEdge.eventCount}</TooltipRow>
+          <TooltipRow label="Ports"><span style={{ fontFamily: MONO, fontSize: '11.5px' }}>:{hoveredEdge.destPorts?.join(', ')}</span></TooltipRow>
+          <TooltipRow label="Last seen">{relativeTime(hoveredEdge.lastSeen)}</TooltipRow>
         </div>
       )}
 
@@ -1347,19 +1148,18 @@ function CircularTopologyMap({
       <div style={{
         position: 'absolute',
         bottom: '12px',
-        left: '12px',
+        left: '14px',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        fontSize: '9px',
-        color: 'rgba(255,255,255,0.4)',
-        fontFamily: 'monospace',
+        fontSize: '11px',
+        color: 'var(--color-text-dim)',
         pointerEvents: 'none',
       }}>
-        <svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(0,212,255,0.35)" strokeWidth="1" /></svg>
-        <span>low freq</span>
-        <svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(0,212,255,0.85)" strokeWidth="3" /></svg>
-        <span>high freq</span>
+        <svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(138,180,255,0.3)" strokeWidth="1" /></svg>
+        <span>Low frequency</span>
+        <svg width="24" height="6" style={{ marginLeft: '6px' }}><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(138,180,255,0.75)" strokeWidth="3" /></svg>
+        <span>High frequency</span>
       </div>
     </div>
   );
@@ -1368,16 +1168,16 @@ function CircularTopologyMap({
 /**
  * Architectural Tiered Flow Topology
  */
-function TieredTopologyMap({ 
-  graph, 
-  maxEventCount, 
-  onSelectNode, 
+function TieredTopologyMap({
+  graph,
+  maxEventCount,
+  onSelectNode,
   selectedNode,
   filterQuery,
   targetId
-}: { 
-  graph: TraceGraph | null; 
-  maxEventCount: number; 
+}: {
+  graph: TraceGraph | null;
+  maxEventCount: number;
   onSelectNode: (node: string) => void;
   selectedNode: string | null;
   filterQuery?: string;
@@ -1426,7 +1226,7 @@ function TieredTopologyMap({
       const list = tieredNodes[tierIdx] || [];
       const colX = paddingX + tierIdx * colWidth;
       const count = list.length;
-      
+
       list.forEach((node, i) => {
         const totalHeight = dims.height - 80;
         const spacing = totalHeight / Math.max(count + 1, 2);
@@ -1451,19 +1251,12 @@ function TieredTopologyMap({
 
   if (!graph || nodes.length === 0) {
     return (
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--color-text-muted)',
-        opacity: 0.5
-      }}>
-        <WifiOff size={44} style={{ marginBottom: '12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 600 }}>No connection topology found</div>
-        <div style={{ fontSize: '11px', marginTop: '4px' }}>Awaiting telemetry cycle from host {targetId}</div>
+      <div style={emptyStateStyle}>
+        <WifiOff size={20} {...ICON} color="var(--color-text-dim)" />
+        <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No connection topology yet</div>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+          Waiting for the next telemetry cycle from <span style={{ fontFamily: MONO }}>{targetId}</span>
+        </div>
       </div>
     );
   }
@@ -1471,7 +1264,7 @@ function TieredTopologyMap({
   const tierHeaders = [
     { label: 'Gateways', x: dims.width * 0.08 },
     { label: 'Frontend', x: dims.width * 0.08 + (dims.width / 5.2) * 1 },
-    { label: 'Core Services', x: dims.width * 0.08 + (dims.width / 5.2) * 2 },
+    { label: 'Core services', x: dims.width * 0.08 + (dims.width / 5.2) * 2 },
     { label: 'Databases', x: dims.width * 0.08 + (dims.width / 5.2) * 3 },
     { label: 'Observability', x: dims.width * 0.08 + (dims.width / 5.2) * 4 },
   ];
@@ -1481,7 +1274,7 @@ function TieredTopologyMap({
       {/* Column Headers */}
       <div style={{
         position: 'absolute',
-        top: '10px',
+        top: '12px',
         left: 0,
         right: 0,
         pointerEvents: 'none',
@@ -1489,16 +1282,11 @@ function TieredTopologyMap({
         zIndex: 2
       }}>
         {tierHeaders.map((th, i) => (
-          <div key={i} style={{
+          <div key={i} className="mm-eyebrow" style={{
             position: 'absolute',
-            left: `${th.x - 40}px`,
-            fontSize: '9px',
-            fontWeight: 700,
-            color: 'var(--color-text-dim)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.8px',
+            left: `${th.x - 50}px`,
             textAlign: 'center',
-            width: '80px'
+            width: '100px'
           }}>
             {th.label}
           </div>
@@ -1506,20 +1294,6 @@ function TieredTopologyMap({
       </div>
 
       <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
-        <defs>
-          <linearGradient id="edge-grad-tiered" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#a855f7" stopOpacity="0.8" />
-          </linearGradient>
-          <filter id="glow-node-tiered">
-            <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         {/* Edges */}
         {edges.map((edge) => {
           const src = nodePositions.get(edge.sourceServiceId);
@@ -1532,11 +1306,11 @@ function TieredTopologyMap({
             : true;
 
           const opacity = connectedSet
-            ? (isRelatedToFocus ? (isEdgeHovered ? 1 : 0.75) : 0.08)
+            ? (isRelatedToFocus ? (isEdgeHovered ? 1 : 0.7) : 0.08)
             : (isEdgeHovered ? 1 : 0.35);
 
           const safeMax = Math.max(1, maxEventCount);
-          const thickness = Math.max(1.2, Math.min(6, 1 + (edge.eventCount / safeMax) * 5));
+          const thickness = Math.max(1.2, Math.min(5, 1 + (edge.eventCount / safeMax) * 4));
 
           const dx = dst.x - src.x;
           const curveFactor = Math.abs(dx) * 0.5;
@@ -1559,10 +1333,9 @@ function TieredTopologyMap({
               <path
                 d={pathD}
                 fill="none"
-                stroke={isEdgeHovered ? '#00d4ff' : 'url(#edge-grad-tiered)'}
-                strokeWidth={isEdgeHovered ? thickness + 1.5 : thickness}
+                stroke="#8ab4ff"
+                strokeWidth={isEdgeHovered ? thickness + 0.75 : thickness}
                 strokeOpacity={opacity}
-                strokeDasharray={isEdgeHovered ? '4 2' : 'none'}
                 style={{ transition: 'stroke-opacity 0.2s, stroke-width 0.2s', pointerEvents: 'none' }}
               />
             </g>
@@ -1594,10 +1367,10 @@ function TieredTopologyMap({
                 <circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={22}
-                  fill={color}
-                  opacity={0.25}
-                  filter="url(#glow-node-tiered)"
+                  r={21}
+                  fill="none"
+                  stroke={isSelected || matchesQuery ? '#8ab4ff' : 'rgba(255,255,255,0.15)'}
+                  strokeWidth={1}
                 />
               )}
 
@@ -1605,28 +1378,29 @@ function TieredTopologyMap({
                 cx={pos.x}
                 cy={pos.y}
                 r={16}
-                fill="#0f1424"
+                fill="#111317"
                 stroke={color}
-                strokeWidth={isSelected ? 3 : (isHovered ? 2.5 : 1.5)}
+                strokeOpacity={isHovered || isSelected ? 1 : 0.7}
+                strokeWidth={1.5}
               />
 
               <circle
                 cx={pos.x}
                 cy={pos.y}
-                r={5}
+                r={3.5}
                 fill={color}
               />
 
               <text
                 x={pos.x}
-                y={pos.y + 26}
-                fill="#f8fafc"
-                fontSize="10"
-                fontWeight={isSelected || isHovered ? 700 : 500}
+                y={pos.y + 30}
+                fill={isSelected || isHovered ? '#ecedef' : '#969ca5'}
+                fontSize="11"
+                fontWeight={isSelected || isHovered ? 600 : 500}
                 textAnchor="middle"
                 style={{
                   pointerEvents: 'none',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.9)'
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8)'
                 }}
               >
                 {name}
@@ -1639,24 +1413,17 @@ function TieredTopologyMap({
       {/* Edge Tooltip */}
       {hoveredEdge && (
         <div style={{
+          ...tooltipStyle,
           position: 'fixed',
           left: tooltipPos.x + 12,
           top: tooltipPos.y - 10,
-          background: 'rgba(10, 13, 24, 0.95)',
-          border: '1px solid var(--color-border-glow)',
-          borderRadius: '8px',
-          padding: '8px 12px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
           zIndex: 50,
-          pointerEvents: 'none',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
         }}>
-          <div style={{ color: 'var(--color-accent-cyan)', fontWeight: 700, marginBottom: '4px' }}>
+          <div style={{ fontWeight: 600, marginBottom: '2px' }}>
             {shortName(hoveredEdge.sourceServiceId)} → {shortName(hoveredEdge.destServiceId)}
           </div>
-          <div>Call Count: <b>{hoveredEdge.eventCount}</b> events</div>
-          <div>Target Port: <b>:{hoveredEdge.destPorts?.join(', ')}</b></div>
+          <TooltipRow label="Events">{hoveredEdge.eventCount}</TooltipRow>
+          <TooltipRow label="Port"><span style={{ fontFamily: MONO, fontSize: '11.5px' }}>:{hoveredEdge.destPorts?.join(', ')}</span></TooltipRow>
         </div>
       )}
     </div>
@@ -1666,11 +1433,11 @@ function TieredTopologyMap({
 /**
  * Traffic Matrix Heatmap View
  */
-function TraceMatrixView({ 
-  graph, 
-  onSelectCell 
-}: { 
-  graph: TraceGraph | null; 
+function TraceMatrixView({
+  graph,
+  onSelectCell
+}: {
+  graph: TraceGraph | null;
   onSelectCell: (src: string, dst: string) => void;
 }) {
   const nodes = useMemo(() => {
@@ -1688,8 +1455,10 @@ function TraceMatrixView({
 
   if (!graph || nodes.length === 0) {
     return (
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
-        No matrix data available.
+      <div style={{ ...emptyStateStyle, position: 'relative', flex: 1 }}>
+        <Grid3X3 size={20} {...ICON} color="var(--color-text-dim)" />
+        <div style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No matrix data yet</div>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Service-to-service traffic will appear here once connections are captured</div>
       </div>
     );
   }
@@ -1698,22 +1467,25 @@ function TraceMatrixView({
     <div style={{
       flex: 1,
       overflow: 'auto',
-      padding: '16px',
+      padding: '20px',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <div style={{ marginBottom: '12px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-        Communication Matrix (Rows: Source caller, Columns: Destination callee). Click any cell to inspect events.
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 600 }}>Communication matrix</div>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+          Rows are callers, columns are callees. Click a cell to inspect its events.
+        </div>
       </div>
 
       <div style={{ display: 'inline-block', minWidth: 'max-content' }}>
         {/* Header Row */}
         <div style={{ display: 'flex' }}>
-          <div style={{ width: '130px', flexShrink: 0 }} />
+          <div style={{ width: '140px', flexShrink: 0 }} />
           {nodes.map(n => (
             <div key={n} style={{
               width: '32px',
-              height: '80px',
+              height: '84px',
               display: 'flex',
               alignItems: 'flex-end',
               justifyContent: 'center',
@@ -1722,9 +1494,8 @@ function TraceMatrixView({
               <span style={{
                 transform: 'rotate(-45deg)',
                 transformOrigin: 'bottom center',
-                fontSize: '9px',
+                fontSize: '11px',
                 color: 'var(--color-text-muted)',
-                fontWeight: 600,
                 whiteSpace: 'nowrap'
               }}>
                 {n}
@@ -1737,15 +1508,15 @@ function TraceMatrixView({
         {nodes.map(src => (
           <div key={src} style={{ display: 'flex', alignItems: 'center', height: '28px' }}>
             <div style={{
-              width: '130px',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: serviceColor(src),
+              width: '140px',
+              fontSize: '12px',
+              color: 'var(--color-text-muted)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               textAlign: 'right',
-              paddingRight: '10px'
+              paddingRight: '10px',
+              boxSizing: 'border-box'
             }}>
               {src}
             </div>
@@ -1753,7 +1524,7 @@ function TraceMatrixView({
             {nodes.map(dst => {
               const count = matrix.get(`${src}|${dst}`) || 0;
               const hasCalls = count > 0;
-              const intensity = hasCalls ? Math.min(1, 0.2 + count / 20) : 0;
+              const intensity = hasCalls ? Math.min(0.55, 0.12 + count / 40) : 0;
 
               return (
                 <div
@@ -1765,20 +1536,20 @@ function TraceMatrixView({
                     height: '24px',
                     margin: '2px',
                     borderRadius: '4px',
-                    background: hasCalls 
-                      ? `rgba(0, 212, 255, ${intensity})` 
-                      : 'rgba(255, 255, 255, 0.02)',
-                    border: hasCalls 
-                      ? '1px solid rgba(0, 212, 255, 0.4)' 
-                      : '1px solid rgba(255, 255, 255, 0.04)',
+                    background: hasCalls
+                      ? `rgba(138,180,255, ${intensity})`
+                      : 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--color-border)',
+                    boxSizing: 'border-box',
                     cursor: hasCalls ? 'pointer' : 'default',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: hasCalls ? '#fff' : 'transparent',
-                    transition: 'all 0.15s'
+                    fontSize: '10px',
+                    fontWeight: 550,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: hasCalls ? 'var(--color-text-main)' : 'transparent',
+                    transition: 'background 0.15s'
                   }}
                 >
                   {hasCalls ? (count > 99 ? '99+' : count) : ''}
@@ -1795,55 +1566,47 @@ function TraceMatrixView({
 /**
  * Live Event Stream View
  */
-function TraceEventStreamView({ 
-  events, 
-  isAutoScroll, 
-  onToggleAutoScroll, 
+function TraceEventStreamView({
+  events,
+  isAutoScroll,
+  onToggleAutoScroll,
   onSelectEvent,
   eventListRef
-}: { 
-  events: ConnectionEvent[]; 
-  isAutoScroll: boolean; 
+}: {
+  events: ConnectionEvent[];
+  isAutoScroll: boolean;
   onToggleAutoScroll: () => void;
   onSelectEvent: (event: ConnectionEvent) => void;
   eventListRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Stream Controls Bar */}
       <div style={{
-        padding: '10px 14px',
+        padding: '0 12px 0 16px',
+        height: '48px',
+        flexShrink: 0,
         borderBottom: '1px solid var(--color-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'rgba(0,0,0,0.25)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Activity size={14} color="var(--color-accent-cyan)" />
-          <span style={{ fontSize: '12px', fontWeight: 700 }}>Real-time Feed</span>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-dim)', marginLeft: '4px' }}>
-            ({events.length})
+          <Activity size={14} {...ICON} color="var(--color-text-muted)" />
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>Live feed</span>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>
+            {events.length}
           </span>
         </div>
 
         <button
+          className={`mm-btn${isAutoScroll ? ' active' : ''}`}
           onClick={onToggleAutoScroll}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: isAutoScroll ? 'rgba(0, 212, 255, 0.12)' : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${isAutoScroll ? 'rgba(0, 212, 255, 0.3)' : 'var(--color-border)'}`,
-            color: isAutoScroll ? 'var(--color-accent-cyan)' : 'var(--color-text-muted)',
-            borderRadius: '6px',
-            padding: '3px 8px',
-            fontSize: '10px',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
+          style={{ height: '26px', padding: '0 10px', fontSize: '12px', cursor: 'pointer' }}
         >
-          {isAutoScroll ? <Eye size={11} /> : <EyeOff size={11} />}
+          {isAutoScroll ? <Eye size={14} {...ICON} /> : <EyeOff size={14} {...ICON} />}
           {isAutoScroll ? 'Auto-scroll' : 'Paused'}
         </button>
       </div>
@@ -1854,82 +1617,67 @@ function TraceEventStreamView({
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '8px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4px',
-          fontFamily: "'JetBrains Mono', monospace"
         }}
       >
         {events.length === 0 ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-muted)',
-            opacity: 0.5,
-            padding: '30px 0'
-          }}>
-            <ShieldAlert size={24} style={{ marginBottom: '8px' }} />
-            <span style={{ fontSize: '12px', fontWeight: 600 }}>No Events Match Filters</span>
-            <span style={{ fontSize: '10px', marginTop: '4px' }}>Clear search query or select another service</span>
+          <div style={{ ...emptyStateStyle, position: 'relative', flex: 1, padding: '30px 16px' }}>
+            <ListFilter size={20} {...ICON} color="var(--color-text-dim)" />
+            <span style={{ fontSize: '13px', color: 'var(--color-text-main)' }}>No events match these filters</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Clear the search or pick another service</span>
           </div>
         ) : (
           events.slice().reverse().map((ev, idx) => (
             <div
               key={`${ev.timestamp}-${ev.sourceServiceId}-${ev.destServiceId}-${idx}`}
               onClick={() => onSelectEvent(ev)}
+              onMouseEnter={() => setHoveredIdx(idx)}
+              onMouseLeave={() => setHoveredIdx(h => (h === idx ? null : h))}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '62px 1fr 14px 1fr 50px',
+                gridTemplateColumns: '64px 1fr 14px 1fr 56px',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '5px 8px',
-                borderRadius: '5px',
-                background: idx === 0 ? 'rgba(0, 212, 255, 0.05)' : 'rgba(255,255,255,0.015)',
-                border: '1px solid rgba(255, 255, 255, 0.04)',
-                fontSize: '11px',
+                gap: '8px',
+                padding: '0 16px',
+                minHeight: '36px',
+                flexShrink: 0,
+                borderBottom: '1px solid var(--color-border)',
+                background: hoveredIdx === idx ? 'rgba(255,255,255,0.025)' : 'transparent',
+                fontSize: '12.5px',
                 cursor: 'pointer',
-                transition: 'all 0.15s'
+                transition: 'background 0.12s'
               }}
             >
-              <span style={{ color: 'var(--color-text-dim)', fontSize: '9px' }}>
+              <span style={{ color: 'var(--color-text-dim)', fontSize: '11px', fontFamily: MONO }}>
                 {new Date(ev.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
 
               <span style={{
-                color: serviceColor(shortName(ev.sourceServiceId)),
-                fontWeight: 700,
+                color: 'var(--color-text-main)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                fontSize: '10px'
               }}>
                 {shortName(ev.sourceServiceId)}
               </span>
 
-              <ArrowRight size={9} color="var(--color-text-dim)" />
+              <ArrowRight size={12} {...ICON} color="var(--color-text-dim)" />
 
               <span style={{
-                color: serviceColor(shortName(ev.destServiceId)),
-                fontWeight: 700,
+                color: 'var(--color-text-main)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                fontSize: '10px'
               }}>
                 {shortName(ev.destServiceId)}
               </span>
 
               <span style={{
                 color: 'var(--color-text-muted)',
-                background: 'rgba(0,0,0,0.3)',
-                padding: '1px 4px',
-                borderRadius: '3px',
-                fontSize: '9px',
-                textAlign: 'center'
+                fontFamily: MONO,
+                fontSize: '11px',
+                textAlign: 'right'
               }}>
                 :{ev.destPort}
               </span>
@@ -1968,106 +1716,101 @@ function NodeInspectorDrawer({
     .filter(e => e.sourceServiceId === nodeId || e.destServiceId === nodeId)
     .slice(-4);
 
+  const rowStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '10px',
+    minHeight: '32px',
+    borderBottom: '1px solid var(--color-border)',
+    fontSize: '12.5px'
+  };
+
   return (
     <div style={{
       width: '300px',
+      flexShrink: 0,
       borderLeft: '1px solid var(--color-border)',
-      background: 'rgba(7, 10, 20, 0.95)',
+      background: 'var(--color-bg-panel)',
       display: 'flex',
       flexDirection: 'column',
       zIndex: 10
     }}>
       <div style={{
-        padding: '14px 16px',
+        padding: '0 12px 0 16px',
+        height: '48px',
+        flexShrink: 0,
         borderBottom: '1px solid var(--color-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
-          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800 }}>{name}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <i className="mm-dot" style={{ background: color }} />
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</h3>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
-          <X size={15} />
+        <button className="mm-icon-btn" onClick={onClose} title="Close">
+          <X size={16} {...ICON} />
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div>
-          <span style={{ fontSize: '10px', color: 'var(--color-text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>Architecture Tier</span>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', marginTop: '2px' }}>{tier.label}</div>
+          <div className="mm-eyebrow">Architecture tier</div>
+          <div style={{ fontSize: '13px', color: 'var(--color-text-main)', marginTop: '4px' }}>{tier.label}</div>
         </div>
 
         {/* Outbound Calls */}
         <div>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-cyan)', marginBottom: '8px' }}>
-            Outbound Connections ({outEdges.length})
+          <div className="mm-eyebrow" style={{ marginBottom: '4px' }}>
+            Outbound connections · {outEdges.length}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {outEdges.map(e => (
-              <div key={e.destServiceId} style={{
-                background: 'rgba(255,255,255,0.03)',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '11px'
-              }}>
-                <span>→ {shortName(e.destServiceId)}</span>
-                <span style={{ color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
-                  :{e.destPorts?.join(',')} ({e.eventCount}×)
+              <div key={e.destServiceId} style={rowStyle}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortName(e.destServiceId)}</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '11.5px', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontFamily: MONO }}>:{e.destPorts?.join(',')}</span> · {e.eventCount}×
                 </span>
               </div>
             ))}
-            {outEdges.length === 0 && <span style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>None</span>}
+            {outEdges.length === 0 && <span style={{ fontSize: '12px', color: 'var(--color-text-dim)', paddingTop: '4px' }}>None</span>}
           </div>
         </div>
 
         {/* Inbound Calls */}
         <div>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-magenta)', marginBottom: '8px' }}>
-            Inbound Clients ({inEdges.length})
+          <div className="mm-eyebrow" style={{ marginBottom: '4px' }}>
+            Inbound clients · {inEdges.length}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {inEdges.map(e => (
-              <div key={e.sourceServiceId} style={{
-                background: 'rgba(255,255,255,0.03)',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '11px'
-              }}>
-                <span>← {shortName(e.sourceServiceId)}</span>
-                <span style={{ color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
+              <div key={e.sourceServiceId} style={rowStyle}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortName(e.sourceServiceId)}</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' }}>
                   {e.eventCount}×
                 </span>
               </div>
             ))}
-            {inEdges.length === 0 && <span style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>None</span>}
+            {inEdges.length === 0 && <span style={{ fontSize: '12px', color: 'var(--color-text-dim)', paddingTop: '4px' }}>None</span>}
           </div>
         </div>
 
         {/* Recent Traffic Samples */}
         {recentNodeEvents.length > 0 && (
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', marginBottom: '8px' }}>
-              Recent Snapshots
+            <div className="mm-eyebrow" style={{ marginBottom: '4px' }}>
+              Recent snapshots
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {recentNodeEvents.map((re, idx) => (
-                <div key={idx} style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  color: 'var(--color-text-muted)'
-                }}>
-                  <span>{shortName(re.sourceServiceId)} → {shortName(re.destServiceId)}</span>
-                  <span style={{ color: re.state === 'ESTABLISHED' ? 'var(--color-healthy)' : 'var(--color-degraded)' }}>
-                    {re.state}
+                <div key={idx} style={{ ...rowStyle, fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {shortName(re.sourceServiceId)} → {shortName(re.destServiceId)}
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', color: 'var(--color-text-main)' }}>
+                    <i className="mm-dot" style={{ background: re.state === 'ESTABLISHED' ? 'var(--color-healthy)' : 'var(--color-unknown)' }} />
+                    {sentenceCase(re.state)}
                   </span>
                 </div>
               ))}
@@ -2076,25 +1819,18 @@ function NodeInspectorDrawer({
         )}
 
         <button
+          className="mm-btn"
           onClick={() => onFilterEvents(nodeId)}
           style={{
             marginTop: 'auto',
-            background: 'rgba(0, 212, 255, 0.15)',
-            border: '1px solid var(--color-accent-cyan)',
-            color: 'var(--color-accent-cyan)',
-            borderRadius: '8px',
-            padding: '8px',
-            fontSize: '11px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
+            width: '100%',
             justifyContent: 'center',
-            gap: '6px'
+            cursor: 'pointer',
+            flexShrink: 0
           }}
         >
-          <ListFilter size={13} />
-          Filter Stream to {name}
+          <ListFilter size={14} {...ICON} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Filter stream to {name}</span>
         </button>
       </div>
     </div>

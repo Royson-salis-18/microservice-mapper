@@ -149,7 +149,7 @@ class VirtualUser {
       // referenced from a step path as /product/${productSlug}.
       //
       // `extract` only works when a step answers JSON, and plenty of real
-      // entry points are server-rendered HTML — the Vertikal storefront's
+      // entry points are server-rendered HTML - the Vertikal storefront's
       // /catalog is a Next.js page, so there is nothing to extract a slug
       // from. Without this every virtual user would have to hammer one
       // hard-coded product, which measures that product's cache rather than
@@ -217,11 +217,22 @@ class VirtualUser {
       }
       const cookieHeader = [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; ');
       if (cookieHeader) headers.cookie = cookieHeader;
-      if (step.body && !headers['content-type']) headers['content-type'] = 'application/json';
+      // `form` sends application/x-www-form-urlencoded fields; `body` sends
+      // JSON. Some front ends only read form fields: DeathStarBench's
+      // nginx-thrift answers a JSON compose with 400 "Incomplete arguments".
+      let payload;
+      if (step.form) {
+        const fields = resolveTemplate(step.form, this.vars);
+        payload = new URLSearchParams(Object.entries(fields).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])).toString();
+        if (!headers['content-type']) headers['content-type'] = 'application/x-www-form-urlencoded';
+      } else if (step.body) {
+        payload = JSON.stringify(resolveTemplate(step.body, this.vars));
+        if (!headers['content-type']) headers['content-type'] = 'application/json';
+      }
       const resp = await fetch(url, {
         method,
         headers,
-        body: step.body ? JSON.stringify(resolveTemplate(step.body, this.vars)) : undefined,
+        body: payload,
         signal: controller.signal,
       });
       clearTimeout(timer);

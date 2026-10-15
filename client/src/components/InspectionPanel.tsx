@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { ServiceNode, DependencyEdge } from '../types';
 import { MiniChart } from './MiniChart';
+import { X, Router, Database, Layers, Rows3, Monitor, Box, Cpu, Globe, ArrowDown, ArrowUp, TriangleAlert } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useMetrics } from '../hooks/useMetrics';
 
 interface InspectionPanelProps {
@@ -10,11 +13,84 @@ interface InspectionPanelProps {
 }
 
 const statusColors: Record<string, string> = {
-  healthy: '#00e676',
-  degraded: '#ffab00',
-  critical: '#ff1744',
-  unknown: '#616161'
+  healthy: '#3ecf8e',
+  degraded: '#e8a33d',
+  critical: '#ef5f67',
+  unknown: '#6b7079'
 };
+
+const statusTint: Record<string, string> = {
+  healthy: 'rgba(62,207,142,0.1)',
+  degraded: 'rgba(232,163,61,0.1)',
+  critical: 'rgba(239,95,103,0.1)',
+  unknown: 'rgba(107,112,121,0.14)'
+};
+
+const typeIcons: Record<string, LucideIcon> = {
+  gateway: Router,
+  service: Box,
+  database: Database,
+  cache: Layers,
+  queue: Rows3,
+  frontend: Monitor,
+  infrastructure: Cpu,
+  external: Globe,
+};
+
+const sentence = (v: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v);
+const meterColor = (v: number) => (v > 95 ? 'var(--color-critical)' : v > 80 ? 'var(--color-degraded)' : 'var(--color-healthy)');
+const edgeStatusColor = (st?: string) => (st === 'failed' ? 'var(--color-critical)' : st === 'degraded' ? 'var(--color-degraded)' : 'var(--color-text-dim)');
+
+const section: CSSProperties = { padding: '20px', borderBottom: '1px solid var(--color-border)' };
+const kpiValue: CSSProperties = { fontSize: '26px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-text-main)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 };
+const kpiUnit: CSSProperties = { fontSize: '13px', fontWeight: 500, color: 'var(--color-text-muted)', marginLeft: '3px', letterSpacing: 0 };
+const row: CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', minHeight: '32px', fontSize: '13px' };
+const rowLabel: CSSProperties = { color: 'var(--color-text-muted)' };
+const rowValue: CSSProperties = { color: 'var(--color-text-main)', fontVariantNumeric: 'tabular-nums', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+
+function Kpi({ label, value, unit, meter, icon: Icon }: { label: string; value: string; unit?: string; meter?: number; icon?: LucideIcon }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+        {Icon && <Icon size={14} strokeWidth={1.75} style={{ color: 'var(--color-text-dim)' }} />}
+        {label}
+      </div>
+      <div style={kpiValue}>
+        {value}
+        {unit && value !== '-' && <span style={kpiUnit}>{unit}</span>}
+      </div>
+      {meter !== undefined && (
+        <div style={{ marginTop: '10px', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${Math.min(meter, 100)}%`, background: meterColor(meter), borderRadius: '2px', transition: 'width 0.3s ease' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DependencyList({ items, side }: { items: DependencyEdge[]; side: 'source' | 'target' }) {
+  if (items.length === 0) {
+    return <div style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>None</div>;
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {items.map((e, i) => (
+        <div key={e.id} style={{
+          display: 'flex', alignItems: 'center', gap: '10px', minHeight: '40px', padding: '6px 0',
+          borderTop: i === 0 ? 'none' : '1px solid var(--color-border)', fontSize: '13px'
+        }}>
+          <span className="mm-dot" style={{ background: edgeStatusColor(e.status) }} />
+          <span style={{ flex: 1, minWidth: 0, color: 'var(--color-text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e[side]}</span>
+          <span style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+            <span>{sentence(e.type)}</span>
+            {e.metrics?.latency !== undefined && e.metrics?.latency !== null && <span>{e.metrics.latency} ms</span>}
+            {e.metrics?.errorRate !== undefined && e.metrics?.errorRate !== null && <span style={{ color: e.metrics.errorRate > 5 ? 'var(--color-critical)' : 'inherit' }}>{e.metrics.errorRate}% err</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const formatBytes = (bytes: number) => {
   if (bytes === 0) return '0 B';
@@ -34,6 +110,10 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
   if (!node) return null;
 
   const sColor = statusColors[node.status] || statusColors.unknown;
+  const sTint = statusTint[node.status] || statusTint.unknown;
+  const TypeIcon = typeIcons[node.type] || Box;
+  const isCascade = upstreams.some(e => e.status === 'failed');
+  const problemColor = node.status === 'critical' ? 'var(--color-critical)' : 'var(--color-degraded)';
 
   return (
     <div style={{
@@ -44,70 +124,68 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
       // right edge of the viewport at ~40px wide with all its content
       // still there but invisible. flexShrink:0 makes the 400px authoritative.
       flexShrink: 0,
-      background: 'rgba(12, 12, 24, 0.85)',
-      backdropFilter: 'blur(12px)',
-      borderLeft: '1px solid rgba(255,255,255,0.1)',
-      boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+      background: 'var(--color-bg-panel)',
+      borderLeft: '1px solid var(--color-border)',
       display: 'flex',
       flexDirection: 'column',
-      animation: 'slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+      animation: 'slideInRight 0.24s cubic-bezier(0.2, 0, 0, 1)',
       overflowY: 'auto',
-      color: '#fff',
+      color: 'var(--color-text-main)',
       height: '100%',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
+      fontFamily: 'var(--font-family)'
     }}>
       <style>{`
         @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
+          from { transform: translateX(16px); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
         .scroll-container::-webkit-scrollbar { width: 6px; }
         .scroll-container::-webkit-scrollbar-track { background: transparent; }
         .scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
       `}</style>
-      
+
       {/* Header */}
-      <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '18px' }}>
-              {node.type === 'service' ? '⚙️' : node.type === 'database' ? '🗄️' : node.type === 'queue' ? '📨' : '📦'}
-            </span>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, textShadow: '0 0 10px rgba(255,255,255,0.3)' }}>{node.name}</h3>
+      <div style={{ ...section, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <TypeIcon size={16} strokeWidth={1.75} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 600, letterSpacing: '-0.01em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</h3>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: `rgba(${sColor === '#00e676' ? '0,230,118' : sColor === '#ffab00' ? '255,171,0' : sColor === '#ff1744' ? '255,23,68' : '97,97,97'}, 0.1)`, padding: '2px 8px', borderRadius: '12px', border: `1px solid ${sColor}40`, boxShadow: `0 0 8px ${sColor}40` }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: sColor, boxShadow: `0 0 5px ${sColor}` }} />
-            <span style={{ fontSize: '11px', fontWeight: 600, color: sColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{node.status}</span>
-          </div>
+          <span className="mm-chip" style={{ background: sTint, color: sColor, borderColor: 'transparent' }}>
+            <i className="mm-dot" style={{ background: 'currentColor' }} />
+            {sentence(node.status)}
+          </span>
         </div>
-        <button onClick={onClose} style={{ 
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', 
-          cursor: 'pointer', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'all 0.2s'
-        }}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        >✕</button>
+        <button onClick={onClose} className="mm-icon-btn" title="Close" aria-label="Close">
+          <X size={16} strokeWidth={1.75} />
+        </button>
       </div>
 
       <div className="scroll-container" style={{ overflowY: 'auto', flex: 1 }}>
         {/* RCA Diagnostics Box */}
         {(node.status === 'critical' || node.status === 'degraded') && (
-          <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: node.status === 'critical' ? 'rgba(255,23,68,0.08)' : 'rgba(255,171,0,0.08)' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: node.status === 'critical' ? 'var(--color-critical)' : 'var(--color-degraded)', marginBottom: '12px', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>🚨</span> ROOT CAUSE ANALYSIS (RCA)
+          <div style={section}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <TriangleAlert size={14} strokeWidth={1.75} style={{ color: problemColor }} />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Root cause analysis</span>
             </div>
-            <div style={{ fontSize: '13px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px', border: `1px solid ${node.status === 'critical' ? 'rgba(255,23,68,0.2)' : 'rgba(255,171,0,0.2)'}` }}>
-              <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
-                Classification: {upstreams.some(e => e.status === 'failed') ? 'CASCADING DEPENDENCY FAILURE' : 'PRIMARY ROOT CAUSE'}
+            <div style={{
+              fontSize: '13px', background: 'var(--color-bg-raised)', padding: '14px', borderRadius: '10px',
+              border: '1px solid var(--color-border)', boxShadow: `inset 2px 0 0 ${problemColor}`
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                {isCascade ? 'Cascading dependency failure' : 'Primary root cause'}
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '8px' }}>
-                {upstreams.some(e => e.status === 'failed') 
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '12.5px', lineHeight: 1.5 }}>
+                {isCascade
                   ? `Failed due to unreachable upstream dependency (${upstreams.filter(e => e.status === 'failed').map(e => e.source.replace(/^(sock-shop|vertikal)-/, '')).join(', ')})`
                   : `Service runtime anomaly detected (${node.metadata?.state || 'Degraded performance'}).`}
               </div>
-              <div style={{ fontSize: '11px', color: '#00d4ff', fontWeight: 600, marginTop: '8px' }}>Remediation Command:</div>
-              <div style={{ background: '#000', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px', color: '#00e676', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '12px', marginBottom: '6px' }}>Remediation command</div>
+              <div style={{
+                background: 'var(--color-bg-body)', border: '1px solid var(--color-border)', padding: '7px 10px', borderRadius: '6px',
+                fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-text-main)', overflowX: 'auto', whiteSpace: 'nowrap'
+              }}>
                 docker restart {node.metadata?.containerName || node.metadata?.containerId || node.name}
               </div>
             </div>
@@ -115,243 +193,106 @@ export function InspectionPanel({ node, edges, onClose }: InspectionPanelProps) 
         )}
 
         {/* Service Info */}
-        <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '16px', letterSpacing: '1px' }}>SERVICE INFO</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>Type</div>
-              <div style={{ textTransform: 'capitalize', color: '#00d4ff' }}>{node.type}</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>Project</div>
-              <div style={{ color: '#e040fb' }}>{node.project}</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', gridColumn: '1 / -1' }}>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>Container ID</div>
-              <div style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.8)' }}>{node.metadata?.containerId?.slice(0,12) || 'Not available'}</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', gridColumn: '1 / -1' }}>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>Uptime</div>
-              <div style={{ color: 'rgba(255,255,255,0.8)' }}>{node.metadata?.uptime || 'Not available'}</div>
-            </div>
+        <div style={section}>
+          <div className="mm-eyebrow" style={{ marginBottom: '8px' }}>Service info</div>
+          <div style={row}><span style={rowLabel}>Type</span><span style={rowValue}>{sentence(node.type)}</span></div>
+          <div style={row}><span style={rowLabel}>Project</span><span style={rowValue}>{node.project}</span></div>
+          <div style={row}>
+            <span style={rowLabel}>Container ID</span>
+            <span style={{ ...rowValue, fontFamily: node.metadata?.containerId ? 'var(--font-mono)' : undefined, fontSize: node.metadata?.containerId ? '12px' : undefined }}>
+              {node.metadata?.containerId?.slice(0,12) || 'Not available'}
+            </span>
           </div>
+          <div style={row}><span style={rowLabel}>Uptime</span><span style={rowValue}>{node.metadata?.uptime || 'Not available'}</span></div>
         </div>
 
-        {/* Request-level metrics — present only when a Tier 1/2 source
+        {/* Request-level metrics - present only when a Tier 1/2 source
             supplied them. Rendered as its own block, labelled with where it
             came from, rather than mixed in with the cgroup numbers: CPU is
             measured by the kernel and latency is measured by whatever the
             target happens to run, and those are not the same kind of fact. */}
         {node.metrics?.provenance && (
-          <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>
-                REQUEST METRICS
-              </span>
-              <span
-                title={node.metrics.provenance.detail || ''}
-                style={{
-                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.04em',
-                  color: 'var(--color-accent-cyan)', border: '1px solid var(--color-accent-cyan)',
-                  borderRadius: '999px', padding: '1px 8px',
-                }}
-              >
-                TIER {node.metrics.provenance.tier} · {node.metrics.provenance.source}
+          <div style={section}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span className="mm-eyebrow">Request metrics</span>
+              <span className="mm-chip" title={node.metrics.provenance.detail || ''} style={{ height: '20px', fontSize: '11px' }}>
+                Tier {node.metrics.provenance.tier} · {node.metrics.provenance.source}
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-              {([
-                ['p50 latency', node.metrics.latencyP50, 'ms'],
-                ['p95 latency', node.metrics.latencyP95, 'ms'],
-                ['p99 latency', node.metrics.latencyP99, 'ms'],
-                ['Request rate', node.metrics.requestRate, '/s'],
-              ] as [string, number | null | undefined, string][]).map(([label, value, unit]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</span>
-                  <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {value === null || value === undefined
-                      ? <span style={{ color: 'rgba(255,255,255,0.3)' }}>not measured</span>
-                      : `${value < 10 ? value.toFixed(2) : value.toFixed(1)}${unit}`}
-                  </span>
-                </div>
-              ))}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Error rate</span>
-                <span style={{ fontWeight: 600, fontFamily: 'monospace',
-                               color: (node.metrics.errorRate ?? 0) > 0 ? 'var(--color-critical)' : undefined }}>
-                  {/* null here means "no traffic in the window", which is not
-                      the same as 0% and must not be shown as a clean bill. */}
-                  {node.metrics.errorRate === null || node.metrics.errorRate === undefined
-                    ? <span style={{ color: 'rgba(255,255,255,0.3)' }}>no traffic in window</span>
-                    : `${(node.metrics.errorRate * 100).toFixed(2)}%`}
+            {([
+              ['p50 latency', node.metrics.latencyP50, 'ms'],
+              ['p95 latency', node.metrics.latencyP95, 'ms'],
+              ['p99 latency', node.metrics.latencyP99, 'ms'],
+              ['Request rate', node.metrics.requestRate, '/s'],
+            ] as [string, number | null | undefined, string][]).map(([label, value, unit]) => (
+              <div key={label} style={row}>
+                <span style={rowLabel}>{label}</span>
+                <span style={rowValue}>
+                  {value === null || value === undefined
+                    ? <span style={{ color: 'var(--color-text-dim)' }}>Not measured</span>
+                    : `${value < 10 ? value.toFixed(2) : value.toFixed(1)}${unit === 'ms' ? ' ms' : unit}`}
                 </span>
               </div>
+            ))}
+            <div style={row}>
+              <span style={rowLabel}>Error rate</span>
+              <span style={{ ...rowValue, color: (node.metrics.errorRate ?? 0) > 0 ? 'var(--color-critical)' : rowValue.color }}>
+                {/* null here means "no traffic in the window", which is not
+                    the same as 0% and must not be shown as a clean bill. */}
+                {node.metrics.errorRate === null || node.metrics.errorRate === undefined
+                  ? <span style={{ color: 'var(--color-text-dim)' }}>No traffic in window</span>
+                  : `${(node.metrics.errorRate * 100).toFixed(2)}%`}
+              </span>
             </div>
           </div>
         )}
 
         {/* Live Health */}
-        <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>LIVE HEALTH</span>
-            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>tier 0 · cgroup</span>
+        <div style={section}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span className="mm-eyebrow">Live health</span>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>Tier 0 · cgroup</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-            
-            {/* CPU Bar */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.6)' }}>CPU Usage</span>
-                <span style={{ fontWeight: 600 }}>{node.metrics?.cpu !== undefined ? `${node.metrics.cpu}%` : 'N/A'}</span>
-              </div>
-              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ 
-                  height: '100%', 
-                  width: `${node.metrics?.cpu || 0}%`, 
-                  background: 'linear-gradient(90deg, #4f8cff, #00d4ff)',
-                  boxShadow: '0 0 10px rgba(0, 212, 255, 0.5)',
-                  transition: 'width 0.3s ease'
-                }} />
-              </div>
-            </div>
-
-            {/* Memory Bar */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.6)' }}>Memory</span>
-                <span style={{ fontWeight: 600 }}>{node.metrics?.memoryPercent !== undefined ? `${node.metrics.memoryPercent}%` : 'N/A'}</span>
-              </div>
-              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ 
-                  height: '100%', 
-                  width: `${node.metrics?.memoryPercent || 0}%`, 
-                  background: 'linear-gradient(90deg, #9c27b0, #e040fb)',
-                  boxShadow: '0 0 10px rgba(224, 64, 251, 0.5)',
-                  transition: 'width 0.3s ease'
-                }} />
-              </div>
-            </div>
-
-            {/* Network */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ color: '#00e676', background: 'rgba(0,230,118,0.1)', padding: '4px', borderRadius: '4px' }}>↓</div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Network RX</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{node.metrics?.networkRx !== undefined ? formatBytes(node.metrics.networkRx) + '/s' : 'N/A'}</div>
-                </div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ color: '#00d4ff', background: 'rgba(0,212,255,0.1)', padding: '4px', borderRadius: '4px' }}>↑</div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Network TX</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{node.metrics?.networkTx !== undefined ? formatBytes(node.metrics.networkTx) + '/s' : 'N/A'}</div>
-                </div>
-              </div>
-            </div>
-
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 16px' }}>
+            <Kpi label="CPU" value={node.metrics?.cpu !== undefined ? `${node.metrics.cpu}` : '-'} unit="%" meter={node.metrics?.cpu || 0} />
+            <Kpi label="Memory" value={node.metrics?.memoryPercent !== undefined ? `${node.metrics.memoryPercent}` : '-'} unit="%" meter={node.metrics?.memoryPercent || 0} />
+            <Kpi label="Network RX" icon={ArrowDown} value={node.metrics?.networkRx !== undefined ? formatBytes(node.metrics.networkRx).split(' ')[0] : '-'} unit={node.metrics?.networkRx !== undefined ? `${formatBytes(node.metrics.networkRx).split(' ')[1]}/s` : undefined} />
+            <Kpi label="Network TX" icon={ArrowUp} value={node.metrics?.networkTx !== undefined ? formatBytes(node.metrics.networkTx).split(' ')[0] : '-'} unit={node.metrics?.networkTx !== undefined ? `${formatBytes(node.metrics.networkTx).split(' ')[1]}/s` : undefined} />
           </div>
         </div>
 
         {/* Metrics History */}
-        <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={section}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>METRICS HISTORY</div>
-            <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '12px' }}>
+            <span className="mm-eyebrow">Metrics history</span>
+            <div className="mm-seg" style={{ gridTemplateColumns: 'repeat(4, 40px)' }}>
               {['5m', '15m', '30m', '1h'].map(t => (
-                <button key={t} onClick={() => setTimeRange(t)} style={{
-                  background: timeRange === t ? 'rgba(0, 212, 255, 0.2)' : 'transparent',
-                  color: timeRange === t ? '#00d4ff' : 'rgba(255,255,255,0.5)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: timeRange === t ? 600 : 400,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: timeRange === t ? '0 0 8px rgba(0,212,255,0.3)' : 'none'
-                }}>{t}</button>
+                <button key={t} className={timeRange === t ? 'on' : undefined} onClick={() => setTimeRange(t)} style={{ height: '22px', fontSize: '11.5px' }}>{t}</button>
               ))}
             </div>
           </div>
-          
+
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>CPU Usage</div>
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <MiniChart data={metrics} dataKey="cpu" color="#00d4ff" />
-            </div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>CPU usage</div>
+            <MiniChart data={metrics} dataKey="cpu" color="#8ab4ff" />
           </div>
-          
+
           <div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>Memory Usage</div>
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <MiniChart data={metrics} dataKey="memoryPercent" color="#e040fb" />
-            </div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Memory usage</div>
+            <MiniChart data={metrics} dataKey="memoryPercent" color="#b4a5ff" />
           </div>
         </div>
 
         {/* Upstream Dependencies */}
-        <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '12px', letterSpacing: '1px' }}>UPSTREAM DEPENDENCIES</div>
-          {upstreams.length === 0 ? (
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontStyle: 'italic', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>None</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {upstreams.map(u => (
-                <div key={u.id} style={{ 
-                  background: 'rgba(255,255,255,0.02)', 
-                  padding: '12px', 
-                  borderRadius: '6px', 
-                  fontSize: '13px',
-                  borderLeft: `3px solid ${u.status === 'failed' ? '#ff1744' : u.status === 'degraded' ? '#ffab00' : '#4f8cff'}`,
-                  transition: 'background 0.2s',
-                  cursor: 'default'
-                }}
-                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                >
-                  <div style={{ fontWeight: 600, color: '#fff' }}>{u.source}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <span style={{ textTransform: 'capitalize', color: 'rgba(255,255,255,0.8)' }}>{u.type}</span>
-                    {u.metrics?.latency !== undefined && u.metrics?.latency !== null && <span>• {u.metrics.latency}ms</span>}
-                    {u.metrics?.errorRate !== undefined && u.metrics?.errorRate !== null && <span style={{ color: u.metrics.errorRate > 5 ? '#ff1744' : 'inherit' }}>• err {u.metrics.errorRate}%</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div style={section}>
+          <div className="mm-eyebrow" style={{ marginBottom: '8px' }}>Upstream dependencies</div>
+          <DependencyList items={upstreams} side="source" />
         </div>
 
         {/* Downstream Dependencies */}
         <div style={{ padding: '20px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: '12px', letterSpacing: '1px' }}>DOWNSTREAM DEPENDENCIES</div>
-          {downstreams.length === 0 ? (
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontStyle: 'italic', padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>None</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {downstreams.map(d => (
-                <div key={d.id} style={{ 
-                  background: 'rgba(255,255,255,0.02)', 
-                  padding: '12px', 
-                  borderRadius: '6px', 
-                  fontSize: '13px',
-                  borderLeft: `3px solid ${d.status === 'failed' ? '#ff1744' : d.status === 'degraded' ? '#ffab00' : '#e040fb'}`,
-                  transition: 'background 0.2s',
-                  cursor: 'default'
-                }}
-                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                >
-                  <div style={{ fontWeight: 600, color: '#fff' }}>{d.target}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <span style={{ textTransform: 'capitalize', color: 'rgba(255,255,255,0.8)' }}>{d.type}</span>
-                    {d.metrics?.latency !== undefined && d.metrics?.latency !== null && <span>• {d.metrics.latency}ms</span>}
-                    {d.metrics?.errorRate !== undefined && d.metrics?.errorRate !== null && <span style={{ color: d.metrics.errorRate > 5 ? '#ff1744' : 'inherit' }}>• err {d.metrics.errorRate}%</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mm-eyebrow" style={{ marginBottom: '8px' }}>Downstream dependencies</div>
+          <DependencyList items={downstreams} side="target" />
         </div>
 
       </div>

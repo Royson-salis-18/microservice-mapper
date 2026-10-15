@@ -17,7 +17,7 @@ export interface RemoteCommandResult<T = unknown> {
 }
 
 export interface RemoteCommand<T = unknown> {
-  /** Human-readable, logged name — e.g. "docker.ps" */
+  /** Human-readable, logged name - e.g. "docker.ps" */
   name: string;
   /** The literal command to execute. No string interpolation of raw user input. */
   command: string;
@@ -56,7 +56,7 @@ export const REMOTE_COMMANDS = {
   // These are all round-trips to a Docker daemon that competes with the
   // containers it's running: on a swap-thrashing 2GB box with ~18 JVM
   // services, `docker ps` was measured at 45s and `docker inspect` at ~3s.
-  // A timeout shorter than that doesn't degrade gracefully — discovery
+  // A timeout shorter than that doesn't degrade gracefully - discovery
   // returns zero services and the whole target disappears from the graph.
   dockerVersion: (): RemoteCommand<string> => ({
     name: "docker.version",
@@ -145,14 +145,14 @@ export const REMOTE_COMMANDS = {
    * entrypoint is /nodejs/bin/node and which has no `sh` at all, so every
    * scan of it failed with exit 127 ("exec: sh: executable file not found").
    * collectObservedEdges treats a non-zero exit as "skip this service", so
-   * frontend's outbound connections were invisible 100% of the time —
+   * frontend's outbound connections were invisible 100% of the time -
    * permanently, not intermittently.
    *
    * That mattered more than it sounds: frontend is the service that actually
    * calls cart / currency / checkout / shipping / product-catalog when it
    * serves /api/*. So none of those edges could ever be observed, none could
    * ever be discovered from traffic, and no amount of load would ever make
-   * them light up — which is exactly the "stress doesn't show in the edges"
+   * them light up - which is exactly the "stress doesn't show in the edges"
    * and "several edges are missing" symptoms.
    *
    * Reading /proc/<hostPid>/net/tcp from the host is the same data (the file
@@ -167,7 +167,13 @@ export const REMOTE_COMMANDS = {
     // `if` rather than `a && b && c` on purpose: a stopped container reports
     // PID 0, and that should read as "no connections" (exit 0, empty output),
     // which is true, not as a scan failure the caller warns about.
-    command: `PID=$(docker inspect ${sanitizeContainerId(containerId)} --format '{{.State.Pid}}' 2>/dev/null); if [ -n "$PID" ] && [ "$PID" != "0" ]; then cat /proc/$PID/net/tcp /proc/$PID/net/tcp6 2>&1; fi`,
+    //
+    // The same network namespace's /proc/<pid>/net/dev rides along after a
+    // marker line: exact byte counters per interface, read in the same exec.
+    // docker stats prints NET I/O rounded to three significant figures
+    // ("527MB"), so a rate taken between two of its readings moved in steps
+    // of ~200 KB/s at that size; these counters are exact.
+    command: `PID=$(docker inspect ${sanitizeContainerId(containerId)} --format '{{.State.Pid}}' 2>/dev/null); if [ -n "$PID" ] && [ "$PID" != "0" ]; then cat /proc/$PID/net/tcp /proc/$PID/net/tcp6 2>&1; echo '${NETDEV_MARKER}'; cat /proc/$PID/net/dev 2>/dev/null; fi`,
     timeoutMs: 10_000,
     maxOutputBytes: 65_536,
   }),
@@ -178,6 +184,10 @@ export const REMOTE_COMMANDS = {
     maxOutputBytes: 1_000_000,
   }),
 } as const;
+
+/** Separates the socket table from the interface counters in
+ *  dockerContainerTcp's output. */
+export const NETDEV_MARKER = '##NETDEV##';
 
 // --- Minimal sanitizers: only allow the identifier shapes Docker itself
 // produces (container IDs, names, network names). Reject anything else. ---

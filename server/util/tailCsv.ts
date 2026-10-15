@@ -16,7 +16,7 @@ import fs from 'fs';
  *
  * The rows wanted are always at the end, so this seeks backwards from EOF in
  * chunks and stops as soon as it has enough. Cost becomes proportional to
- * the answer rather than to the history — a file ten times larger is not ten
+ * the answer rather than to the history - a file ten times larger is not ten
  * times slower.
  *
  * The header is read separately from the front, which is the one part that
@@ -44,7 +44,7 @@ export interface TailOptions {
   limit: number;
   /**
    * Optional row filter, applied to the raw line. Kept as a predicate on the
-   * unparsed text so a non-matching line is never split — splitting is the
+   * unparsed text so a non-matching line is never split - splitting is the
    * expensive part and most lines will not match when filtering by service.
    */
   match?: (line: string) => boolean;

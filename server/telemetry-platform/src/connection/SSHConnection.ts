@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolveKeyPath } from '../../../util/platform.js';
 import { Client as SSHClient } from "ssh2";
 import type { Connection } from "./Connection.js";
 import type { RemoteCommand, RemoteCommandResult } from "./RemoteCommand.js";
@@ -26,7 +27,13 @@ export class SSHConnection implements Connection {
   }
 
   async connect(): Promise<void> {
-    const privateKey = readFileSync(this.config.privateKeyPath);
+    const keyPath = resolveKeyPath(this.config.privateKeyPath);
+    let privateKey: Buffer;
+    try {
+      privateKey = readFileSync(keyPath);
+    } catch {
+      throw new Error(`SSH key not found: ${this.config.privateKeyPath} (looked for ${keyPath}). Set the key path in Add Project.`);
+    }
     const passphrase = this.config.passphraseEnvVar
       ? process.env[this.config.passphraseEnvVar]
       : undefined;
@@ -78,7 +85,7 @@ export class SSHConnection implements Connection {
        * Timing out used to resolve the promise and walk away, leaving the
        * channel open with the command still running on the other end. Each
        * one holds a slot against the server's MaxSessions (OpenSSH defaults
-       * to 10), so on a loaded host — where these commands time out often —
+       * to 10), so on a loaded host - where these commands time out often -
        * the slots fill up and then *every* subsequent exec fails with
        * "(SSH) Channel open failure: open failed", which is exactly what
        * the telemetry warnings were showing across all three targets.

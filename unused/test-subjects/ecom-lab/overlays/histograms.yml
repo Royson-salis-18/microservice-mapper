@@ -1,0 +1,25 @@
+# Make Spring Boot emit request-duration HISTOGRAM buckets (upstream exposes only count/sum/max summaries).
+# Pure configuration, no code change. Passed as a JVM system property because the hyphenated name
+# (percentiles-histogram) cannot be expressed as an environment variable.
+services:
+  api-gateway:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  user-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  inventory-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  order-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  payment-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  review-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"
+  projection-service:
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dmanagement.metrics.distribution.percentiles-histogram.http.server.requests=true"

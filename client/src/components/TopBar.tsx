@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { RotateCw, Search, Gauge, TerminalSquare, Settings2, ChevronDown } from 'lucide-react';
 import type { GlobalStatus, Target } from '../types';
+import { useModelStatus, learningText } from '../hooks/useModelStatus';
+import { useEngineMode } from '../hooks/useEngineMode';
 
 interface TopBarProps {
   status: GlobalStatus | null;
@@ -16,16 +19,37 @@ interface TopBarProps {
   isTerminalOpen?: boolean;
   onEditProject?: (projectId: string) => void;
   onReloadGraph?: (targetId: string) => Promise<void>;
+  activeTab?: string;
 }
 
-export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph }: TopBarProps) {
+const SECTION: Record<string, string> = {
+  '3D Vision': 'Spatial view', Architecture: 'Architecture', Dependencies: 'Dependencies', Telemetry: 'Telemetry',
+  TRACES: 'Traces', Analytics: 'Analytics', 'RCA / INCIDENTS': 'Incidents & cascade', RCA: 'Incidents & cascade', RELIABILITY: 'Cascade risk', FINDINGS: 'Findings',
+  'ML PIPELINE': 'ML pipeline', EXPERIMENTS: 'Experiments',
+};
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+
+export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph, activeTab }: TopBarProps) {
   const [isReloading, setIsReloading] = useState(false);
-  const getStatusColor = (s: string | undefined) => {
-    if (s === 'healthy') return 'var(--color-healthy)';
-    if (s === 'degraded') return 'var(--color-degraded)';
-    if (s === 'critical') return 'var(--color-critical)';
-    return 'var(--color-unknown)';
-  };
+  const searchRef = useRef<HTMLInputElement>(null);
+  const model = useModelStatus(selectedProject);
+  const engine = useEngineMode();
+
+  // Cmd/Ctrl+K or "/" focuses search, as in most tools people already use.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+      if (e.key === 'Escape' && document.activeElement === searchRef.current) searchRef.current?.blur();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleRefresh = async () => {
     if (selectedProject !== 'ALL' && onReloadGraph) {
@@ -41,309 +65,96 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
   };
 
   const currentTarget = targets.find(t => t.targetId === selectedProject);
+  const feed = currentTarget ? currentTarget.status : (isConnected ? 'LIVE' : 'OFFLINE');
+  const feedColor = feed === 'LIVE' ? 'var(--color-healthy)' : feed === 'STALE' ? 'var(--color-degraded)'
+    : feed === 'OFFLINE' ? 'var(--color-critical)' : 'var(--color-unknown)';
+  const feedLabel = feed === 'LIVE' ? 'Live' : feed === 'STALE' ? 'Stale' : feed === 'OFFLINE' ? (currentTarget ? 'Offline' : 'Disconnected') : 'No data';
+  const seen = currentTarget?.lastSeen ?? lastUpdate;
+  const showCounts = status && (selectedProject === 'ALL' || currentTarget?.status === 'LIVE');
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      height: '64px',
-      background: 'var(--color-bg-glass)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderBottom: '1px solid transparent',
-      position: 'relative',
-      zIndex: 10,
-    }}>
-      {/* Gradient Bottom Border */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '1px',
-        background: 'linear-gradient(90deg, var(--color-accent-cyan) 0%, var(--color-accent-magenta) 100%)',
-        opacity: 0.5
-      }} />
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1, justifyContent: 'space-between' }}>
-        {/* Left Side: Project Selector and Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={selectedProject} 
-              onChange={(e) => onProjectChange(e.target.value)}
-              style={{
-                appearance: 'none',
-                background: 'rgba(255,255,255,0.03)',
-                color: 'var(--color-text-main)',
-                border: '1px solid var(--color-border)',
-                padding: '6px 32px 6px 16px',
-                borderRadius: '20px',
-                fontFamily: 'var(--font-family)',
-                fontSize: '12px',
-                fontWeight: 600,
-                letterSpacing: '0.5px',
-                outline: 'none',
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-                boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.05)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-accent-cyan)';
-                e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 212, 255, 0.1), inset 0 1px 2px rgba(255,255,255,0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-border)';
-                e.currentTarget.style.boxShadow = 'inset 0 1px 2px rgba(255,255,255,0.05)';
-              }}
-            >
-              <option value="ALL" style={{ background: 'var(--color-bg-panel)' }}>ALL TARGETS</option>
-              {targets.map(t => (
-                <option key={t.targetId} value={t.targetId} style={{ background: 'var(--color-bg-panel)' }}>
-                  {t.displayName ? t.displayName.toUpperCase() : t.targetId.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <div style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              pointerEvents: 'none',
-              color: 'var(--color-text-muted)',
-              fontSize: '10px'
-            }}>▼</div>
-          </div>
-
-          {selectedProject !== 'ALL' && (
-            <button 
-              onClick={handleRefresh}
-              disabled={isReloading}
-              title={isReloading ? 'Loading edges...' : 'Reload architecture and edges'}
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-muted)',
-                borderRadius: '8px',
-                width: '34px',
-                height: '34px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: isReloading ? 'wait' : 'pointer',
-                transition: 'all 0.2s',
-                fontSize: '14px'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}
-            >
-              {isReloading ? '…' : '↻'}
-            </button>
-          )}
-
-          {status && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              background: 'rgba(255,255,255,0.03)',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: '1px solid var(--color-border)',
-            }}>
-              <div style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: getStatusColor(
-                  selectedProject !== 'ALL' 
-                    ? (currentTarget?.status === 'LIVE' ? (status.critical > 0 ? 'critical' : status.degraded > 0 ? 'degraded' : 'healthy') : 'unknown')
-                    : status.status
-                ),
-                boxShadow: `0 0 10px ${getStatusColor(
-                  selectedProject !== 'ALL' 
-                    ? (currentTarget?.status === 'LIVE' ? (status.critical > 0 ? 'critical' : status.degraded > 0 ? 'degraded' : 'healthy') : 'unknown')
-                    : status.status
-                )}`
-              }} />
-              <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--color-text-main)' }}>
-                {selectedProject !== 'ALL' 
-                  ? (currentTarget?.status === 'LIVE' ? (status.critical > 0 ? 'CRITICAL' : status.degraded > 0 ? 'DEGRADED' : 'HEALTHY') : currentTarget?.status || 'UNKNOWN')
-                  : status.status}
-              </span>
-            </div>
-          )}
+    <header className="mm-top">
+      <div className="mm-crumb">
+        <span>{SECTION[activeTab ?? ''] ?? activeTab ?? 'Overview'}</span>
+        <span style={{ color: 'var(--color-text-dim)' }}>/</span>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <select className="mm-select" value={selectedProject} onChange={e => onProjectChange(e.target.value)} aria-label="Project">
+            <option value="ALL">All projects</option>
+            {targets.map(t => (
+              <option key={t.targetId} value={t.targetId}>{t.displayName || t.targetId}</option>
+            ))}
+          </select>
+          <ChevronDown size={13} style={{ position: 'absolute', right: 7, pointerEvents: 'none', color: 'var(--color-text-dim)' }} />
         </div>
-
-        {/* Right Side: Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div style={{ position: 'relative' }}>
-            <input 
-              type="text" 
-              placeholder="Search services..." 
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              style={{
-                background: 'rgba(0,0,0,0.2)',
-                color: 'var(--color-text-main)',
-                border: '1px solid var(--color-border)',
-                padding: '8px 12px 8px 36px',
-                borderRadius: '20px',
-                width: '240px',
-                fontFamily: 'var(--font-family)',
-                fontSize: '13px',
-                outline: 'none',
-                transition: 'all var(--transition-fast)',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = 'var(--color-accent-magenta)';
-                e.target.style.boxShadow = '0 0 15px rgba(224, 64, 251, 0.15), inset 0 2px 4px rgba(0,0,0,0.2)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'var(--color-border)';
-                e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
-              }}
-            />
-            <span style={{ 
-              position: 'absolute', 
-              left: '12px', 
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--color-text-muted)',
-              fontSize: '14px'
-            }}>⌕</span>
-          </div>
-
-          {onToggleTrafficPanel && (
-            <button
-              onClick={onToggleTrafficPanel}
-              style={{
-                background: isTrafficPanelOpen
-                  ? 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-magenta))'
-                  : 'rgba(255,255,255,0.03)',
-                color: '#fff',
-                border: `1px solid ${isTrafficPanelOpen ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontWeight: 700,
-                fontSize: '11px',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: isTrafficPanelOpen ? '0 0 12px rgba(0,212,255,0.4)' : 'none',
-                transition: 'all var(--transition-fast)'
-              }}
-            >
-              <span>⚡</span> TRAFFIC
-            </button>
-          )}
-
-          {onToggleTerminal && (
-            <button
-              onClick={onToggleTerminal}
-              style={{
-                background: isTerminalOpen
-                  ? 'linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-blue))'
-                  : 'rgba(255,255,255,0.03)',
-                color: '#fff',
-                border: `1px solid ${isTerminalOpen ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontWeight: 700,
-                fontSize: '11px',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: isTerminalOpen ? '0 0 12px rgba(0,212,255,0.4)' : 'none',
-                transition: 'all var(--transition-fast)'
-              }}
-            >
-              <span>💻</span> SSH TERMINAL
-            </button>
-          )}
-
-          {onEditProject && selectedProject !== 'ALL' && (
-            <button
-              onClick={() => onEditProject(selectedProject)}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                color: '#fff',
-                border: '1px solid var(--color-border)',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontWeight: 700,
-                fontSize: '11px',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all var(--transition-fast)'
-              }}
-            >
-              <span>⚙️</span> EDIT PROJECT
-            </button>
-          )}
-
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            paddingLeft: '16px',
-            borderLeft: '1px solid var(--color-border)'
-          }}>
-            <div style={{
-              position: 'relative',
-              width: '10px', height: '10px', 
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <div style={{
-                position: 'absolute',
-                width: '100%', height: '100%',
-                borderRadius: '50%',
-                background: currentTarget ? 
-                  (currentTarget.status === 'LIVE' ? 'var(--color-healthy)' : 
-                   currentTarget.status === 'STALE' ? 'var(--color-degraded)' : 'var(--color-critical)') 
-                  : (isConnected ? 'var(--color-healthy)' : 'var(--color-critical)'),
-                animation: (currentTarget?.status === 'LIVE' || (!currentTarget && isConnected)) ? 'breathe-healthy 3s infinite' : 'pulse-critical 1.5s infinite',
-                opacity: 0.5
-              }} />
-              <div style={{
-                width: '6px', height: '6px', borderRadius: '50%',
-                background: currentTarget ? 
-                  (currentTarget.status === 'LIVE' ? 'var(--color-healthy)' : 
-                   currentTarget.status === 'STALE' ? 'var(--color-degraded)' : 'var(--color-critical)') 
-                  : (isConnected ? 'var(--color-healthy)' : 'var(--color-critical)'),
-                zIndex: 1
-              }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1px', color: currentTarget ? 
-                  (currentTarget.status === 'LIVE' ? 'var(--color-healthy)' : 
-                   currentTarget.status === 'STALE' ? 'var(--color-degraded)' : 'var(--color-critical)') 
-                  : (isConnected ? 'var(--color-healthy)' : 'var(--color-critical)') }}>
-                {currentTarget ? currentTarget.status : (isConnected ? 'LIVE' : 'DISCONNECTED')}
-              </span>
-              {currentTarget?.lastSeen ? (
-                <span style={{ fontSize: '9px', color: 'var(--color-text-dim)', letterSpacing: '0.5px' }}>
-                  {new Date(currentTarget.lastSeen).toLocaleTimeString()}
-                </span>
-              ) : lastUpdate && (
-                <span style={{ fontSize: '9px', color: 'var(--color-text-dim)', letterSpacing: '0.5px' }}>
-                  {new Date(lastUpdate).toLocaleTimeString()}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        {selectedProject !== 'ALL' && onReloadGraph && (
+          <button className="mm-icon-btn" onClick={handleRefresh} disabled={isReloading}
+            title={isReloading ? 'Rediscovering services and calls…' : 'Rediscover services and calls'} aria-label="Reload architecture">
+            <RotateCw size={14} strokeWidth={1.75} className={isReloading ? 'mm-spin' : undefined} />
+          </button>
+        )}
       </div>
-    </div>
+
+      {showCounts && status && (
+        <div className="mm-health" title="Services by current health">
+          <span className={status.healthy ? '' : 'zero'}><i className="mm-dot" style={{ background: 'var(--color-healthy)' }} />{status.healthy} healthy</span>
+          <span className={status.degraded ? '' : 'zero'}><i className="mm-dot" style={{ background: status.degraded ? 'var(--color-degraded)' : 'var(--color-text-dim)' }} />{status.degraded} degraded</span>
+          <span className={status.critical ? '' : 'zero'} style={status.critical ? { color: 'var(--color-critical)' } : undefined}>
+            <i className="mm-dot" style={{ background: status.critical ? 'var(--color-critical)' : 'var(--color-text-dim)' }} />{status.critical} critical
+          </span>
+        </div>
+      )}
+      {!showCounts && currentTarget && (
+        <div className="mm-health"><span className="zero">No live data for this project yet</span></div>
+      )}
+
+      {model?.state === 'learning' && (
+        <span className="mm-chip" style={{ marginLeft: 12, height: 24, background: 'rgba(138,180,255,0.1)', color: '#b4c8ff' }}
+          title="The model for this project is learning what normal looks like from its own data. Until it has enough baseline, only stopped, paused or restarting containers raise an incident.">
+          Learning baseline · {learningText(model)}
+        </span>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      <label className="mm-search">
+        <Search size={14} strokeWidth={1.75} />
+        <input ref={searchRef} type="text" placeholder="Find a service" value={searchQuery} onChange={e => onSearchChange(e.target.value)} />
+        {!searchQuery && <span className="mm-kbd">{isMac ? '⌘K' : 'Ctrl K'}</span>}
+      </label>
+
+      <div style={{ display: 'flex', gap: 2 }}>
+        {onToggleTrafficPanel && (
+          <button className={`mm-icon-btn${isTrafficPanelOpen ? ' on' : ''}`} onClick={onToggleTrafficPanel} title="Traffic generator" aria-label="Traffic generator">
+            <Gauge size={16} strokeWidth={1.75} />
+          </button>
+        )}
+        {onToggleTerminal && (
+          <button className={`mm-icon-btn${isTerminalOpen ? ' on' : ''}`} onClick={onToggleTerminal} title="Remote terminal" aria-label="Remote terminal">
+            <TerminalSquare size={16} strokeWidth={1.75} />
+          </button>
+        )}
+        {onEditProject && selectedProject !== 'ALL' && (
+          <button className="mm-icon-btn" onClick={() => onEditProject(selectedProject)} title="Project settings" aria-label="Project settings">
+            <Settings2 size={16} strokeWidth={1.75} />
+          </button>
+        )}
+      </div>
+
+      {engine.mode && (
+        <div className="mm-engine" role="group" aria-label="Detection engine" title="Which engine decides incidents. Rules: statistical detector. ML: Isolation Forest on each service's learned baseline + random walk on the call graph. Hybrid (default): either engine can raise the alarm, the ML engine names the source.">
+          {(['rules', 'hybrid', 'ml'] as const).map((m) => (
+            <button key={m} className={engine.mode === m ? 'on' : ''} disabled={engine.busy} onClick={() => engine.change(m)} aria-pressed={engine.mode === m}>
+              {m === 'rules' ? 'Rules' : m === 'hybrid' ? 'Hybrid' : 'ML'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mm-live" title={seen ? `Last sample ${new Date(seen).toLocaleString()}` : undefined}>
+        <i className={`mm-dot${feed === 'LIVE' ? ' on' : ''}`} style={{ background: feedColor, color: feedColor }} />
+        <span style={{ color: 'var(--color-text-main)' }}>{feedLabel}</span>
+        {seen && <span style={{ color: 'var(--color-text-dim)' }}>{new Date(seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
+      </div>
+    </header>
   );
 }

@@ -1,7 +1,11 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import Docker from 'dockerode';
+import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from '../server/algorithms/detection/requestStats.js';
 import axios from 'axios';
 
-// Default to 127.0.0.1:3001 — the server opens a reverse SSH tunnel so this reaches the mapper.
+// Default to 127.0.0.1:3001 - the server opens a reverse SSH tunnel so this reaches the mapper.
 const MAPPER_URL = process.env.MAPPER_URL || 'http://127.0.0.1:3001';
 console.log(`[collector] MAPPER_URL=${MAPPER_URL}`);
 
@@ -9,9 +13,22 @@ const INGEST_TOKEN = process.env.INGEST_TOKEN || 'mapper-secret-token';
 const TARGET_ID = process.env.TARGET_ID || 'sock-shop-aws';
 const ENVIRONMENT = process.env.ENVIRONMENT || 'aws';
 const REGION = process.env.REGION || 'ap-south-1';
-const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || '5000', 10);
+const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL || String(COLLECTOR_PARAMS.pollMs), 10);
+// Optional: watch one compose project only (several benches can share a host; each gets its own collector and target).
+const COMPOSE_PROJECT = process.env.COMPOSE_PROJECT || '';
+const inProject = (c: { Labels?: Record<string, string> }) => !COMPOSE_PROJECT || (c.Labels?.['com.docker.compose.project'] === COMPOSE_PROJECT);
 
-const docker = new Docker();
+// Where Docker's socket is differs by machine: /var/run/docker.sock on Linux and most Macs, but Docker Desktop (without the
+// symlink option), Colima and Rancher Desktop keep it under the home directory. DOCKER_HOST wins; Windows uses its named pipe.
+function dockerOptions(): { socketPath?: string } {
+  if (process.env.DOCKER_HOST || process.platform === 'win32') return {};
+  const home = os.homedir();
+  for (const p of ['/var/run/docker.sock', path.join(home, '.docker', 'run', 'docker.sock'), path.join(home, '.colima', 'default', 'docker.sock'), path.join(home, '.rd', 'docker.sock')]) {
+    if (fs.existsSync(p)) return { socketPath: p };
+  }
+  return {};
+}
+const docker = new Docker(dockerOptions());
 
 interface ServiceNode {
   id: string;
@@ -35,6 +52,10 @@ interface DependencyEdge {
 
 interface MetricSnapshot {
   timestamp: string;
+  requestCount?: number; requestRate?: number; errorCount?: number; errorRate?: number | null;
+  latency?: number | null; p50Latency?: number | null; p95Latency?: number | null; p99Latency?: number | null;
+  networkRxRate?: number; networkTxRate?: number; restartDelta?: number;
+  cpuThrottledPct?: number; cpuAllowanceCores?: number; cpuOfAllowance?: number;
   cpu?: number;
   memory?: number;
   memoryPercent?: number;
@@ -56,7 +77,7 @@ interface InteractionEvent {
 }
 
 /**
- * Raw TCP connection event. NOT a trace span — this is an SSH-sampled
+ * Raw TCP connection event. NOT a trace span - this is an SSH-sampled
  * snapshot of active TCP connections between containers, captured by
  * reading /proc/net/tcp. Known limitations:
  * - Samples at collection-cycle granularity (POLLING_INTERVAL)
@@ -75,8 +96,9 @@ interface ConnectionEvent {
 function determineType(name: string, image: string): string {
   const n = name.toLowerCase();
   const img = image.toLowerCase();
-  if (n.includes('db') || img.includes('mongo') || img.includes('mysql') || img.includes('postgres')) return 'database';
-  if (n.includes('rabbitmq') || n.includes('queue')) return 'queue';
+  if (n.includes('db') || /(^|[-_])(store|cache|redis|memcached|mongo|postgres|mysql)([-_]|$)/.test(n)
+      || /mongo|mysql|postgres|redis|memcached|valkey/.test(img)) return 'database';
+  if (/rabbitmq|queue|kafka|nats|(^|[-_])bus([-_]|$)/.test(n) || /rabbitmq|kafka|nats/.test(img)) return 'queue';
   if (n.includes('edge-router') || n.includes('gateway') || img.includes('traefik')) return 'gateway';
   if (n.includes('front-end') || n.includes('ui')) return 'frontend';
   return 'service';
@@ -151,6 +173,12 @@ function demuxDockerLogs(buffer: Buffer): string[] {
   return lines;
 }
 
+/** What the previous cycle saw of each container: cumulative counters (for rates), start time (for restarts), log cursor. */
+const prevSample = new Map<string, { t: number; rx?: number; tx?: number; startedAt?: string; restarts?: number; thr?: { periods?: number; throttled?: number } }>();
+/** Request windows of the last REQUEST_WINDOW_MS per container, summarised together each cycle. */
+const reqHistory = new Map<string, { t: number; w: RequestWindow }[]>();
+const REQUEST_WINDOW_MS = COLLECTOR_PARAMS.requestWindowMs;
+
 let lastLogCheckTime = Math.floor((Date.now() - 10000) / 1000);
 
 async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise<InteractionEvent[]> {
@@ -159,10 +187,11 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
   lastLogCheckTime = Math.floor(Date.now() / 1000);
 
   try {
-    const containers = await docker.listContainers({ all: false });
+    const containers = (await docker.listContainers({ all: false })).filter(inProject);
     for (const cInfo of containers) {
       const containerName = cInfo.Names[0].replace(/^\//, '');
-      const cleanName = containerName.replace(/^docker-compose-/, '').replace(/-\d+$/, '');
+      // Same name as the node uses (compose service label first), or edges built from logs point at services that do not exist.
+      const cleanName = deriveServiceName(cInfo);
       
       try {
         const container = docker.getContainer(cInfo.Id);
@@ -292,7 +321,7 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
 }
 
 async function discoverAndCollect() {
-  const containers = await docker.listContainers({ all: true });
+  const containers = (await docker.listContainers({ all: true })).filter(inProject);
   
   const nodes: ServiceNode[] = [];
   const metrics: { nodeId: string; snapshot: MetricSnapshot }[] = [];
@@ -300,6 +329,12 @@ async function discoverAndCollect() {
   const activeContainerNames = new Set<string>();
   // Map containerInfo.Id -> friendlyName for /proc/net/tcp parsing
   const containerIdToName = new Map<string, string>();
+
+  // docker stats (non-streaming) waits about a second per container; ask for all of them at once.
+  const statsById = new Map<string, any>();
+  await Promise.all(containers.filter((c) => c.State === 'running').map(async (c) => {
+    try { statsById.set(c.Id, await docker.getContainer(c.Id).stats({ stream: false })); } catch (e: any) { console.error('stats failed', c.Names?.[0], e.message); }
+  }));
 
   for (const containerInfo of containers) {
     const image = containerInfo.Image;
@@ -327,8 +362,8 @@ async function discoverAndCollect() {
     
     if (isRunning) {
       try {
-        const container = docker.getContainer(containerInfo.Id);
-        const stats = await container.stats({ stream: false });
+        const stats = statsById.get(containerInfo.Id);
+        if (!stats) throw new Error('no stats');
         cpu = calculateCpuPercent(stats);
         if (stats.memory_stats?.usage !== undefined) {
           memory = stats.memory_stats.usage;
@@ -347,7 +382,10 @@ async function discoverAndCollect() {
       } catch (e) {}
     }
     
-    let status = isRunning ? 'healthy' : 'critical';
+    // A job that finished cleanly ("Exited (0)") or a container that was created but never started is not a failure.
+    const exitHit = /Exited \((\d+)\)/i.exec(containerInfo.Status ?? '');
+    const exitCode = exitHit ? Number(exitHit[1]) : undefined;
+    let status = isRunning ? 'healthy' : (exitCode === 0 || containerInfo.State === 'created') ? 'unknown' : 'critical';
     if (cpu !== undefined && cpu > 80) status = 'degraded';
     if (memoryPercent !== undefined && memoryPercent > 80) status = 'degraded';
     if (containerInfo.State.includes('restart')) status = 'critical';
@@ -360,18 +398,54 @@ async function discoverAndCollect() {
       status,
       metadata: {
         containerId: containerInfo.Id.substring(0, 12),
+        containerName: (containerInfo.Names?.[0] ?? '').replace(/^\//, '') || undefined,
         image,
         state: containerInfo.State,
-        status: containerInfo.Status
+        status: containerInfo.Status,
+        ...(exitCode !== undefined ? { exitCode } : {}),
       }
     });
     
     if (isRunning) {
+      const nowMs = Date.now();
+      const prev = prevSample.get(containerInfo.Id);
+      const dt = prev ? Math.max(1, (nowMs - prev.t) / 1000) : 0;
+      const rate = (cur?: number, old?: number) => (cur !== undefined && old !== undefined && dt && cur >= old ? Math.round((cur - old) / dt) : undefined);
+      let restartDelta = 0, startedAt: string | undefined, restarts: number | undefined;
+      let req: RequestStats | undefined;
+      let allowance: number | undefined;
+      try {
+        const container = docker.getContainer(containerInfo.Id);
+        const info = await container.inspect();
+        startedAt = info.State?.StartedAt; restarts = info.RestartCount;
+        const hc = info.HostConfig ?? {};
+        allowance = hc.NanoCpus ? hc.NanoCpus / 1e9 : hc.CpuQuota > 0 && hc.CpuPeriod > 0 ? hc.CpuQuota / hc.CpuPeriod : undefined;
+        // A running container attached to no network cannot be reached or reach anyone. Docker reports that as a fact.
+        const detached = Object.keys(info.NetworkSettings?.Networks ?? {}).length === 0;
+        const node = nodes.find((n) => n.id === id);
+        if (node && detached) { node.metadata = { ...node.metadata, networkDetached: true }; node.status = 'critical'; }
+        if (prev) restartDelta = Math.max(0, (restarts ?? 0) - (prev.restarts ?? 0)) || (prev.startedAt && startedAt && prev.startedAt !== startedAt ? 1 : 0);
+        if (prev && dt) {
+          const logsBuf = await container.logs({ stdout: true, stderr: true, since: Math.floor(prev.t / 1000), timestamps: false });
+          const hist = (reqHistory.get(containerInfo.Id) ?? []).filter((h) => nowMs - h.t < REQUEST_WINDOW_MS);
+          hist.push({ t: nowMs, w: parseRequestLines(demuxDockerLogs(logsBuf)) });
+          reqHistory.set(containerInfo.Id, hist);
+          const span = Math.max(dt, (nowMs - hist[0].t) / 1000 + dt);
+          req = summarize(mergeWindows(hist.map((h) => h.w)), span);
+        }
+      } catch (e: any) { console.error('request stats failed', friendlyName, e.message); }
+      const st = statsById.get(containerInfo.Id);
+      const thr = st?.cpu_stats?.throttling_data ? { periods: st.cpu_stats.throttling_data.periods, throttled: st.cpu_stats.throttling_data.throttled_periods } : undefined;
+      const cpuThrottledPct = throttledPercent(thr, prev?.thr);
+      prevSample.set(containerInfo.Id, { t: nowMs, rx: networkRx, tx: networkTx, startedAt, restarts, thr });
       metrics.push({
         nodeId: id,
         snapshot: {
           timestamp: new Date().toISOString(),
-          cpu, memory, memoryPercent, networkRx, networkTx
+          cpu, memory, memoryPercent, networkRx, networkTx,
+          networkRxRate: rate(networkRx, prev?.rx), networkTxRate: rate(networkTx, prev?.tx), restartDelta,
+          cpuThrottledPct, cpuAllowanceCores: allowance, cpuOfAllowance: allowance && cpu !== undefined ? Math.round((cpu / (allowance * 100)) * 1000) / 10 : undefined,
+          ...(req ?? {}),
         }
       });
     }
@@ -385,8 +459,8 @@ async function discoverAndCollect() {
   const connectionEvents: ConnectionEvent[] = [];
   const now = new Date().toISOString();
 
-  for (const containerInfo of containers) {
-    if (containerInfo.State !== 'running') continue;
+  await Promise.all(containers.map(async (containerInfo) => {
+    if (containerInfo.State !== 'running') return;
     const friendlyName = containerIdToName.get(containerInfo.Id) || deriveServiceName(containerInfo);
 
     try {
@@ -428,7 +502,7 @@ async function discoverAndCollect() {
         }
       }
     } catch (e) {}
-  }
+  }));
 
   for (const pair of observedPairs) {
     const [src, tgt] = pair.split('->');

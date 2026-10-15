@@ -27,48 +27,41 @@ export function TerminalPanel({ logs, onCommandSubmit, isActive }: TerminalPanel
       flexDirection: 'column',
       background: 'transparent',
       overflow: 'hidden',
-      fontFamily: 'monospace',
-      fontSize: '11px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: '12px',
+      lineHeight: 1.6,
       height: '100%',
       width: '100%'
     }}>
-      <div style={{
-        background: 'rgba(255,255,255,0.05)',
-        padding: '6px 12px',
-        borderBottom: '1px solid var(--color-border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        color: 'var(--color-text-muted)'
-      }}>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-critical)' }} />
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-unknown)' }} />
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-healthy)' }} />
-        </div>
-        <span>DISCOVERY TERMINAL</span>
-      </div>
 
       <div style={{
         flex: 1,
-        padding: '12px 24px',
+        padding: '12px 20px',
         overflowY: 'auto',
-        color: '#a0a0b0',
+        color: 'var(--color-text-muted)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px'
+        gap: '2px'
       }}>
-        {logs.map((log, i) => (
-          <div key={i} style={{ 
-            color: log.startsWith('[ERROR]') ? 'var(--color-critical)' : 
-                   log.startsWith('[SUCCESS]') ? 'var(--color-healthy)' : 
-                   log.startsWith('$') ? 'var(--color-accent-cyan)' : '#a0a0b0',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all'
-          }}>
-            {log}
-          </div>
-        ))}
+        {logs.map((log, i) => {
+          const isCommand = log.startsWith('$');
+          return (
+            <div key={i} style={{
+              color: log.startsWith('[ERROR]') ? 'var(--color-critical)' :
+                     log.startsWith('[SUCCESS]') ? 'var(--color-healthy)' :
+                     isCommand ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all'
+            }}>
+              {isCommand ? (
+                <>
+                  <span style={{ color: 'var(--color-text-dim)' }}>$</span>
+                  {log.slice(1)}
+                </>
+              ) : log}
+            </div>
+          );
+        })}
         <div ref={endRef} />
       </div>
 
@@ -76,25 +69,26 @@ export function TerminalPanel({ logs, onCommandSubmit, isActive }: TerminalPanel
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '8px 24px',
+          height: '36px',
+          padding: '0 20px',
           borderTop: '1px solid var(--color-border)',
-          background: 'rgba(0,0,0,0.3)'
+          background: 'rgba(255,255,255,0.015)'
         }}>
-          <span style={{ color: 'var(--color-accent-cyan)', marginRight: '8px' }}>$</span>
-          <input 
+          <span style={{ color: 'var(--color-text-dim)', marginRight: '8px' }}>$</span>
+          <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type command to execute remotely..."
+            placeholder="Run a command on the remote host"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: '#fff',
-              fontFamily: 'monospace',
-              fontSize: '11px'
+              color: 'var(--color-text-main)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px'
             }}
           />
         </div>

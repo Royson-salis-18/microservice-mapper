@@ -163,7 +163,7 @@ export class DiscoveryEngine {
 
   /**
    * Candidate edges from shared network membership. NEVER declared,
-   * NEVER observed — network membership alone is not proof of anything
+   * NEVER observed - network membership alone is not proof of anything
    * beyond "these two containers could reach each other" (spec section 9).
    */
   private buildNetworkCandidateDependencies(services: Service[]): Dependency[] {
@@ -206,7 +206,7 @@ export class DiscoveryEngine {
   /**
    * Best-effort: if a compose project label points at a config file we
    * can read, parse its depends_on into declared=true dependencies.
-   * Silently yields nothing if the file isn't found/readable — this
+   * Silently yields nothing if the file isn't found/readable - this
    * must never block discovery of everything else.
    */
   private async discoverComposeDependencies(

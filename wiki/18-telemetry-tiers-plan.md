@@ -1,4 +1,4 @@
-# 18 — Telemetry tiers: the plan
+# 18 - Telemetry tiers: the plan
 
 **Status:** in progress. Each phase lists what "done" means so progress is
 checkable rather than asserted.
@@ -39,7 +39,7 @@ Error-rate series present: `http_server_request_duration_seconds_bucket`,
 `http_server_duration_milliseconds_bucket`, `http_server_active_requests`,
 `http_server_response_body_size_bytes_bucket`.
 
-Prometheus reports `activeTargets: []` — it is not scraping. The OTel
+Prometheus reports `activeTargets: []` - it is not scraping. The OTel
 Collector pushes into it. The data exists because the demo instruments
 itself.
 
@@ -48,7 +48,7 @@ itself.
 | Target | Available |
 |---|---|
 | open-telemetry | Full OTLP: histograms, status codes, service metadata |
-| death-star | Jaeger on :16686, **0 services, null spans** — instrumentation off |
+| death-star | Jaeger on :16686, **0 services, null spans** - instrumentation off |
 | sock-shop | Nothing. No Prometheus, no Jaeger. 909 MB box |
 | vertikal | Next.js + Supabase, no APM |
 
@@ -78,7 +78,7 @@ prevent. The same discipline extends to metric provenance.
 
 ## Why this also fixes the ML
 
-The models are currently crippled by thin data — `sock-shop:front-end` has
+The models are currently crippled by thin data - `sock-shop:front-end` has
 **6 distinct values across 1568 rows** (0.4%), because CPU and memory on a
 mostly-idle container barely move and the collector samples faster than they
 change. Every detector fires on 0% because there is nothing to learn.
@@ -93,14 +93,14 @@ target that matters most.
 
 ## Phases
 
-### Phase 1 — Provenance foundation
+### Phase 1 - Provenance foundation
 Add an explicit source to every metric and edge metric, so any number can say
 which tier produced it. Nothing else can land honestly until this exists.
 
 *Done when:* metrics carry a source field end to end, the UI can read it, and
 existing Tier 0 numbers are labelled as such. No behaviour change otherwise.
 
-### Phase 2 — Telemetry source abstraction
+### Phase 2 - Telemetry source abstraction
 A `TelemetrySource` interface with the current SSH collector as the first
 implementation, so adding a second source is not surgery on `MetricCollector`.
 Per-target configuration of which sources to try, in `remote_config.json`.
@@ -108,7 +108,7 @@ Per-target configuration of which sources to try, in `remote_config.json`.
 *Done when:* the existing collector runs unchanged behind the interface, and
 a target can declare additional sources without code changes.
 
-### Phase 3 — Prometheus source (Tier 2)
+### Phase 3 - Prometheus source (Tier 2)
 Query the target's Prometheus over the SSH connection already held. Map
 PromQL to the fields that are currently null:
 
@@ -119,7 +119,7 @@ PromQL to the fields that are currently null:
 *Done when:* `edge.metrics` is non-null for open-telemetry, values match what
 a direct PromQL query returns, and the UI labels them Tier 2.
 
-### Phase 3b — Wiring (done)
+### Phase 3b - Wiring (done)
 
 Tier 2 metrics reach the graph and the UI.
 
@@ -135,7 +135,7 @@ Tier 2 metrics reach the graph and the UI.
 }
 ```
 
-`localhost` is correct and deliberate — the query runs *on the target* via
+`localhost` is correct and deliberate - the query runs *on the target* via
 curl over the SSH connection already held. Prometheus is bound to localhost
 there and only :8080 is open in the security group, so querying from outside
 would mean opening a port to read a metric.
@@ -159,21 +159,21 @@ same kind of fact.
 Two things it will not do:
 - A missing quantile reads "not measured", never `0ms`.
 - An error rate with no traffic in the window reads "no traffic in window",
-  never `0%` — a clean bill of health nobody earned.
+  never `0%` - a clean bill of health nobody earned.
 
 *Verified:* server boots with the path wired and stays silent when no target
-opts in; 44 tests pass. **Not yet verified against live Prometheus** — all
+opts in; 44 tests pass. **Not yet verified against live Prometheus** - all
 four targets were unreachable (SSH closed) throughout this work.
 
-### Phase 4 — Edge heat and RCA use real rates
-Edge heat currently grades on `samplesPerMin` — socket observations, an
+### Phase 4 - Edge heat and RCA use real rates
+Edge heat currently grades on `samplesPerMin` - socket observations, an
 honest proxy but a proxy. Where a real request rate exists, use it. Same for
 RCA: real error rates are far stronger evidence than status heuristics.
 
 *Done when:* heat uses request rate where available and socket samples
 otherwise, with the difference visible rather than silently swapped.
 
-### Phase 5 — Access logs (Tier 1)
+### Phase 5 - Access logs (Tier 1)
 `parseHttpLogLine` and `collectHttpInteractions` already exist and find
 nothing, because these proxies do not log to stdout in a parseable form by
 default. Document the config change per proxy and make the parser robust to
@@ -182,7 +182,7 @@ the formats actually emitted.
 *Done when:* a configured Envoy or nginx produces real per-request rows in
 Raw Traffic Logs, on a target with no Prometheus.
 
-### Phase 6 — Richer ML features
+### Phase 6 - Richer ML features
 Extend `ml/` to include latency and error-rate features where the tier
 provides them, with the feature set recorded per model so a model trained on
 four features is never confused with one trained on seven.
@@ -190,7 +190,7 @@ four features is never confused with one trained on seven.
 *Done when:* models train on the extended feature set, and distinct-row
 counts on instrumented targets are materially better than the current 0.4%.
 
-### Phase 7 — Comparison harness
+### Phase 7 - Comparison harness
 Use the instrumented target as ground truth and measure how well the
 agentless signal tracks it. Does socket-sample rate correlate with real
 request rate? Does a cgroup-only Isolation Forest detect what a
@@ -204,7 +204,7 @@ kept rather than replaced.
 
 ## Sequencing note
 
-Phases 1–2 are pure refactoring and can be done with every target offline —
+Phases 1–2 are pure refactoring and can be done with every target offline -
 which matters, because all four were unreachable when this plan was written
 (the EC2 IPs rotate constantly). Phases 3 onward need a live instrumented
 target for verification.

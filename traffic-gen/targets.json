@@ -1,7 +1,7 @@
 {
   "sock-shop": {
     "targetId": "sock-shop",
-    "baseUrl": "http://13.233.120.223:80",
+    "baseUrl": "http://15.252.139.149",
     "endpoints": [
       {
         "path": "/",
@@ -13,60 +13,54 @@
     ],
     "architecture": null,
     "settings": {
-      "profile": "STRESS",
+      "profile": "BASELINE",
       "endpointPaths": [
         "/"
       ],
-      "users": 20
-    }
-  },
-  "vertikal-prod": {
-    "targetId": "vertikal",
-    "baseUrl": "http://localhost:3000",
-    "settings": {
-      "profile": "MODERATE",
-      "users": 8,
-      "durationSec": 30,
-      "endpointPaths": []
+      "users": 1
     }
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://13.201.168.222:8080",
+    "baseUrl": "http://13.232.161.204:8080",
     "settings": {
-      "profile": "MODERATE",
-      "endpointPaths": [],
-      "users": 10,
-      "durationSec": 90
-    }
-  },
-  "open-telemetry": {
-    "targetId": "open-telemetry",
-    "baseUrl": "http://43.204.211.231:8080",
-    "settings": {
-      "profile": "STRESS",
+      "profile": "HEAVY",
       "endpointPaths": [
-        "http://43.204.211.231:8080",
-        "http://43.204.211.231:8080/",
-        "http://43.204.211.231:8080/api/cart",
-        "http://43.204.211.231:8080/api/checkout",
-        "http://43.204.211.231:8080/api/currency",
-        "http://43.204.211.231:8080/api/data",
-        "http://43.204.211.231:8080/api/products",
-        "http://43.204.211.231:8080/api/recommendations",
-        "http://43.204.211.231:8080/api/shipping",
-        "http://43.204.211.231:8080/cart"
+        "/"
       ],
       "users": 10
     }
   },
-  "vertikal": {
-    "targetId": "vertikal",
-    "baseUrl": "http://localhost:3000",
+  "open-telemetry": {
+    "targetId": "open-telemetry",
+    "baseUrl": "http://13.233.155.34:8080",
     "settings": {
       "profile": "BASELINE",
-      "users": 1,
-      "endpointPaths": []
+      "endpointPaths": [],
+      "users": 5,
+      "durationSec": 90
+    }
+  },
+  "shopflowbench": {
+    "targetId": "shopflowbench",
+    "baseUrl": "http://65.2.83.79",
+    "settings": {
+      "profile": "BASELINE",
+      "endpointPaths": [
+        "/"
+      ],
+      "users": 1
+    }
+  },
+  "bench-1": {
+    "targetId": "bench-1",
+    "baseUrl": "http://65.2.83.79",
+    "settings": {
+      "profile": "BASELINE",
+      "endpointPaths": [
+        "/"
+      ],
+      "users": 1
     }
   }
 }

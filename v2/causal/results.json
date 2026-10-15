@@ -1,0 +1,5169 @@
+{
+ "directions": {
+  "real": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 1,
+      "wrong": 0,
+      "unknown": 30
+     },
+     "online": {
+      "right": 40,
+      "wrong": 0,
+      "unknown": 642
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 21,
+      "wrong": 0,
+      "unknown": 10
+     },
+     "online": {
+      "right": 462,
+      "wrong": 0,
+      "unknown": 220
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 612,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 25,
+      "wrong": 4,
+      "unknown": 2
+     },
+     "online": {
+      "right": 525,
+      "wrong": 123,
+      "unknown": 34
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 620,
+      "wrong": 62,
+      "unknown": 0
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 5,
+      "wrong": 0,
+      "unknown": 26
+     },
+     "online": {
+      "right": 110,
+      "wrong": 0,
+      "unknown": 572
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 21,
+      "wrong": 8,
+      "unknown": 2
+     },
+     "online": {
+      "right": 360,
+      "wrong": 141,
+      "unknown": 181
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 19,
+      "wrong": 11,
+      "unknown": 1
+     },
+     "online": {
+      "right": 274,
+      "wrong": 223,
+      "unknown": 185
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 511,
+      "wrong": 138,
+      "unknown": 33
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 8,
+      "wrong": 5,
+      "unknown": 18
+     },
+     "online": {
+      "right": 104,
+      "wrong": 119,
+      "unknown": 459
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 19,
+      "wrong": 12,
+      "unknown": 0
+     },
+     "online": {
+      "right": 363,
+      "wrong": 281,
+      "unknown": 38
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 17,
+      "wrong": 9,
+      "unknown": 5
+     },
+     "online": {
+      "right": 248,
+      "wrong": 224,
+      "unknown": 210
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 17,
+      "wrong": 14,
+      "unknown": 0
+     },
+     "online": {
+      "right": 337,
+      "wrong": 324,
+      "unknown": 21
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 21,
+      "wrong": 10,
+      "unknown": 0
+     },
+     "online": {
+      "right": 432,
+      "wrong": 245,
+      "unknown": 5
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 18,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 398,
+      "wrong": 284,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 25,
+      "wrong": 5,
+      "unknown": 1
+     },
+     "online": {
+      "right": 486,
+      "wrong": 97,
+      "unknown": 99
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 22,
+      "wrong": 1,
+      "unknown": 8
+     },
+     "online": {
+      "right": 484,
+      "wrong": 22,
+      "unknown": 176
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 30
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 642
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 20,
+      "wrong": 0,
+      "unknown": 10
+     },
+     "online": {
+      "right": 422,
+      "wrong": 0,
+      "unknown": 220
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 572,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 24,
+      "wrong": 4,
+      "unknown": 2
+     },
+     "online": {
+      "right": 485,
+      "wrong": 123,
+      "unknown": 34
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 580,
+      "wrong": 62,
+      "unknown": 0
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 4,
+      "wrong": 0,
+      "unknown": 26
+     },
+     "online": {
+      "right": 70,
+      "wrong": 0,
+      "unknown": 572
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 20,
+      "wrong": 8,
+      "unknown": 2
+     },
+     "online": {
+      "right": 349,
+      "wrong": 122,
+      "unknown": 171
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 18,
+      "wrong": 11,
+      "unknown": 1
+     },
+     "online": {
+      "right": 252,
+      "wrong": 222,
+      "unknown": 168
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 496,
+      "wrong": 117,
+      "unknown": 29
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 8,
+      "wrong": 4,
+      "unknown": 18
+     },
+     "online": {
+      "right": 102,
+      "wrong": 112,
+      "unknown": 428
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 18,
+      "wrong": 12,
+      "unknown": 0
+     },
+     "online": {
+      "right": 351,
+      "wrong": 257,
+      "unknown": 34
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 16,
+      "wrong": 9,
+      "unknown": 5
+     },
+     "online": {
+      "right": 222,
+      "wrong": 211,
+      "unknown": 209
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 17,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 325,
+      "wrong": 299,
+      "unknown": 18
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 20,
+      "wrong": 10,
+      "unknown": 0
+     },
+     "online": {
+      "right": 402,
+      "wrong": 235,
+      "unknown": 5
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 17,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 371,
+      "wrong": 271,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 24,
+      "wrong": 5,
+      "unknown": 1
+     },
+     "online": {
+      "right": 453,
+      "wrong": 97,
+      "unknown": 92
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 21,
+      "wrong": 1,
+      "unknown": 8
+     },
+     "online": {
+      "right": 444,
+      "wrong": 22,
+      "unknown": 176
+     }
+    }
+   },
+   "pairs": {
+    "all": 31,
+    "ambiguous": 30
+   }
+  },
+  "real, name-blind": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 1,
+      "wrong": 0,
+      "unknown": 30
+     },
+     "online": {
+      "right": 40,
+      "wrong": 0,
+      "unknown": 642
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 31
+     },
+     "online": {
+      "right": 9,
+      "wrong": 0,
+      "unknown": 673
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 612,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 25,
+      "wrong": 4,
+      "unknown": 2
+     },
+     "online": {
+      "right": 525,
+      "wrong": 123,
+      "unknown": 34
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 612,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 5,
+      "wrong": 0,
+      "unknown": 26
+     },
+     "online": {
+      "right": 110,
+      "wrong": 0,
+      "unknown": 572
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 21,
+      "wrong": 8,
+      "unknown": 2
+     },
+     "online": {
+      "right": 360,
+      "wrong": 141,
+      "unknown": 181
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 19,
+      "wrong": 11,
+      "unknown": 1
+     },
+     "online": {
+      "right": 274,
+      "wrong": 223,
+      "unknown": 185
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 28,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 511,
+      "wrong": 138,
+      "unknown": 33
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 8,
+      "wrong": 5,
+      "unknown": 18
+     },
+     "online": {
+      "right": 104,
+      "wrong": 119,
+      "unknown": 459
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 19,
+      "wrong": 12,
+      "unknown": 0
+     },
+     "online": {
+      "right": 363,
+      "wrong": 281,
+      "unknown": 38
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 17,
+      "wrong": 9,
+      "unknown": 5
+     },
+     "online": {
+      "right": 248,
+      "wrong": 224,
+      "unknown": 210
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 17,
+      "wrong": 14,
+      "unknown": 0
+     },
+     "online": {
+      "right": 337,
+      "wrong": 324,
+      "unknown": 21
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 21,
+      "wrong": 10,
+      "unknown": 0
+     },
+     "online": {
+      "right": 432,
+      "wrong": 245,
+      "unknown": 5
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 18,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 398,
+      "wrong": 284,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 25,
+      "wrong": 5,
+      "unknown": 1
+     },
+     "online": {
+      "right": 486,
+      "wrong": 97,
+      "unknown": 99
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 22,
+      "wrong": 1,
+      "unknown": 8
+     },
+     "online": {
+      "right": 484,
+      "wrong": 22,
+      "unknown": 176
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 30
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 642
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 30
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 642
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 572,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 24,
+      "wrong": 4,
+      "unknown": 2
+     },
+     "online": {
+      "right": 485,
+      "wrong": 123,
+      "unknown": 34
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 572,
+      "wrong": 66,
+      "unknown": 4
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 4,
+      "wrong": 0,
+      "unknown": 26
+     },
+     "online": {
+      "right": 70,
+      "wrong": 0,
+      "unknown": 572
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 20,
+      "wrong": 8,
+      "unknown": 2
+     },
+     "online": {
+      "right": 349,
+      "wrong": 122,
+      "unknown": 171
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 18,
+      "wrong": 11,
+      "unknown": 1
+     },
+     "online": {
+      "right": 252,
+      "wrong": 222,
+      "unknown": 168
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 27,
+      "wrong": 3,
+      "unknown": 0
+     },
+     "online": {
+      "right": 496,
+      "wrong": 117,
+      "unknown": 29
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 8,
+      "wrong": 4,
+      "unknown": 18
+     },
+     "online": {
+      "right": 102,
+      "wrong": 112,
+      "unknown": 428
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 18,
+      "wrong": 12,
+      "unknown": 0
+     },
+     "online": {
+      "right": 351,
+      "wrong": 257,
+      "unknown": 34
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 16,
+      "wrong": 9,
+      "unknown": 5
+     },
+     "online": {
+      "right": 222,
+      "wrong": 211,
+      "unknown": 209
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 17,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 325,
+      "wrong": 299,
+      "unknown": 18
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 20,
+      "wrong": 10,
+      "unknown": 0
+     },
+     "online": {
+      "right": 402,
+      "wrong": 235,
+      "unknown": 5
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 17,
+      "wrong": 13,
+      "unknown": 0
+     },
+     "online": {
+      "right": 371,
+      "wrong": 271,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 24,
+      "wrong": 5,
+      "unknown": 1
+     },
+     "online": {
+      "right": 453,
+      "wrong": 97,
+      "unknown": 92
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 21,
+      "wrong": 1,
+      "unknown": 8
+     },
+     "online": {
+      "right": 444,
+      "wrong": 22,
+      "unknown": 176
+     }
+    }
+   },
+   "pairs": {
+    "all": 31,
+    "ambiguous": 30
+   }
+  },
+  "tune (tune+tune2)": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 109,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 1308,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 207,
+      "wrong": 0,
+      "unknown": 31
+     },
+     "online": {
+      "right": 2484,
+      "wrong": 0,
+      "unknown": 372
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 236,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 2789,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 229,
+      "wrong": 6,
+      "unknown": 3
+     },
+     "online": {
+      "right": 2497,
+      "wrong": 169,
+      "unknown": 190
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 236,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 2800,
+      "wrong": 45,
+      "unknown": 11
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 109,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 1308,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 130,
+      "wrong": 80,
+      "unknown": 28
+     },
+     "online": {
+      "right": 951,
+      "wrong": 670,
+      "unknown": 1235
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 163,
+      "wrong": 41,
+      "unknown": 34
+     },
+     "online": {
+      "right": 1093,
+      "wrong": 383,
+      "unknown": 1380
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 194,
+      "wrong": 37,
+      "unknown": 7
+     },
+     "online": {
+      "right": 1905,
+      "wrong": 452,
+      "unknown": 499
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 55,
+      "wrong": 14,
+      "unknown": 169
+     },
+     "online": {
+      "right": 376,
+      "wrong": 117,
+      "unknown": 2363
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 135,
+      "wrong": 103,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1442,
+      "wrong": 1210,
+      "unknown": 204
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 64,
+      "wrong": 100,
+      "unknown": 74
+     },
+     "online": {
+      "right": 835,
+      "wrong": 974,
+      "unknown": 1047
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 133,
+      "wrong": 105,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1480,
+      "wrong": 1364,
+      "unknown": 12
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 174,
+      "wrong": 63,
+      "unknown": 1
+     },
+     "online": {
+      "right": 2013,
+      "wrong": 824,
+      "unknown": 19
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 111,
+      "wrong": 127,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1424,
+      "wrong": 1432,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 137,
+      "wrong": 39,
+      "unknown": 62
+     },
+     "online": {
+      "right": 1468,
+      "wrong": 273,
+      "unknown": 1115
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 194,
+      "wrong": 10,
+      "unknown": 34
+     },
+     "online": {
+      "right": 2328,
+      "wrong": 120,
+      "unknown": 408
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 98,
+      "wrong": 0,
+      "unknown": 31
+     },
+     "online": {
+      "right": 1176,
+      "wrong": 0,
+      "unknown": 372
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 127,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1481,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 120,
+      "wrong": 6,
+      "unknown": 3
+     },
+     "online": {
+      "right": 1189,
+      "wrong": 169,
+      "unknown": 190
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 127,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1492,
+      "wrong": 45,
+      "unknown": 11
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 75,
+      "wrong": 36,
+      "unknown": 18
+     },
+     "online": {
+      "right": 561,
+      "wrong": 308,
+      "unknown": 679
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 93,
+      "wrong": 20,
+      "unknown": 16
+     },
+     "online": {
+      "right": 627,
+      "wrong": 208,
+      "unknown": 713
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 102,
+      "wrong": 24,
+      "unknown": 3
+     },
+     "online": {
+      "right": 1047,
+      "wrong": 267,
+      "unknown": 234
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 36,
+      "wrong": 5,
+      "unknown": 88
+     },
+     "online": {
+      "right": 247,
+      "wrong": 53,
+      "unknown": 1248
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 71,
+      "wrong": 58,
+      "unknown": 0
+     },
+     "online": {
+      "right": 769,
+      "wrong": 674,
+      "unknown": 105
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 29,
+      "wrong": 57,
+      "unknown": 43
+     },
+     "online": {
+      "right": 423,
+      "wrong": 535,
+      "unknown": 590
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 71,
+      "wrong": 58,
+      "unknown": 0
+     },
+     "online": {
+      "right": 814,
+      "wrong": 728,
+      "unknown": 6
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 92,
+      "wrong": 37,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1106,
+      "wrong": 435,
+      "unknown": 7
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 59,
+      "wrong": 70,
+      "unknown": 0
+     },
+     "online": {
+      "right": 748,
+      "wrong": 800,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 83,
+      "wrong": 15,
+      "unknown": 31
+     },
+     "online": {
+      "right": 862,
+      "wrong": 90,
+      "unknown": 596
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 108,
+      "wrong": 4,
+      "unknown": 17
+     },
+     "online": {
+      "right": 1296,
+      "wrong": 48,
+      "unknown": 204
+     }
+    }
+   },
+   "pairs": {
+    "all": 238,
+    "ambiguous": 129
+   }
+  },
+  "tune (tune+tune2), name-blind": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 109,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 1308,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 109,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 1308,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 236,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 2789,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 229,
+      "wrong": 6,
+      "unknown": 3
+     },
+     "online": {
+      "right": 2497,
+      "wrong": 169,
+      "unknown": 190
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 236,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 2789,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 109,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 1308,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 130,
+      "wrong": 80,
+      "unknown": 28
+     },
+     "online": {
+      "right": 951,
+      "wrong": 670,
+      "unknown": 1235
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 163,
+      "wrong": 41,
+      "unknown": 34
+     },
+     "online": {
+      "right": 1093,
+      "wrong": 383,
+      "unknown": 1380
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 194,
+      "wrong": 37,
+      "unknown": 7
+     },
+     "online": {
+      "right": 1905,
+      "wrong": 452,
+      "unknown": 499
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 55,
+      "wrong": 14,
+      "unknown": 169
+     },
+     "online": {
+      "right": 376,
+      "wrong": 117,
+      "unknown": 2363
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 135,
+      "wrong": 103,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1442,
+      "wrong": 1210,
+      "unknown": 204
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 64,
+      "wrong": 100,
+      "unknown": 74
+     },
+     "online": {
+      "right": 835,
+      "wrong": 974,
+      "unknown": 1047
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 133,
+      "wrong": 105,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1480,
+      "wrong": 1364,
+      "unknown": 12
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 174,
+      "wrong": 63,
+      "unknown": 1
+     },
+     "online": {
+      "right": 2013,
+      "wrong": 824,
+      "unknown": 19
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 111,
+      "wrong": 127,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1424,
+      "wrong": 1432,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 137,
+      "wrong": 39,
+      "unknown": 62
+     },
+     "online": {
+      "right": 1468,
+      "wrong": 273,
+      "unknown": 1115
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 194,
+      "wrong": 10,
+      "unknown": 34
+     },
+     "online": {
+      "right": 2328,
+      "wrong": 120,
+      "unknown": 408
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 127,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1481,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 120,
+      "wrong": 6,
+      "unknown": 3
+     },
+     "online": {
+      "right": 1189,
+      "wrong": 169,
+      "unknown": 190
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 127,
+      "wrong": 2,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1481,
+      "wrong": 50,
+      "unknown": 17
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 129
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1548
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 75,
+      "wrong": 36,
+      "unknown": 18
+     },
+     "online": {
+      "right": 561,
+      "wrong": 308,
+      "unknown": 679
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 93,
+      "wrong": 20,
+      "unknown": 16
+     },
+     "online": {
+      "right": 627,
+      "wrong": 208,
+      "unknown": 713
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 102,
+      "wrong": 24,
+      "unknown": 3
+     },
+     "online": {
+      "right": 1047,
+      "wrong": 267,
+      "unknown": 234
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 36,
+      "wrong": 5,
+      "unknown": 88
+     },
+     "online": {
+      "right": 247,
+      "wrong": 53,
+      "unknown": 1248
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 71,
+      "wrong": 58,
+      "unknown": 0
+     },
+     "online": {
+      "right": 769,
+      "wrong": 674,
+      "unknown": 105
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 29,
+      "wrong": 57,
+      "unknown": 43
+     },
+     "online": {
+      "right": 423,
+      "wrong": 535,
+      "unknown": 590
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 71,
+      "wrong": 58,
+      "unknown": 0
+     },
+     "online": {
+      "right": 814,
+      "wrong": 728,
+      "unknown": 6
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 92,
+      "wrong": 37,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1106,
+      "wrong": 435,
+      "unknown": 7
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 59,
+      "wrong": 70,
+      "unknown": 0
+     },
+     "online": {
+      "right": 748,
+      "wrong": 800,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 83,
+      "wrong": 15,
+      "unknown": 31
+     },
+     "online": {
+      "right": 862,
+      "wrong": 90,
+      "unknown": 596
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 108,
+      "wrong": 4,
+      "unknown": 17
+     },
+     "online": {
+      "right": 1296,
+      "wrong": 48,
+      "unknown": 204
+     }
+    }
+   },
+   "pairs": {
+    "all": 238,
+    "ambiguous": 129
+   }
+  },
+  "test (held out)": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 95,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 1140,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 172,
+      "wrong": 0,
+      "unknown": 32
+     },
+     "online": {
+      "right": 2064,
+      "wrong": 0,
+      "unknown": 384
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 197,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 2357,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 190,
+      "wrong": 12,
+      "unknown": 2
+     },
+     "online": {
+      "right": 2180,
+      "wrong": 151,
+      "unknown": 117
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 198,
+      "wrong": 6,
+      "unknown": 0
+     },
+     "online": {
+      "right": 2367,
+      "wrong": 72,
+      "unknown": 9
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 95,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 1140,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 129,
+      "wrong": 54,
+      "unknown": 21
+     },
+     "online": {
+      "right": 1049,
+      "wrong": 471,
+      "unknown": 928
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 132,
+      "wrong": 35,
+      "unknown": 37
+     },
+     "online": {
+      "right": 1041,
+      "wrong": 329,
+      "unknown": 1078
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 175,
+      "wrong": 25,
+      "unknown": 4
+     },
+     "online": {
+      "right": 1802,
+      "wrong": 346,
+      "unknown": 300
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 49,
+      "wrong": 15,
+      "unknown": 140
+     },
+     "online": {
+      "right": 390,
+      "wrong": 116,
+      "unknown": 1942
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 120,
+      "wrong": 84,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1252,
+      "wrong": 1007,
+      "unknown": 189
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 60,
+      "wrong": 85,
+      "unknown": 59
+     },
+     "online": {
+      "right": 770,
+      "wrong": 865,
+      "unknown": 813
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 100,
+      "wrong": 104,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1243,
+      "wrong": 1190,
+      "unknown": 15
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 140,
+      "wrong": 63,
+      "unknown": 1
+     },
+     "online": {
+      "right": 1719,
+      "wrong": 714,
+      "unknown": 15
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 107,
+      "wrong": 97,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1315,
+      "wrong": 1133,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 116,
+      "wrong": 44,
+      "unknown": 44
+     },
+     "online": {
+      "right": 1202,
+      "wrong": 344,
+      "unknown": 902
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 164,
+      "wrong": 10,
+      "unknown": 30
+     },
+     "online": {
+      "right": 1968,
+      "wrong": 120,
+      "unknown": 360
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 77,
+      "wrong": 0,
+      "unknown": 32
+     },
+     "online": {
+      "right": 924,
+      "wrong": 0,
+      "unknown": 384
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 102,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 1217,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 95,
+      "wrong": 12,
+      "unknown": 2
+     },
+     "online": {
+      "right": 1040,
+      "wrong": 151,
+      "unknown": 117
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 103,
+      "wrong": 6,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1227,
+      "wrong": 72,
+      "unknown": 9
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 71,
+      "wrong": 28,
+      "unknown": 10
+     },
+     "online": {
+      "right": 591,
+      "wrong": 238,
+      "unknown": 479
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 71,
+      "wrong": 19,
+      "unknown": 19
+     },
+     "online": {
+      "right": 566,
+      "wrong": 171,
+      "unknown": 571
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 92,
+      "wrong": 16,
+      "unknown": 1
+     },
+     "online": {
+      "right": 969,
+      "wrong": 181,
+      "unknown": 158
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 27,
+      "wrong": 7,
+      "unknown": 75
+     },
+     "online": {
+      "right": 210,
+      "wrong": 57,
+      "unknown": 1041
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 66,
+      "wrong": 43,
+      "unknown": 0
+     },
+     "online": {
+      "right": 676,
+      "wrong": 538,
+      "unknown": 94
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 29,
+      "wrong": 47,
+      "unknown": 33
+     },
+     "online": {
+      "right": 392,
+      "wrong": 464,
+      "unknown": 452
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 52,
+      "wrong": 57,
+      "unknown": 0
+     },
+     "online": {
+      "right": 648,
+      "wrong": 652,
+      "unknown": 8
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 78,
+      "wrong": 31,
+      "unknown": 0
+     },
+     "online": {
+      "right": 935,
+      "wrong": 373,
+      "unknown": 0
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 60,
+      "wrong": 49,
+      "unknown": 0
+     },
+     "online": {
+      "right": 734,
+      "wrong": 574,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 67,
+      "wrong": 23,
+      "unknown": 19
+     },
+     "online": {
+      "right": 691,
+      "wrong": 182,
+      "unknown": 435
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 88,
+      "wrong": 4,
+      "unknown": 17
+     },
+     "online": {
+      "right": 1056,
+      "wrong": 48,
+      "unknown": 204
+     }
+    }
+   },
+   "pairs": {
+    "all": 204,
+    "ambiguous": 109
+   }
+  },
+  "test (held out), name-blind": {
+   "all": {
+    "collector view": {
+     "end": {
+      "right": 95,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 1140,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 95,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 1140,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 197,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 2357,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 190,
+      "wrong": 12,
+      "unknown": 2
+     },
+     "online": {
+      "right": 2180,
+      "wrong": 151,
+      "unknown": 117
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 197,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 2357,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 95,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 1140,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 129,
+      "wrong": 54,
+      "unknown": 21
+     },
+     "online": {
+      "right": 1049,
+      "wrong": 471,
+      "unknown": 928
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 132,
+      "wrong": 35,
+      "unknown": 37
+     },
+     "online": {
+      "right": 1041,
+      "wrong": 329,
+      "unknown": 1078
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 175,
+      "wrong": 25,
+      "unknown": 4
+     },
+     "online": {
+      "right": 1802,
+      "wrong": 346,
+      "unknown": 300
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 49,
+      "wrong": 15,
+      "unknown": 140
+     },
+     "online": {
+      "right": 390,
+      "wrong": 116,
+      "unknown": 1942
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 120,
+      "wrong": 84,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1252,
+      "wrong": 1007,
+      "unknown": 189
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 60,
+      "wrong": 85,
+      "unknown": 59
+     },
+     "online": {
+      "right": 770,
+      "wrong": 865,
+      "unknown": 813
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 100,
+      "wrong": 104,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1243,
+      "wrong": 1190,
+      "unknown": 15
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 140,
+      "wrong": 63,
+      "unknown": 1
+     },
+     "online": {
+      "right": 1719,
+      "wrong": 714,
+      "unknown": 15
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 107,
+      "wrong": 97,
+      "unknown": 0
+     },
+     "online": {
+      "right": 1315,
+      "wrong": 1133,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 116,
+      "wrong": 44,
+      "unknown": 44
+     },
+     "online": {
+      "right": 1202,
+      "wrong": 344,
+      "unknown": 902
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 164,
+      "wrong": 10,
+      "unknown": 30
+     },
+     "online": {
+      "right": 1968,
+      "wrong": 120,
+      "unknown": 360
+     }
+    }
+   },
+   "ambiguous": {
+    "collector view": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "v1 name rule": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "learned": {
+     "end": {
+      "right": 102,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 1217,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "dynamic": {
+     "end": {
+      "right": 95,
+      "wrong": 12,
+      "unknown": 2
+     },
+     "online": {
+      "right": 1040,
+      "wrong": 151,
+      "unknown": 117
+     }
+    },
+    "name+ (name, else learned)": {
+     "end": {
+      "right": 102,
+      "wrong": 6,
+      "unknown": 1
+     },
+     "online": {
+      "right": 1217,
+      "wrong": 78,
+      "unknown": 13
+     }
+    },
+    "method: edges": {
+     "end": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 109
+     },
+     "online": {
+      "right": 0,
+      "wrong": 0,
+      "unknown": 1308
+     }
+    },
+    "method: up": {
+     "end": {
+      "right": 71,
+      "wrong": 28,
+      "unknown": 10
+     },
+     "online": {
+      "right": 591,
+      "wrong": 238,
+      "unknown": 479
+     }
+    },
+    "method: down": {
+     "end": {
+      "right": 71,
+      "wrong": 19,
+      "unknown": 19
+     },
+     "online": {
+      "right": 566,
+      "wrong": 171,
+      "unknown": 571
+     }
+    },
+    "method: implication": {
+     "end": {
+      "right": 92,
+      "wrong": 16,
+      "unknown": 1
+     },
+     "online": {
+      "right": 969,
+      "wrong": 181,
+      "unknown": 158
+     }
+    },
+    "method: onset": {
+     "end": {
+      "right": 27,
+      "wrong": 7,
+      "unknown": 75
+     },
+     "online": {
+      "right": 210,
+      "wrong": 57,
+      "unknown": 1041
+     }
+    },
+    "method: xcorr-anomaly": {
+     "end": {
+      "right": 66,
+      "wrong": 43,
+      "unknown": 0
+     },
+     "online": {
+      "right": 676,
+      "wrong": 538,
+      "unknown": 94
+     }
+    },
+    "method: xcorr-symptom": {
+     "end": {
+      "right": 29,
+      "wrong": 47,
+      "unknown": 33
+     },
+     "online": {
+      "right": 392,
+      "wrong": 464,
+      "unknown": 452
+     }
+    },
+    "method: granger-anomaly": {
+     "end": {
+      "right": 52,
+      "wrong": 57,
+      "unknown": 0
+     },
+     "online": {
+      "right": 648,
+      "wrong": 652,
+      "unknown": 8
+     }
+    },
+    "method: granger-symptom": {
+     "end": {
+      "right": 78,
+      "wrong": 31,
+      "unknown": 0
+     },
+     "online": {
+      "right": 935,
+      "wrong": 373,
+      "unknown": 0
+     }
+    },
+    "method: bytes": {
+     "end": {
+      "right": 60,
+      "wrong": 49,
+      "unknown": 0
+     },
+     "online": {
+      "right": 734,
+      "wrong": 574,
+      "unknown": 0
+     }
+    },
+    "method: instrumented": {
+     "end": {
+      "right": 67,
+      "wrong": 23,
+      "unknown": 19
+     },
+     "online": {
+      "right": 691,
+      "wrong": 182,
+      "unknown": 435
+     }
+    },
+    "method: depth": {
+     "end": {
+      "right": 88,
+      "wrong": 4,
+      "unknown": 17
+     },
+     "online": {
+      "right": 1056,
+      "wrong": 48,
+      "unknown": 204
+     }
+    }
+   },
+   "pairs": {
+    "all": 204,
+    "ambiguous": 109
+   }
+  }
+ },
+ "rca": {
+  "real": {
+   "v1 hybrid": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.8214285714285714,
+    "caughtAndNamed": 0.7419354838709677,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 46,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.75,
+    "caughtAndNamed": 0.6774193548387096,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 2
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 13
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 42,
+    "gained": 0,
+    "lost": 4
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.8214285714285714,
+    "caughtAndNamed": 0.7419354838709677,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 46,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned directions": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, dynamic-only directions": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, name rule else learned": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.8035714285714286,
+    "caughtAndNamed": 0.7258064516129032,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 45,
+    "gained": 0,
+    "lost": 1
+   },
+   "walk, learned + learned weights": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7678571428571429,
+    "caughtAndNamed": 0.6935483870967742,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 43,
+    "gained": 0,
+    "lost": 3
+   }
+  },
+  "real, name-blind": {
+   "v1 hybrid": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.8214285714285714,
+    "caughtAndNamed": 0.7419354838709677,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 46,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.75,
+    "caughtAndNamed": 0.6774193548387096,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 2
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 13
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 42,
+    "gained": 0,
+    "lost": 4
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7678571428571429,
+    "caughtAndNamed": 0.6935483870967742,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 13
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 43,
+    "gained": 1,
+    "lost": 4
+   },
+   "walk, learned directions": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, dynamic-only directions": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, name rule else learned": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7857142857142857,
+    "caughtAndNamed": 0.7096774193548387,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 44,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.8035714285714286,
+    "caughtAndNamed": 0.7258064516129032,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 16
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 45,
+    "gained": 0,
+    "lost": 1
+   },
+   "walk, learned + learned weights": {
+    "faults": 62,
+    "detected": 0.9032258064516129,
+    "top1OfDetected": 0.7678571428571429,
+    "caughtAndNamed": 0.6935483870967742,
+    "falseAlarmsPerHour": 6.150530387143854,
+    "alarmShare": 0.0673873892343935,
+    "byClass": {
+     "flap": {
+      "n": 2,
+      "detected": 2,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 4,
+      "detected": 4,
+      "named": 3
+     },
+     "crash": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "stop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "brownout": {
+      "n": 14,
+      "detected": 8,
+      "named": 1
+     },
+     "pause": {
+      "n": 4,
+      "detected": 4,
+      "named": 4
+     },
+     "memory": {
+      "n": 6,
+      "detected": 6,
+      "named": 4
+     }
+    },
+    "named": 43,
+    "gained": 0,
+    "lost": 3
+   }
+  },
+  "tune (tune+tune2)": {
+   "v1 hybrid": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 5
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8227848101265823,
+    "caughtAndNamed": 0.7647058823529411,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 4
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 24
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 130,
+    "gained": 2,
+    "lost": 4
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 5
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned directions": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, dynamic-only directions": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, name rule else learned": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8417721518987342,
+    "caughtAndNamed": 0.7823529411764706,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 7
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 133,
+    "gained": 2,
+    "lost": 1
+   },
+   "walk, learned + learned weights": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 5
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 0,
+    "lost": 0
+   }
+  },
+  "tune (tune+tune2), name-blind": {
+   "v1 hybrid": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 5
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8227848101265823,
+    "caughtAndNamed": 0.7647058823529411,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 4
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 24
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 130,
+    "gained": 2,
+    "lost": 4
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8227848101265823,
+    "caughtAndNamed": 0.7647058823529411,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 4
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 24
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 130,
+    "gained": 2,
+    "lost": 4
+   },
+   "walk, learned directions": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, dynamic-only directions": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, name rule else learned": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 6
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 1,
+    "lost": 1
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8417721518987342,
+    "caughtAndNamed": 0.7823529411764706,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 7
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 19
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 133,
+    "gained": 2,
+    "lost": 1
+   },
+   "walk, learned + learned weights": {
+    "faults": 170,
+    "detected": 0.9294117647058824,
+    "top1OfDetected": 0.8354430379746836,
+    "caughtAndNamed": 0.7764705882352941,
+    "falseAlarmsPerHour": 0.7807417046193885,
+    "alarmShare": 0.08826718716113642,
+    "byClass": {
+     "latency": {
+      "n": 27,
+      "detected": 17,
+      "named": 5
+     },
+     "brownout": {
+      "n": 28,
+      "detected": 28,
+      "named": 20
+     },
+     "memory": {
+      "n": 30,
+      "detected": 28,
+      "named": 25
+     },
+     "crash": {
+      "n": 21,
+      "detected": 21,
+      "named": 20
+     },
+     "flap": {
+      "n": 13,
+      "detected": 13,
+      "named": 13
+     },
+     "pause": {
+      "n": 10,
+      "detected": 10,
+      "named": 9
+     },
+     "stop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     },
+     "partition": {
+      "n": 13,
+      "detected": 13,
+      "named": 12
+     },
+     "crash-loop": {
+      "n": 14,
+      "detected": 14,
+      "named": 14
+     }
+    },
+    "named": 132,
+    "gained": 0,
+    "lost": 0
+   }
+  },
+  "test (held out)": {
+   "v1 hybrid": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 12
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 2,
+    "lost": 1
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned directions": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, dynamic-only directions": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, name rule else learned": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned + learned weights": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   }
+  },
+  "test (held out), name-blind": {
+   "v1 hybrid": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7852760736196319,
+    "caughtAndNamed": 0.7191011235955056,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 21
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 128,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7975460122699386,
+    "caughtAndNamed": 0.7303370786516854,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 23
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 12
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 130,
+    "gained": 3,
+    "lost": 1
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7975460122699386,
+    "caughtAndNamed": 0.7303370786516854,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 23
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 15
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 12
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 130,
+    "gained": 3,
+    "lost": 1
+   },
+   "walk, learned directions": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 1,
+    "lost": 0
+   },
+   "walk, dynamic-only directions": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 1,
+    "lost": 0
+   },
+   "walk, name rule else learned": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 1,
+    "lost": 0
+   },
+   "walk, TRUE directions (ceiling)": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 1,
+    "lost": 0
+   },
+   "walk, learned + learned weights": {
+    "faults": 178,
+    "detected": 0.9157303370786517,
+    "top1OfDetected": 0.7914110429447853,
+    "caughtAndNamed": 0.7247191011235955,
+    "falseAlarmsPerHour": 0.787746170678337,
+    "alarmShare": 0.05820568927789935,
+    "byClass": {
+     "stop": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash": {
+      "n": 27,
+      "detected": 27,
+      "named": 22
+     },
+     "brownout": {
+      "n": 26,
+      "detected": 26,
+      "named": 18
+     },
+     "latency": {
+      "n": 25,
+      "detected": 13,
+      "named": 2
+     },
+     "crash-loop": {
+      "n": 16,
+      "detected": 16,
+      "named": 14
+     },
+     "flap": {
+      "n": 12,
+      "detected": 12,
+      "named": 12
+     },
+     "memory": {
+      "n": 18,
+      "detected": 15,
+      "named": 12
+     },
+     "partition": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     },
+     "pause": {
+      "n": 15,
+      "detected": 15,
+      "named": 13
+     }
+    },
+    "named": 129,
+    "gained": 1,
+    "lost": 0
+   }
+  }
+ },
+ "settings": {
+  "presets": {
+   "learned": {
+    "depth": 1,
+    "implication": 1,
+    "down": 1,
+    "up": 2,
+    "instrumented": 2,
+    "granger-symptom": 0.5
+   },
+   "dynamic": {
+    "implication": 1,
+    "down": 2,
+    "up": 1,
+    "granger-symptom": 0.5
+   }
+  },
+  "checkpointEvery": 60
+ }
+}

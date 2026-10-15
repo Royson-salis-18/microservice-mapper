@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronRight, ChevronDown, Play, Loader2 } from 'lucide-react';
 import { InfoTip } from './ui/Panel';
 
 /**
  * Notebook-style execution panel for the ML pipeline.
  *
  * The cells are the real pipeline steps, in the order they run, each showing
- * the actual source of the script it executes — fetched from the server, not
+ * the actual source of the script it executes - fetched from the server, not
  * transcribed here, so what is displayed cannot drift from what runs.
  *
  * What is editable is the part worth editing: the project to scope to and the
@@ -66,47 +67,73 @@ const ALGORITHMS = [
 ];
 
 const label: React.CSSProperties = {
-  fontSize: '10px',
+  fontSize: '12px',
   color: 'var(--color-text-muted)',
-  textTransform: 'uppercase',
-  fontWeight: 600,
+  fontWeight: 500,
   display: 'block',
-  marginBottom: '4px',
-  letterSpacing: '0.04em',
+  marginBottom: '6px',
 };
+
+const cell: React.CSSProperties = {
+  border: '1px solid var(--color-border)',
+  borderRadius: 'var(--radius-md)',
+  padding: '16px',
+  marginBottom: '12px',
+};
+
+const cellTitle: React.CSSProperties = {
+  display: 'flex', alignItems: 'baseline', gap: '8px',
+  fontSize: '13px', fontWeight: 600, color: 'var(--color-text-main)',
+};
+
+const stepNo: React.CSSProperties = {
+  fontSize: '11px', fontWeight: 500, color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums',
+};
+
+const helper: React.CSSProperties = {
+  fontSize: '11.5px', color: 'var(--color-text-dim)', marginTop: '6px', lineHeight: 1.5,
+};
+
+const mono = 'var(--font-mono)';
 
 const input: React.CSSProperties = {
   width: '100%',
-  background: 'rgba(0,0,0,0.35)',
-  color: '#fff',
+  height: '30px',
+  background: 'rgba(255,255,255,0.03)',
+  color: 'var(--color-text-main)',
   border: '1px solid var(--color-border)',
-  borderRadius: '6px',
-  padding: '6px 8px',
-  fontSize: '11px',
+  borderRadius: '8px',
+  padding: '0 10px',
+  fontSize: '13px',
+  fontFamily: 'inherit',
+  fontVariantNumeric: 'tabular-nums',
   outline: 'none',
 };
 
 function CodeCell({ source, collapsed, onToggle }: { source: SourceDoc | null; collapsed: boolean; onToggle: () => void }) {
   if (!source) return null;
   return (
-    <div style={{ marginTop: '10px', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' }}>
+    <div style={{ marginTop: '12px', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' }}>
       <button
         type="button"
         onClick={onToggle}
         style={{
-          width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.03)', border: 'none',
-          color: 'var(--color-text-muted)', padding: '6px 10px', fontSize: '10px', cursor: 'pointer',
-          fontFamily: 'monospace', display: 'flex', justifyContent: 'space-between',
+          width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: 'none',
+          color: 'var(--color-text-muted)', padding: '0 10px', height: '30px', fontSize: '12px', cursor: 'pointer',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}
       >
-        <span>{collapsed ? '▸' : '▾'} ml/{source.file}</span>
-        <span>{source.lines} lines · read-only</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: mono }}>
+          {collapsed ? <ChevronRight size={14} strokeWidth={1.75} /> : <ChevronDown size={14} strokeWidth={1.75} />}
+          ml/{source.file}
+        </span>
+        <span style={{ fontSize: '11.5px', color: 'var(--color-text-dim)', fontVariantNumeric: 'tabular-nums' }}>{source.lines} lines · Read-only</span>
       </button>
       {!collapsed && (
         <pre style={{
-          margin: 0, padding: '10px', maxHeight: '340px', overflow: 'auto',
-          background: 'rgba(0,0,0,0.4)', fontSize: '10px', lineHeight: 1.5,
-          color: 'var(--color-text-dim)', fontFamily: 'monospace',
+          margin: 0, padding: '12px', maxHeight: '340px', overflow: 'auto',
+          background: 'var(--color-bg-body)', borderTop: '1px solid var(--color-border)', fontSize: '12px', lineHeight: 1.55,
+          color: 'var(--color-text-muted)', fontFamily: mono,
         }}>{source.code}</pre>
       )}
     </div>
@@ -116,7 +143,7 @@ function CodeCell({ source, collapsed, onToggle }: { source: SourceDoc | null; c
 /**
  * The suggestion under a hyperparameter field.
  *
- * Shows the value, the sane range, and one click to take it — with the
+ * Shows the value, the sane range, and one click to take it - with the
  * reasoning behind it available rather than asking anyone to trust a bare
  * number. The reasons are computed from this project's own feature table,
  * so they say what will happen to these services rather than quoting a
@@ -128,26 +155,27 @@ function Hint({ s, current, onApply }: { s?: Suggestion; current: string; onAppl
   const value = String(s.suggested);
   const applied = current === value;
   return (
-    <div style={{ marginTop: '4px', fontSize: '9px', color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
-      <span>suggest </span>
+    <div style={{ marginTop: '6px', fontSize: '11.5px', color: 'var(--color-text-dim)', lineHeight: 1.6 }}>
+      <span>Suggested </span>
       <button
         type="button"
         onClick={() => onApply(value)}
-        title={applied ? 'already set' : `use ${value}`}
+        title={applied ? 'Already set' : `Use ${value}`}
         style={{
-          background: applied ? 'rgba(0,230,118,0.15)' : 'rgba(0,212,255,0.12)',
-          border: `1px solid ${applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)'}`,
-          color: applied ? 'var(--color-healthy)' : 'var(--color-accent-cyan)',
-          borderRadius: '4px', padding: '0 5px', fontSize: '9px', cursor: 'pointer', fontWeight: 700,
+          background: applied ? 'rgba(255,255,255,0.04)' : 'rgba(138,180,255,0.1)',
+          border: `1px solid ${applied ? 'var(--color-border)' : 'rgba(138,180,255,0.3)'}`,
+          color: applied ? 'var(--color-text-muted)' : 'var(--color-accent-cyan)',
+          borderRadius: '6px', padding: '0 6px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 550,
+          fontVariantNumeric: 'tabular-nums', fontFamily: 'inherit',
         }}
       >{value}</button>
       {s.range && <span> · usual {s.range[0]}–{s.range[1]}</span>}
       <button
         type="button" onClick={() => setOpen(o => !o)}
-        style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '9px', padding: '0 0 0 5px', textDecoration: 'underline' }}
-      >{open ? 'less' : 'why'}</button>
+        style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '11.5px', padding: '0 0 0 6px', textDecoration: 'underline', textUnderlineOffset: '2px', fontFamily: 'inherit' }}
+      >{open ? 'Less' : 'Why'}</button>
       {open && (
-        <div style={{ marginTop: '4px', padding: '6px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', color: 'var(--color-text-muted)' }}>
+        <div style={{ marginTop: '6px', padding: '8px 10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)', borderRadius: '6px', color: 'var(--color-text-muted)' }}>
           {s.reason}
         </div>
       )}
@@ -291,11 +319,11 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
 
   return (
     <div className="ml-panel">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-        <h3 className="ml-chart-title" style={{ margin: 0 }}>Execution</h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' }}>Execution</h3>
         <InfoTip>
           The pipeline steps in the order they run, each showing the real source of the script it
-          executes — fetched from the server, so what is displayed cannot drift from what runs.
+          executes - fetched from the server, so what is displayed cannot drift from what runs.
           <br /><br />
           Hyperparameters are passed to <code>train.py</code> as CLI flags. Anything left blank keeps the
           default from <code>ml/config.json</code>, and the exact command is previewed before you run it.
@@ -303,9 +331,9 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       </div>
 
       {/* ---- cell 1: scope ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '8px', color: 'var(--color-accent-cyan)' }}>
-          [1] Scope
+      <div style={cell}>
+        <div style={{ ...cellTitle, marginBottom: '12px' }}>
+          <span style={stepNo}>1</span>Scope
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
           <div>
@@ -313,22 +341,22 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
             <select value={project} onChange={e => setProject(e.target.value)} disabled={running} style={input}>
               {projects.length === 0 && <option value="">(no data yet)</option>}
               {projects.map(p => <option key={p} value={p}>{p}</option>)}
-              <option value="ALL">all projects</option>
+              <option value="ALL">All projects</option>
             </select>
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>
-              One project at a time. Models are per service either way — this picks which get rebuilt.
+            <div style={helper}>
+              One project at a time. Models are per service either way - this picks which get rebuilt.
             </div>
           </div>
           <div>
             <label style={label}>Train on data since</label>
             <input value={since} onChange={e => setSince(e.target.value)} disabled={running}
                    placeholder="2026-09-17T00:00:00Z" style={input} />
-            <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px' }}>
+            <div style={helper}>
               Use to exclude a known stress window from the training set.
             </div>
           </div>
           <div>
-            <label style={label}>…until</label>
+            <label style={label}>Until</label>
             <input value={until} onChange={e => setUntil(e.target.value)} disabled={running}
                    placeholder="(now)" style={input} />
           </div>
@@ -336,19 +364,21 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       </div>
 
       {/* ---- cell 2: preprocess ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
+      <div style={cell}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-cyan)' }}>
-            [2] Preprocess → features.csv
+          <div style={cellTitle}>
+            <span style={stepNo}>2</span>Preprocess
+            <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--color-text-dim)', fontFamily: mono }}>features.csv</span>
           </div>
-          <label style={{ fontSize: '10px', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={skipPreprocess} onChange={e => setSkipPreprocess(e.target.checked)} disabled={running} />
-            skip this step
+          <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={skipPreprocess} onChange={e => setSkipPreprocess(e.target.checked)} disabled={running}
+                   style={{ accentColor: 'var(--color-accent-cyan)' }} />
+            Skip this step
           </label>
         </div>
         <div style={{ marginTop: '6px' }}>
-          <InfoTip label="what this step does">
-            Rebuilds the feature table for <em>every</em> service — it is not project-scoped, and it is
+          <InfoTip label="What this step does">
+            Rebuilds the feature table for <em>every</em> service - it is not project-scoped, and it is
             the slow step. Skip it when tuning hyperparameters against data that has not changed.
           </InfoTip>
         </div>
@@ -357,29 +387,29 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       </div>
 
       {/* ---- cell 3: train ---- */}
-      <div style={{ border: '1px solid var(--color-border)', borderRadius: '10px', padding: '16px', marginBottom: '14px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '8px', color: 'var(--color-accent-cyan)' }}>
-          [3] Train
+      <div style={cell}>
+        <div style={{ ...cellTitle, marginBottom: '12px' }}>
+          <span style={stepNo}>3</span>Train
         </div>
 
         {/* What the suggestions below are reasoning from. Without this the
             numbers look like defaults rather than measurements. */}
         {suggest?.available && suggest.observed && (
           <div style={{
-            marginBottom: '10px', padding: '8px 10px', borderRadius: '6px',
-            background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.25)',
-            fontSize: '10px', color: 'var(--color-text-muted)', lineHeight: 1.6,
+            marginBottom: '12px', padding: '8px 12px', borderRadius: '8px',
+            background: 'rgba(255,255,255,0.02)', border: '1px solid var(--color-border)',
+            fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6, fontVariantNumeric: 'tabular-nums',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span>
-                <strong style={{ color: 'var(--color-accent-cyan)' }}>Measured for {suggest.project}:</strong>{' '}
+                <span style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>Measured for {suggest.project}:</span>{' '}
                 {suggest.observed.services} services · median{' '}
-                <strong style={{ color: 'var(--color-text-main)' }}>{suggest.observed.median_distinct}</strong>
+                <span style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{suggest.observed.median_distinct}</span>
                 {' '}distinct of {suggest.observed.median_rows} rows
               </span>
-              <InfoTip label="where these come from">
+              <InfoTip label="Where these come from">
                 Every suggestion below is computed from this project's own feature table, not from a
-                textbook default — so they say what will happen to <em>these</em> services.
+                textbook default - so they say what will happen to <em>these</em> services.
                 {suggest.observed.thinnest.length > 0 && (
                   <>
                     <br /><br />
@@ -394,9 +424,9 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
 
         {(suggest?.warnings ?? []).map((w, i) => (
           <div key={i} style={{
-            marginBottom: '10px', padding: '8px 10px', borderRadius: '6px',
-            background: 'rgba(255,171,0,0.08)', border: '1px solid rgba(255,171,0,0.3)',
-            fontSize: '10px', color: 'var(--color-degraded)', lineHeight: 1.5,
+            marginBottom: '12px', padding: '8px 12px', borderRadius: '8px',
+            background: 'rgba(232,163,61,0.06)', border: '1px solid rgba(232,163,61,0.25)',
+            fontSize: '12px', color: 'var(--color-degraded)', lineHeight: 1.5,
           }}>{w}</div>
         ))}
 
@@ -404,19 +434,19 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
         {Array.isArray(suggest?.suggestions?.algorithms?.suggested) && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap',
-            fontSize: '11px', color: 'var(--color-text-muted)',
+            fontSize: '12px', color: 'var(--color-text-muted)',
           }}>
             <span>Suggested:</span>
             <button
               type="button" disabled={running}
               onClick={() => setAlgorithms(suggest!.suggestions!.algorithms.suggested as string[])}
               style={{
-                background: 'rgba(0,212,255,0.12)', border: '1px solid var(--color-accent-cyan)',
-                color: 'var(--color-accent-cyan)', borderRadius: '6px', padding: '3px 10px',
-                fontSize: '11px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 650,
+                background: 'rgba(138,180,255,0.1)', border: '1px solid rgba(138,180,255,0.3)',
+                color: 'var(--color-accent-cyan)', borderRadius: '6px', height: '24px', padding: '0 10px',
+                fontSize: '12px', cursor: running ? 'not-allowed' : 'pointer', fontWeight: 550, fontFamily: 'inherit',
               }}
             >{(suggest!.suggestions!.algorithms.suggested as string[]).join(', ')}</button>
-            <InfoTip label="why these">{suggest!.suggestions!.algorithms.reason}</InfoTip>
+            <InfoTip label="Why these">{suggest!.suggestions!.algorithms.reason}</InfoTip>
           </div>
         )}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -428,18 +458,18 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
                 onClick={() => setAlgorithms(prev => on ? prev.filter(x => x !== a.id) : [...prev, a.id])}
                 title={a.note}
                 style={{
-                  background: on ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${on ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-                  color: on ? '#fff' : 'var(--color-text-dim)',
-                  borderRadius: '6px', padding: '5px 10px', fontSize: '10px',
-                  cursor: running ? 'not-allowed' : 'pointer', fontWeight: 600,
+                  background: on ? 'rgba(138,180,255,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${on ? 'rgba(138,180,255,0.35)' : 'var(--color-border)'}`,
+                  color: on ? '#dfe8ff' : 'var(--color-text-muted)',
+                  borderRadius: '8px', height: '30px', padding: '0 12px', fontSize: '12.5px',
+                  cursor: running ? 'not-allowed' : 'pointer', fontWeight: 550, fontFamily: 'inherit',
                 }}
               >{a.label}</button>
             );
           })}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
           <div>
             <label style={label}>Contamination</label>
             <input value={contamination} onChange={e => setContamination(e.target.value)} disabled={running}
@@ -447,7 +477,7 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
             <Hint s={suggest?.suggestions?.contamination} current={contamination} onApply={setContamination} />
           </div>
           <div>
-            <label style={label}>n_estimators</label>
+            <label style={label}><span style={{ fontFamily: mono, fontSize: '12px' }}>n_estimators</span></label>
             <input value={nEstimators} onChange={e => setNEstimators(e.target.value)} disabled={running}
                    type="number" min="10" placeholder="200" style={input} />
             <Hint s={suggest?.suggestions?.n_estimators} current={nEstimators} onApply={setNEstimators} />
@@ -471,11 +501,11 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       </div>
 
       {/* ---- run ---- */}
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={label}>Command</label>
         <pre style={{
-          margin: 0, padding: '8px 10px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px',
-          fontSize: '10px', color: 'var(--color-healthy)', fontFamily: 'monospace',
+          margin: 0, padding: '10px 12px', background: 'var(--color-bg-body)', border: '1px solid var(--color-border)', borderRadius: '8px',
+          fontSize: '12px', lineHeight: 1.55, color: 'var(--color-text-main)', fontFamily: mono,
           whiteSpace: 'pre-wrap', wordBreak: 'break-all',
         }}>{skipPreprocess ? '' : 'python3 preprocess.py && '}{commandPreview}</pre>
       </div>
@@ -483,30 +513,39 @@ export function MLExecutionPanel({ selectedProject = 'ALL' }: { selectedProject?
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         <button
           type="button" onClick={run} disabled={running}
-          className="ml-btn ml-btn-start"
-          style={{ padding: '8px 18px', fontSize: '11px' }}
-        >{running ? 'RUNNING…' : '▶ RUN'}</button>
+          className="mm-btn primary"
+          style={{ opacity: running ? 0.6 : 1, cursor: running ? 'not-allowed' : 'pointer' }}
+        >
+          {running ? <Loader2 size={14} strokeWidth={1.75} style={{ animation: 'mm-spin 1s linear infinite' }} /> : <Play size={14} strokeWidth={1.75} />}
+          {running ? 'Running…' : 'Run'}
+        </button>
         {retrain?.finishedAt && !running && (
-          <span style={{ fontSize: '10px', color: retrain.exitCode === 0 ? 'var(--color-healthy)' : 'var(--color-critical)' }}>
-            {retrain.exitCode === 0 ? 'finished cleanly' : `exited ${retrain.exitCode}`}
+          <span
+            className="mm-chip"
+            style={retrain.exitCode === 0
+              ? { background: 'rgba(62,207,142,0.1)', color: 'var(--color-healthy)' }
+              : { background: 'rgba(239,95,103,0.1)', color: 'var(--color-critical)' }}
+          >
+            <i className="mm-dot" style={{ background: 'currentColor' }} />
+            {retrain.exitCode === 0 ? 'Finished cleanly' : `Exited ${retrain.exitCode}`}
           </span>
         )}
       </div>
 
       {error && (
         <div style={{
-          marginTop: '10px', background: 'rgba(255,82,82,0.1)', border: '1px solid rgba(255,82,82,0.4)',
-          borderRadius: '6px', padding: '8px 10px', fontSize: '10px', color: 'var(--color-critical)',
+          marginTop: '12px', background: 'rgba(239,95,103,0.06)', border: '1px solid rgba(239,95,103,0.25)',
+          borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--color-critical)',
         }}>{error}</div>
       )}
 
       {retrain && retrain.log.length > 0 && (
-        <div style={{ marginTop: '12px' }}>
+        <div style={{ marginTop: '16px' }}>
           <label style={label}>Output</label>
           <pre ref={logRef} style={{
-            margin: 0, padding: '10px', maxHeight: '260px', overflow: 'auto',
-            background: 'rgba(0,0,0,0.45)', borderRadius: '6px', fontSize: '10px',
-            lineHeight: 1.55, color: 'var(--color-text-dim)', fontFamily: 'monospace',
+            margin: 0, padding: '10px 12px', maxHeight: '260px', overflow: 'auto',
+            background: 'var(--color-bg-body)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px',
+            lineHeight: 1.55, color: 'var(--color-text-muted)', fontFamily: mono,
             whiteSpace: 'pre-wrap',
           }}>{retrain.log.join('\n')}</pre>
         </div>

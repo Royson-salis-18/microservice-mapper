@@ -1,0 +1,24 @@
+\begin{tikzpicture}[font=\scriptsize,x=1cm,y=1cm,
+  blk/.style={draw,rounded corners=1.6pt,align=center,inner sep=2.4pt,minimum height=7.4mm,fill=blue!5,line width=0.5pt},
+  sto/.style={draw,align=center,inner sep=2.4pt,minimum height=7.4mm,fill=gray!10,line width=0.5pt},
+  agt/.style={draw,rounded corners=1.6pt,align=center,inner sep=2.4pt,minimum height=7.4mm,fill=green!7,line width=0.5pt},
+  ar/.style={-{Latex[length=1.7mm]},line width=0.5pt},
+  lab/.style={font=\tiny\itshape,fill=white,inner sep=0.6pt}]
+\node[sto,minimum width=21mm] (host) at (0,0) {Containers\\(Docker, SSH)};
+\node[agt,minimum width=21mm] (col) at (3.0,0) {Collector agent\\stats, sockets,\\container state};
+\node[blk,minimum width=22mm] (gr) at (6.2,0) {Evidence-weighted\\graph $G$};
+\node[blk,minimum width=22mm] (dir) at (9.6,0) {Learned call\\directions};
+\node[blk,minimum width=24mm] (det) at (3.0,-1.7) {Hybrid detector\\forests + rules + facts};
+\node[blk,minimum width=22mm] (rk) at (6.2,-1.7) {Ranker: own vs\\explained, walk};
+\node[blk,minimum width=22mm] (cas) at (9.6,-1.7) {Cascade model\\$p(c\!\leftarrow\!x)$, early warning};
+\node[agt,minimum width=44mm] (asst) at (4.6,-3.45) {Diagnosis assistant: cause, who is next,\\fault type, runbook, explanation};
+\node[sto,minimum width=21mm] (op) at (9.6,-3.45) {Operator};
+\draw[ar] (host)--(col); \draw[ar] (col)--(gr); \draw[ar] (gr)--(dir);
+\draw[ar] (col.south) -- ++(0,-0.4) -| (det.north);
+\draw[ar] (gr.south)--(rk.north); \draw[ar] (dir.south)--(cas.north);
+\draw[ar] (det)--(rk); \draw[ar] (rk)--(cas);
+\draw[ar] (rk.south) |- ([yshift=2mm]asst.east);
+\draw[ar] (cas.south) |- ([yshift=-2mm]asst.east) ;
+\draw[ar] (asst)--(op) node[midway,lab,above] {};
+\draw[ar,dashed] (op.north) -- ++(0,0.0) ;
+\end{tikzpicture}

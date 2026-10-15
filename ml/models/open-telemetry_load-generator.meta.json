@@ -1,0 +1,111 @@
+{
+  "service_id": "open-telemetry:load-generator",
+  "project": "open-telemetry",
+  "feature_columns": [
+    "z_cpu_percent",
+    "z_memory_percent",
+    "z_network_rx_rate",
+    "z_network_tx_rate"
+  ],
+  "trained_on_samples": 40,
+  "trained_at": "2026-09-30T17:39:43.304828+00:00",
+  "contamination": 0.01,
+  "n_estimators": 200,
+  "max_samples": "auto",
+  "threshold_p99": -2.2985086056692694e-17,
+  "train_score_mean": -0.2501887150989709,
+  "train_score_max": 0.0035130718694460494,
+  "holdout": {
+    "samples": 9,
+    "flag_rate": 0.0,
+    "mean_score": -0.27836167452566934,
+    "max_score": -0.1604261919167057,
+    "from": "2026-09-18T15:13:58.590617+00:00",
+    "to": "2026-09-18T15:15:18.823302+00:00"
+  },
+  "algorithms": {
+    "iforest": {
+      "threshold_p99": -2.2985086056692694e-17,
+      "train_score_mean": -0.2501887150989709,
+      "train_score_median": -0.24603400293833855,
+      "train_score_max": 0.0035130718694460494,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.27836167452566934,
+        "max_score": -0.1604261919167057,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_load-generator.joblib"
+    },
+    "lof": {
+      "error": "ValueError: only 18 distinct feature rows (need 20) \u2014 too little distinct structure for a density model"
+    },
+    "ocsvm": {
+      "threshold_p99": 0.0003119751609018673,
+      "train_score_mean": -0.004845287137233694,
+      "train_score_median": -0.005089169048425386,
+      "train_score_max": 0.0003119751609018673,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": -0.009129437856824692,
+        "max_score": -0.0016209009667606522,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_load-generator.ocsvm.joblib"
+    },
+    "zscore": {
+      "threshold_p99": 5.438516476104781,
+      "train_score_mean": 1.4721123759181995,
+      "train_score_median": 1.1084691262344375,
+      "train_score_max": 5.635865004586981,
+      "holdout": {
+        "samples": 9,
+        "flag_rate": 0.0,
+        "mean_score": 0.7190105529193134,
+        "max_score": 1.1090188827063263,
+        "from": "2026-09-18T15:13:58.590617+00:00",
+        "to": "2026-09-18T15:15:18.823302+00:00"
+      },
+      "artifact": "open-telemetry_load-generator.zscore.joblib"
+    }
+  },
+  "agreement": {
+    "iforest|ocsvm": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "iforest|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    },
+    "ocsvm|zscore": {
+      "same_verdict_rate": 1.0,
+      "jaccard": null,
+      "both_flagged": 0,
+      "either_flagged": 0
+    }
+  },
+  "data_quality": {
+    "rows": 40,
+    "unique_rows": 18,
+    "unique_fraction": 0.45,
+    "feature_std": {
+      "z_cpu_percent": 1.0693163571467326,
+      "z_memory_percent": 1.085739792586577,
+      "z_network_rx_rate": 1.0966416864233592,
+      "z_network_tx_rate": 1.066231207297858
+    }
+  },
+  "training_window": {
+    "since": null,
+    "until": null
+  }
+}

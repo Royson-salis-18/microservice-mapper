@@ -15,7 +15,7 @@ export interface ClassificationResult {
 /**
  * Classifies a service using multiple independent signals (spec section 8):
  * name, image, exposed ports, and labels. Never relies on a single
- * hard-coded naming rule — each match is recorded as evidence so the
+ * hard-coded naming rule - each match is recorded as evidence so the
  * decision is auditable.
  */
 export function classifyService(input: ClassificationInput): ClassificationResult {

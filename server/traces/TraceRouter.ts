@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TraceStore } from '../traces/TraceStore.js';
-import { TraceGraphAggregator } from '../traces/TraceGraphAggregator.js';
+import { TraceStore } from './TraceStore.js';
+import { TraceGraphAggregator } from './TraceGraphAggregator.js';
 
 /**
  * API router for connection trace data. These are SSH-sampled TCP
@@ -39,7 +39,7 @@ export function createTraceRouter(
     });
   });
 
-  // Start/Stop are now UI-level subscriptions — the remote-collector
+  // Start/Stop are now UI-level subscriptions - the remote-collector
   // sends connection events continuously via the ingest pipeline.
   // These endpoints exist for API compatibility.
   router.post('/start', async (req, res) => {

@@ -1,0 +1,11 @@
+# Job name == service name, so each series is attributed to the right service (and to the mapper's Tier-2 source, which reads the `job` label).
+global: { scrape_interval: 5s, evaluation_interval: 5s }
+scrape_configs:
+  - { job_name: accounts, static_configs: [{ targets: ["accounts:3101"] }] }
+  - { job_name: transfers, static_configs: [{ targets: ["transfers:3102"] }] }
+  - { job_name: ledger, static_configs: [{ targets: ["ledger:3103"] }] }
+  - { job_name: fraud-screening, static_configs: [{ targets: ["fraud-screening:3104"] }] }
+  - { job_name: fx-rates, static_configs: [{ targets: ["fx-rates:3105"] }] }
+  - { job_name: statements-worker, static_configs: [{ targets: ["statements-worker:3106"] }] }
+  - { job_name: fx-provider, static_configs: [{ targets: ["fx-provider:4100"] }] }
+  - { job_name: docker, static_configs: [{ targets: ["docker-exporter:9200"] }] }

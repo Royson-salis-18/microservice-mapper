@@ -15,7 +15,7 @@ Persists, per service:
   models/<service_id>.joblib        the fitted IsolationForest
   models/<service_id>.meta.json     feature column order + threshold (99th
                                      percentile of this service's own
-                                     training scores) — both required to
+                                     training scores) - both required to
                                      score new data consistently later.
 """
 
@@ -38,7 +38,7 @@ MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 _cfg = load_config()
 MIN_TRAINING_SAMPLES = _cfg["min_training_samples"]
-CONTAMINATION = _cfg["contamination"]  # explicit, not 'auto' — must be reproducible for the paper
+CONTAMINATION = _cfg["contamination"]  # explicit, not 'auto' - must be reproducible for the paper
 FEATURE_COLUMNS = [c for c in _cfg["feature_columns"] if c in ALL_FEATURE_COLUMNS] or list(ALL_FEATURE_COLUMNS)
 
 
@@ -51,10 +51,10 @@ FEATURE_COLUMNS = [c for c in _cfg["feature_columns"] if c in ALL_FEATURE_COLUMN
 #
 # These are deliberately different *families*, because agreeing detectors
 # are only informative when they could have disagreed:
-#   iforest  partitioning    — cheap, handles mixed scales, the existing default
-#   lof      local density   — catches a point normal globally but odd locally
-#   ocsvm    boundary        — fits a frontier around the normal region
-#   zscore   statistical     — no fitting at all; the features are already
+#   iforest  partitioning    - cheap, handles mixed scales, the existing default
+#   lof      local density   - catches a point normal globally but odd locally
+#   ocsvm    boundary        - fits a frontier around the normal region
+#   zscore   statistical     - no fitting at all; the features are already
 #                              z-scores, so this is max|z| across them, and it
 #                              is the interpretable baseline the others have
 #                              to beat before anyone trusts them.
@@ -79,11 +79,11 @@ def _fit_lof(X, contamination, **_):
     # neighbours are all identical to it, its local reachability density is
     # effectively infinite and the LOF score explodes: fitting this data
     # as-is produced thresholds of 3.37e9 for death-star:user-mongodb, and
-    # sock-shop:carts — 1568 rows with 6 distinct values — flagged 100% of
+    # sock-shop:carts - 1568 rows with 6 distinct values - flagged 100% of
     # its holdout. Those are artefacts of duplicate rows, not detections.
     # Refusing to fit is the honest outcome; a model nobody can trust is
     # worse than an absent one, and the reason is recorded in the metadata.
-    # Fit on distinct rows. The duplication here is a sampling artefact —
+    # Fit on distinct rows. The duplication here is a sampling artefact -
     # the collector polls every 10s while docker stats updates less often,
     # so the same state is recorded over and over (1568 rows carrying 47
     # distinct values on death-star:social-graph-mongodb). Real density
@@ -103,7 +103,7 @@ def _fit_lof(X, contamination, **_):
     LOF_MIN_DISTINCT = 20
     if len(X_unique) < LOF_MIN_DISTINCT:
         raise ValueError(
-            f"only {len(X_unique)} distinct feature rows (need {LOF_MIN_DISTINCT}) — "
+            f"only {len(X_unique)} distinct feature rows (need {LOF_MIN_DISTINCT}) - "
             "too little distinct structure for a density model"
         )
     n_neighbors = int(min(20, len(X_unique) - 1))
@@ -174,8 +174,8 @@ def main():
     if unknown:
         print(f"[train] unknown algorithm(s): {', '.join(unknown)}; known: {', '.join(DETECTORS)}", file=sys.stderr)
         sys.exit(2)
-    # iforest first so its artifact and the top-level meta fields — which
-    # every existing reader depends on — are written even if a later
+    # iforest first so its artifact and the top-level meta fields - which
+    # every existing reader depends on - are written even if a later
     # detector blows up on this service.
     algorithms.sort(key=lambda a: 0 if a == "iforest" else 1)
     min_training_samples = args.min_samples
@@ -184,7 +184,7 @@ def main():
     holdout_fraction = float(args.holdout_fraction)
 
     if not os.path.exists(FEATURES_PATH):
-        print(f"[train] no features at {FEATURES_PATH} — run preprocess.py first", file=sys.stderr)
+        print(f"[train] no features at {FEATURES_PATH} - run preprocess.py first", file=sys.stderr)
         sys.exit(1)
 
     df = pd.read_csv(FEATURES_PATH, parse_dates=["timestamp"])
@@ -265,7 +265,7 @@ def main():
                 # Drop any artifact from an earlier run. Leaving it behind
                 # means the metadata says "refused" while a loadable model
                 # sits on disk next to it, and a scorer that globs for
-                # artifacts would happily use the stale one — which is how
+                # artifacts would happily use the stale one - which is how
                 # you end up acting on a detector you already decided not
                 # to trust.
                 suffix = "" if algo == "iforest" else f".{algo}"
@@ -296,15 +296,27 @@ def main():
                     "to": holdout_rows["timestamp"].iloc[-1].isoformat(),
                 }
 
+            # The z-score detector holds no fitted state (it is max|z| over
+            # already-normalised features), and score.py computes it
+            # directly. Pickling it wrote one identical, never-loaded file per
+            # service, which could not even be unpickled outside this script.
             suffix = "" if algo == "iforest" else f".{algo}"
-            joblib.dump(model, os.path.join(MODELS_DIR, f"{safe_name}{suffix}.joblib"))
+            artifact = None if algo == "zscore" else f"{safe_name}{suffix}.joblib"
+            if artifact:
+                joblib.dump(model, os.path.join(MODELS_DIR, artifact))
 
             per_algo[algo] = {
                 "threshold_p99": threshold_99,
                 "train_score_mean": float(np.mean(raw_scores)),
+                # The live scorer centres on this rather than the mean. Score
+                # distributions here are heavily skewed - a one-class SVM had
+                # its mean pulled *past* its own 99th percentile by a handful
+                # of extreme training scores - and the median is the typical
+                # sample regardless.
+                "train_score_median": float(np.median(raw_scores)),
                 "train_score_max": float(np.max(raw_scores)),
                 "holdout": holdout_eval,
-                "artifact": f"{safe_name}{suffix}.joblib",
+                "artifact": artifact,
             }
 
         # How often do the detectors agree on the same holdout rows? Two
@@ -448,7 +460,7 @@ def main():
         json.dump(summary, f, indent=2)
 
     if not trained:
-        print("[train] nothing trained — need more data or a wider --since/--until window", file=sys.stderr)
+        print("[train] nothing trained - need more data or a wider --since/--until window", file=sys.stderr)
         sys.exit(1)
 
 

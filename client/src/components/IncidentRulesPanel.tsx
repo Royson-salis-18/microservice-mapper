@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ChevronRight, RotateCcw } from 'lucide-react';
 
 /**
  * The rules that decide what becomes an incident, shown where incidents are.
  *
- * These numbers used to be literals inside AnomalyDetector — a z-score of
- * 2.5, an absolute 85%, a 30-point jump on a flat baseline — so the honest
+ * These numbers used to be literals inside AnomalyDetector - a z-score of
+ * 2.5, an absolute 85%, a 30-point jump on a flat baseline - so the honest
  * answer to "why did this fire?" was "read the source". They are editable
  * here because the right value depends on the target: a 909MB box that sits
  * pinned at 90% CPU needs different bounds from one that idles at 2%.
  *
  * Nothing on this panel touches the ML pipeline. Incidents are rule-based on
- * purpose — they have to fire on a service discovered a minute ago, on a
+ * purpose - they have to fire on a service discovered a minute ago, on a
  * target whose models were never trained, while the scorer is stopped. What
  * the models think lives under Findings.
  */
@@ -48,16 +49,16 @@ const GROUPS: { title: string; note: string; keys: string[] }[] = [
 
 const LABELS: Record<string, string> = {
   zScoreAnomaly: 'Anomalous at |z| ≥',
-  zScoreHigh: 'HIGH at |z| ≥',
-  zScoreCritical: 'CRITICAL at |z| ≥',
+  zScoreHigh: 'High at |z| ≥',
+  zScoreCritical: 'Critical at |z| ≥',
   minDeltaPercent: 'Must also move by ≥ (points)',
-  absoluteHighPercent: 'HIGH above %',
-  absoluteCriticalPercent: 'CRITICAL above %',
+  absoluteHighPercent: 'High above %',
+  absoluteCriticalPercent: 'Critical above %',
   flatlineStdDev: 'Flat below std dev',
   flatlineDeltaPercent: 'Flat: anomalous jump (pts)',
-  flatlineCriticalPercent: 'Flat: CRITICAL above %',
+  flatlineCriticalPercent: 'Flat: critical above %',
   minHistorySamples: 'Min history samples',
-  criticalServicesForCritical: 'Critical services for CRITICAL',
+  criticalServicesForCritical: 'Critical services for critical',
 };
 
 export function IncidentRulesPanel() {
@@ -103,7 +104,7 @@ export function IncidentRulesPanel() {
       } else {
         setData(prev => (prev ? { ...prev, values: out.values } : prev));
         setDraft(Object.fromEntries(Object.entries(out.values).map(([k, v]) => [k, String(v)])));
-        setMessage(reset ? 'Reset to defaults — applies on the next detection cycle.' : 'Saved — applies on the next detection cycle.');
+        setMessage(reset ? 'Reset to defaults - applies on the next detection cycle.' : 'Saved - applies on the next detection cycle.');
       }
     } catch (e: any) {
       setMessage(e?.message || 'Could not reach the server');
@@ -118,74 +119,83 @@ export function IncidentRulesPanel() {
   const changedFromDefault = Object.entries(data.values).filter(([k, v]) => v !== data.defaults[k]);
 
   return (
-    <div style={{
-      background: 'var(--color-bg-panel)', border: '1px solid var(--color-border)',
-      borderRadius: '12px', padding: '16px', marginBottom: '16px',
-    }}>
+    <div className="mm-card" style={{ padding: 0, marginBottom: '16px', overflow: 'hidden' }}>
+      <style>{`
+        .mm-ir-head { transition: background var(--transition-fast); }
+        .mm-ir-head:hover { background: rgba(255,255,255,.025); }
+        .mm-ir-input { width: 100%; height: 30px; background: rgba(255,255,255,0.03); color: var(--color-text-main); border: 1px solid var(--color-border);
+          border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; outline: none; transition: border-color var(--transition-fast); }
+        .mm-ir-input:hover { border-color: var(--color-border-hover); }
+        .mm-ir-input.changed { border-color: rgba(138,180,255,0.3); }
+        .mm-ir-input:focus { border-color: rgba(138,180,255,0.45); }
+      `}</style>
       <button
         type="button"
+        className="mm-ir-head"
         onClick={() => setOpen(o => !o)}
         style={{
-          width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left',
-          color: 'var(--color-text-main)',
+          width: '100%', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', textAlign: 'left',
+          color: 'var(--color-text-main)', font: 'inherit',
         }}
       >
-        <span>
-          <span style={{ fontSize: '14px', fontWeight: 700 }}>{open ? '▾' : '▸'} Detection rules</span>
-          <span style={{ marginLeft: '10px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-            rule-based · no model involved
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <ChevronRight
+            size={15}
+            strokeWidth={1.75}
+            color="var(--color-text-dim)"
+            style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform var(--transition-fast)', flexShrink: 0 }}
+          />
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>Detection rules</span>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            Rule-based, no model involved
           </span>
         </span>
-        <span style={{ fontSize: '10px', color: changedFromDefault.length ? 'var(--color-degraded)' : 'var(--color-text-dim)' }}>
+        <span className="mm-chip" style={changedFromDefault.length ? { color: 'var(--color-text-main)' } : { color: 'var(--color-text-dim)' }}>
           {changedFromDefault.length
-            ? `${changedFromDefault.length} rule(s) customised`
-            : 'all defaults'}
+            ? `${changedFromDefault.length} customised`
+            : 'All defaults'}
         </span>
       </button>
 
       {open && (
-        <>
-          <p style={{ margin: '10px 0 14px 0', fontSize: '11px', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-            An incident fires when a live metric breaks one of these rules — no trained model is consulted,
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--color-border)' }}>
+          <p style={{ margin: '14px 0 18px 0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.6, maxWidth: '760px' }}>
+            An incident fires when a live metric breaks one of these rules - no trained model is consulted,
             which is why incidents work on a target that has never been trained and while the scorer is
-            stopped. What the models think is a separate question, under <strong>Findings</strong>.
+            stopped. What the models think is a separate question, under <strong style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>Findings</strong>.
             The right values depend on the target: a box pinned at 90% CPU needs different bounds from one
             that idles at 2%.
           </p>
 
-          {GROUPS.map(group => (
-            <div key={group.title} style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent-cyan)' }}>{group.title}</div>
-              <div style={{ fontSize: '10px', color: 'var(--color-text-dim)', margin: '2px 0 8px 0', lineHeight: 1.5 }}>{group.note}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px' }}>
+          {GROUPS.map((group, gi) => (
+            <div key={group.title} style={{ padding: '16px 0', borderTop: gi === 0 ? 'none' : '1px solid var(--color-border)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 550, color: 'var(--color-text-main)' }}>{group.title}</div>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '2px 0 12px 0', lineHeight: 1.5 }}>{group.note}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px 16px' }}>
                 {group.keys.map(key => {
                   const [lo, hi] = data.limits[key] || [0, 0];
                   const isDefault = Number(draft[key]) === data.defaults[key];
                   return (
                     <div key={key}>
                       <label style={{
-                        fontSize: '10px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '3px',
+                        fontSize: '12px', color: 'var(--color-text-muted)', display: 'block', marginBottom: '6px',
                       }} title={data.docs[key]}>
                         {LABELS[key] || key}
                       </label>
                       <input
                         type="number"
+                        className={`mm-ir-input${isDefault ? '' : ' changed'}`}
                         value={draft[key] ?? ''}
                         min={lo}
                         max={hi}
                         step={key === 'flatlineStdDev' ? 0.0001 : key.startsWith('zScore') ? 0.1 : 1}
                         onChange={e => setDraft(d => ({ ...d, [key]: e.target.value }))}
-                        style={{
-                          width: '100%', background: 'rgba(0,0,0,0.35)', color: '#fff',
-                          border: `1px solid ${isDefault ? 'var(--color-border)' : 'var(--color-degraded)'}`,
-                          borderRadius: '6px', padding: '5px 8px', fontSize: '11px', outline: 'none',
-                        }}
                       />
-                      <div style={{ fontSize: '9px', color: 'var(--color-text-dim)', marginTop: '3px', lineHeight: 1.45 }}>
+                      <div style={{ fontSize: '11.5px', color: 'var(--color-text-dim)', marginTop: '6px', lineHeight: 1.45 }}>
                         {data.docs[key]}
-                        <span style={{ display: 'block', marginTop: '2px' }}>
-                          default {data.defaults[key]} · allowed {lo}–{hi}
+                        <span style={{ display: 'block', marginTop: '2px', fontVariantNumeric: 'tabular-nums' }}>
+                          Default {data.defaults[key]} · allowed {lo}–{hi}
                         </span>
                       </div>
                     </div>
@@ -195,28 +205,21 @@ export function IncidentRulesPanel() {
             </div>
           ))}
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid var(--color-border)', flexWrap: 'wrap' }}>
             <button
-              type="button" disabled={busy || !dirty} onClick={() => save(false)}
-              style={{
-                background: dirty && !busy ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${dirty && !busy ? 'var(--color-accent-cyan)' : 'var(--color-border)'}`,
-                color: dirty && !busy ? '#fff' : 'var(--color-text-dim)',
-                borderRadius: '6px', padding: '6px 14px', fontSize: '11px', fontWeight: 700,
-                cursor: dirty && !busy ? 'pointer' : 'not-allowed',
-              }}
-            >{busy ? 'SAVING…' : 'SAVE RULES'}</button>
+              type="button" className="mm-btn primary" disabled={busy || !dirty} onClick={() => save(false)}
+              style={{ cursor: dirty && !busy ? 'pointer' : 'not-allowed', opacity: dirty && !busy ? 1 : 0.45 }}
+            >{busy ? 'Saving…' : 'Save rules'}</button>
             <button
-              type="button" disabled={busy} onClick={() => save(true)}
-              style={{
-                background: 'transparent', border: '1px solid var(--color-border)',
-                color: 'var(--color-text-muted)', borderRadius: '6px', padding: '6px 12px',
-                fontSize: '11px', cursor: busy ? 'not-allowed' : 'pointer',
-              }}
-            >Reset to defaults</button>
-            {message && <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>{message}</span>}
+              type="button" className="mm-btn" disabled={busy} onClick={() => save(true)}
+              style={{ cursor: busy ? 'not-allowed' : 'pointer', color: 'var(--color-text-muted)' }}
+            >
+              <RotateCcw size={14} strokeWidth={1.75} />
+              Reset to defaults
+            </button>
+            {message && <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginLeft: '4px' }}>{message}</span>}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

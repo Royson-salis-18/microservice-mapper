@@ -7,13 +7,13 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "..",
     "declaration": true,
     "sourceMap": true,
     "resolveJsonModule": true,
     "types": ["node"],
     "typeRoots": ["../server/node_modules/@types"]
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts", "../server/algorithms/detection/requestStats.ts"],
   "exclude": ["node_modules", "dist"]
 }
