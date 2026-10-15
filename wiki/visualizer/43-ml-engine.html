@@ -654,8 +654,8 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-purple">ML</span>
                 <span class="meta-item"><code>wiki/43-ml-engine.md</code></span>
-                <span class="meta-item">~15 min read</span>
-                <span class="meta-item">3,001 words</span>
+                <span class="meta-item">~16 min read</span>
+                <span class="meta-item">3,150 words</span>
             </div>
             <nav class="toc">
   <a href="#how-it-works-step-by-step">How it works, step by step</a>
@@ -666,7 +666,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <a href="#5-the-hybrid">5. The hybrid</a>
   <a href="#6-predictions">6. Predictions</a>
   <a href="#results">Results</a>
-  <a href="#on-the-recorded-bench-runs-2-benches-217-minutes-34-faults">On the recorded bench runs...</a>
+  <a href="#on-the-recorded-bench-runs-2-benches-217-minutes-62-faults">On the recorded bench runs...</a>
   <a href="#on-a-synthetic-bench-held-out-set-178-faults">out set, 178 faults)</a>
   <a href="#predictions-npm-run-mlpredict">Predictions (npm run ml:pr...</a>
   <a href="#limits-say-these-first">Limits (say these first)</a>
@@ -827,8 +827,8 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
     </tr>
   </tbody>
 </table></div>
-<p>On 34 recorded faults one fault is 3 points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.</p>
-<p>These numbers were measured before fixes 3 to 5 above.</p>
+<p>On the recorded faults one fault is a few points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.</p>
+<p>These numbers were measured before fixes 3 to 5 above, and before the ledger correction below (on 34 of the 62 recorded faults).</p>
 <h3 id="3-facts-first-stopped-and-crash-looping-containers">3. Facts first: stopped and crash-looping containers</h3>
 <ul>
   <li><strong><code>docker stop</code> exits with code 0</strong>, which normally means a one-shot job finished. A service that had been running for a minute and then exits counts as stopped.</li>
@@ -862,7 +862,7 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
 </table></div>
 <p>With probability 0.15 it jumps back to an anomalous service. The share of time spent on each service is its root-cause score.</p>
 <p><strong>Directions.</strong> Connections are seen from both ends. The engine keeps the direction a call normally takes, from entry point to service to data store or external provider. A pair between two ordinary services keeps both directions, marked "direction unknown".</p>
-<p><strong>Other root-cause methods that were tried</strong> (setting <code>rca</code>):</p>
+<p><strong>Other root-cause methods that were tried</strong> (setting <code>rca</code>; measured on 34 of the 62 recorded faults, before the ledger correction):</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Method</th>
@@ -938,8 +938,8 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
   <li><strong>Alarm time</strong> is the share of fault-free time spent in alarm.</li>
 </ul>
 <p>No engine ever sees a label: every moment is judged from the past only.</p>
-<div class="box why"><p><strong>Correction.</strong> Earlier versions of this page reported the ML engine with about a fifth of the rules' false alarms. That number counted alarm <em>episodes</em> only. Measuring alarm <em>time</em> showed the engine was alarming for 92% of fault-free time on the recorded runs: one long alarm counts as one episode. Fixes 3 to 5 above bring it to 32%, in line with the rules. Every table below includes alarm time.</p></div>
-<h3 id="on-the-recorded-bench-runs-2-benches-217-minutes-34-faults">On the recorded bench runs (2 benches, 217 minutes, 34 faults)</h3>
+<div class="box why"><p><strong>Corrections.</strong> 1. Earlier versions of this page reported the ML engine with about a fifth of the rules' false alarms. That number counted alarm <em>episodes</em> only. Measuring alarm <em>time</em> showed the previous engine was alarming for most of the fault-free time (86% on the recorded runs): one long alarm counts as one episode. Fixes 3 to 5 above bring it to 5%. Every table below includes alarm time. 2. Each recorded run holds two fault campaigns, and both number their faults from f001. The ledger reader kept only the second campaign, so 14 of the 31 faults per bench were missing from every earlier table (for all engines), and their outages were counted as false alarms. The reader is fixed (<code>server/algorithms/evaluation/score.ts</code>, with a test), and all numbers below use all 62 faults.</p></div>
+<h3 id="on-the-recorded-bench-runs-2-benches-217-minutes-62-faults">On the recorded bench runs (2 benches, 217 minutes, 62 faults)</h3>
 <p><code>npm run ml:compare</code> (ML over 5 seeds) and <code>npm run ml:hybrid</code>:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -953,50 +953,51 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
   <tbody>
     <tr>
       <td>Rules (live, as recorded)</td>
-      <td>97%</td>
-      <td>58%</td>
-      <td>56%</td>
-      <td>12.4</td>
-      <td>33%</td>
+      <td>89%</td>
+      <td>60%</td>
+      <td>53%</td>
+      <td>4.6</td>
+      <td>11%</td>
     </tr>
     <tr>
       <td>Rules (re-scored, with the same container facts)</td>
-      <td>97%</td>
-      <td>67%</td>
+      <td>90%</td>
+      <td>71%</td>
       <td>65%</td>
-      <td>16.2</td>
-      <td>26%</td>
+      <td>9.2</td>
+      <td>9%</td>
     </tr>
     <tr>
       <td>ML, previous version (two-sided, alarm at the line)</td>
-      <td>95 ± 1%</td>
+      <td>96 ± 1%</td>
       <td>77 ± 1%</td>
-      <td>73%</td>
-      <td>2.6</td>
-      <td><strong>92%</strong></td>
+      <td>74%</td>
+      <td>2.5</td>
+      <td><strong>86%</strong></td>
     </tr>
     <tr>
       <td>ML now (5 seeds)</td>
-      <td>100 ± 0%</td>
-      <td>71 ± 1%</td>
+      <td>88 ± 1%</td>
+      <td>81 ± 1%</td>
       <td>71%</td>
-      <td>8.7</td>
-      <td>32%</td>
+      <td>2.0</td>
+      <td>5%</td>
     </tr>
     <tr>
       <td><strong>Hybrid (default)</strong></td>
-      <td><strong>100%</strong></td>
+      <td><strong>90%</strong></td>
+      <td><strong>82%</strong></td>
       <td><strong>74%</strong></td>
-      <td><strong>74%</strong></td>
-      <td>10.9</td>
-      <td>35%</td>
+      <td>6.2</td>
+      <td>7%</td>
     </tr>
   </tbody>
 </table></div>
 <ul>
-  <li><strong>Root cause.</strong> The ML and hybrid engines name the right service first clearly more often than the rules (74% against 56 to 65%).</li>
-  <li><strong>Alarms.</strong> They alarm about as much as the live rules.</li>
-  <li><strong>The walk.</strong> It adds 3 points over ranking by anomaly alone (71% against 68%).</li>
+  <li><strong>Root cause.</strong> The ML and hybrid engines name the right service first far more often than the rules (81 to 82% against 60 to 71%).</li>
+  <li><strong>Detection.</strong> The hybrid gets back the faults the ML engine alone misses (90% against 88%).</li>
+  <li><strong>Alarms.</strong> It alarms less than the live rules (7% of fault-free time against 11%).</li>
+  <li><strong>The walk.</strong> It adds 2 points over ranking by anomaly alone (81% against 79%).</li>
 </ul>
 <p><strong>Cross-system check</strong> (ML settings chosen on one bench, tested untouched on the other, 5 seeds):</p>
 <div class="scroll"><table class="t">
@@ -1008,13 +1009,13 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
   <tbody>
     <tr>
       <td>ShopFlow</td>
-      <td>100% / 76% / 9.3 / 31%</td>
-      <td>100% / 59% / 11.3 / 28%</td>
+      <td>87% / 85% / 2.2 / 5%</td>
+      <td>90% / 64% / 1.5 / 6%</td>
     </tr>
     <tr>
       <td>LedgerLine</td>
-      <td>100% / 65% / 8.3 / 30%</td>
-      <td>94% / 56% / 13.6 / 37%</td>
+      <td>87% / 78% / 1.5 / 2%</td>
+      <td>87% / 56% / 7.7 / 15%</td>
     </tr>
   </tbody>
 </table></div>
@@ -1030,17 +1031,24 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
   <tbody>
     <tr>
       <td>stop</td>
-      <td>8</td>
-      <td>4</td>
-      <td>8</td>
-      <td>8</td>
+      <td>16</td>
+      <td>9</td>
+      <td>16</td>
+      <td>16</td>
     </tr>
     <tr>
       <td>crash</td>
-      <td>10</td>
-      <td>10</td>
-      <td>10</td>
-      <td>10</td>
+      <td>16</td>
+      <td>16</td>
+      <td>16</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>brownout</td>
+      <td>14</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
     </tr>
     <tr>
       <td>memory</td>
@@ -1051,27 +1059,28 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
     </tr>
     <tr>
       <td>crash-loop</td>
-      <td>2</td>
-      <td>2</td>
-      <td>1</td>
-      <td>1</td>
+      <td>4</td>
+      <td>4</td>
+      <td>3</td>
+      <td>3</td>
     </tr>
     <tr>
       <td>pause</td>
-      <td>2</td>
-      <td>2</td>
-      <td>2</td>
-      <td>2</td>
+      <td>4</td>
+      <td>4</td>
+      <td>4</td>
+      <td>4</td>
     </tr>
     <tr>
-      <td>brownout</td>
-      <td>6</td>
-      <td>0</td>
-      <td>0</td>
-      <td>0</td>
+      <td>flap</td>
+      <td>2</td>
+      <td>2</td>
+      <td>2</td>
+      <td>2</td>
     </tr>
   </tbody>
 </table></div>
+<p>Brownouts are the open problem on the real benches: every engine misses almost all of them. Many hit near-idle services, where throttling barely shows.</p>
 <h3 id="on-a-synthetic-bench-held-out-set-178-faults">On a synthetic bench (held-out set, 178 faults)</h3>
 <ul>
   <li><code>npm run ml:synth</code> writes synthetic campaigns in the recorded format.</li>
@@ -1207,7 +1216,7 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
 <div class="scroll"><table class="t">
   <thead><tr>
     <th></th>
-    <th>Recorded runs (34 faults)</th>
+    <th>Recorded runs (62 faults)</th>
     <th>Synthetic held-out (178 faults)</th>
   </tr></thead>
   <tbody>
@@ -1223,22 +1232,22 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
     </tr>
     <tr>
       <td>False warnings per fault-free hour</td>
-      <td>6.4</td>
+      <td>7.7</td>
       <td>0.9</td>
     </tr>
     <tr>
       <td>Likely next, learned cascade: precision / recall / F1</td>
-      <td>13% / 53% / 0.21</td>
+      <td>10% / 55% / 0.17</td>
       <td>40% / 47% / 0.43</td>
     </tr>
     <tr>
       <td>Likely next, everything upstream: precision / recall / F1</td>
-      <td>10% / 80% / 0.18</td>
+      <td>8% / 75% / 0.14</td>
       <td>32% / 73% / 0.45</td>
     </tr>
     <tr>
       <td>Likely next, the live mapper's own at-risk list</td>
-      <td>19% / 47% / 0.27</td>
+      <td>15% / 45% / 0.23</td>
       <td>(not recorded)</td>
     </tr>
   </tbody>
@@ -1249,7 +1258,7 @@ level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 �
 </ul>
 <h2 id="limits-say-these-first">Limits (say these first)</h2>
 <ul>
-  <li>34 recorded faults is a small sample: one fault is 3 points.</li>
+  <li>62 recorded faults is a small sample: one fault is about 2 points.</li>
   <li>Most faults overlapped with another fault, which makes "right service first" hard for every engine.</li>
   <li>Settings were chosen on the recorded runs and the synthetic tuning set. The held-out synthetic set is the fair estimate. It is a simulator: cleaner than a real system, useful for comparing engines and fault classes, not a claim about production accuracy.</li>
   <li>The <code>docker stop</code> and crash-loop facts were found by looking at the recorded runs. Both are given to every engine in the comparisons, but the live rule engine alone does not have them.</li>

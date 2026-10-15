@@ -150,7 +150,7 @@ The same questions can be answered by a learned engine, or by both engines toget
    - Early warning: a 2-minute trend forecast on memory, CPU, throttling, errors and latency.
    - Likely next: a cascade model learned from how often trouble moved along each call edge.
 6. **Results.**
-   - Recorded runs, 34 faults: the hybrid catches and names 74%, against 56% for the live rules, with about the same alarm time.
+   - Recorded runs, 62 faults: the hybrid catches and names 74%, against 53% for the live rules. It alarms 7% of fault-free time, against 11% for the rules.
    - Held-out synthetic bench, 178 faults: hybrid 72% (92% detected), rules 70% (89%), ML 70% (89%).
    - Early warning catches 7 of 18 memory leaks before the alarm on the synthetic bench.
 

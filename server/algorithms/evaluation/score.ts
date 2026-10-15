@@ -51,11 +51,16 @@ export const norm = (id: string | null | undefined): string => (id ? (id.include
 // ---------------------------------------------------------------- loading
 export function parseLedger(text: string): { faults: LedgerFault[]; campaigns: { seed: string; ts: number }[] } {
   const starts = new Map<string, any>(), ends = new Map<string, any>(); const campaigns: { seed: string; ts: number }[] = [];
+  // Every campaign numbers its faults from f001 again, so one ledger can hold the same id more than once: a repeated id
+  // gets the campaign number as a suffix (f001#2), and a fault-end belongs to the latest fault-start with its id.
+  const current = new Map<string, string>();
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
     let r: any; try { r = JSON.parse(line); } catch { continue; }
-    if (r.type === 'fault-start') starts.set(r.id, r);
-    else if (r.type === 'fault-end') ends.set(r.id, r);
+    if (r.type === 'fault-start') {
+      const key = starts.has(r.id) ? `${r.id}#${Math.max(1, campaigns.length)}` : r.id;
+      current.set(r.id, key); starts.set(key, { ...r, id: key });
+    } else if (r.type === 'fault-end') ends.set(current.get(r.id) ?? r.id, r);
     else if (r.type === 'campaign-start') campaigns.push({ seed: r.seed, ts: r.ts });
   }
   const faults: LedgerFault[] = [];

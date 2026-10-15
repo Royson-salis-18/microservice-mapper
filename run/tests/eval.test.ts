@@ -239,3 +239,17 @@ test('a soft fault that changed nothing users could feel is not ground truth for
   assert.equal(r2.faults.find((f) => f.id === 'f1')!.effect, 'unknown');
   assert.deepEqual(r2.confusion.truth, ['cache', 'db']);
 });
+
+test('parseLedger keeps faults from every campaign when ids repeat (each campaign starts at f001)', () => {
+  const L = [
+    { ts: 1, type: 'campaign-start', seed: 'calm' },
+    { ts: 10, type: 'fault-start', id: 'f001', class: 'crash', target: 'a', startedAt: 10, durationSec: 5 },
+    { ts: 20, type: 'fault-end', id: 'f001', appliedAt: 11, healedAt: 20 },
+    { ts: 30, type: 'campaign-start', seed: 'storm' },
+    { ts: 40, type: 'fault-start', id: 'f001', class: 'stop', target: 'b', startedAt: 40, durationSec: 5 },
+    { ts: 50, type: 'fault-end', id: 'f001', appliedAt: 41, healedAt: 50 },
+  ].map((x) => JSON.stringify(x)).join('\n');
+  const { faults } = parseLedger(L);
+  assert.equal(faults.length, 2);
+  assert.deepEqual(faults.map((f) => [f.target, f.a, f.b]), [['a', 11, 20], ['b', 41, 50]]);
+});

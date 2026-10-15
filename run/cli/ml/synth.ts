@@ -233,6 +233,8 @@ for (let c = 0; c < CAMPAIGNS; c++) {
   const out = campaign(t, SEED * 1000 + c, MINUTES, 1_800_000_000_000 + c * 86_400_000);
   fs.writeFileSync(path.join(dir, `ledger-${t.subject}.jsonl`), out.ledger);
   fs.writeFileSync(path.join(dir, `observed-${t.subject}.jsonl`), out.observed);
+  // the true call graph, for experiments that learn it from the data (never read by the engines)
+  fs.writeFileSync(path.join(dir, `topology-${t.subject}.json`), JSON.stringify({ subject: t.subject, calls: t.calls }, null, 1));
   total += out.faults;
   console.log(`${path.relative(process.cwd(), dir)}  ${t.subject.padEnd(18)} ${t.services.length} services  ${out.faults} faults`);
 }
