@@ -3,201 +3,211 @@
     {
       "name": "runC/ledgerline",
       "moments": 1300,
-      "faults": 17
+      "faults": 31
     },
     {
       "name": "runC/shopflow",
       "moments": 1300,
-      "faults": 17
+      "faults": 31
     }
   ],
   "k": 5,
   "cv": {
     "learned": {
-      "faults": 34,
-      "detected": 0.5,
-      "detectedN": 17,
-      "top1OfDetected": 0.5294117647058824,
-      "top1N": 9,
-      "caughtAndNamed": 0.2647058823529412,
-      "falseAlarmsPerHour": 2.95216387461668,
-      "falseAlarms": 2,
-      "medianDelaySec": 26.96
+      "faults": 62,
+      "detected": 0.8548387096774194,
+      "detectedN": 53,
+      "top1OfDetected": 0.6792452830188679,
+      "top1N": 36,
+      "caughtAndNamed": 0.5806451612903226,
+      "falseAlarmsPerHour": 6.047080299557241,
+      "falseAlarms": 8,
+      "alarmShare": null,
+      "medianDelaySec": 16.932
     },
     "rulesFixed": {
-      "faults": 34,
-      "detected": 0.9705882352941176,
-      "detectedN": 33,
-      "top1OfDetected": 0.5454545454545454,
-      "top1N": 18,
-      "caughtAndNamed": 0.5294117647058824,
-      "falseAlarmsPerHour": 8.85649162385004,
-      "falseAlarms": 6,
-      "medianDelaySec": 9.851
+      "faults": 62,
+      "detected": 0.9032258064516129,
+      "detectedN": 56,
+      "top1OfDetected": 0.5357142857142857,
+      "top1N": 30,
+      "caughtAndNamed": 0.4838709677419355,
+      "falseAlarmsPerHour": 9.826505486780515,
+      "falseAlarms": 13,
+      "alarmShare": null,
+      "medianDelaySec": 15.058
     },
     "rulesTuned": {
-      "faults": 34,
-      "detected": 0.8235294117647058,
-      "detectedN": 28,
-      "top1OfDetected": 0.4642857142857143,
-      "top1N": 13,
-      "caughtAndNamed": 0.38235294117647056,
-      "falseAlarmsPerHour": 4.42824581192502,
-      "falseAlarms": 3,
+      "faults": 62,
+      "detected": 0.8548387096774194,
+      "detectedN": 53,
+      "top1OfDetected": 0.5471698113207547,
+      "top1N": 29,
+      "caughtAndNamed": 0.46774193548387094,
+      "falseAlarmsPerHour": 3.0235401497786203,
+      "falseAlarms": 4,
+      "alarmShare": null,
       "medianDelaySec": 15.514
     },
     "live": {
-      "faults": 34,
-      "detected": 0.9705882352941176,
-      "detectedN": 33,
-      "top1OfDetected": 0.5757575757575758,
-      "top1N": 19,
-      "caughtAndNamed": 0.5588235294117647,
-      "falseAlarmsPerHour": 5.90432774923336,
-      "falseAlarms": 4,
-      "medianDelaySec": 4.984
+      "faults": 62,
+      "detected": 0.8870967741935484,
+      "detectedN": 55,
+      "top1OfDetected": 0.6,
+      "top1N": 33,
+      "caughtAndNamed": 0.532258064516129,
+      "falseAlarmsPerHour": 4.53531022466793,
+      "falseAlarms": 6,
+      "alarmShare": null,
+      "medianDelaySec": 9.851
     }
   },
   "cross": [
     {
       "label": "train shopflow → test ledgerline",
       "learned": {
-        "faults": 17,
-        "detected": 1,
-        "detectedN": 17,
-        "top1OfDetected": 0.5294117647058824,
-        "top1N": 9,
-        "caughtAndNamed": 0.5294117647058824,
-        "falseAlarmsPerHour": 11.313862037090193,
-        "falseAlarms": 15,
-        "medianDelaySec": 15.058
+        "faults": 31,
+        "detected": 0.8709677419354839,
+        "detectedN": 27,
+        "top1OfDetected": 0.7407407407407407,
+        "top1N": 20,
+        "caughtAndNamed": 0.6451612903225806,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": null,
+        "medianDelaySec": 15.084
       },
       "rules": {
-        "faults": 17,
-        "detected": 0.9411764705882353,
-        "detectedN": 16,
-        "top1OfDetected": 0.5625,
-        "top1N": 9,
-        "caughtAndNamed": 0.5294117647058824,
-        "falseAlarmsPerHour": 9.051089629672154,
-        "falseAlarms": 12,
-        "medianDelaySec": 15.514
+        "faults": 31,
+        "detected": 0.8387096774193549,
+        "detectedN": 26,
+        "top1OfDetected": 0.5384615384615384,
+        "top1N": 14,
+        "caughtAndNamed": 0.45161290322580644,
+        "falseAlarmsPerHour": 1.53929433616649,
+        "falseAlarms": 1,
+        "alarmShare": null,
+        "medianDelaySec": 15.382
       },
       "live": {
-        "faults": 17,
-        "detected": 0.9411764705882353,
-        "detectedN": 16,
-        "top1OfDetected": 0.5625,
-        "top1N": 9,
-        "caughtAndNamed": 0.5294117647058824,
-        "falseAlarmsPerHour": 13.576634444508231,
-        "falseAlarms": 18,
-        "medianDelaySec": 4.984
+        "faults": 31,
+        "detected": 0.8709677419354839,
+        "detectedN": 27,
+        "top1OfDetected": 0.5555555555555556,
+        "top1N": 15,
+        "caughtAndNamed": 0.4838709677419355,
+        "falseAlarmsPerHour": 7.69647168083245,
+        "falseAlarms": 5,
+        "alarmShare": null,
+        "medianDelaySec": 8
       }
     },
     {
       "label": "train ledgerline → test shopflow",
       "learned": {
-        "faults": 17,
-        "detected": 1,
-        "detectedN": 17,
-        "top1OfDetected": 0.5294117647058824,
-        "top1N": 9,
-        "caughtAndNamed": 0.5294117647058824,
-        "falseAlarmsPerHour": 9.041634844786316,
-        "falseAlarms": 12,
-        "medianDelaySec": 17.236
+        "faults": 31,
+        "detected": 0.8387096774193549,
+        "detectedN": 26,
+        "top1OfDetected": 0.6923076923076923,
+        "top1N": 18,
+        "caughtAndNamed": 0.5806451612903226,
+        "falseAlarmsPerHour": 13.823769972467657,
+        "falseAlarms": 9,
+        "alarmShare": null,
+        "medianDelaySec": 16.932
       },
       "rules": {
-        "faults": 17,
-        "detected": 1,
-        "detectedN": 17,
-        "top1OfDetected": 0.5294117647058824,
-        "top1N": 9,
-        "caughtAndNamed": 0.5294117647058824,
-        "falseAlarmsPerHour": 9.041634844786316,
-        "falseAlarms": 12,
-        "medianDelaySec": 9.851
+        "faults": 31,
+        "detected": 0.8709677419354839,
+        "detectedN": 27,
+        "top1OfDetected": 0.5555555555555556,
+        "top1N": 15,
+        "caughtAndNamed": 0.4838709677419355,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": null,
+        "medianDelaySec": 16.358
       },
       "live": {
-        "faults": 17,
-        "detected": 1,
-        "detectedN": 17,
-        "top1OfDetected": 0.5882352941176471,
-        "top1N": 10,
-        "caughtAndNamed": 0.5882352941176471,
-        "falseAlarmsPerHour": 11.302043555982893,
-        "falseAlarms": 15,
-        "medianDelaySec": 6.919
+        "faults": 31,
+        "detected": 0.9032258064516129,
+        "detectedN": 28,
+        "top1OfDetected": 0.6428571428571429,
+        "top1N": 18,
+        "caughtAndNamed": 0.5806451612903226,
+        "falseAlarmsPerHour": 1.5359744413852954,
+        "falseAlarms": 1,
+        "alarmShare": null,
+        "medianDelaySec": 11.353
       }
     }
   ],
-  "threshold": 0.8465946592667314,
-  "lambda": 100,
+  "threshold": 0.8256252526239767,
+  "lambda": 10,
   "weights": [
     {
-      "feature": "callersSymptomMax",
-      "weight": 0.642
-    },
-    {
-      "feature": "symptom",
-      "weight": -0.591
-    },
-    {
       "feature": "throttle",
-      "weight": 0.57
+      "weight": 1.102
     },
     {
       "feature": "down",
-      "weight": 0.306
-    },
-    {
-      "feature": "own",
-      "weight": 0.277
+      "weight": 0.787
     },
     {
       "feature": "reqDrop",
-      "weight": 0.272
+      "weight": -0.632
     },
     {
-      "feature": "netDrop",
-      "weight": -0.245
-    },
-    {
-      "feature": "restarting",
-      "weight": 0.23
-    },
-    {
-      "feature": "paused",
-      "weight": 0.198
-    },
-    {
-      "feature": "memory",
-      "weight": 0.193
-    },
-    {
-      "feature": "hasRequests",
-      "weight": 0.099
-    },
-    {
-      "feature": "latRise",
-      "weight": -0.097
-    },
-    {
-      "feature": "calleesEvidenceMax",
-      "weight": 0.044
-    },
-    {
-      "feature": "errRise",
-      "weight": -0.036
-    },
-    {
-      "feature": "cpu",
-      "weight": 0.011
+      "feature": "symptom",
+      "weight": -0.544
     },
     {
       "feature": "callersSymptomMean",
-      "weight": -0.009
+      "weight": 0.5
+    },
+    {
+      "feature": "netDrop",
+      "weight": 0.492
+    },
+    {
+      "feature": "memory",
+      "weight": 0.449
+    },
+    {
+      "feature": "hasRequests",
+      "weight": 0.42
+    },
+    {
+      "feature": "paused",
+      "weight": 0.389
+    },
+    {
+      "feature": "restarting",
+      "weight": 0.318
+    },
+    {
+      "feature": "latRise",
+      "weight": 0.286
+    },
+    {
+      "feature": "errRise",
+      "weight": -0.229
+    },
+    {
+      "feature": "calleesEvidenceMax",
+      "weight": -0.061
+    },
+    {
+      "feature": "own",
+      "weight": 0.051
+    },
+    {
+      "feature": "cpu",
+      "weight": -0.05
+    },
+    {
+      "feature": "callersSymptomMax",
+      "weight": 0.043
     },
     {
       "feature": "detached",
@@ -212,6 +222,303 @@
     {
       "run": "runC/ledgerline",
       "id": "f001",
+      "class": "flap",
+      "target": "transfers",
+      "detected": true,
+      "top1": true,
+      "delaySec": 10.517,
+      "predicted": "transfers",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f002",
+      "class": "crash-loop",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": true,
+      "delaySec": 16.709,
+      "predicted": "fraud-screening",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f003",
+      "class": "crash",
+      "target": "accounts",
+      "detected": true,
+      "top1": true,
+      "delaySec": 3.908,
+      "predicted": "accounts",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f004",
+      "class": "crash",
+      "target": "fx-rates",
+      "detected": true,
+      "top1": true,
+      "delaySec": 12.88,
+      "predicted": "fx-rates",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001",
+      "class": "flap",
+      "target": "cart",
+      "detected": true,
+      "top1": true,
+      "delaySec": 10.542,
+      "predicted": "cart",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f002",
+      "class": "crash-loop",
+      "target": "payments",
+      "detected": true,
+      "top1": true,
+      "delaySec": 16.746,
+      "predicted": "payments",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f003",
+      "class": "crash",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 18.933,
+      "predicted": "catalog-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f004",
+      "class": "crash",
+      "target": "psp-sandbox",
+      "detected": true,
+      "top1": true,
+      "delaySec": 2.911,
+      "predicted": "psp-sandbox",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f005",
+      "class": "stop",
+      "target": "state-store",
+      "detected": true,
+      "top1": false,
+      "delaySec": 92.424,
+      "predicted": "statements-worker",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f006",
+      "class": "brownout",
+      "target": "event-bus",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f007",
+      "class": "stop",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 13.87,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f008",
+      "class": "stop",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": false,
+      "delaySec": 129.464,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f005",
+      "class": "stop",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 17.295,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f006",
+      "class": "brownout",
+      "target": "notifier",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f007",
+      "class": "stop",
+      "target": "notifier",
+      "detected": true,
+      "top1": false,
+      "delaySec": 109.086,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f008",
+      "class": "stop",
+      "target": "orders",
+      "detected": true,
+      "top1": false,
+      "delaySec": 129.402,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f009",
+      "class": "brownout",
+      "target": "fraud-screening",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f010",
+      "class": "brownout",
+      "target": "accounts-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 24.135,
+      "predicted": "accounts-db",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f011",
+      "class": "crash",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": true,
+      "delaySec": 16.317,
+      "predicted": "fx-provider",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f012",
+      "class": "brownout",
+      "target": "fraud-screening",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f013",
+      "class": "pause",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 0.362,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f009",
+      "class": "brownout",
+      "target": "payments",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f010",
+      "class": "brownout",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 24.154,
+      "predicted": "catalog-db",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f011",
+      "class": "crash",
+      "target": "orders",
+      "detected": true,
+      "top1": true,
+      "delaySec": 16.358,
+      "predicted": "orders",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f012",
+      "class": "brownout",
+      "target": "psp-sandbox",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f013",
+      "class": "pause",
+      "target": "notifier",
+      "detected": true,
+      "top1": true,
+      "delaySec": 15.384,
+      "predicted": "notifier",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f014",
+      "class": "stop",
+      "target": "edge",
+      "detected": true,
+      "top1": false,
+      "delaySec": 165.165,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f001#2",
       "class": "crash-loop",
       "target": "statements-worker",
       "detected": true,
@@ -222,7 +529,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f002",
+      "id": "f002#2",
       "class": "stop",
       "target": "ledger-db",
       "detected": true,
@@ -233,40 +540,40 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f003",
+      "id": "f003#2",
       "class": "stop",
       "target": "statements-worker",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
+      "delaySec": 62.538,
       "predicted": null,
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f004",
+      "id": "f004#2",
       "class": "crash",
       "target": "fraud-screening",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 15.514,
+      "predicted": "fraud-screening",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f005",
+      "id": "f005#2",
       "class": "crash",
       "target": "ledger",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 18.563,
+      "predicted": "ledger",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f006",
+      "id": "f006#2",
       "class": "memory",
       "target": "transfers",
       "detected": false,
@@ -277,40 +584,40 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f007",
+      "id": "f007#2",
       "class": "stop",
       "target": "accounts",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
+      "delaySec": 93.787,
       "predicted": null,
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f008",
+      "id": "f008#2",
       "class": "brownout",
       "target": "ledger-db",
       "detected": true,
       "top1": true,
-      "delaySec": 90.107,
+      "delaySec": 4.984,
       "predicted": "ledger-db",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f009",
+      "id": "f009#2",
       "class": "memory",
       "target": "ledger",
       "detected": true,
-      "top1": false,
-      "delaySec": 48.055,
-      "predicted": "ledger-db",
+      "top1": true,
+      "delaySec": 18.012,
+      "predicted": "ledger",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f010",
+      "id": "f010#2",
       "class": "memory",
       "target": "accounts",
       "detected": true,
@@ -321,7 +628,18 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f001",
+      "id": "f014",
+      "class": "stop",
+      "target": "api-gateway",
+      "detected": true,
+      "top1": false,
+      "delaySec": 165.137,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001#2",
       "class": "crash-loop",
       "target": "orders-db",
       "detected": true,
@@ -332,106 +650,106 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f002",
+      "id": "f002#2",
       "class": "stop",
       "target": "orders",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "delaySec": 54.871,
+      "predicted": "orders-db",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f003",
+      "id": "f003#2",
       "class": "stop",
       "target": "orders-db",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "delaySec": 47.202,
+      "predicted": "payments",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f004",
+      "id": "f004#2",
       "class": "crash",
       "target": "payments",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "delaySec": 0.196,
+      "predicted": "orders-db",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f005",
+      "id": "f005#2",
       "class": "crash",
       "target": "cart-store",
       "detected": true,
-      "top1": false,
-      "delaySec": 33.341,
-      "predicted": null,
+      "top1": true,
+      "delaySec": 18.32,
+      "predicted": "cart-store",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f006",
+      "id": "f006#2",
       "class": "memory",
       "target": "cart",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 17.236,
+      "predicted": "cart",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f007",
+      "id": "f007#2",
       "class": "stop",
       "target": "catalog",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "delaySec": 3.347,
+      "predicted": "cart",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f008",
+      "id": "f008#2",
       "class": "brownout",
       "target": "cart-store",
       "detected": true,
       "top1": false,
-      "delaySec": 79.846,
+      "delaySec": 4.725,
       "predicted": "cart",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f009",
+      "id": "f009#2",
       "class": "memory",
       "target": "cart",
       "detected": true,
       "top1": true,
-      "delaySec": 26.96,
+      "delaySec": 16.932,
       "predicted": "cart",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f010",
+      "id": "f010#2",
       "class": "memory",
       "target": "catalog",
       "detected": true,
       "top1": true,
-      "delaySec": 36.459,
+      "delaySec": 26.445,
       "predicted": "catalog",
       "isolated": true
     },
     {
       "run": "runC/ledgerline",
-      "id": "f011",
+      "id": "f011#2",
       "class": "brownout",
       "target": "fx-provider",
       "detected": false,
@@ -442,34 +760,34 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f012",
+      "id": "f012#2",
       "class": "crash",
       "target": "accounts-db",
       "detected": true,
       "top1": true,
-      "delaySec": 22.478,
+      "delaySec": 17.471,
       "predicted": "accounts-db",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f013",
+      "id": "f013#2",
       "class": "crash",
       "target": "accounts",
       "detected": true,
-      "top1": false,
-      "delaySec": 34.591,
-      "predicted": null,
+      "top1": true,
+      "delaySec": 14.561,
+      "predicted": "accounts",
       "isolated": false
     },
     {
       "run": "runC/ledgerline",
-      "id": "f014",
+      "id": "f014#2",
       "class": "brownout",
       "target": "ledger-db",
       "detected": true,
       "top1": true,
-      "delaySec": 13.815,
+      "delaySec": 18.823,
       "predicted": "ledger-db",
       "isolated": false
     },
@@ -490,9 +808,9 @@
       "class": "pause",
       "target": "fraud-screening",
       "detected": true,
-      "top1": false,
-      "delaySec": 60.152,
-      "predicted": null,
+      "top1": true,
+      "delaySec": 15.084,
+      "predicted": "fraud-screening",
       "isolated": false
     },
     {
@@ -502,13 +820,13 @@
       "target": "fx-provider",
       "detected": true,
       "top1": true,
-      "delaySec": 22.074,
+      "delaySec": 12.063,
       "predicted": "fx-provider",
       "isolated": true
     },
     {
       "run": "runC/shopflow",
-      "id": "f011",
+      "id": "f011#2",
       "class": "brownout",
       "target": "orders",
       "detected": false,
@@ -519,35 +837,35 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f012",
+      "id": "f012#2",
       "class": "crash",
       "target": "catalog-db",
       "detected": true,
-      "top1": false,
-      "delaySec": 32.109,
-      "predicted": null,
+      "top1": true,
+      "delaySec": 17.091,
+      "predicted": "catalog-db",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f013",
+      "id": "f013#2",
       "class": "crash",
       "target": "catalog",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 19.268,
+      "predicted": "catalog",
       "isolated": false
     },
     {
       "run": "runC/shopflow",
-      "id": "f014",
+      "id": "f014#2",
       "class": "brownout",
       "target": "inventory",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "delaySec": 213.853,
+      "predicted": "payments",
       "isolated": false
     },
     {
@@ -555,9 +873,9 @@
       "id": "f015",
       "class": "stop",
       "target": "payments",
-      "detected": false,
+      "detected": true,
       "top1": false,
-      "delaySec": null,
+      "delaySec": 94.529,
       "predicted": null,
       "isolated": false
     },
@@ -566,10 +884,10 @@
       "id": "f016",
       "class": "pause",
       "target": "payments",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 9.851,
+      "predicted": "payments",
       "isolated": false
     },
     {
@@ -577,10 +895,10 @@
       "id": "f017",
       "class": "crash",
       "target": "psp-sandbox",
-      "detected": false,
-      "top1": false,
-      "delaySec": null,
-      "predicted": null,
+      "detected": true,
+      "top1": true,
+      "delaySec": 16.732,
+      "predicted": "psp-sandbox",
       "isolated": true
     }
   ],
@@ -588,6 +906,303 @@
     {
       "run": "runC/ledgerline",
       "id": "f001",
+      "class": "flap",
+      "target": "transfers",
+      "detected": true,
+      "top1": false,
+      "delaySec": 10.517,
+      "predicted": "edge",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f002",
+      "class": "crash-loop",
+      "target": "fraud-screening",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.699,
+      "predicted": "fraud-screening",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f003",
+      "class": "crash",
+      "target": "accounts",
+      "detected": true,
+      "top1": true,
+      "delaySec": 3.908,
+      "predicted": "accounts",
+      "isolated": false
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f004",
+      "class": "crash",
+      "target": "fx-rates",
+      "detected": true,
+      "top1": true,
+      "delaySec": 2.869,
+      "predicted": "fx-rates",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001",
+      "class": "flap",
+      "target": "cart",
+      "detected": true,
+      "top1": true,
+      "delaySec": 10.542,
+      "predicted": "cart",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f002",
+      "class": "crash-loop",
+      "target": "payments",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.74,
+      "predicted": "payments",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f003",
+      "class": "crash",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 3.906,
+      "predicted": "catalog-db",
+      "isolated": false
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f004",
+      "class": "crash",
+      "target": "psp-sandbox",
+      "detected": true,
+      "top1": true,
+      "delaySec": 2.911,
+      "predicted": "psp-sandbox",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f005",
+      "class": "stop",
+      "target": "state-store",
+      "detected": true,
+      "top1": false,
+      "delaySec": 17.29,
+      "predicted": "edge",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f006",
+      "class": "brownout",
+      "target": "event-bus",
+      "detected": true,
+      "top1": false,
+      "delaySec": 4.733,
+      "predicted": "statements-worker",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f007",
+      "class": "stop",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 8.863,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f008",
+      "class": "stop",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": false,
+      "delaySec": 39.31,
+      "predicted": "fx-rates",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f005",
+      "class": "stop",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 12.288,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f006",
+      "class": "brownout",
+      "target": "notifier",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f007",
+      "class": "stop",
+      "target": "notifier",
+      "detected": true,
+      "top1": false,
+      "delaySec": 104.077,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f008",
+      "class": "stop",
+      "target": "orders",
+      "detected": true,
+      "top1": false,
+      "delaySec": 124.395,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f009",
+      "class": "brownout",
+      "target": "fraud-screening",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f010",
+      "class": "brownout",
+      "target": "accounts-db",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f011",
+      "class": "crash",
+      "target": "fx-provider",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.31,
+      "predicted": "fx-provider",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f012",
+      "class": "brownout",
+      "target": "fraud-screening",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f013",
+      "class": "pause",
+      "target": "event-bus",
+      "detected": true,
+      "top1": true,
+      "delaySec": 10.374,
+      "predicted": "event-bus",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f009",
+      "class": "brownout",
+      "target": "payments",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f010",
+      "class": "brownout",
+      "target": "catalog-db",
+      "detected": true,
+      "top1": true,
+      "delaySec": 29.16,
+      "predicted": "catalog-db",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f011",
+      "class": "crash",
+      "target": "orders",
+      "detected": true,
+      "top1": true,
+      "delaySec": 11.353,
+      "predicted": "orders",
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f012",
+      "class": "brownout",
+      "target": "psp-sandbox",
+      "detected": false,
+      "top1": false,
+      "delaySec": null,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f013",
+      "class": "pause",
+      "target": "notifier",
+      "detected": true,
+      "top1": true,
+      "delaySec": 15.384,
+      "predicted": "notifier",
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f014",
+      "class": "stop",
+      "target": "edge",
+      "detected": true,
+      "top1": false,
+      "delaySec": 160.157,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/ledgerline",
+      "id": "f001#2",
       "class": "crash-loop",
       "target": "statements-worker",
       "detected": true,
@@ -598,7 +1213,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f002",
+      "id": "f002#2",
       "class": "stop",
       "target": "ledger-db",
       "detected": true,
@@ -609,7 +1224,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f003",
+      "id": "f003#2",
       "class": "stop",
       "target": "statements-worker",
       "detected": true,
@@ -620,7 +1235,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f004",
+      "id": "f004#2",
       "class": "crash",
       "target": "fraud-screening",
       "detected": true,
@@ -631,7 +1246,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f005",
+      "id": "f005#2",
       "class": "crash",
       "target": "ledger",
       "detected": true,
@@ -642,7 +1257,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f006",
+      "id": "f006#2",
       "class": "memory",
       "target": "transfers",
       "detected": true,
@@ -653,7 +1268,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f007",
+      "id": "f007#2",
       "class": "stop",
       "target": "accounts",
       "detected": true,
@@ -664,7 +1279,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f008",
+      "id": "f008#2",
       "class": "brownout",
       "target": "ledger-db",
       "detected": true,
@@ -675,7 +1290,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f009",
+      "id": "f009#2",
       "class": "memory",
       "target": "ledger",
       "detected": true,
@@ -686,7 +1301,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f010",
+      "id": "f010#2",
       "class": "memory",
       "target": "accounts",
       "detected": true,
@@ -697,7 +1312,18 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f001",
+      "id": "f014",
+      "class": "stop",
+      "target": "api-gateway",
+      "detected": true,
+      "top1": false,
+      "delaySec": 160.131,
+      "predicted": null,
+      "isolated": true
+    },
+    {
+      "run": "runC/shopflow",
+      "id": "f001#2",
       "class": "crash-loop",
       "target": "orders-db",
       "detected": true,
@@ -708,7 +1334,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f002",
+      "id": "f002#2",
       "class": "stop",
       "target": "orders",
       "detected": true,
@@ -719,7 +1345,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f003",
+      "id": "f003#2",
       "class": "stop",
       "target": "orders-db",
       "detected": true,
@@ -730,7 +1356,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f004",
+      "id": "f004#2",
       "class": "crash",
       "target": "payments",
       "detected": true,
@@ -741,7 +1367,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f005",
+      "id": "f005#2",
       "class": "crash",
       "target": "cart-store",
       "detected": true,
@@ -752,7 +1378,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f006",
+      "id": "f006#2",
       "class": "memory",
       "target": "cart",
       "detected": true,
@@ -763,7 +1389,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f007",
+      "id": "f007#2",
       "class": "stop",
       "target": "catalog",
       "detected": true,
@@ -774,7 +1400,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f008",
+      "id": "f008#2",
       "class": "brownout",
       "target": "cart-store",
       "detected": true,
@@ -785,7 +1411,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f009",
+      "id": "f009#2",
       "class": "memory",
       "target": "cart",
       "detected": true,
@@ -796,7 +1422,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f010",
+      "id": "f010#2",
       "class": "memory",
       "target": "catalog",
       "detected": true,
@@ -807,7 +1433,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f011",
+      "id": "f011#2",
       "class": "brownout",
       "target": "fx-provider",
       "detected": false,
@@ -818,7 +1444,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f012",
+      "id": "f012#2",
       "class": "crash",
       "target": "accounts-db",
       "detected": true,
@@ -829,7 +1455,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f013",
+      "id": "f013#2",
       "class": "crash",
       "target": "accounts",
       "detected": true,
@@ -840,7 +1466,7 @@
     },
     {
       "run": "runC/ledgerline",
-      "id": "f014",
+      "id": "f014#2",
       "class": "brownout",
       "target": "ledger-db",
       "detected": true,
@@ -884,7 +1510,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f011",
+      "id": "f011#2",
       "class": "brownout",
       "target": "orders",
       "detected": true,
@@ -895,7 +1521,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f012",
+      "id": "f012#2",
       "class": "crash",
       "target": "catalog-db",
       "detected": true,
@@ -906,7 +1532,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f013",
+      "id": "f013#2",
       "class": "crash",
       "target": "catalog",
       "detected": true,
@@ -917,7 +1543,7 @@
     },
     {
       "run": "runC/shopflow",
-      "id": "f014",
+      "id": "f014#2",
       "class": "brownout",
       "target": "inventory",
       "detected": true,

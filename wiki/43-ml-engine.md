@@ -77,9 +77,9 @@ All plug into the same window, line and range guard (`server/algorithms/ml/detec
 | Ensemble of all four | mean of the four levels | 71% | 76% |
 | Isolation Forest + Mahalanobis | mean of the two levels | 71% | 76% |
 
-On 34 recorded faults one fault is 3 points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.
+On the recorded faults one fault is a few points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.
 
-These numbers were measured before fixes 3 to 5 above.
+These numbers were measured before fixes 3 to 5 above, and before the ledger correction below (on 34 of the 62 recorded faults).
 
 ### 3. Facts first: stopped and crash-looping containers
 
@@ -100,7 +100,7 @@ With probability 0.15 it jumps back to an anomalous service. The share of time s
 
 **Directions.** Connections are seen from both ends. The engine keeps the direction a call normally takes, from entry point to service to data store or external provider. A pair between two ordinary services keeps both directions, marked "direction unknown".
 
-**Other root-cause methods that were tried** (setting `rca`):
+**Other root-cause methods that were tried** (setting `rca`; measured on 34 of the 62 recorded faults, before the ledger correction):
 
 | Method | Idea | Recorded runs | Synthetic |
 |---|---|---|---|
@@ -151,41 +151,47 @@ All numbers come from the same event-level scoring.
 
 No engine ever sees a label: every moment is judged from the past only.
 
-> **Correction.** Earlier versions of this page reported the ML engine with about a fifth of the rules' false alarms. That number counted alarm *episodes* only. Measuring alarm *time* showed the engine was alarming for 92% of fault-free time on the recorded runs: one long alarm counts as one episode. Fixes 3 to 5 above bring it to 32%, in line with the rules. Every table below includes alarm time.
+> **Corrections.**
+> 1. Earlier versions of this page reported the ML engine with about a fifth of the rules' false alarms. That number counted alarm *episodes* only. Measuring alarm *time* showed the previous engine was alarming for most of the fault-free time (86% on the recorded runs): one long alarm counts as one episode. Fixes 3 to 5 above bring it to 5%. Every table below includes alarm time.
+> 2. Each recorded run holds two fault campaigns, and both number their faults from f001. The ledger reader kept only the second campaign, so 14 of the 31 faults per bench were missing from every earlier table (for all engines), and their outages were counted as false alarms. The reader is fixed (`server/algorithms/evaluation/score.ts`, with a test), and all numbers below use all 62 faults.
 
-### On the recorded bench runs (2 benches, 217 minutes, 34 faults)
+### On the recorded bench runs (2 benches, 217 minutes, 62 faults)
 
 `npm run ml:compare` (ML over 5 seeds) and `npm run ml:hybrid`:
 
 | Engine | Detected | Right service first (of detected) | Caught and named first | False alarms per hour | Alarm time |
 |---|---|---|---|---|---|
-| Rules (live, as recorded) | 97% | 58% | 56% | 12.4 | 33% |
-| Rules (re-scored, with the same container facts) | 97% | 67% | 65% | 16.2 | 26% |
-| ML, previous version (two-sided, alarm at the line) | 95 ± 1% | 77 ± 1% | 73% | 2.6 | **92%** |
-| ML now (5 seeds) | 100 ± 0% | 71 ± 1% | 71% | 8.7 | 32% |
-| **Hybrid (default)** | **100%** | **74%** | **74%** | 10.9 | 35% |
+| Rules (live, as recorded) | 89% | 60% | 53% | 4.6 | 11% |
+| Rules (re-scored, with the same container facts) | 90% | 71% | 65% | 9.2 | 9% |
+| ML, previous version (two-sided, alarm at the line) | 96 ± 1% | 77 ± 1% | 74% | 2.5 | **86%** |
+| ML now (5 seeds) | 88 ± 1% | 81 ± 1% | 71% | 2.0 | 5% |
+| **Hybrid (default)** | **90%** | **82%** | **74%** | 6.2 | 7% |
 
-- **Root cause.** The ML and hybrid engines name the right service first clearly more often than the rules (74% against 56 to 65%).
-- **Alarms.** They alarm about as much as the live rules.
-- **The walk.** It adds 3 points over ranking by anomaly alone (71% against 68%).
+- **Root cause.** The ML and hybrid engines name the right service first far more often than the rules (81 to 82% against 60 to 71%).
+- **Detection.** The hybrid gets back the faults the ML engine alone misses (90% against 88%).
+- **Alarms.** It alarms less than the live rules (7% of fault-free time against 11%).
+- **The walk.** It adds 2 points over ranking by anomaly alone (81% against 79%).
 
 **Cross-system check** (ML settings chosen on one bench, tested untouched on the other, 5 seeds):
 
 | Test bench | ML: detected / right first / false alarms per hour / alarm time | Rules (live) |
 |---|---|---|
-| ShopFlow | 100% / 76% / 9.3 / 31% | 100% / 59% / 11.3 / 28% |
-| LedgerLine | 100% / 65% / 8.3 / 30% | 94% / 56% / 13.6 / 37% |
+| ShopFlow | 87% / 85% / 2.2 / 5% | 90% / 64% / 1.5 / 6% |
+| LedgerLine | 87% / 78% / 1.5 / 2% | 87% / 56% / 7.7 / 15% |
 
 By class (caught and named first, recorded runs):
 
 | Class | Faults | Rules | ML | Hybrid |
 |---|---|---|---|---|
-| stop | 8 | 4 | 8 | 8 |
-| crash | 10 | 10 | 10 | 10 |
+| stop | 16 | 9 | 16 | 16 |
+| crash | 16 | 16 | 16 | 16 |
+| brownout | 14 | 1 | 0 | 1 |
 | memory | 6 | 4 | 4 | 4 |
-| crash-loop | 2 | 2 | 1 | 1 |
-| pause | 2 | 2 | 2 | 2 |
-| brownout | 6 | 0 | 0 | 0 |
+| crash-loop | 4 | 4 | 3 | 3 |
+| pause | 4 | 4 | 4 | 4 |
+| flap | 2 | 2 | 2 | 2 |
+
+Brownouts are the open problem on the real benches: every engine misses almost all of them. Many hit near-idle services, where throttling barely shows.
 
 ### On a synthetic bench (held-out set, 178 faults)
 
@@ -229,21 +235,21 @@ Caught and named first, by class:
 
 ### Predictions (`npm run ml:predict`)
 
-| | Recorded runs (34 faults) | Synthetic held-out (178 faults) |
+| | Recorded runs (62 faults) | Synthetic held-out (178 faults) |
 |---|---|---|
 | Faults warned before the first alarm | 1 | 16 (memory 7 of 18, brownout 5 of 26, slow network 4 of 25) |
 | Median lead over the alarm | 90 s | 30 s |
-| False warnings per fault-free hour | 6.4 | 0.9 |
-| Likely next, learned cascade: precision / recall / F1 | 13% / 53% / 0.21 | 40% / 47% / 0.43 |
-| Likely next, everything upstream: precision / recall / F1 | 10% / 80% / 0.18 | 32% / 73% / 0.45 |
-| Likely next, the live mapper's own at-risk list | 19% / 47% / 0.27 | (not recorded) |
+| False warnings per fault-free hour | 7.7 | 0.9 |
+| Likely next, learned cascade: precision / recall / F1 | 10% / 55% / 0.17 | 40% / 47% / 0.43 |
+| Likely next, everything upstream: precision / recall / F1 | 8% / 75% / 0.14 | 32% / 73% / 0.45 |
+| Likely next, the live mapper's own at-risk list | 15% / 45% / 0.23 | (not recorded) |
 
 - **Early warning.** It works for faults that build up: memory leaks, throttling, slowly rising latency. On sudden faults (crash, stop, pause) there is nothing to forecast. The recorded runs have almost no slow faults, so it rarely fires there.
 - **Learned cascade.** It is more precise than "everything upstream" and misses more, with about the same F1. The live mapper's own at-risk list is the best predictor on the recorded runs. Predicting who is hit next is hard for all three, and the margins are small.
 
 ## Limits (say these first)
 
-- 34 recorded faults is a small sample: one fault is 3 points.
+- 62 recorded faults is a small sample: one fault is about 2 points.
 - Most faults overlapped with another fault, which makes "right service first" hard for every engine.
 - Settings were chosen on the recorded runs and the synthetic tuning set. The held-out synthetic set is the fair estimate. It is a simulator: cleaner than a real system, useful for comparing engines and fault classes, not a claim about production accuracy.
 - The `docker stop` and crash-loop facts were found by looking at the recorded runs. Both are given to every engine in the comparisons, but the live rule engine alone does not have them.
