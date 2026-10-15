@@ -37,3 +37,14 @@ run/synthetic-runs/
 # v2 trace caches (rebuild with v2/core/trace.ts)
 v2/.cache/
 v2/reports/*.html
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.synctex.gz
+paper/build*.log
+paper/b.log
+paper/bibtex.log
