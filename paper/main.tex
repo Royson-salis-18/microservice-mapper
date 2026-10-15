@@ -4,6 +4,8 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{graphicx}
+\usepackage{placeins}
+\renewcommand{\topfraction}{0.95}\renewcommand{\dbltopfraction}{0.95}\renewcommand{\textfraction}{0.05}\renewcommand{\floatpagefraction}{0.8}\renewcommand{\dblfloatpagefraction}{0.8}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
@@ -134,7 +136,7 @@ benchmark applications \cite{gan2019deathstar,zhou2018trainticket} frame our fau
 
 \section{System Overview and Problem Statement}
 \label{sec:overview}
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \input{fig_arch.tex}
 \caption{System overview. The collector agent observes the containers from outside the application. The evidence-weighted
@@ -223,7 +225,7 @@ episode rate and an alarm time of 86\% on the real systems; the refinements abov
 
 \section{A Probabilistic Cascading-Failure Model}
 \label{sec:cascade}
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \input{fig_prop.tex}
 \caption{The cascade model on a four-service example. Edge labels are learned propagation probabilities $p(c\!\leftarrow\!x)$;
@@ -346,7 +348,7 @@ advantage is robustly about operating point rather than a single threshold. Fig.
 gain over the rules is concentrated in \emph{stop} faults (16/16 against 9/16 on the real systems), which is the effect of the
 \texttt{docker stop} fact, and, on the synthetic set, \emph{flap} faults (12/12 against 2/12).
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults). Det.: faults detected (\%).
 \acc{1}, \acc{3}: true cause first or in the top three among detected (\%). \cn: caught and named first over all faults (\%).
@@ -376,7 +378,7 @@ Hybrid + learned dir. & 92 [87, 96] & 79 & 93 & 72 [65, 79] & 0.8 & 6 \\
 \end{tabular}
 \end{table*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_op.pdf}
 \caption{Operating curves. Sweeping the alarm threshold of each engine traces detection rate (top) and caught-and-named rate (bottom)
@@ -385,7 +387,7 @@ envelope in both the real systems (a, c) and the synthetic held-out set (b, d).}
 \label{fig:op}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_roc.pdf}
 \caption{Service-level detection by detector: ROC (top) and precision--recall (bottom) for the real systems (left) and the synthetic
@@ -394,7 +396,7 @@ faulted service during a fault; negatives are any service when no fault is activ
 \label{fig:roc}
 \end{figure*}
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering
 \caption{Service-level detection by detector (mean $\pm$ s.d. over three seeds; the rule layer is deterministic). Dashes: not run.}
 \label{tab:roc}
@@ -414,7 +416,7 @@ Ensemble of four & 0.648$\pm$0.001 & 0.323$\pm$0.003 & -- & -- \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{fig_forest.pdf}
 \caption{Paired differences in caught-and-named rate between engines (percentage points, 95\% paired-bootstrap interval); filled markers
@@ -422,7 +424,7 @@ exclude zero.}
 \label{fig:forest}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering
 \caption{Paired bootstrap tests behind Fig.~\ref{fig:forest} (difference in caught-and-named rate).}
 \label{tab:paired}
@@ -464,7 +466,7 @@ Fig.~\ref{fig:atk} shows the true cause in the top $k$: the ML-based rankers rea
 and the curves converge by $k{=}2$ to $3$ near the 90\% detection ceiling, so the remaining misses are mostly faults the engine does not see (brownouts on near-idle services)
 rather than faults it ranks badly.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_delay.pdf}
 \caption{Detection delay after fault onset as a cumulative distribution (symmetric-log axis); legends give the median over detected
@@ -472,7 +474,7 @@ faults. The curves plateau at each engine's detection rate.}
 \label{fig:delay}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_atk.pdf}
 \caption{Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals (offset for legibility), for the real
@@ -480,7 +482,7 @@ systems (a) and the synthetic held-out set (b).}
 \label{fig:atk}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_class.pdf}
 \caption{Caught-and-named rate by fault class (percent; $n$ faults per class), for four rankers on the real systems (a) and the
@@ -497,7 +499,7 @@ alarming at level one instead of two raises it to 22\% and false alarms to 11.3 
 one-sided features do not matter on the synthetic set, where restarts do not lower memory: an effect of the real systems that the
 simulator does not reproduce.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_ablation.pdf}
 \caption{Ablation. Each bar removes one mechanism from the full engine. (a), (b): change in caught-and-named rate (percentage points)
@@ -519,7 +521,7 @@ victim is louder than the true cause rises from 15\% to 25\% (panel c), the seve
 A router that uses it whenever no container fact holds did not change the full benchmarks (within $\pm$2 points), so the shipped ranking is
 unchanged. We read this as: graph-aware ranking is a modest, regime-dependent gain, and the decomposition matters more than the walk.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_amp.pdf}
 \caption{Amplification study on soft faults (106 per level). (a) Caught-and-named rate of four rankers on identical alarms. (b) Gain over the
@@ -536,7 +538,7 @@ experiment cannot be done well:} only 5 of 420 predictions were followed by a ca
 against 0.661; the live mapper's own risk values 0.530) is not informative. We state this because the real faults are mostly single-service
 outages that the systems absorb; whether learned propagation helps on a real cascade is untested.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_calibration.pdf}
 \caption{Who-is-next prediction on the synthetic held-out set. (a) Reliability diagram with equal-width bins and marker area proportional
@@ -552,7 +554,7 @@ than the effect on directions: with names available the learned directions do \e
 $-3.2$ points, not significant), and with names hidden they reach 71\% against 69\% for the name rule and 73\% for the true graph. So learned
 directions are a robustness mechanism, not an accuracy gain.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_dirs.pdf}
 \caption{Call directions. (a) Share of observed true-call pairs oriented correctly, wrongly, or left unresolved by the name rule and by the learned
@@ -568,14 +570,14 @@ fault-type diagnosis: with the true service the forest is correct for 99\% of sy
 true service), because real flaps are pause cycles and real brownouts on idle services show no throttling: differences between the simulator and the
 real systems that the learned models absorb as synthetic-specific patterns.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_early.pdf}
 \caption{Early warning. (a) Share of faults warned before the alarm, by fault class. (b) Lead time of the warnings over the alarm as a cumulative distribution.}
 \label{fig:early}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_diag.pdf}
 \caption{Fault-type diagnosis. (a) Confusion matrix (counts; shading is row-normalised) of the random forest on the engine's suspect 60\,s after the alarm,
@@ -595,7 +597,7 @@ names the stopped containers first, as it should, and only a model of concurrent
 30\,s after its first kill and stays named between kills. In (c) a brownout on an almost idle service never raises an alarm, which is the open
 problem of Fig.~\ref{fig:class}.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{fig_case.pdf}
 \caption{Three real incidents. Heat maps show the ML level of the most relevant services; the blue box is the fault, grey dashed boxes are other faults running
@@ -635,6 +637,7 @@ brownouts on near-idle services, which no engine here catches, and validating le
 Future work is a larger measured campaign on more systems, a public labelled dataset for comparability, promotion of learned directions and change-point alarms into the
 live system behind its operator switch, and a user study of an assistant layer built on the structured evidence.
 
+\FloatBarrier
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 
