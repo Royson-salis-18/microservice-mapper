@@ -12,7 +12,7 @@ export function MLLivePanel({ selectedProject }: { selectedProject?: string | nu
   const td: React.CSSProperties = { padding: '7px 8px 7px 0', fontSize: 12.5, borderTop: '1px solid var(--color-border)', fontVariantNumeric: 'tabular-nums' };
   const tone = (v: number) => (v >= 1 ? 'var(--color-degraded)' : 'var(--color-text-main)');
 
-  if (mode !== 'ml') {
+  if (mode !== 'ml' && mode !== 'hybrid') {
     return (
       <section className="mm-card" style={{ padding: 20, marginBottom: 16 }}>
         <h3 style={h3}>ML engine</h3>
@@ -22,7 +22,7 @@ export function MLLivePanel({ selectedProject }: { selectedProject?: string | nu
   }
   return (
     <section className="mm-card" style={{ padding: 20, marginBottom: 16, marginTop: 16 }}>
-      <h3 style={h3}>What the ML engine sees</h3>
+      <h3 style={h3}>{mode === 'hybrid' ? 'What the hybrid engine sees' : 'What the ML engine sees'}</h3>
       <div style={sub}>
         Every service has two Isolation Forests trained on its own recent normal readings. Level 0 is typical, 1 is that service's alarm line.
         Own = CPU, memory, throttling (a dependency cannot cause these). Symptom = traffic, errors, latency (can be inherited).
@@ -33,7 +33,18 @@ export function MLLivePanel({ selectedProject }: { selectedProject?: string | nu
         <div key={t.targetId} style={{ marginTop: 14 }}>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4 }}>
             <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{t.targetId}</b> · learned {t.learnedServices} of {t.services} services{t.ready ? '' : ` · each needs about ${t.needReadings} readings first`}
+            {mode === 'hybrid' && typeof t.rulesTop === 'number' && <> · rule engine: strongest service at {t.rulesTop.toFixed(1)}× its line (alarms on its own above 1.25×)</>}
           </div>
+          {!!t.warnings?.length && (
+            <div style={{ fontSize: 12.5, margin: '8px 0', padding: '8px 10px', borderRadius: 8, background: 'var(--color-degraded-glow)', color: 'var(--color-text-main)' }}>
+              <b style={{ fontWeight: 550 }}>Early warning</b> (trend forecast): {t.warnings.map((w) => `${clean(w.id)} ${w.feature} heading over its line${w.inSec !== null ? ` in about ${w.inSec} s` : ''}`).join('; ')}
+            </div>
+          )}
+          {!!t.cascade?.length && (
+            <div style={{ fontSize: 12.5, margin: '8px 0', color: 'var(--color-text-muted)' }}>
+              <b style={{ fontWeight: 550, color: 'var(--color-text-main)' }}>Likely next</b> (learned from how trouble spread here before): {t.cascade.map((c) => `${clean(c.id)} ${Math.round(c.risk * 100)}%`).join(', ')}
+            </div>
+          )}
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr><th style={th}>Service</th><th style={th}>Baseline</th><th style={th}>Own</th><th style={th}>Symptom</th><th style={{ ...th, width: '34%' }}>Blame</th></tr></thead>
             <tbody>

@@ -134,14 +134,25 @@ Be honest about this one: the 0.7 and the weights are modelling choices, not mea
 
 ---
 
-### 4.4 The ML engine (the Rules / ML switch in the top bar)
+### 4.4 The ML and hybrid engines (the Rules / Hybrid / ML switch in the top bar)
 
-The same three questions can be answered by a learned engine instead of the rules (details: `wiki/43-ml-engine.md`, Python version: `algorithms/ml_engine.py`):
+The same questions can be answered by a learned engine, or by both engines together (details: `wiki/43-ml-engine.md`, Python version: `algorithms/ml_engine.py`):
 
-1. **Learn normal.** Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency). They are trained on a sliding window of the last 120 *normal* readings. A new reading is scored by the forest built before it arrived; only readings under the alarm line are learned, so a fault never becomes "normal".
-2. **Find the source.** A random walk (personalised PageRank, as in MonitorRank) moves over the call graph towards the sickest dependency; the service where the walker spends most time is the root cause.
-3. **Facts first.** A container that is down, stopped (`docker stop` exits with code 0, which used to be ignored) or crash-looping (two outages within 3 minutes) is ranked first.
-4. **Result on the same 34 faults** (mean over 5 seeds): detected 95%, right service first 77%, 2.6 false alarms per hour. The live rules: 97%, 58%, 12.4. On a synthetic bench with 178 held-out faults: 75% caught and named first, against 53% for the rules. ML is the default engine; the rules are one click away.
+1. **Learn normal.** Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency).
+   - They are trained on a sliding window of the last 120 *normal* readings. A new reading is scored by the models built before it arrived.
+   - Small steady shifts are learned as the new normal after 2 minutes; big ones are not, so a fault never becomes "normal".
+   - Less CPU or memory than usual never counts as a fault.
+   - Three other detectors were tried: k-nearest neighbours, Mahalanobis and HBOS. They tied.
+2. **Facts first.** A container that is down, stopped (`docker stop` exits with code 0) or crash-looping (two outages within 3 minutes) is named first.
+3. **Find the source.** A random walk (personalised PageRank, as in MonitorRank) moves over the call graph towards the sickest dependency. PageRank, onset order and depth were also tried; the walk was best.
+4. **Hybrid (default).** The alarm goes off when the ML engine says so, or when the rules are well over their own line. The ML engine names the source.
+5. **Predictions.**
+   - Early warning: a 2-minute trend forecast on memory, CPU, throttling, errors and latency.
+   - Likely next: a cascade model learned from how often trouble moved along each call edge.
+6. **Results.**
+   - Recorded runs, 34 faults: the hybrid catches and names 74%, against 56% for the live rules, with about the same alarm time.
+   - Held-out synthetic bench, 178 faults: hybrid 72% (92% detected), rules 70% (89%), ML 70% (89%).
+   - Early warning catches 7 of 18 memory leaks before the alarm on the synthetic bench.
 
 ## 5. How the Python maps to the real code
 
@@ -234,7 +245,7 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 
 **Why is it written in TypeScript and not Python?** The product is a web application: the dashboard must be JavaScript, so using TypeScript for the server and collector too gives one language and one set of data types (service, link, incident) that every part checks against. The logic runs every 5 seconds inside the live server, so keeping it in the same language avoids running a second program and passing data to it. Docker, SSH and WebSocket libraries are strong in Node. The same files are reused by the tests and the scoring tools. The maths itself is language independent, and every file has a simplified Python version in `algorithms/`. Python is used where it is the better tool: the machine learning experiments in `ml/`.
 
-**Where is the machine learning?** Two places. The ML engine behind the Rules/ML switch learns each service's normal with Isolation Forests on a sliding window of normal readings and ranks the cause with a random walk on the call graph. Separately, we tested a supervised logistic model against the rules (it lost, so it is not used).
+**Where is the machine learning?** Two places. The ML and hybrid engines behind the Rules / Hybrid / ML switch learn each service's normal with Isolation Forests on a sliding window of normal readings, rank the cause with a random walk on the call graph, forecast trends and learn how failures spread. Separately, we tested a supervised logistic model against the rules (it lost, so it is not used).
 
 **Why does the forest only learn from normal readings?** If it learned during a fault, the fault would slowly become the new normal and stop being flagged. A long-lasting change with nothing broken (about half an hour) is accepted as a new normal.
 

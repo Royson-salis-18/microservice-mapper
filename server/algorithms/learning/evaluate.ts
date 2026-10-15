@@ -15,6 +15,8 @@ export interface EventResult {
   faults: FaultOutcome[];
   detected: ReturnType<typeof wilson>; top1: ReturnType<typeof wilson>; top1All: ReturnType<typeof wilson>;
   falseAlarms: number; fpHours: number; perHour: number; medianDelay: number;
+  /** Alarm time outside every fault window (ms). Episodes alone can hide an alarm that never switches off. */
+  alarmMs: number;
 }
 export interface EvalOpts { graceSec?: number; warmupSec?: number; persistence?: number }
 
@@ -41,7 +43,7 @@ export function evaluatePrepared(prep: Prepared | 'live', runsIn: Run[] | null, 
   const top = prep === 'live' ? liveTop(runs) : prep.top;
   const grace = (opts.graceSec ?? 60) * 1000, warmup = (opts.warmupSec ?? 300) * 1000, K = Math.max(1, opts.persistence ?? 2);
   const faults: FaultOutcome[] = [];
-  let falseAlarms = 0, fpMs = 0;
+  let falseAlarms = 0, fpMs = 0, alarmMs = 0;
   runs.forEach((run, ri) => {
     const n = run.moments.length, t = top[ri];
     const hot = t.map((x) => x.max >= threshold);
@@ -72,7 +74,7 @@ export function evaluatePrepared(prep: Prepared | 'live', runsIn: Run[] | null, 
     for (let k = 1; k < n; k++) {
       const ts = run.moments[k].ts;
       if (ts < run.t0 + warmup) continue;
-      if (!windows.some(([a, b]) => ts >= a && ts <= b)) fpMs += ts - run.moments[k - 1].ts;
+      if (!windows.some(([a, b]) => ts >= a && ts <= b)) { fpMs += ts - run.moments[k - 1].ts; if (alarm[k]) alarmMs += ts - run.moments[k - 1].ts; }
     }
   });
   const det = faults.filter((f) => f.detected);
@@ -80,7 +82,7 @@ export function evaluatePrepared(prep: Prepared | 'live', runsIn: Run[] | null, 
   return {
     faults, detected: wilson(det.length, faults.length), top1: wilson(det.filter((f) => f.top1).length, det.length),
     top1All: wilson(faults.filter((f) => f.top1).length, faults.length),
-    falseAlarms, fpHours, perHour: fpHours ? falseAlarms / fpHours : 0, medianDelay: median(det.map((f) => f.delaySec!)),
+    falseAlarms, fpHours, perHour: fpHours ? falseAlarms / fpHours : 0, medianDelay: median(det.map((f) => f.delaySec!)), alarmMs,
   };
 }
 

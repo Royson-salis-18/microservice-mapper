@@ -26,7 +26,7 @@ const nFaults = runs.reduce((s, r) => s + r.faults.length, 0);
 const minutes = runs.reduce((s, r) => s + (r.t1 - r.t0) / 60000, 0);
 console.log(`${runs.length} runs, ${nFaults} faults, ${minutes.toFixed(0)} min\n`);
 
-const pool = (rs: EventResult[]) => ({ ...summarise({ faults: rs.flatMap((r) => r.faults), falseAlarms: rs.reduce((s, r) => s + r.falseAlarms, 0), fpHours: rs.reduce((s, r) => s + r.fpHours, 0) }), outcomes: rs.flatMap((r) => r.faults) });
+const pool = (rs: EventResult[]) => ({ ...summarise({ faults: rs.flatMap((r) => r.faults), falseAlarms: rs.reduce((s, r) => s + r.falseAlarms, 0), fpHours: rs.reduce((s, r) => s + r.fpHours, 0), alarmMs: rs.reduce((s, r) => s + r.alarmMs, 0) }), outcomes: rs.flatMap((r) => r.faults) });
 const rules = pool(runs.map((r) => { const rs: Run[] = [r]; return evaluatePrepared(prepare(rs, scorer(rs, rulesScore)), null, RULES_FIXED_THRESHOLD); }));
 const hasLive = runs.some((r) => r.moments.some((m) => m.live.alarm));
 const live = hasLive ? pool(runs.map((r) => evaluatePrepared('live', [r], 0.5))) : null;
@@ -37,13 +37,13 @@ for (const [name, p] of variants) {
   const per = seeds.map((seed) => pool(runs.map((r, i) => evaluatePrepared({ runs: [r], top: [replayTop(texts[i].observed, texts[i].subject, { ...p, baseline: { ...(p.baseline ?? {}), seed } } as Partial<EngineParams>)] }, null, p.threshold ?? 1))));
   const mean = (f: (s: any) => number) => per.reduce((a, s) => a + f(s), 0) / per.length;
   const sd = (f: (s: any) => number) => { const m = mean(f); return Math.sqrt(per.reduce((a, s) => a + (f(s) - m) ** 2, 0) / per.length); };
-  rows.push([name, { ...per[0], detected: mean((s) => s.detected), top1OfDetected: mean((s) => s.top1OfDetected), caughtAndNamed: mean((s) => s.caughtAndNamed), falseAlarmsPerHour: mean((s) => s.falseAlarmsPerHour),
+  rows.push([name, { ...per[0], detected: mean((s) => s.detected), top1OfDetected: mean((s) => s.top1OfDetected), caughtAndNamed: mean((s) => s.caughtAndNamed), falseAlarmsPerHour: mean((s) => s.falseAlarmsPerHour), alarmShare: mean((s) => s.alarmShare ?? 0),
     sd: { top1: sd((s) => s.top1OfDetected), fa: sd((s) => s.falseAlarmsPerHour) }, sec: (Date.now() - t) / 1000 }]);
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(0)}%`.padStart(5);
-console.log(`${'engine'.padEnd(28)} detected  right-first  caught+named  false/h`);
-for (const [name, s] of rows) console.log(`${name.padEnd(28)} ${pct(s.detected)}     ${pct(s.top1OfDetected)}${s.sd ? `±${(s.sd.top1 * 100).toFixed(0)}` : '   '}      ${pct(s.caughtAndNamed)}     ${s.falseAlarmsPerHour.toFixed(1).padStart(5)}${s.sd ? `±${s.sd.fa.toFixed(1)}` : ''}`);
+console.log(`${'engine'.padEnd(28)} detected  right-first  caught+named  false/h  alarm-time`);
+for (const [name, s] of rows) console.log(`${name.padEnd(28)} ${pct(s.detected)}     ${pct(s.top1OfDetected)}${s.sd ? `±${(s.sd.top1 * 100).toFixed(0)}` : '   '}      ${pct(s.caughtAndNamed)}     ${s.falseAlarmsPerHour.toFixed(1).padStart(5)}${s.sd ? `±${s.sd.fa.toFixed(1)}` : '    '}   ${pct(s.alarmShare ?? 0)}`);
 
 // per fault class: caught and named first (the number that matters to an operator)
 const classes = [...new Set(rows[0][1].outcomes.map((o: any) => o.class))].sort() as string[];

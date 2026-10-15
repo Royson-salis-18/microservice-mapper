@@ -37,7 +37,7 @@ export function train(rs: Run[], keep?: (r: Run, ts: number) => boolean, opts: E
 
 export const blockOf = (r: Run, ts: number, K: number) => Math.min(K - 1, Math.floor(((ts - r.t0) / Math.max(1, r.t1 - r.t0 + 1)) * K));
 
-export interface Pooled { faults: FaultOutcome[]; falseAlarms: number; fpHours: number }
+export interface Pooled { faults: FaultOutcome[]; falseAlarms: number; fpHours: number; alarmMs?: number }
 export interface CV {
   pooled: Record<Method, Pooled>;
   /** Out-of-fold row scores and labels, for ROC / precision-recall / calibration. */
@@ -81,6 +81,8 @@ export function summarise(p: Pooled) {
     top1OfDetected: det.filter((f) => f.top1).length / Math.max(1, det.length), top1N: det.filter((f) => f.top1).length,
     caughtAndNamed: p.faults.filter((f) => f.top1).length / Math.max(1, p.faults.length),
     falseAlarmsPerHour: p.fpHours ? p.falseAlarms / p.fpHours : 0, falseAlarms: p.falseAlarms,
+    /** share of fault-free time spent in alarm */
+    alarmShare: p.fpHours && p.alarmMs !== undefined ? p.alarmMs / 3.6e6 / p.fpHours : null,
     medianDelaySec: d.length ? d[Math.floor(d.length / 2)] : null,
   };
 }

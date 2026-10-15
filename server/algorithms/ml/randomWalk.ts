@@ -62,3 +62,28 @@ export function rootCauseWalk(ids: string[], a: Map<string, number>, edges: Walk
   ids.forEach((id, i) => out.set(id, pi[i] / s));
   return out;
 }
+
+/**
+ * Plain personalised PageRank, in the form MicroRCA uses (Wu et al., NOMS 2020): the walker follows calls towards
+ * anomalous callees and restarts on anomalous services, with no "stay" weight and no explaining away. Kept as a
+ * comparison for the MonitorRank-style walk above.
+ */
+export function pageRankScores(ids: string[], a: Map<string, number>, edges: WalkEdge[], alpha = 0.15, iterations = 60): Map<string, number> {
+  const n = ids.length, index = new Map(ids.map((id, i) => [id, i]));
+  const an = ids.map((id) => Math.max(0, Math.min(1, a.get(id) ?? 0)));
+  const total = an.reduce((s, x) => s + x, 0);
+  const out = new Map<string, number>(ids.map((id) => [id, 0]));
+  if (!n || total <= 0) return out;
+  const rows: { j: number; p: number }[][] = ids.map(() => []);
+  for (const e of edges) { const i = index.get(e.from), j = index.get(e.to); if (i !== undefined && j !== undefined && i !== j) rows[i].push({ j, p: Math.max(0, e.weight) * an[j] }); }
+  const norm = rows.map((r, i) => { const s = r.reduce((t, m) => t + m.p, 0); return s > 0 ? r.map((m) => ({ j: m.j, p: m.p / s })) : [{ j: i, p: 1 }]; });
+  const restart = an.map((x) => x / total);
+  let pi = [...restart];
+  for (let it = 0; it < iterations; it++) {
+    const next = restart.map((r) => alpha * r);
+    for (let i = 0; i < n; i++) for (const m of norm[i]) next[m.j] += (1 - alpha) * pi[i] * m.p;
+    pi = next;
+  }
+  ids.forEach((id, i) => out.set(id, pi[i]));
+  return out;
+}
