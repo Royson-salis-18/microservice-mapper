@@ -123,3 +123,61 @@ test('engine: a crash loop stays the prime suspect between kills', () => {
   assert.equal(r.services.get('api')!.fact, 'crash loop');
   assert.ok(r.hot);
 });
+
+import { fitDetector, DETECTORS } from '../../server/algorithms/ml/detectors.ts';
+import { fuseMoment } from '../../server/algorithms/ml/hybrid.ts';
+import { PropagationModel } from '../../server/algorithms/ml/propagation.ts';
+
+test('detectors: every detector scores an outlier above a normal reading', () => {
+  const r = rng(5);
+  const X = Array.from({ length: 120 }, () => [10 + r(), 5 + r()]);
+  for (const kind of DETECTORS) {
+    const d = fitDetector(kind, X, [0.1, 0.1], { trees: 50, sampleSize: 64, seed: 1 });
+    assert.ok(d.score([20, 5.5]) > d.score([10.5, 5.5]), kind);
+  }
+});
+
+test('baseline: memory falling after a restart is not an anomaly (one-sided features)', () => {
+  const b = new ServiceBaseline(3);
+  const mem = normal(4, 80, 30, 0.2);
+  for (let i = 0; i < 80; i++) b.observe(readingVector(reading(10, { memoryPercent: mem[i] })));
+  assert.ok(b.observe(readingVector(reading(10, { memoryPercent: 15 }))).level < 1);
+  assert.ok(b.observe(readingVector(reading(10, { memoryPercent: 60 }))).level >= 1);
+});
+
+test('baseline: a steady memory climb is forecast before it crosses the line', () => {
+  const b = new ServiceBaseline(4);
+  const mem = normal(6, 80, 20, 0.1);
+  for (let i = 0; i < 80; i++) b.observe(readingVector(reading(10, { memoryPercent: mem[i] })));
+  let warnedEarly = false;
+  for (let i = 1; i <= 20; i++) {
+    const v = b.observe(readingVector(reading(10, { memoryPercent: 20 + i * 0.4 })));
+    if (v.level < 1 && v.forecast.level >= 1 && v.forecast.feature === 'memory') warnedEarly = true;
+  }
+  assert.ok(warnedEarly, 'the trend warned while the level was still under the line');
+});
+
+test('hybrid: either engine can raise the alarm, facts are named first', () => {
+  const base = { services: ['web', 'db'], walk: new Map([['web', 0.3], ['db', 0.7]]), mlRanked: ['db', 'web'], hard: new Set<string>() };
+  const quietMl = { ...base, level: new Map([['web', 0.2], ['db', 0.3]]) };
+  assert.ok(fuseMoment({ ...quietMl, rules: new Map([['web', 1.5], ['db', 0.1]]) }, { detection: 'or-strict', ranking: 'ml', rulesAlone: 1.25 }).max >= 1, 'rules alone, well over their line');
+  assert.ok(fuseMoment({ ...quietMl, rules: new Map([['web', 1.1], ['db', 0.1]]) }, { detection: 'or-strict', ranking: 'ml', rulesAlone: 1.25 }).max < 1, 'rules just over the line are not enough alone');
+  const f = fuseMoment({ ...base, level: new Map([['web', 3], ['db', 0]]), rules: new Map([['web', 2], ['db', 0]]), hard: new Set(['db']) }, { detection: 'or', ranking: 'blend' });
+  assert.equal(f.ranked[0], 'db');
+});
+
+test('cascade: an edge that always carries trouble is learned as likely', () => {
+  const m = new PropagationModel();
+  const callersOf = (id: string) => (id === 'db' ? ['api'] : id === 'api' ? ['web'] : []);
+  const calleesOf = (id: string) => (id === 'web' ? ['api'] : id === 'api' ? ['db'] : []);
+  let step = 0;
+  for (let k = 0; k < 6; k++) {
+    m.update(++step, ['db'], new Set(['db']), callersOf);            // db breaks
+    m.update(++step, ['api'], new Set(['db', 'api']), callersOf);    // api follows, web does not
+    for (let i = 0; i < 14; i++) m.update(++step, [], new Set(), callersOf);
+  }
+  assert.ok(m.prob('api', 'db') > 0.8);
+  assert.ok(m.prob('web', 'api') < 0.3);
+  const risk = m.risk('db', new Set(['db']), callersOf, calleesOf);
+  assert.ok((risk.get('api') ?? 0) > (risk.get('web') ?? 0));
+});

@@ -3,7 +3,7 @@ import math
 import random
 import unittest
 
-from ml_engine import ContainerFacts, Forest, ServiceBaseline, c, root_cause_walk
+from ml_engine import Cascade, ContainerFacts, Forest, ServiceBaseline, c, hybrid_alarm, root_cause_walk, trend_forecast
 
 
 class MlEngineTests(unittest.TestCase):
@@ -44,6 +44,23 @@ class MlEngineTests(unittest.TestCase):
         for state in ["running", "exited", "running", "exited", "running"]:
             f.tick(); last = f.judge("api", state, exit_code=137)
         self.assertEqual(last, "crash loop")
+
+    def test_hybrid_alarm_either_engine(self):
+        self.assertTrue(hybrid_alarm(2.5, 0))          # the forests alone
+        self.assertTrue(hybrid_alarm(0.5, 4.0))        # the rules alone, well over their line
+        self.assertFalse(hybrid_alarm(0.5, 3.3))       # the rules only just over: not enough alone
+
+    def test_trend_forecast_sees_a_climb(self):
+        self.assertGreater(trend_forecast([20 + 0.4 * i for i in range(12)], hi=21, unit=2), 1)
+        self.assertEqual(trend_forecast([20] * 12, hi=21, unit=2), 0)
+
+    def test_cascade_learns_edges(self):
+        m = Cascade()
+        for _ in range(8):
+            m.record("api", "db", True)
+            m.record("web", "api", False)
+        self.assertGreater(m.prob("api", "db"), 0.8)
+        self.assertLess(m.prob("web", "api"), 0.2)
 
 
 if __name__ == "__main__":

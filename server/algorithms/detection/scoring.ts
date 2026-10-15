@@ -22,6 +22,9 @@ export function learnedScore(m: Weights, x: number[]): number {
   return sigmoid(z);
 }
 
+/** The rule score is in robust z units; 3 (three sigma) is its alarm line. */
+export const RULES_LINE = 3;
+
 export function rulesScore(x: number[]): number {
   const facts = Math.max(x[I('down')], x[I('paused')], x[I('restarting')], x[I('detached')]);
   return Math.max(ex(x[I('own')]), ex(x[I('symptom')]) - ex(x[I('calleesEvidenceMax')])) + 10 * facts;

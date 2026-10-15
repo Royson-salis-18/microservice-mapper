@@ -282,13 +282,13 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
    * target whose models were never trained, while the scorer is stopped.
    * Model output is a separate question and lives under Findings.
    */
-  // Which engine decides incidents: rules (statistical detector + ranking) or ml (Isolation Forest + random walk).
+  // Which engine decides incidents: rules (statistical detector + ranking), ml (Isolation Forest + random walk) or hybrid (both).
   router.get('/engine', (_req, res) => {
     res.json({ mode: getEngineMode(), status: incidentManager?.engineStatus() ?? null });
   });
   router.post('/engine', (req, res) => {
     const mode = req.body?.mode;
-    if (mode !== 'rules' && mode !== 'ml') return res.status(400).json({ error: "mode must be 'rules' or 'ml'" });
+    if (mode !== 'rules' && mode !== 'ml' && mode !== 'hybrid') return res.status(400).json({ error: "mode must be 'rules', 'ml' or 'hybrid'" });
     const prev = getEngineMode();
     const next = setEngineMode(mode);
     // a different engine judges differently: close the open incidents so the new one starts clean

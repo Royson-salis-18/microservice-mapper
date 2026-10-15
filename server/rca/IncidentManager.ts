@@ -7,6 +7,9 @@ import { TargetModels } from './TargetModels.js';
 import { loadThresholds } from './thresholdsStore.js';
 import { getEngineMode } from './engineMode.js';
 import { MLEngine, ENGINE_DEFAULTS } from '../algorithms/ml/mlEngine.js';
+import { fuseMoment, HYBRID_DEFAULTS } from '../algorithms/ml/hybrid.js';
+import { momentScores, makeScorer } from '../algorithms/detection/scoring.js';
+import { RULES_LINE } from '../algorithms/detection/scoring.js';
 import type { AnomalyRecord } from '../models/Incident.js';
 import type { MetricSnapshot } from '../models/MetricSnapshot.js';
 
@@ -27,7 +30,7 @@ export class IncidentManager {
   /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
   private learnedHot = new Map<string, boolean>();
   /** ML engine state per target: the learned baselines, the newest reading already fed in, last cycle's alarm. */
-  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
+  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; rulesTop?: number; warnings?: { id: string; feature: string; inSec: number | null }[]; cascade?: { id: string; risk: number }[]; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
@@ -50,7 +53,8 @@ export class IncidentManager {
     const hostSilent = hostStatus === 'STALE' || hostStatus === 'OFFLINE';
     const model = this.models.get(targetId);
     const learning = model.state === 'learning' ? { haveSec: model.baselineSec, needSec: model.needSec } : undefined;
-    if (getEngineMode() === 'ml') return this.finish(targetId, targetNodes, targetEdges, anomalies, this.mlAnalysis(targetId, targetNodes, targetEdges, anomalies, hostSilent, open), t);
+    const mode = getEngineMode();
+    if (mode !== 'rules') return this.finish(targetId, targetNodes, targetEdges, anomalies, this.mlAnalysis(targetId, targetNodes, targetEdges, anomalies, hostSilent, open, mode === 'hybrid'), t);
     this.graphStore.clearEngineScores?.();
     const scored = hostSilent || learning ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'), model.threshold);
     let learned: any;
@@ -75,8 +79,9 @@ export class IncidentManager {
   }
 
   /** The ML engine: per-service Isolation Forest (learned on a sliding window of normal readings) and a random walk on the
-   *  call graph. Its verdict goes through the same incident machinery as the rules (explanation, cascade, at-risk). */
-  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined) {
+   *  call graph. Its verdict goes through the same incident machinery as the rules (explanation, cascade, at-risk).
+   *  Hybrid: the rule engine scores the same moment too, and either engine can raise the alarm (server/algorithms/ml/hybrid.ts). */
+  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined, hybrid = false) {
     let st = this.ml.get(targetId);
     if (!st) { st = { engine: new MLEngine(ENGINE_DEFAULTS), seen: new Map(), hot: false, ready: false, learned: 0, services: 0, readings: 0, detail: [] }; this.ml.set(targetId, st); }
     const fresh = new Map<string, MetricSnapshot[]>();
@@ -87,15 +92,27 @@ export class IncidentManager {
       if (h.length) { st.seen.set(n.id, h[h.length - 1].timestamp); fresh.set(n.id, h); readings += h.length; }
     }
     const r = st.engine.step(nodes, edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight?.value ?? 1 })), hostSilent ? new Map() : fresh);
-    const alarm = r.hot && st.hot;
-    st.hot = r.hot; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
+    let hotNow = r.hot;
+    if (hybrid && !hostSilent) {
+      const history = (id: string) => this.graphStore.metricStore.getHistory(id, '15m');
+      const rules = momentScores(nodes, history, edges.map((e) => [e.source, e.target] as [string, string]), makeScorer(null));
+      const ids = [...r.services.keys()];
+      const fused = fuseMoment({ services: ids, rules: new Map(ids.map((id) => [id, (rules.get(id) ?? 0) / RULES_LINE])), level: new Map(ids.map((id) => [id, r.services.get(id)!.level / ENGINE_DEFAULTS.alarmLevel])),
+        hard: new Set(ids.filter((id) => r.services.get(id)!.hard)), walk: r.rank, mlRanked: r.ranked }, HYBRID_DEFAULTS);
+      hotNow = fused.max >= 1;
+      st.rulesTop = Math.max(0, ...ids.map((id) => (rules.get(id) ?? 0) / RULES_LINE));
+    }
+    const alarm = hotNow && st.hot;
+    st.hot = hotNow; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
+    st.warnings = r.warnings.map((w) => ({ id: w.id, feature: w.feature, inSec: w.inSec }));
+    st.cascade = [...r.atRisk].filter(([, p]) => p >= 0.5).sort((a, b) => b[1] - a[1]).map(([id, risk]) => ({ id, risk: Math.round(risk * 100) / 100 }));
     st.detail = [...r.services].map(([id, v]) => ({ id, level: +v.level.toFixed(2), own: +v.ownLevel.toFixed(2), symptom: +v.symptomLevel.toFixed(2), anomaly: +v.anomaly.toFixed(2), walk: +(r.rank.get(id) ?? 0).toFixed(3), hard: v.hard, ready: v.ready, fact: v.fact }))
       .sort((a, b) => b.walk - a.walk || b.level - a.level);
     this.graphStore.setEngineScores?.(new Map([...r.services].map(([id, v]) => [id, { score: v.anomaly, persistent: v.level >= 1 }])));
 
     // evidence for the incident: container facts (from the detector) plus the forest's verdicts
     const now = new Date().toISOString();
-    const anomalies: AnomalyRecord[] = ruleAnomalies.filter((a) => (a.evidence ?? '') === 'hard');
+    const anomalies: AnomalyRecord[] = hybrid ? [...ruleAnomalies] : ruleAnomalies.filter((a) => (a.evidence ?? '') === 'hard');
     for (const [id, v] of r.services) {
       if (v.hard || v.level < 1) continue;
       anomalies.push({ id: `anomaly-${id}-iforest-${Date.now()}`, nodeId: id, targetId, metric: 'isolation-forest', timestamp: now, observedValue: Math.round(v.score * 1000) / 1000,
@@ -114,7 +131,7 @@ export class IncidentManager {
 
   /** What the ML engine has learned so far, per target (for the UI). */
   public engineStatus() {
-    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, detail: s.detail, needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
+    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, detail: s.detail, rulesTop: s.rulesTop ?? null, warnings: s.warnings ?? [], cascade: s.cascade ?? [], needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
   }
 
   /** Close every open incident (used when the engine is switched, so the new engine starts from a clean slate). */

@@ -23,7 +23,9 @@
     "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts",
     "ml:compare": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/compare.ts",
     "ml:synth": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/synth.ts",
-    "ml:bench": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/bench.ts"
+    "ml:bench": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/bench.ts",
+    "ml:hybrid": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/hybrid.ts",
+    "ml:predict": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/predict.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

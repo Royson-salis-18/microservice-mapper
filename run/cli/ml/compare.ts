@@ -26,7 +26,7 @@ if (!runs.length) { console.error('no recorded runs found in run/recorded-runs')
 
 type P = Partial<Omit<EngineParams, 'baseline' | 'walk'>> & { baseline?: Partial<EngineParams['baseline']>; walk?: Partial<EngineParams['walk']>; threshold?: number };
 const sum = (r: EventResult) => summarise({ faults: r.faults, falseAlarms: r.falseAlarms, fpHours: r.fpHours });
-const pool = (rs: EventResult[]) => summarise({ faults: rs.flatMap((r) => r.faults), falseAlarms: rs.reduce((s, r) => s + r.falseAlarms, 0), fpHours: rs.reduce((s, r) => s + r.fpHours, 0) });
+const pool = (rs: EventResult[]) => summarise({ faults: rs.flatMap((r) => r.faults), falseAlarms: rs.reduce((s, r) => s + r.falseAlarms, 0), fpHours: rs.reduce((s, r) => s + r.fpHours, 0), alarmMs: rs.reduce((s, r) => s + r.alarmMs, 0) });
 
 const cache = new Map<string, Prepared['top'][number]>();
 function mlTop(i: number, p: P) {
@@ -42,7 +42,7 @@ const evalRules = (idx: number[], th = RULES_FIXED_THRESHOLD) => idx.map((i) => 
 const evalLive = (idx: number[]) => idx.map((i) => evaluatePrepared('live', [runs[i]], 0.5));
 
 const all = runs.map((_, i) => i);
-const fmt = (s: any) => (s.seeds ? `detected ${(s.detected * 100).toFixed(0)}±${(s.spread.detected * 100).toFixed(0)}%  right first ${(s.top1OfDetected * 100).toFixed(0)}±${(s.spread.top1OfDetected * 100).toFixed(0)}%  false alarms ${s.falseAlarmsPerHour.toFixed(1)}±${s.spread.falseAlarmsPerHour.toFixed(1)}/h  (mean ± sd over ${s.seeds} seeds)` : `detected ${(s.detected * 100).toFixed(0)}% (${s.detectedN}/${s.faults})  right first ${(s.top1OfDetected * 100).toFixed(0)}% (${s.top1N}/${s.detectedN})  false alarms ${s.falseAlarmsPerHour.toFixed(1)}/h  delay ${s.medianDelaySec === null ? 'n/a' : s.medianDelaySec.toFixed(0) + ' s'}`);
+const fmt = (s: any) => (s.seeds ? `detected ${(s.detected * 100).toFixed(0)}±${(s.spread.detected * 100).toFixed(0)}%  right first ${(s.top1OfDetected * 100).toFixed(0)}±${(s.spread.top1OfDetected * 100).toFixed(0)}%  false alarms ${s.falseAlarmsPerHour.toFixed(1)}±${s.spread.falseAlarmsPerHour.toFixed(1)}/h  alarm time ${((s.alarmShare ?? 0) * 100).toFixed(0)}%  (mean ± sd over ${s.seeds} seeds)` : `detected ${(s.detected * 100).toFixed(0)}% (${s.detectedN}/${s.faults})  right first ${(s.top1OfDetected * 100).toFixed(0)}% (${s.top1N}/${s.detectedN})  false alarms ${s.falseAlarmsPerHour.toFixed(1)}/h  alarm time ${((s.alarmShare ?? 0) * 100).toFixed(0)}%  delay ${s.medianDelaySec === null ? 'n/a' : s.medianDelaySec.toFixed(0) + ' s'}`);
 
 console.log(`runs: ${runs.map((r) => `${r.name} (${r.faults.length} faults)`).join(', ')}\n`);
 const SEEDS = [0, 1, 2, 3, 4];
@@ -52,12 +52,12 @@ function overSeeds(idx: number[], p: P) {
   const mean = (f: (s: ReturnType<typeof summarise>) => number) => rows.reduce((a, r) => a + f(r), 0) / rows.length;
   const sd = (f: (s: ReturnType<typeof summarise>) => number) => { const m = mean(f); return Math.sqrt(rows.reduce((a, r) => a + (f(r) - m) ** 2, 0) / rows.length); };
   return { ...rows[0], detected: mean((r) => r.detected), top1OfDetected: mean((r) => r.top1OfDetected), caughtAndNamed: mean((r) => r.caughtAndNamed),
-    falseAlarmsPerHour: mean((r) => r.falseAlarmsPerHour), spread: { detected: sd((r) => r.detected), top1OfDetected: sd((r) => r.top1OfDetected), falseAlarmsPerHour: sd((r) => r.falseAlarmsPerHour) }, seeds: SEEDS.length };
+    falseAlarmsPerHour: mean((r) => r.falseAlarmsPerHour), alarmShare: mean((r) => r.alarmShare ?? 0), spread: { detected: sd((r) => r.detected), top1OfDetected: sd((r) => r.top1OfDetected), falseAlarmsPerHour: sd((r) => r.falseAlarmsPerHour) }, seeds: SEEDS.length };
 }
 const headline: Record<string, any> = {
   'Rules (live, as recorded)': pool(evalLive(all)),
   'Rules (re-scored, threshold 3)': pool(evalRules(all)),
-  'ML: one forest, no range guard': quick ? pool(evalML(all, { baseline: { rangeK: 0 } })) : overSeeds(all, { baseline: { rangeK: 0 } }),
+  'ML: two-sided features, alarm at the line': quick ? pool(evalML(all, { alarmLevel: 1, baseline: { oneSided: false, mildDriftAfter: 0 } })) : overSeeds(all, { alarmLevel: 1, baseline: { oneSided: false, mildDriftAfter: 0 } }),
   'ML: forest only (rank by anomaly)': quick ? pool(evalML(all, { useWalk: false })) : overSeeds(all, { useWalk: false }),
   'ML: forests + random walk (default)': quick ? pool(evalML(all, {})) : overSeeds(all, {}),
 };

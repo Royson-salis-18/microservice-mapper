@@ -12,7 +12,9 @@
  * fact is present. PURE: the caller supplies readings, nodes and edges; the engine keeps only the learned state.
  */
 import { ServiceBaseline, readingVector, BASELINE_DEFAULTS, type BaselineParams } from './serviceBaseline.js';
-import { rootCauseWalk, WALK_DEFAULTS, type WalkParams, type WalkEdge } from './randomWalk.js';
+import { PropagationModel } from './propagation.js';
+import type { Forecast } from './serviceBaseline.js';
+import { rootCauseWalk, pageRankScores, WALK_DEFAULTS, type WalkParams, type WalkEdge } from './randomWalk.js';
 import { containerFact, isLoadGenerator } from '../detection/containerFacts.js';
 import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
 
@@ -25,14 +27,17 @@ export interface EngineParams {
   useOwn: boolean;          // resource (own) anomalies keep the walker: they cannot be explained by a dependency
   loopWindow: number;       // steps in which two separate outages make a crash loop (0: off)
   loopHold: number;         // steps a crash-looping service stays down-ranked-first after its last outage
+  rca: 'walk' | 'pagerank' | 'onset' | 'depth';   // how the root cause is ranked among anomalous services
+  alarmLevel: number;       // the project alarms when some service holds at least this level (1 = its own line)
+  warnAt: number;           // early warning when a service's trend reaches this level within the forecast horizon
   stoppedIsDown: boolean;   // exit code 0 after a minute of running counts as down (docker stop), not as a finished job
 }
-export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, stoppedIsDown: true };
+export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
 
 export interface EngineNode { id: string; name: string; type?: string; status?: string; metadata?: Record<string, any> }
 export interface EngineEdge { source: string; target: string; weight?: number }
 
-export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number; fact?: string }
+export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number; fact?: string; forecast?: Forecast }
 export interface EngineResult {
   services: Map<string, ServiceView>;
   rank: Map<string, number>;        // random-walk share, sums to 1 over services
@@ -41,6 +46,10 @@ export interface EngineResult {
   hot: boolean;                     // something is above its line right now
   ready: boolean;                   // at least one service has a model
   learnedServices: number;
+  /** Early warning: services not yet over their line whose recent trend crosses it within the forecast horizon. */
+  warnings: { id: string; feature: string; inSec: number | null; level: number }[];
+  /** Learned cascade: risk that the current top suspect's trouble reaches each healthy service. */
+  atRisk: Map<string, number>;
 }
 
 const STORE = /(^|[-_])(db|store|cache|redis|memcached|mongo|mongodb|postgres|mysql|queue|bus|kafka|nats|rabbitmq)([-_]|$)/i;
@@ -85,6 +94,9 @@ export class MLEngine {
   private onsets = new Map<string, number[]>();
   private wasHard = new Map<string, boolean>();
   private clock = 0;
+  private onsetAt = new Map<string, number>();
+  private propagation = new PropagationModel();
+  private warnStreak = new Map<string, number>();   // step at which the service last became anomalous
 
   constructor(private readonly p: EngineParams = ENGINE_DEFAULTS) {}
 
@@ -92,6 +104,7 @@ export class MLEngine {
   step(nodes: EngineNode[], edges: EngineEdge[], fresh: Map<string, MetricSnapshot[]>): EngineResult {
     const services = new Map<string, ServiceView>();
     this.clock++;
+    const onsets: string[] = [];
     const watched = nodes.filter((n) => !isLoadGenerator(n.name));
     for (const n of watched) {
       let fact = containerFact(n as any);
@@ -121,7 +134,7 @@ export class MLEngine {
       if (!hard) {
         for (const r of readings) {
           const v = model.observe(readingVector(r, this.p.baseline.minRequests));
-          view = { level: v.level, anomaly: 0, own: 0, hard: false, ready: v.ready, score: v.score, ownLevel: v.own, symptomLevel: v.symptom };
+          view = { level: v.level, anomaly: 0, own: 0, hard: false, ready: v.ready, score: v.score, ownLevel: v.own, symptomLevel: v.symptom, forecast: v.forecast };
           this.streak.set(n.id, v.level >= 1 ? (this.streak.get(n.id) ?? 0) + 1 : 0);
         }
       }
@@ -136,6 +149,7 @@ export class MLEngine {
       view = { ...view, level: lvl, anomaly, own, hard, ready: model.ready, fact: label };
       this.last.set(n.id, view);
       services.set(n.id, view);
+      if (anomaly > 0) { if (!this.onsetAt.has(n.id)) { this.onsetAt.set(n.id, this.clock); onsets.push(n.id); } } else this.onsetAt.delete(n.id);
     }
 
     const ids = [...services.keys()];
@@ -143,14 +157,49 @@ export class MLEngine {
     const walkEdges = resolveDirections(edges.filter((e) => services.has(e.source) && services.has(e.target)), (id) => byId.get(id));
     const a = new Map(ids.map((id) => [id, services.get(id)!.anomaly]));
     const ownA = new Map(ids.map((id) => [id, services.get(id)!.own]));
-    const rank = this.p.useWalk ? rootCauseWalk(ids, a, walkEdges, this.p.walk, this.p.useOwn ? ownA : undefined) : new Map(ids.map((id) => [id, a.get(id)!]));
+    const rank = !this.p.useWalk ? new Map(ids.map((id) => [id, a.get(id)!])) : this.rankBy(ids, a, ownA, walkEdges);
     const hardOf = (id: string) => (this.p.hardFirst && services.get(id)!.hard ? 1 : 0);
     const ranked = [...ids].sort((x, y) => (hardOf(y) - hardOf(x)) || (rank.get(y)! - rank.get(x)!) || (services.get(y)!.level - services.get(x)!.level) || x.localeCompare(y));
     let maxLevel = 0;
     for (const v of services.values()) maxLevel = Math.max(maxLevel, v.level);
     const learned = [...services.values()].filter((v) => v.ready).length;
-    return { services, rank, ranked, maxLevel, hot: maxLevel >= 1, ready: learned > 0, learnedServices: learned };
+    const hot = maxLevel >= this.p.alarmLevel;
+
+    // learned cascade: count how often trouble moved from a service to its callers, then project from the top suspect
+    const callersOf = (id: string) => walkEdges.filter((e) => e.to === id).map((e) => e.from);
+    const calleesOf = (id: string) => walkEdges.filter((e) => e.from === id).map((e) => e.to);
+    const abnormal = new Set(ids.filter((id) => services.get(id)!.anomaly > 0));
+    this.propagation.update(this.clock, onsets, abnormal, callersOf);
+    const atRisk = hot && ranked[0] ? this.propagation.risk(ranked[0], abnormal, callersOf, calleesOf) : new Map<string, number>();
+
+    // early warning: a trend heading for the alarm level, on a service not at that level yet, two steps in a row
+    const warnings: EngineResult['warnings'] = [];
+    for (const id of ids) {
+      const v = services.get(id)!, f = v.forecast;
+      const warn = !v.hard && v.level < this.p.alarmLevel && !!f && f.level >= this.p.warnAt && !!f.feature;
+      this.warnStreak.set(id, warn ? (this.warnStreak.get(id) ?? 0) + 1 : 0);
+      if (warn && this.warnStreak.get(id)! >= 2) warnings.push({ id, feature: f!.feature!, inSec: f!.inSteps === null ? null : f!.inSteps * 5, level: f!.level });
+    }
+    return { services, rank, ranked, maxLevel, hot, ready: learned > 0, learnedServices: learned, warnings, atRisk };
   }
 
-  forget(): void { this.models.clear(); this.last.clear(); this.streak.clear(); this.sinceFact.clear(); this.runningFor.clear(); this.onsets.clear(); this.wasHard.clear(); }
+  /** Root-cause scores among the anomalous services, by the configured method. */
+  private rankBy(ids: string[], a: Map<string, number>, ownA: Map<string, number>, walkEdges: WalkEdge[]): Map<string, number> {
+    if (this.p.rca === 'pagerank') return pageRankScores(ids, a, walkEdges, this.p.walk.alpha, this.p.walk.iterations);
+    const walk = rootCauseWalk(ids, a, walkEdges, this.p.walk, this.p.useOwn ? ownA : undefined);
+    if (this.p.rca === 'onset') {
+      // temporal precedence: in a cascade the source turns abnormal first, so earlier onsets weigh more (half weight per 30 s)
+      const ons = ids.filter((id) => a.get(id)! > 0).map((id) => this.onsetAt.get(id) ?? this.clock);
+      const first = ons.length ? Math.min(...ons) : this.clock;
+      return new Map(ids.map((id) => [id, walk.get(id)! * Math.pow(0.5, ((this.onsetAt.get(id) ?? this.clock) - first) / 6)]));
+    }
+    if (this.p.rca === 'depth') {
+      // the deepest anomalous service: one with no anomalous callee of known direction
+      const sick = (id: string) => a.get(id)! > 0;
+      return new Map(ids.map((id) => [id, a.get(id)! * (walkEdges.some((e) => e.from === id && !e.mutual && sick(e.to)) ? 0.3 : 1)]));
+    }
+    return walk;
+  }
+
+  forget(): void { this.models.clear(); this.last.clear(); this.streak.clear(); this.sinceFact.clear(); this.runningFor.clear(); this.onsets.clear(); this.wasHard.clear(); this.onsetAt.clear(); this.propagation.forget(); this.warnStreak.clear(); }
 }

@@ -25,7 +25,15 @@ STEP 3  Facts before guesses
     - A crash loop looks healthy between kills. Two outages within 3 minutes make it a crash loop, and it
       stays the prime suspect for a minute after the last one.
 
-STEP 4  Find the source: random walk (personalised PageRank, MonitorRank style)
+STEP 4  Hybrid alarm (the default engine)
+  The rule engine (robust z-scores) watches the same services. Alarm if the forests say so,
+  or if the rules are well over their own line (1.25x). Either engine can catch an issue.
+
+STEP 5  Predictions
+  Early warning: a straight-line trend on memory, CPU, throttling, errors or latency, projected
+  2 minutes ahead. Learned cascade: how often trouble moved from a service to each caller.
+
+STEP 6  Find the source: random walk (personalised PageRank, MonitorRank style)
   A walker starts on anomalous services and keeps moving:
     to a service it calls      with weight  anomaly(callee)          (follow the trouble down)
     back to a caller           with weight  0.2 * anomaly(caller)    (do not get stuck)
@@ -180,6 +188,46 @@ def root_cause_walk(anomaly, calls, alpha=0.15, rho=0.2, steps=60):
                 nxt[v] += (1 - alpha) * pi[u] * p
         pi = nxt
     return pi
+
+
+# ---------------------------------------------------------------- hybrid alarm and predictions
+RULES_ALONE = 1.25
+
+
+def hybrid_alarm(ml_level_max, rules_z_max, alarm_level=2.0, rules_line=3.0):
+    """Alarm when the forests are over the alarm level, or the rules are well over their own line on their own."""
+    return ml_level_max / alarm_level >= 1 or rules_z_max / rules_line / RULES_ALONE >= 1
+
+
+def trend_forecast(values, hi, unit, horizon=24, min_r2=0.6):
+    """Level the recent straight-line trend reaches `horizon` readings ahead (1 = the alarm line), or 0 if no clear rise."""
+    n = len(values)
+    if n < 8:
+        return 0.0
+    xs = range(n)
+    mx, my = (n - 1) / 2, sum(values) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, values))
+    syy = sum((y - my) ** 2 for y in values)
+    if sxx == 0 or syy == 0:
+        return 0.0
+    b, r2 = sxy / sxx, sxy * sxy / (sxx * syy)
+    if b <= 0 or r2 < min_r2:
+        return 0.0
+    return max(0.0, my + b * (n - 1 + horizon - mx) - hi) / unit
+
+
+class Cascade:
+    """Propagation probability per call edge: (times trouble reached the caller + 1) / (times it could have + 2)."""
+    def __init__(self):
+        self.trials, self.hits = {}, {}
+
+    def record(self, caller, callee, reached):
+        self.trials[(caller, callee)] = self.trials.get((caller, callee), 0) + 1
+        self.hits[(caller, callee)] = self.hits.get((caller, callee), 0) + (1 if reached else 0)
+
+    def prob(self, caller, callee):
+        return (self.hits.get((caller, callee), 0) + 1) / (self.trials.get((caller, callee), 0) + 2)
 
 
 if __name__ == "__main__":

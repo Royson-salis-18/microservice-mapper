@@ -655,7 +655,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
                 <span class="badge badge-green">SETUP</span>
                 <span class="meta-item"><code>README.md</code></span>
                 <span class="meta-item">~11 min read</span>
-                <span class="meta-item">2,115 words</span>
+                <span class="meta-item">2,134 words</span>
             </div>
             <nav class="toc">
   <a href="#what-it-does">What It Does</a>
@@ -708,7 +708,7 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
   <li><strong>Runtime observation</strong> - reads each container's socket tables to see which services actually talk to each other, and which end is calling (the one holding the listening port is the one being called)</li>
   <li><strong>Live metrics</strong> - CPU (against the container's own allowance), memory, and exact network counters from <code>docker stats</code> and <code>/proc</code>, refreshed every 5 seconds</li>
   <li><strong>Root cause analysis</strong> - when services fail or show anomalies, an additive, explainable score ranks the most likely cause, says how confident it is, and traces the propagation path</li>
-  <li><strong>ML engine (default)</strong>: a per-service Isolation Forest learns normal on a sliding window of healthy readings, and a random walk on the call graph ranks the root cause; on the recorded runs it names the right service first 77% of the time (rules: 58%) with a fifth of the false alarms. Switch Rules / ML in the top bar; <code>npm run ml:compare</code>, <code>npm run ml:synth</code>, <code>npm run ml:bench</code> reproduce the numbers (see wiki/43-ml-engine.md)</li>
+  <li><strong>Hybrid ML + rules engine (default)</strong>: a per-service Isolation Forest learns normal on a sliding window of healthy readings, a random walk on the call graph ranks the root cause, a trend forecast warns early and a learned cascade model predicts who is hit next; the rule engine can raise the alarm too. On the recorded runs it names the right service first 74% of the time (live rules: 56%). Switch Rules / Hybrid / ML in the top bar; <code>npm run ml:compare</code>, <code>ml:hybrid</code>, <code>ml:predict</code>, <code>ml:synth</code>, <code>ml:bench</code> reproduce the numbers (see wiki/43-ml-engine.md)</li>
   <li><strong>Cascade risk</strong> - per-service health, criticality and risk; what-if failure simulation and blast radius</li>
   <li><strong>Anomaly detection</strong> - optional Python ML pipeline trains four detectors per service and feeds their combined verdict back as Findings, kept separate from rule-based incidents</li>
   <li><strong>Traffic experiments</strong> - built-in load test runner with experiment tracking</li>

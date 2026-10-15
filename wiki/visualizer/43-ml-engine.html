@@ -654,19 +654,22 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
             <div class="metadata-strip">
                 <span class="badge badge-purple">ML</span>
                 <span class="meta-item"><code>wiki/43-ml-engine.md</code></span>
-                <span class="meta-item">~12 min read</span>
-                <span class="meta-item">2,324 words</span>
+                <span class="meta-item">~15 min read</span>
+                <span class="meta-item">3,001 words</span>
             </div>
             <nav class="toc">
   <a href="#how-it-works-step-by-step">How it works, step by step</a>
-  <a href="#1-learn-normal-two-isolation-forests-per-service">1. Learn normal: two Isola...</a>
-  <a href="#2-facts-first-stopped-and-crash-looping-containers">looping containers</a>
-  <a href="#3-find-the-source-random-walk-on-the-call-graph">3. Find the source: random...</a>
+  <a href="#1-learn-normal-two-models-per-service">1. Learn normal: two model...</a>
+  <a href="#2-other-detectors-that-were-tried">2. Other detectors that we...</a>
+  <a href="#3-facts-first-stopped-and-crash-looping-containers">looping containers</a>
+  <a href="#4-find-the-source-random-walk-on-the-call-graph">4. Find the source: random...</a>
+  <a href="#5-the-hybrid">5. The hybrid</a>
+  <a href="#6-predictions">6. Predictions</a>
   <a href="#results">Results</a>
-  <a href="#on-the-recorded-bench-runs">On the recorded bench runs</a>
-  <a href="#on-a-synthetic-bench-many-more-faults">On a synthetic bench (many...</a>
+  <a href="#on-the-recorded-bench-runs-2-benches-217-minutes-34-faults">On the recorded bench runs...</a>
+  <a href="#on-a-synthetic-bench-held-out-set-178-faults">out set, 178 faults)</a>
+  <a href="#predictions-npm-run-mlpredict">Predictions (npm run ml:pr...</a>
   <a href="#limits-say-these-first">Limits (say these first)</a>
-  <a href="#files">Files</a>
 </nav>
         </header>
 
@@ -684,80 +687,154 @@ h2[id], h3[id], h4[id], section[id] { scroll-margin-top: 84px; }
         <div class="doc-layout">
             <div class="doc-main">
                 <article class="doc-body">
-                    <p>The top bar has a small <strong>Rules · ML</strong> switch. It decides which engine raises incidents and ranks the root cause. The setting is saved on the server, in <code>server/data/engine_mode.json</code>; <code>MAPPER_ENGINE=ml</code> or <code>rules</code> overrides it. The default is ML.</p>
+                    <p>The top bar has a small <strong>Rules · Hybrid · ML</strong> switch. It decides which engine raises incidents and names the root cause.</p>
+<ul>
+  <li>The choice is saved on the server in <code>server/data/engine_mode.json</code>; <code>MAPPER_ENGINE=rules|hybrid|ml</code> overrides it.</li>
+  <li><strong>Hybrid is the default.</strong></li>
+</ul>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th></th>
     <th>Rules</th>
     <th>ML</th>
+    <th>Hybrid (default)</th>
   </tr></thead>
   <tbody>
     <tr>
       <td>Is a service abnormal?</td>
-      <td>robust z-score per metric (median, MAD), two samples in a row</td>
-      <td><strong>Isolation Forest</strong> per service, trained on a sliding window of that service's normal readings</td>
+      <td>robust z-score per metric (median, MAD)</td>
+      <td>two <strong>Isolation Forests</strong> per service, trained on a sliding window of its normal readings</td>
+      <td>both: either engine can raise the alarm</td>
     </tr>
     <tr>
       <td>Which service is the cause?</td>
-      <td><code>max(own, symptom − explained)</code> + 100 for a stopped container</td>
-      <td><strong>random walk (personalised PageRank)</strong> on the call graph, driven by the forests' anomaly scores</td>
+      <td><code>max(own, symptom − explained)</code></td>
+      <td><strong>random walk</strong> (personalised PageRank) on the call graph</td>
+      <td>the ML engine's ranking</td>
+    </tr>
+    <tr>
+      <td>What comes next?</td>
+      <td>callers of the root</td>
+      <td><strong>learned cascade</strong>: how often trouble moved along each call edge before</td>
+      <td>the learned cascade, plus a <strong>trend forecast</strong> (early warning)</td>
     </tr>
     <tr>
       <td>Code</td>
-      <td><code>server/algorithms/detection</code>, <code>server/algorithms/rca</code></td>
+      <td><code>server/algorithms/detection</code>, <code>rca</code></td>
       <td><code>server/algorithms/ml</code></td>
-    </tr>
-    <tr>
-      <td>Short Python version</td>
-      <td><code>algorithms/detector.py</code>, <code>root_cause.py</code></td>
-      <td><code>algorithms/ml_engine.py</code></td>
+      <td><code>server/algorithms/ml/hybrid.ts</code></td>
     </tr>
   </tbody>
 </table></div>
-<p>Both engines feed the same incident page, cascade forecast and at-risk list. Container facts (stopped, paused, restarting) count in both: they are facts, not guesses.</p>
+<p>All three feed the same incident page, cascade forecast and at-risk list.</p>
+<p>Container facts count in every mode:</p>
+<ul>
+  <li>down, paused, restarting, detached;</li>
+  <li>stopped (<code>docker stop</code>, exit code 0, after the service had been running);</li>
+  <li>crash-looping.</li>
+</ul>
+<p>They are facts, not guesses, and are always named first.</p>
 <h2 id="how-it-works-step-by-step">How it works, step by step</h2>
 <figure><div class="fx" style="margin: 18px 0;">
                         <pre style="margin: 0; background: transparent; border: none; padding: 0; font-size: 12px; line-height: 1.5;">every 5 s, for every service
-  reading ──► scored by the forest built from the PREVIOUS window ──► level (0 typical, 1 = alarm line)
+  reading ──► scored by the models built from the PREVIOUS window ──► level (0 typical, 1 = this service&#x27;s line)
                  │
-                 ├── level &lt; 1  → reading joins the training window  (normal: learn from it)
-                 └── level ≥ 1  → reading is NOT learned            (a fault never becomes &quot;normal&quot;)
-  every 10 new normal readings: rebuild the forest on the newest 120 normal readings
+                 ├── under the line   → learned (joins the window)
+                 ├── a small steady shift (under level 3 for 2 minutes)  → learned: it is the new normal
+                 └── a big shift      → NOT learned (for 30 minutes), so a fault never becomes normal
+  every 10 learned readings: rebuild the models on the newest 120 learned readings
+  trend: straight line through the last 24 readings of memory, CPU, throttling, errors, latency
 
 then, for the whole project
-  facts first: down, paused, restarting, detached, stopped (exit 0 after running), crash loop (2 outages in 3 min)
-  anomaly per service (0..1) + call graph ──► random walk ──► root-cause ranking
-  alarm when some service is above its line for two cycles in a row (or a container fact)</pre>
+  facts first: down, paused, restarting, detached, stopped, crash loop (2 outages in 3 minutes)
+  ML alarm:     some service at level 2 or more, two cycles in a row
+  rules alarm:  some service at 1.25 x the rule line (z = 3.75)
+  hybrid:       alarm if either says so;  ranking by the random walk;  early warning from the trend;  likely-next from the learned cascade</pre>
                     </div></figure>
-<h3 id="1-learn-normal-two-isolation-forests-per-service">1. Learn normal: two Isolation Forests per service</h3>
-<p>Each reading becomes 8 numbers: CPU, memory, throttling, network in, network out, request rate, error share and p95 latency. Positive quantities are on a log scale. They are split into two groups, each with its own forest:</p>
+<h3 id="1-learn-normal-two-models-per-service">1. Learn normal: two models per service</h3>
+<p>Each reading becomes 8 numbers: CPU, memory, throttling, network in, network out, request rate, error share and p95 latency. Positive quantities are on a log scale. They are split into two groups, each with its own model:</p>
 <ul>
   <li><strong>own</strong>: CPU, memory, throttling. A broken dependency cannot cause these.</li>
   <li><strong>symptom</strong>: traffic, errors, latency, network. These can be inherited from a broken dependency.</li>
 </ul>
-<p><strong>Isolation Forest.</strong> 100 random trees each keep cutting the data at random values until every point is alone. An unusual reading gets isolated after only a few cuts.</p>
+<p><strong>Isolation Forest</strong> (the default). 100 random trees each keep cutting the data at random values until every point is alone. An unusual reading gets isolated after only a few cuts.</p>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); padding:6px 12px; border:1px solid var(--rule); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--mono); font-size:11px; color:var(--muted);">
                             <span>TEXT</span>
                         </div>
-                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">s(x) = 2 ^ ( −E[h(x)] / c(ψ) )         E[h(x)] = average number of cuts,  c(ψ) = 2·(ln(ψ−1) + 0.5772) − 2(ψ−1)/ψ
-level = (s − typical) / (line − typical)
-line  = typical + 3 × 1.4826 × MAD(training scores)      (robust, does not jump around with the random trees)</code></pre>
+                        <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">s(x) = 2 ^ ( −E[h(x)] / c(ψ) )       E[h(x)] = average number of cuts,  c(ψ) = 2·(ln(ψ−1) + 0.5772) − 2(ψ−1)/ψ
+level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 × MAD(training scores)</code></pre>
                     </div>
-<p><strong>Two fixes, both found by testing:</strong></p>
+<p><strong>Fixes found by bench testing:</strong></p>
 <ol>
-  <li><strong>Constant features.</strong> A feature that never moved in the window (error share always 0) gives the trees nothing to cut on, so a later jump in it went unseen. Training copies therefore get a little noise at each feature's smallest meaningful change (its <em>floor</em>, the same floors the rules use).</li>
-  <li><strong>Range guard.</strong> A forest scores a value far outside anything it has seen (CPU 60 when it has always been about 10) no higher than its most extreme training point, so the score saturates. In a real tree such a value would be cut off at the root. The engine therefore also counts how many floors a value is beyond the training range: 5 floors beyond counts as level 1.</li>
+  <li><strong>Constant features.</strong> Training copies get a little noise at each feature's smallest meaningful change (its floor), so a feature that never moved can still show a jump.</li>
+  <li><strong>Range guard.</strong> A forest scores a value far outside anything it has seen no higher than its most extreme training point. The engine also counts how many floors a value is beyond the training range (5 floors = level 1).</li>
+  <li><strong>One-sided features.</strong> Less CPU, memory, throttling, errors or latency than usual is never a fault of the service itself. It happens after every restart: memory starts low again. These features only count when they rise. Traffic and network count both ways, because a drop matters.</li>
+  <li><strong>Two-speed drift.</strong></li>
 </ol>
-<p><strong>The gate (your rule).</strong> A reading is learned only if it is under the line. A service that stays above its line for 360 readings (about half an hour) with nothing broken is treated as having a new normal, for example after a deploy.</p>
-<h3 id="2-facts-first-stopped-and-crash-looping-containers">2. Facts first: stopped and crash-looping containers</h3>
-<p>A container that is down, paused, restarting or cut off from the network is a fact, not a guess, and it is ranked first. Bench testing found two cases where the plain container state hides the fact:</p>
 <ul>
-  <li><strong><code>docker stop</code> exits with code 0.</strong> Code 0 normally means a one-shot job finished, so it was ignored, and every stopped service in the recorded runs (8 of 8) went unnamed by both engines. Now a service that had been running for at least a minute and then exits counts as stopped, whatever the code.</li>
-  <li><strong>A crash loop looks healthy between kills.</strong> Two separate outages within 3 minutes make it a crash loop; it stays first for a minute after the last outage. The same rule covers a flapping container.</li>
+  <li>A small steady shift (level under 3 for 2 minutes) is learned as the new normal: a restart that settled at a new memory level, a deploy.</li>
+  <li>A big shift is only accepted after 30 minutes, so a real fault is not learned.</li>
 </ul>
-<p>Memory also got a finer floor (5% instead of 15%): memory hardly moves on a healthy service, so a leak is visible much earlier.</p>
-<h3 id="3-find-the-source-random-walk-on-the-call-graph">3. Find the source: random walk on the call graph</h3>
+<ol>
+  <li><strong>Alarm at level 2.</strong> A project of a dozen services always has one hovering near its own line. The project alarms when some service reaches twice its line.</li>
+</ol>
+<h3 id="2-other-detectors-that-were-tried">2. Other detectors that were tried</h3>
+<p>All plug into the same window, line and range guard (<code>server/algorithms/ml/detectors.ts</code>, setting <code>baseline.detector</code>):</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Detector</th>
+    <th>Idea</th>
+    <th>Caught and named first, recorded runs</th>
+    <th>Same, synthetic tuning set</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Isolation Forest</strong> (default)</td>
+      <td>few random cuts isolate an odd point (Liu, Ting and Zhou 2008)</td>
+      <td>74%</td>
+      <td>72%</td>
+    </tr>
+    <tr>
+      <td>Mahalanobis (Hotelling T²)</td>
+      <td>distance from the mean in units of the covariance, shrunk to stay invertible</td>
+      <td>71%</td>
+      <td>75%</td>
+    </tr>
+    <tr>
+      <td>k-nearest neighbours</td>
+      <td>mean distance to the 5 nearest normal readings (Ramaswamy et al. 2000)</td>
+      <td>68%</td>
+      <td>72% (but 3× the false alarms)</td>
+    </tr>
+    <tr>
+      <td>HBOS</td>
+      <td>how rare each feature's histogram bin is (Goldstein and Dengel 2012)</td>
+      <td>68%</td>
+      <td>72% (but 4× the false alarms)</td>
+    </tr>
+    <tr>
+      <td>Ensemble of all four</td>
+      <td>mean of the four levels</td>
+      <td>71%</td>
+      <td>76%</td>
+    </tr>
+    <tr>
+      <td>Isolation Forest + Mahalanobis</td>
+      <td>mean of the two levels</td>
+      <td>71%</td>
+      <td>76%</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>On 34 recorded faults one fault is 3 points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.</p>
+<p>These numbers were measured before fixes 3 to 5 above.</p>
+<h3 id="3-facts-first-stopped-and-crash-looping-containers">3. Facts first: stopped and crash-looping containers</h3>
+<ul>
+  <li><strong><code>docker stop</code> exits with code 0</strong>, which normally means a one-shot job finished. A service that had been running for a minute and then exits counts as stopped.</li>
+  <li><strong>A crash loop looks healthy between kills.</strong> Two outages within 3 minutes make it a crash loop, and it stays first for a minute after the last one.</li>
+</ul>
+<h3 id="4-find-the-source-random-walk-on-the-call-graph">4. Find the source: random walk on the call graph</h3>
 <p>This is MonitorRank (Kim, Sumbaly and Shah, SIGMETRICS 2013), a personalised PageRank. A walker starts on anomalous services and keeps stepping:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
@@ -783,99 +860,200 @@ line  = typical + 3 × 1.4826 × MAD(training scores)      (robust, does not jum
     </tr>
   </tbody>
 </table></div>
-<p>With probability 0.15 it jumps back to an anomalous service (the restart). The share of time spent on each service is its root-cause score.</p>
-<p><strong>Directions.</strong> Connections are seen from both ends, so in the recordings almost every link appears in both directions (15 of 32 pairs in ShopFlow, 18 of 36 in LedgerLine). The engine keeps the direction a call normally takes, from entry point to service to data store or external provider. A pair between two ordinary services keeps both directions, marked "direction unknown"; such a pair can move the walker but cannot explain a service away.</p>
+<p>With probability 0.15 it jumps back to an anomalous service. The share of time spent on each service is its root-cause score.</p>
+<p><strong>Directions.</strong> Connections are seen from both ends. The engine keeps the direction a call normally takes, from entry point to service to data store or external provider. A pair between two ordinary services keeps both directions, marked "direction unknown".</p>
+<p><strong>Other root-cause methods that were tried</strong> (setting <code>rca</code>):</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Method</th>
+    <th>Idea</th>
+    <th>Recorded runs</th>
+    <th>Synthetic</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>MonitorRank walk</strong> (default)</td>
+      <td>above</td>
+      <td>74%</td>
+      <td>72%</td>
+    </tr>
+    <tr>
+      <td>PageRank (MicroRCA style)</td>
+      <td>follow calls to anomalous callees, no "stay", no explaining away</td>
+      <td>74%</td>
+      <td>71%</td>
+    </tr>
+    <tr>
+      <td>Onset order</td>
+      <td>the service that turned abnormal first is weighted up (half weight per 30 s later)</td>
+      <td>65%</td>
+      <td>71%</td>
+    </tr>
+    <tr>
+      <td>Deepest anomalous</td>
+      <td>prefer anomalous services with no anomalous callee</td>
+      <td>68%</td>
+      <td>73%</td>
+    </tr>
+  </tbody>
+</table></div>
+<h3 id="5-the-hybrid">5. The hybrid</h3>
+<p>The rule engine and the ML engine judge the same moment (<code>server/algorithms/ml/hybrid.ts</code>). Every way of combining them was scored on the recorded runs and on the synthetic tuning set (<code>npm run ml:hybrid</code>):</p>
+<ul>
+  <li><strong>When to alarm.</strong> The options were:</li>
+  <li>one engine alone;</li>
+  <li>either engine;</li>
+  <li>both engines;</li>
+  <li>both on the same service;</li>
+  <li>ML, or the rules well over their own line ("or-strict").</li>
+  <li><strong>Who is first.</strong> The options were:</li>
+  <li>one engine's order;</li>
+  <li>a weighted blend of the walk share and the rule score;</li>
+  <li>reciprocal rank fusion.</li>
+</ul>
+<p>The chosen hybrid: <strong>alarm when the ML engine says so, or when the rules are at 1.25 × their line on their own; rank with the ML engine.</strong></p>
+<ul>
+  <li>Plain "either engine" catches one or two faults more, but brings almost all of the rules' false alarms.</li>
+  <li>The blends did not beat the ML ranking on the recorded runs.</li>
+</ul>
+<h3 id="6-predictions">6. Predictions</h3>
+<ul>
+  <li><strong>Early warning (trend forecast).</strong></li>
+  <li>A straight line is fitted through the last 24 readings (2 minutes) of each rising-only feature: memory, CPU, throttling, errors, latency.</li>
+  <li>It must be clearly rising (R² ≥ 0.6, and a change worth at least two floors).</li>
+  <li>It is projected 2 minutes ahead and judged with the range guard.</li>
+  <li>It warns when a service not yet at the alarm level is heading there.</li>
+  <li><strong>Likely next (learned cascade).</strong></li>
+  <li><strong>Learning.</strong> Every time a service turns abnormal, each healthy caller is a trial: did it turn abnormal within a minute?</li>
+  <li><strong>Probability per call edge.</strong> The success rate per call edge, with a Beta prior worth 2 trials at 0.5, is that edge's propagation probability.</li>
+  <li><strong>Spreading the risk.</strong> Risk travels up from the suspect by noisy-OR, as in the independent-cascade model (Kempe, Kleinberg and Tardos 2003).</li>
+  <li><strong>What is shown.</strong> Services with risk ≥ 0.5 are shown as likely next.</li>
+</ul>
 <h2 id="results">Results</h2>
-<h3 id="on-the-recorded-bench-runs">On the recorded bench runs</h3>
-<p>Both engines are scored on the same recorded runs: 2 benches, 217 minutes, 34 injected faults. The scoring is event-level, as before. The ML engine never sees a label: every moment is scored from the past only. Run it yourself with <code>npm run ml:compare</code>; the results are in <code>graphs/output/ml-vs-rules.json</code>.</p>
+<p>All numbers come from the same event-level scoring.</p>
+<ul>
+  <li>A fault is <strong>detected</strong> when an alarm during it has the right services near the top.</li>
+  <li>It is <strong>caught and named</strong> when, in addition, the faulted service is first.</li>
+  <li><strong>False alarms per hour</strong> counts alarm episodes outside every fault window.</li>
+  <li><strong>Alarm time</strong> is the share of fault-free time spent in alarm.</li>
+</ul>
+<p>No engine ever sees a label: every moment is judged from the past only.</p>
+<div class="box why"><p><strong>Correction.</strong> Earlier versions of this page reported the ML engine with about a fifth of the rules' false alarms. That number counted alarm <em>episodes</em> only. Measuring alarm <em>time</em> showed the engine was alarming for 92% of fault-free time on the recorded runs: one long alarm counts as one episode. Fixes 3 to 5 above bring it to 32%, in line with the rules. Every table below includes alarm time.</p></div>
+<h3 id="on-the-recorded-bench-runs-2-benches-217-minutes-34-faults">On the recorded bench runs (2 benches, 217 minutes, 34 faults)</h3>
+<p><code>npm run ml:compare</code> (ML over 5 seeds) and <code>npm run ml:hybrid</code>:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Engine</th>
-    <th>Faults detected</th>
+    <th>Detected</th>
     <th>Right service first (of detected)</th>
+    <th>Caught and named first</th>
     <th>False alarms per hour</th>
+    <th>Alarm time</th>
   </tr></thead>
   <tbody>
     <tr>
       <td>Rules (live, as recorded)</td>
       <td>97%</td>
       <td>58%</td>
+      <td>56%</td>
       <td>12.4</td>
+      <td>33%</td>
     </tr>
     <tr>
-      <td>Rules (re-scored, threshold 3)</td>
+      <td>Rules (re-scored, with the same container facts)</td>
       <td>97%</td>
-      <td>55%</td>
+      <td>67%</td>
+      <td>65%</td>
       <td>16.2</td>
+      <td>26%</td>
     </tr>
     <tr>
-      <td>ML, first version</td>
-      <td>99 ± 1%</td>
-      <td>57 ± 2%</td>
-      <td>7.8 ± 1.0</td>
+      <td>ML, previous version (two-sided, alarm at the line)</td>
+      <td>95 ± 1%</td>
+      <td>77 ± 1%</td>
+      <td>73%</td>
+      <td>2.6</td>
+      <td><strong>92%</strong></td>
     </tr>
     <tr>
-      <td>ML now, forests only (rank by anomaly)</td>
+      <td>ML now (5 seeds)</td>
       <td>100 ± 0%</td>
-      <td>68 ± 0%</td>
-      <td>2.6 ± 0.4</td>
+      <td>71 ± 1%</td>
+      <td>71%</td>
+      <td>8.7</td>
+      <td>32%</td>
     </tr>
     <tr>
-      <td><strong>ML now, forests + random walk (default)</strong></td>
-      <td><strong>95 ± 1%</strong></td>
-      <td><strong>77 ± 1%</strong></td>
-      <td><strong>2.6 ± 0.4</strong></td>
+      <td><strong>Hybrid (default)</strong></td>
+      <td><strong>100%</strong></td>
+      <td><strong>74%</strong></td>
+      <td><strong>74%</strong></td>
+      <td>10.9</td>
+      <td>35%</td>
     </tr>
   </tbody>
 </table></div>
-<p>ML rows are the mean ± standard deviation over 5 random seeds.</p>
 <ul>
-  <li>Against the live rules, the ML engine names the right service first 19 points more often and raises about a fifth of the false alarms. It misses one or two faults more (95% against 97%).</li>
-  <li>The random walk adds 9 points to "right service first" over ranking by anomaly alone.</li>
-  <li>Where the gain comes from (faults caught and named first, seed 0):</li>
+  <li><strong>Root cause.</strong> The ML and hybrid engines name the right service first clearly more often than the rules (74% against 56 to 65%).</li>
+  <li><strong>Alarms.</strong> They alarm about as much as the live rules.</li>
+  <li><strong>The walk.</strong> It adds 3 points over ranking by anomaly alone (71% against 68%).</li>
 </ul>
+<p><strong>Cross-system check</strong> (ML settings chosen on one bench, tested untouched on the other, 5 seeds):</p>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th>Test bench</th>
+    <th>ML: detected / right first / false alarms per hour / alarm time</th>
+    <th>Rules (live)</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>ShopFlow</td>
+      <td>100% / 76% / 9.3 / 31%</td>
+      <td>100% / 59% / 11.3 / 28%</td>
+    </tr>
+    <tr>
+      <td>LedgerLine</td>
+      <td>100% / 65% / 8.3 / 30%</td>
+      <td>94% / 56% / 13.6 / 37%</td>
+    </tr>
+  </tbody>
+</table></div>
+<p>By class (caught and named first, recorded runs):</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Class</th>
     <th>Faults</th>
-    <th>Rules (live)</th>
-    <th>ML first version</th>
-    <th>ML now</th>
+    <th>Rules</th>
+    <th>ML</th>
+    <th>Hybrid</th>
   </tr></thead>
   <tbody>
     <tr>
       <td>stop</td>
       <td>8</td>
-      <td>0</td>
-      <td>0</td>
-      <td><strong>8</strong></td>
+      <td>4</td>
+      <td>8</td>
+      <td>8</td>
     </tr>
     <tr>
       <td>crash</td>
       <td>10</td>
       <td>10</td>
       <td>10</td>
-      <td>9</td>
+      <td>10</td>
     </tr>
     <tr>
       <td>memory</td>
       <td>6</td>
-      <td>5</td>
-      <td>5</td>
-      <td>3</td>
-    </tr>
-    <tr>
-      <td>brownout</td>
-      <td>6</td>
-      <td>0</td>
-      <td>1</td>
-      <td>2</td>
+      <td>4</td>
+      <td>4</td>
+      <td>4</td>
     </tr>
     <tr>
       <td>crash-loop</td>
       <td>2</td>
       <td>2</td>
-      <td>2</td>
+      <td>1</td>
       <td>1</td>
     </tr>
     <tr>
@@ -885,172 +1063,198 @@ line  = typical + 3 × 1.4826 × MAD(training scores)      (robust, does not jum
       <td>2</td>
       <td>2</td>
     </tr>
-  </tbody>
-</table></div>
-<p>Most of the gain is the stop fix. Memory got worse on these runs (5 → 3 of 6), even though it improved on the synthetic bench. With 6 faults that difference could be noise, but it is listed rather than hidden.</p>
-<p><strong>Cross-system check.</strong> Settings were chosen on one bench and tested untouched on the other:</p>
-<div class="scroll"><table class="t">
-  <thead><tr>
-    <th>Test bench</th>
-    <th>ML: detected / right first / false alarms per hour</th>
-    <th>Rules (live): detected / right first / false alarms per hour</th>
-  </tr></thead>
-  <tbody>
     <tr>
-      <td>ShopFlow (settings from LedgerLine)</td>
-      <td>89% / 82% / 3.0</td>
-      <td>100% / 59% / 11.3</td>
-    </tr>
-    <tr>
-      <td>LedgerLine (settings from ShopFlow)</td>
-      <td>100% / 60% / 5.3</td>
-      <td>94% / 56% / 13.6</td>
+      <td>brownout</td>
+      <td>6</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
     </tr>
   </tbody>
 </table></div>
-<p>On both benches, with settings it was not tuned on, the ML engine now names the right service first more often than the rules, with fewer false alarms. LedgerLine was the weak bench before (46% against 56%); it is now 60%. On ShopFlow it detects fewer faults with those borrowed settings (89%).</p>
-<h3 id="on-a-synthetic-bench-many-more-faults">On a synthetic bench (many more faults)</h3>
-<p>34 faults is a small sample, so a synthetic bench was built: <code>npm run ml:synth</code> writes campaigns in exactly the recorded format, and <code>npm run ml:bench -- &lt;dirs&gt;</code> scores any set of runs, overall and per fault class.</p>
+<h3 id="on-a-synthetic-bench-held-out-set-178-faults">On a synthetic bench (held-out set, 178 faults)</h3>
 <ul>
+  <li><code>npm run ml:synth</code> writes synthetic campaigns in the recorded format.</li>
   <li><strong>What it simulates.</strong></li>
-  <li>The two bench topologies, with baselines taken from the recorded runs, plus random topologies.</li>
+  <li>The two bench topologies with their measured baselines, plus random ones.</li>
   <li>Traffic waves and bursts.</li>
-  <li>Nine fault classes. Effects travel up the call graph (callers see errors and slow calls) and down it (callees see less traffic).</li>
+  <li>Nine fault classes that spread up and down the call graph.</li>
   <li>Overlapping faults.</li>
-  <li>Things that are not faults and carry no label: noisy neighbours, a deploy that moves one service's memory level for good, and missing readings.</li>
-  <li><strong>How it was used.</strong></li>
-  <li>The new settings were chosen on one set: seed 1, 16 one-hour campaigns, 170 faults.</li>
-  <li>They were then tested once on a set not used for tuning: seed 2, 16 campaigns, 178 faults.</li>
+  <li>Unlabelled noise: noisy neighbours, deploys, missing readings.</li>
+  <li><strong>How it was used.</strong> Settings were chosen on one set (seed 1, 170 faults) and tested once on another (seed 2, 178 faults).</li>
 </ul>
 <div class="scroll"><table class="t">
   <thead><tr>
-    <th>Engine (held-out synthetic set, 178 faults)</th>
+    <th>Engine</th>
     <th>Detected</th>
     <th>Right first (of detected)</th>
     <th>Caught and named first</th>
     <th>False alarms per hour</th>
+    <th>Alarm time</th>
   </tr></thead>
   <tbody>
     <tr>
-      <td>Rules (re-scored)</td>
-      <td>87%</td>
-      <td>61%</td>
-      <td>53%</td>
-      <td>2.5</td>
+      <td>Rules (with the same container facts)</td>
+      <td>89%</td>
+      <td>78%</td>
+      <td>70%</td>
+      <td>1.3 to 3.7</td>
+      <td>1 to 2%</td>
     </tr>
     <tr>
-      <td>ML, first version</td>
-      <td>87%</td>
-      <td>58%</td>
-      <td>50%</td>
-      <td>3.2</td>
+      <td>ML</td>
+      <td>89%</td>
+      <td>78%</td>
+      <td>70%</td>
+      <td>0</td>
+      <td>1 to 10%</td>
     </tr>
     <tr>
-      <td><strong>ML now</strong></td>
-      <td><strong>98%</strong></td>
-      <td><strong>76 ± 1%</strong></td>
-      <td><strong>75%</strong></td>
-      <td><strong>3.2 ± 0.2</strong></td>
+      <td><strong>Hybrid (default)</strong></td>
+      <td><strong>92%</strong></td>
+      <td><strong>79%</strong></td>
+      <td><strong>72%</strong></td>
+      <td>0 to 1.6</td>
+      <td>2 to 10%</td>
     </tr>
   </tbody>
 </table></div>
+<p>(Ranges are over the two halves of the set.)</p>
 <p>Caught and named first, by class:</p>
 <div class="scroll"><table class="t">
   <thead><tr>
     <th>Class</th>
     <th>Faults</th>
     <th>Rules</th>
-    <th>ML first version</th>
-    <th>ML now</th>
+    <th>ML</th>
+    <th>Hybrid</th>
   </tr></thead>
   <tbody>
     <tr>
-      <td>stop</td>
-      <td>24</td>
-      <td>1</td>
-      <td>0</td>
-      <td>23</td>
-    </tr>
-    <tr>
       <td>flap</td>
       <td>12</td>
-      <td>0</td>
-      <td>0</td>
+      <td>2</td>
       <td>12</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>stop</td>
+      <td>24</td>
+      <td>21</td>
+      <td>23</td>
+      <td>23</td>
     </tr>
     <tr>
       <td>crash-loop</td>
       <td>16</td>
-      <td>13</td>
-      <td>2</td>
       <td>14</td>
+      <td>14</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>brownout</td>
+      <td>26</td>
+      <td>18</td>
+      <td>16</td>
+      <td>18</td>
+    </tr>
+    <tr>
+      <td>crash</td>
+      <td>27</td>
+      <td>23</td>
+      <td>21</td>
+      <td>21</td>
     </tr>
     <tr>
       <td>memory</td>
       <td>18</td>
       <td>13</td>
-      <td>10</td>
-      <td>15</td>
-    </tr>
-    <tr>
-      <td>crash</td>
-      <td>27</td>
-      <td>17</td>
-      <td>25</td>
-      <td>23</td>
+      <td>12</td>
+      <td>12</td>
     </tr>
     <tr>
       <td>partition</td>
       <td>15</td>
-      <td>11</td>
       <td>15</td>
+      <td>13</td>
       <td>13</td>
     </tr>
     <tr>
       <td>pause</td>
       <td>15</td>
       <td>14</td>
-      <td>15</td>
       <td>13</td>
-    </tr>
-    <tr>
-      <td>brownout</td>
-      <td>26</td>
-      <td>21</td>
-      <td>20</td>
-      <td>15</td>
+      <td>13</td>
     </tr>
     <tr>
       <td>slow network</td>
       <td>25</td>
       <td>4</td>
+      <td>0</td>
       <td>2</td>
-      <td>5</td>
     </tr>
   </tbody>
 </table></div>
 <ul>
-  <li><strong>Brownouts are the ML engine's weak class.</strong> Most misses are brownouts that overlap a crash or stop elsewhere: the dead container is ranked first by design, and only one service can be first at a time.</li>
-  <li><strong>Slow networks are hard for both engines.</strong> A slow database reports no latency of its own, so only its callers show it. One extra rule was tried for this case (blame a metric-less dependency when all its callers suffer). It gained one fault and was left out.</li>
+  <li><strong>Where the hybrid wins.</strong> It catches more faults than either engine alone (92% against 89%).</li>
+  <li><strong>Where each engine is better.</strong></li>
+  <li>The ML engine is clearly better on flapping containers.</li>
+  <li>The rules are a little better on brownouts and crashes.</li>
+  <li>The hybrid takes the rules' brownouts back.</li>
+  <li><strong>Slow network.</strong> Faults on a database or cache with no request metrics of its own stay hard for every engine.</li>
 </ul>
-<p><strong>Conclusion.</strong></p>
+<h3 id="predictions-npm-run-mlpredict">Predictions (<code>npm run ml:predict</code>)</h3>
+<div class="scroll"><table class="t">
+  <thead><tr>
+    <th></th>
+    <th>Recorded runs (34 faults)</th>
+    <th>Synthetic held-out (178 faults)</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td>Faults warned before the first alarm</td>
+      <td>1</td>
+      <td>16 (memory 7 of 18, brownout 5 of 26, slow network 4 of 25)</td>
+    </tr>
+    <tr>
+      <td>Median lead over the alarm</td>
+      <td>90 s</td>
+      <td>30 s</td>
+    </tr>
+    <tr>
+      <td>False warnings per fault-free hour</td>
+      <td>6.4</td>
+      <td>0.9</td>
+    </tr>
+    <tr>
+      <td>Likely next, learned cascade: precision / recall / F1</td>
+      <td>13% / 53% / 0.21</td>
+      <td>40% / 47% / 0.43</td>
+    </tr>
+    <tr>
+      <td>Likely next, everything upstream: precision / recall / F1</td>
+      <td>10% / 80% / 0.18</td>
+      <td>32% / 73% / 0.45</td>
+    </tr>
+    <tr>
+      <td>Likely next, the live mapper's own at-risk list</td>
+      <td>19% / 47% / 0.27</td>
+      <td>(not recorded)</td>
+    </tr>
+  </tbody>
+</table></div>
 <ul>
-  <li>On the recorded runs and on the synthetic bench, the ML engine names the right service first clearly more often than the rules.</li>
-  <li>It raises fewer false alarms than the rules on the recorded runs, and about the same on the synthetic bench.</li>
-  <li>It is the default engine. The rule engine is one click away in the top bar, or set <code>MAPPER_ENGINE=rules</code>.</li>
-  <li>The incidents page shows, in ML mode:</li>
-  <li>each service's forest levels and its share of the walk, in the "Why ... scores" box;</li>
-  <li>a live table of what every service has learned.</li>
+  <li><strong>Early warning.</strong> It works for faults that build up: memory leaks, throttling, slowly rising latency. On sudden faults (crash, stop, pause) there is nothing to forecast. The recorded runs have almost no slow faults, so it rarely fires there.</li>
+  <li><strong>Learned cascade.</strong> It is more precise than "everything upstream" and misses more, with about the same F1. The live mapper's own at-risk list is the best predictor on the recorded runs. Predicting who is hit next is hard for all three, and the margins are small.</li>
 </ul>
 <h2 id="limits-say-these-first">Limits (say these first)</h2>
 <ul>
-  <li>34 faults is a small sample; differences of a few points are noise.</li>
-  <li>Most faults overlapped with another fault (16 of 17 per bench), which makes "right service first" hard for both engines.</li>
-  <li>The first version's settings were chosen on these runs. The new settings were chosen on the synthetic bench. The stop fix, however, was found by looking at the recorded runs (stopped services never appeared in any ranking). The cross-system check and the held-out synthetic set are the fair estimates.</li>
-  <li>The rule engine has the same blind spot for <code>docker stop</code>. The fix lives in the ML engine only, so the comparison on stop faults reflects that fix, not a better model.</li>
-  <li>The synthetic bench is a simulator. It is cleaner than a real system, so its absolute numbers are higher than on real runs. It is useful for comparing settings and fault classes, not as a claim about production accuracy.</li>
+  <li>34 recorded faults is a small sample: one fault is 3 points.</li>
+  <li>Most faults overlapped with another fault, which makes "right service first" hard for every engine.</li>
+  <li>Settings were chosen on the recorded runs and the synthetic tuning set. The held-out synthetic set is the fair estimate. It is a simulator: cleaner than a real system, useful for comparing engines and fault classes, not a claim about production accuracy.</li>
+  <li>The <code>docker stop</code> and crash-loop facts were found by looking at the recorded runs. Both are given to every engine in the comparisons, but the live rule engine alone does not have them.</li>
   <li>The tier rule that recovers call directions uses service names (gateway, db, cache, provider...). On a system with unusual names it falls back to "direction unknown".</li>
-  <li>A new project needs about 30 readings per service (2 to 3 minutes) before the forests exist. Until then only container facts can raise an incident.</li>
+  <li>A new project needs about 30 readings per service (2 to 3 minutes) before the models exist. Until then only container facts and the rules can raise an incident.</li>
 </ul>
 <h2 id="files">Files</h2>
 <div class="code-wrapper" style="position:relative; margin: 16px 0 8px;">
@@ -1058,17 +1262,22 @@ line  = typical + 3 × 1.4826 × MAD(training scores)      (robust, does not jum
                             <span>TEXT</span>
                         </div>
                         <pre style="border-radius:0 0 8px 8px; margin-top:0;"><code class="language-">server/algorithms/ml/isolationForest.ts   the forest (seeded, no dependencies)
-server/algorithms/ml/serviceBaseline.ts   sliding window, gate, two forests, alarm line, range guard
-server/algorithms/ml/randomWalk.ts        personalised PageRank root cause
-server/algorithms/ml/mlEngine.ts          ties it together per project; direction recovery
-server/algorithms/ml/replay.ts            replays a recorded run moment by moment for the experiment
-server/rca/engineMode.ts                  the saved Rules / ML choice
-run/cli/ml/compare.ts                     npm run ml:compare
-run/cli/ml/synth.ts                       npm run ml:synth: synthetic fault campaigns in the recorded format
-run/cli/ml/bench.ts                       npm run ml:bench: score both engines on any runs, per fault class
-run/tests/ml-engine.test.ts               14 tests
-algorithms/ml_engine.py                   the same logic in about 210 lines of Python
-client/src/components/MLLivePanel.tsx     the live &quot;What the ML engine sees&quot; table</code></pre>
+server/algorithms/ml/detectors.ts         Isolation Forest, k-nearest neighbours, Mahalanobis, HBOS
+server/algorithms/ml/serviceBaseline.ts   sliding window, gate, two-speed drift, one-sided features, range guard, trend forecast
+server/algorithms/ml/randomWalk.ts        MonitorRank walk and plain PageRank
+server/algorithms/ml/propagation.ts       learned cascade (independent-cascade model with learned edge probabilities)
+server/algorithms/ml/mlEngine.ts          ties it together per project; facts; direction recovery; warnings; likely next
+server/algorithms/ml/hybrid.ts            combining the rule engine and the ML engine
+server/algorithms/ml/replay.ts            replays a recorded run moment by moment for the experiments
+server/rca/engineMode.ts                  the saved Rules / Hybrid / ML choice
+run/cli/ml/compare.ts                     npm run ml:compare   ML against the rules, sweeps, cross-system check
+run/cli/ml/hybrid.ts                      npm run ml:hybrid    every way of combining the two engines
+run/cli/ml/predict.ts                     npm run ml:predict   early warning and likely-next accuracy
+run/cli/ml/synth.ts                       npm run ml:synth     synthetic fault campaigns in the recorded format
+run/cli/ml/bench.ts                       npm run ml:bench     both engines on any runs, per fault class
+run/tests/ml-engine.test.ts               19 tests
+algorithms/ml_engine.py                   the same ideas in about 250 lines of Python
+client/src/components/MLLivePanel.tsx     the live &quot;What the engine sees&quot; table, warnings and likely next</code></pre>
                     </div>
                 </article>
                 
