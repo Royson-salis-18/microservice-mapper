@@ -2,14 +2,16 @@ import { computeSite } from './site';
 
 export type LayoutId =
   | 'halls'
+  | 'flow'
+  | 'topology'
+  | 'clusters'
   | 'grid'
+  | 'tiers'
+  | 'radial'
   | 'circle'
   | 'polygon'
   | 'sphere'
-  | 'helix'
-  | 'tiers'
-  | 'clusters'
-  | 'radial';
+  | 'helix';
 
 export interface LayoutOption {
   id: LayoutId;
@@ -19,12 +21,14 @@ export interface LayoutOption {
 
 export const LAYOUTS: LayoutOption[] = [
   { id: 'halls', label: 'Islands', hint: 'Each project a district of platforms by role: edge, services, data, messaging, with observability set apart' },
+  { id: 'flow', label: 'Flow', hint: 'Stepped architectural decks: Ingress on upper deck, services in mid-deck, and data on illuminated bedrock' },
+  { id: 'topology', label: 'Topology', hint: 'Organic 3D force simulation: communicating services physically cluster by real-time call frequency' },
   { id: 'clusters', label: 'Clusters', hint: 'One island per project, laid out side by side' },
+  { id: 'tiers', label: 'Tiers', hint: 'Stacked by role: gateways on top, databases at the bottom' },
+  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count - busiest in the middle' },
   { id: 'grid', label: 'Grid', hint: 'Even rows and columns - easiest to scan a lot of services' },
   { id: 'circle', label: 'Circle', hint: 'Single ring, every service equally spaced' },
   { id: 'polygon', label: 'Polygon', hint: 'Services distributed along the edges of an n-sided shape' },
-  { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count - busiest in the middle' },
-  { id: 'tiers', label: 'Tiers', hint: 'Stacked by role: gateways on top, databases at the bottom' },
   { id: 'sphere', label: 'Sphere', hint: 'Even spread over a sphere (Fibonacci)' },
   { id: 'helix', label: 'Helix', hint: 'Rising spiral - good for spotting one long chain' },
 ];
@@ -48,7 +52,7 @@ export const ZONED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 
 /** Layouts where each project's services sit together, so a floating name
  *  over their centre points at them. In the rest (tiers, radial, sphere,
  *  helix) projects interleave and every name lands in the same spot. */
-export const LABELLED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['grid', 'circle', 'polygon']);
+export const LABELLED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['grid', 'circle', 'polygon', 'flow', 'topology']);
 
 /** Margin between a hall's outermost services and its walls. */
 export const HALL_PADDING = 6;
@@ -74,12 +78,163 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
  * by node count so a 15-service target and a 60-service one both stay
  * readable without the camera having to move.
  */
-export function computeLayout(layout: LayoutId, nodes: LayoutNode[]): Positions {
+export function computeLayout(
+  layout: LayoutId,
+  nodes: LayoutNode[],
+  edges: any[] = [],
+  links: [string, string][] = []
+): Positions {
   const positions: Positions = {};
   const n = nodes.length;
   if (n === 0) return positions;
 
   switch (layout) {
+    case 'flow': {
+      // Stepped Architectural Flow:
+      // Ingress on Deck 3 (y=16), Services on Deck 2 (y=8), Data on Bedrock Deck 1 (y=0),
+      // and Side Wing for Queues/Infra (y=4).
+      const ingress: LayoutNode[] = [];
+      const services: LayoutNode[] = [];
+      const data: LayoutNode[] = [];
+      const wing: LayoutNode[] = [];
+
+      nodes.forEach((node) => {
+        if (node.type === 'gateway' || node.type === 'frontend') ingress.push(node);
+        else if (node.type === 'database' || node.type === 'cache') data.push(node);
+        else if (node.type === 'queue' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') wing.push(node);
+        else services.push(node);
+      });
+
+      ingress.sort((a, b) => b.degree - a.degree);
+      services.sort((a, b) => b.degree - a.degree);
+      data.sort((a, b) => b.degree - a.degree);
+      wing.sort((a, b) => b.degree - a.degree);
+
+      const placeDeck = (deckNodes: LayoutNode[], y: number, centerZ: number, gapX = 14, gapZ = 12, maxCols = 5) => {
+        const count = deckNodes.length;
+        if (count === 0) return;
+        const cols = Math.min(count, maxCols);
+        const rows = Math.ceil(count / cols);
+        const zOffset = ((rows - 1) * gapZ) / 2;
+
+        deckNodes.forEach((node, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const inThisRow = Math.min(count - row * cols, cols);
+          const xOffset = ((inThisRow - 1) * gapX) / 2;
+          positions[node.id] = [
+            col * gapX - xOffset,
+            y,
+            centerZ + (row * gapZ - zOffset)
+          ];
+        });
+      };
+
+      // Ingress closest to camera along +Z at elevation y=16
+      placeDeck(ingress, 16, 26, 14, 12, 4);
+      // Processing services in mid-deck at y=8, z=0
+      placeDeck(services, 8, 0, 13, 12, 6);
+      // Data stores at bedrock level y=0, z=-26
+      placeDeck(data, 0, -26, 14, 12, 4);
+      // Side wing placed laterally
+      if (wing.length > 0) {
+        const wingX = -32 - Math.sqrt(services.length) * 4;
+        wing.forEach((node, i) => {
+          positions[node.id] = [wingX, 4, -10 + i * 11];
+        });
+      }
+
+      return positions;
+    }
+
+    case 'topology': {
+      // Real-time 3D Force-Directed Simulation based on actual dependency weights
+      const idMap = new Map<string, number>();
+      nodes.forEach((node, i) => idMap.set(node.id, i));
+
+      const pairWeights = new Map<string, number>();
+      for (const e of edges) {
+        const src = e.source, tgt = e.target;
+        if (idMap.has(src) && idMap.has(tgt)) {
+          const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
+          const spm = (e.data as any)?.activity?.samplesPerMin || 0;
+          const weight = 1.0 + Math.min(10, Math.log10(spm + 1) * 2.5);
+          pairWeights.set(key, (pairWeights.get(key) || 0) + weight);
+        }
+      }
+      for (const [src, tgt] of links) {
+        if (idMap.has(src) && idMap.has(tgt)) {
+          const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
+          if (!pairWeights.has(key)) pairWeights.set(key, 1.5);
+        }
+      }
+
+      const coords: [number, number, number][] = nodes.map((_, i) => {
+        const angle = (i / n) * Math.PI * 2;
+        const rad = Math.max(16, Math.sqrt(n) * 7);
+        const y = ((i % 3) - 1) * 5 + 6;
+        return [Math.cos(angle) * rad, y, Math.sin(angle) * rad];
+      });
+
+      const iterations = 60;
+      const k = 16.0;
+      for (let iter = 0; iter < iterations; iter++) {
+        const temp = (1 - iter / iterations) * 0.9;
+        const disp: [number, number, number][] = nodes.map(() => [0, 0, 0]);
+
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            let dx = coords[i][0] - coords[j][0];
+            let dy = coords[i][1] - coords[j][1];
+            let dz = coords[i][2] - coords[j][2];
+            let distSq = dx * dx + dy * dy + dz * dz + 0.04;
+            let dist = Math.sqrt(distSq);
+            let rep = (k * k) / distSq;
+            let fx = (dx / dist) * rep;
+            let fy = (dy / dist) * rep * 0.5;
+            let fz = (dz / dist) * rep;
+
+            disp[i][0] += fx; disp[i][1] += fy; disp[i][2] += fz;
+            disp[j][0] -= fx; disp[j][1] -= fy; disp[j][2] -= fz;
+          }
+        }
+
+        for (const [key, weight] of pairWeights) {
+          const [idA, idB] = key.split('|');
+          const i = idMap.get(idA)!, j = idMap.get(idB)!;
+          let dx = coords[i][0] - coords[j][0];
+          let dy = coords[i][1] - coords[j][1];
+          let dz = coords[i][2] - coords[j][2];
+          let dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
+          let att = ((dist * dist) / k) * Math.min(weight, 3.5);
+          let fx = (dx / dist) * att;
+          let fy = (dy / dist) * att * 0.5;
+          let fz = (dz / dist) * att;
+
+          disp[i][0] -= fx; disp[i][1] += fy; disp[i][2] += fz;
+          disp[j][0] += fx; disp[j][1] += fy; disp[j][2] += fz;
+        }
+
+        for (let i = 0; i < n; i++) {
+          let dLen = Math.sqrt(disp[i][0] * disp[i][0] + disp[i][1] * disp[i][1] + disp[i][2] * disp[i][2]) + 0.001;
+          let step = Math.min(dLen, 12 * temp);
+          coords[i][0] += (disp[i][0] / dLen) * step;
+          coords[i][1] = Math.max(0, Math.min(24, coords[i][1] + (disp[i][1] / dLen) * step));
+          coords[i][2] += (disp[i][2] / dLen) * step;
+        }
+      }
+
+      let cx = 0, cz = 0;
+      coords.forEach((c) => { cx += c[0]; cz += c[2]; });
+      cx /= n; cz /= n;
+
+      nodes.forEach((node, i) => {
+        positions[node.id] = [coords[i][0] - cx, coords[i][1], coords[i][2] - cz];
+      });
+
+      return positions;
+    }
+
     case 'grid': {
       const cols = Math.ceil(Math.sqrt(n));
       const gap = 12;

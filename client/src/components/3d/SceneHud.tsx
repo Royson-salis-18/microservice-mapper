@@ -7,6 +7,7 @@ import { LAYOUTS, type LayoutId } from './layouts';
 import type { LinkRouting } from './Edge3D';
 import { AT_RISK, STATUS_LIGHT, TYPE_STYLE } from './Node3D';
 import type { CalloutItem, CalloutKind } from './Callouts3D';
+import type { EnvPreset } from './AmbientParticles';
 
 export interface ZoneSummary {
   id: string;
@@ -29,6 +30,8 @@ interface SceneHudProps {
   onShowCards?: (show: boolean) => void;
   glow: boolean;
   onGlow: (on: boolean) => void;
+  envPreset?: EnvPreset;
+  onEnvPreset?: (preset: EnvPreset) => void;
   zones: ZoneSummary[];
   focusZone: string | null;
   onFocusZone: (zone: string | null) => void;
@@ -51,7 +54,7 @@ const projectOf = (id: string) => (id.includes(':') ? id.slice(0, id.indexOf(':'
 
 /** Arrangements that answer a question about the system; the rest (circle,
  *  polygon, sphere, helix) are alternative shapes, kept one click further. */
-const PRIMARY_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 'clusters', 'grid', 'radial', 'tiers']);
+const PRIMARY_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 'flow', 'topology', 'clusters', 'tiers']);
 
 function formatRate(perMin: number): string {
   if (perMin >= 10_000) return `${(perMin / 1000).toFixed(0)}k`;
@@ -97,6 +100,7 @@ function useConsistency(): ConsistencyReport | null {
 export function SceneHud({
   nodes, edges, layout, onLayout, routing, onRouting, showLabels, onShowLabels,
   showCards = true, onShowCards, glow, onGlow,
+  envPreset = 'cyber', onEnvPreset,
   zones, focusZone, onFocusZone, alerts, onAlertSelect, onNextAlert,
 }: SceneHudProps) {
   const alertCount = alerts.length;
@@ -311,6 +315,23 @@ export function SceneHud({
             <Sparkles size={12} style={{ verticalAlign: '-2px' }} />
           </button>
         </div>
+
+        {onEnvPreset && (
+          <div className="scene-pill-group" aria-label="Environment Theme">
+            <select
+              className="scene-pill scene-pill-select active"
+              value={envPreset}
+              onChange={(e) => onEnvPreset(e.target.value as EnvPreset)}
+              title="3D Environment Theme: Cyberpunk, Clean Studio, or Hologram"
+              aria-label="3D Environment Theme"
+              style={{ fontWeight: 600, paddingRight: 22 }}
+            >
+              <option value="cyber">Theme: Cyberpunk</option>
+              <option value="studio">Theme: Studio</option>
+              <option value="holo">Theme: Hologram</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="scene-alarm-wrap" ref={alarmRef}>
