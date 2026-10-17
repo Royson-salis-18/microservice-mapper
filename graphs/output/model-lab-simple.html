@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model results, simply explained</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f8fa;
+      --card: #fff;
+      --text: #17212b;
+      --muted: #526171;
+      --line: #d9e0e7;
+      --track: #e9eef3;
+      --blue: #3678c8;
+      --orange: #b65a22;
+      --green: #25815e;
+      --purple: #7254a6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #15191e;
+        --card: #20262d;
+        --text: #eef3f7;
+        --muted: #b7c2cc;
+        --line: #3b4651;
+        --track: #343e48;
+        --blue: #76a9ee;
+        --orange: #f09a63;
+        --green: #64c79e;
+        --purple: #b39be1;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { width: min(860px, 100% - 32px); margin: 0 auto; padding: 36px 0 64px; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; }
+    h2 { margin: 0 0 8px; font-size: 1.3rem; }
+    p { margin: 8px 0; }
+    .intro, .meaning { color: var(--muted); max-width: 70ch; }
+    .verdict, section, .caution {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+    .verdict { border-left: 5px solid var(--green); }
+    .chart { margin-top: 18px; }
+    .row {
+      display: grid;
+      grid-template-columns: minmax(145px, 205px) minmax(60px, 1fr) 92px;
+      gap: 12px;
+      align-items: center;
+      margin: 14px 0;
+    }
+    .method { font-weight: 650; }
+    .track {
+      height: 22px;
+      overflow: hidden;
+      background: var(--track);
+      border-radius: 6px;
+    }
+    .bar { height: 100%; min-width: 2px; border-radius: inherit; }
+    .learned { background: var(--blue); }
+    .fixed { background: var(--orange); }
+    .tuned { background: var(--purple); }
+    .live { background: var(--green); }
+    .value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+    .scale {
+      display: flex;
+      justify-content: space-between;
+      margin: -6px 104px 0 217px;
+      color: var(--muted);
+      font-size: .8rem;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; color: var(--muted); font-size: .9rem; }
+    .legend span::before {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+      border-radius: 3px;
+      background: var(--swatch);
+      content: "";
+    }
+    .caution { border-left: 5px solid var(--orange); }
+    .source { color: var(--muted); font-size: .85rem; margin-top: 22px; }
+    @media (max-width: 560px) {
+      main { width: min(100% - 20px, 860px); padding-top: 24px; }
+      section, .verdict, .caution { padding: 14px; }
+      .row { grid-template-columns: 1fr auto; gap: 6px 10px; margin: 18px 0; }
+      .track { grid-column: 1 / -1; grid-row: 2; }
+      .value { grid-column: 2; grid-row: 1; }
+      .scale { margin: -10px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Model results, simply explained</h1>
+    <p class="intro">We deliberately broke services, then checked whether the mapper identified the service that was actually broken. These two charts show the main trade-off.</p>
+
+    <div class="verdict">
+      <strong>Short answer:</strong> The live mapper named the broken service first most often. The learned model raised fewer false alarms, but it also named the right service less often. These results do not show that the learned model is a better overall choice.
+    </div>
+
+    <section aria-labelledby="correct-heading">
+      <h2 id="correct-heading">1. How often did it name the right service first?</h2>
+      <p class="meaning">Each bar is the share of all 34 injected faults where the method both noticed the fault and put the actual broken service first. Higher is better.</p>
+      <div class="chart" role="img" aria-label="Correctly named first: learned model 26 percent, fixed rules 53 percent, tuned rules 38 percent, live mapper 56 percent.">
+        <div class="row"><span class="method">Learned model</span><div class="track"><div class="bar learned" style="width:26%"></div></div><span class="value">26% (9 of 34)</span></div>
+        <div class="row"><span class="method">Rules, fixed setting</span><div class="track"><div class="bar fixed" style="width:53%"></div></div><span class="value">53% (18 of 34)</span></div>
+        <div class="row"><span class="method">Rules, tuned setting</span><div class="track"><div class="bar tuned" style="width:38%"></div></div><span class="value">38% (13 of 34)</span></div>
+        <div class="row"><span class="method">Live mapper</span><div class="track"><div class="bar live" style="width:56%"></div></div><span class="value">56% (19 of 34)</span></div>
+        <div class="scale"><span>0%</span><span>100% of faults</span></div>
+      </div>
+      <p class="meaning"><strong>How to read it:</strong> the live mapper was right first for about 19 faults; the learned model for about 9. A fault it detected but ranked the wrong service first does not count as correct here.</p>
+    </section>
+
+    <section aria-labelledby="alarms-heading">
+      <h2 id="alarms-heading">2. How often did it sound a false alarm?</h2>
+      <p class="meaning">This is the average number of alarms during an hour when no injected fault was active. Shorter bars are better. The scale ends at 10 alarms per hour.</p>
+      <div class="chart" role="img" aria-label="False alarms per hour: learned model 3.0, fixed rules 8.9, tuned rules 4.4, live mapper 5.9. Lower is better.">
+        <div class="row"><span class="method">Learned model</span><div class="track"><div class="bar learned" style="width:30%"></div></div><span class="value">3.0 per hour</span></div>
+        <div class="row"><span class="method">Rules, fixed setting</span><div class="track"><div class="bar fixed" style="width:89%"></div></div><span class="value">8.9 per hour</span></div>
+        <div class="row"><span class="method">Rules, tuned setting</span><div class="track"><div class="bar tuned" style="width:44%"></div></div><span class="value">4.4 per hour</span></div>
+        <div class="row"><span class="method">Live mapper</span><div class="track"><div class="bar live" style="width:59%"></div></div><span class="value">5.9 per hour</span></div>
+        <div class="scale"><span>0</span><span>10 false alarms per hour</span></div>
+      </div>
+      <p class="meaning"><strong>How to read it:</strong> the learned model was quieter, but being quieter alone does not mean it identified faults correctly. Compare this chart with the one above.</p>
+    </section>
+
+    <div class="legend" aria-label="Method colors">
+      <span style="--swatch:var(--blue)">Learned model</span>
+      <span style="--swatch:var(--orange)">Fixed rules</span>
+      <span style="--swatch:var(--purple)">Tuned rules</span>
+      <span style="--swatch:var(--green)">Live mapper</span>
+    </div>
+
+    <div class="caution">
+      <strong>Important:</strong> this is a small test: two recorded systems and 34 injected faults. One or two faults can noticeably change the percentages, so don’t treat small differences as proof that one method is always better.
+    </div>
+
+    <p class="source">This is a simplified companion to the detailed model-lab report. The original report has not been changed.</p>
+  </main>
+</body>
+</html>
