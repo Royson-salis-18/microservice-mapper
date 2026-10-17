@@ -66,27 +66,25 @@ export function doorTexture(): THREE.CanvasTexture {
  */
 export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
   return make(`backdrop_${preset}`, [1024, 1024], (ctx, w, h) => {
-    const bg = preset === 'holo' ? '#080214' : preset === 'studio' ? '#090a0f' : '#05070e';
+    const bg = preset === 'holo' ? '#070210' : preset === 'studio' ? '#0c0d10' : '#05070e';
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
-    const g = ctx.createRadialGradient(w * 0.5, h * 0.44, 0, w * 0.5, h * 0.44, w * 0.68);
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, w * 0.7);
     if (preset === 'holo') {
-      g.addColorStop(0, '#4a0e78');
-      g.addColorStop(0.25, '#350a58');
-      g.addColorStop(0.52, '#1e0534');
-      g.addColorStop(0.82, '#0f021c');
-      g.addColorStop(1, '#080214');
+      g.addColorStop(0, '#1c082e');
+      g.addColorStop(0.35, '#12041e');
+      g.addColorStop(0.68, '#0b0213');
+      g.addColorStop(1, '#070210');
     } else if (preset === 'studio') {
-      g.addColorStop(0, '#262a36');
-      g.addColorStop(0.32, '#181c25');
-      g.addColorStop(0.68, '#101219');
-      g.addColorStop(1, '#090a0f');
+      g.addColorStop(0, '#1c1e27');
+      g.addColorStop(0.35, '#14161d');
+      g.addColorStop(0.68, '#0f1015');
+      g.addColorStop(1, '#0c0d10');
     } else {
-      // cyber: vibrant electric navy and teal-cyan horizon haze
-      g.addColorStop(0, '#1c345a');
-      g.addColorStop(0.28, '#12233e');
-      g.addColorStop(0.62, '#0a1424');
-      g.addColorStop(0.88, '#060a13');
+      // cyber: deep sleek navy atmospheric dusk behind the architecture
+      g.addColorStop(0, '#0f1b2d');
+      g.addColorStop(0.32, '#0a121e');
+      g.addColorStop(0.68, '#070c14');
       g.addColorStop(1, '#05070e');
     }
     ctx.fillStyle = g;
