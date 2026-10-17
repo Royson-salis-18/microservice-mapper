@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Node, Edge } from '@xyflow/react';
-import { Activity, AlertTriangle, BellRing, Bell, Brain, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, AlertTriangle, BellRing, Bell, Brain, IdCard, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints, ChevronDown, ChevronUp } from 'lucide-react';
 import type { DependencyEdge, ServiceNode } from '../../types';
 import { LAYOUTS, type LayoutId } from './layouts';
 import type { LinkRouting } from './Edge3D';
@@ -25,6 +25,8 @@ interface SceneHudProps {
   onRouting: (routing: LinkRouting) => void;
   showLabels: boolean;
   onShowLabels: (show: boolean) => void;
+  showCards?: boolean;
+  onShowCards?: (show: boolean) => void;
   glow: boolean;
   onGlow: (on: boolean) => void;
   zones: ZoneSummary[];
@@ -93,7 +95,8 @@ function useConsistency(): ConsistencyReport | null {
 }
 
 export function SceneHud({
-  nodes, edges, layout, onLayout, routing, onRouting, showLabels, onShowLabels, glow, onGlow,
+  nodes, edges, layout, onLayout, routing, onRouting, showLabels, onShowLabels,
+  showCards = true, onShowCards, glow, onGlow,
   zones, focusZone, onFocusZone, alerts, onAlertSelect, onNextAlert,
 }: SceneHudProps) {
   const alertCount = alerts.length;
@@ -169,7 +172,7 @@ export function SceneHud({
 
   return (
     <>
-      <div className={`scene-panel scene-overview${overviewOpen ? '' : ' min'}`}>
+      <div className={`scene-panel scene-overview${overviewOpen ? '' : ' min'}${stats.critical > 0 ? ' incident' : ''}`}>
         <div className="scene-overview-head">
           <div style={{ minWidth: 0 }}>
             <div className="scene-overview-title">Live overview</div>
@@ -208,11 +211,14 @@ export function SceneHud({
         <div className="scene-stat-grid">
           {cards.map((c) => {
             const Icon = c.icon;
+            const isBad = c.label === 'Down' && stats.critical > 0;
+            const isWarn = c.label === 'Degraded' && stats.degraded > 0;
+            const statClass = isBad ? 'scene-stat bad' : isWarn ? 'scene-stat warn' : 'scene-stat';
             return (
-              <div key={c.label} className="scene-stat">
+              <div key={c.label} className={statClass}>
                 <div className="scene-stat-head">{c.label}</div>
                 <div className="scene-stat-body">
-                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: 'none' }}>
+                  <span className="scene-stat-icon" style={{ background: c.color }}>
                     <Icon size={15} strokeWidth={2.3} />
                   </span>
                   <div style={{ minWidth: 0 }}>
@@ -282,6 +288,19 @@ export function SceneHud({
           >
             <Tags size={12} style={{ verticalAlign: '-2px' }} />
           </button>
+          {onShowCards && (
+            <button
+              type="button"
+              className={`scene-pill ${showCards ? 'active' : ''}`}
+              title={showCards ? 'Section title cards: Visible (click to hide)' : 'Section title cards: Hidden (click to show)'}
+              aria-pressed={showCards}
+              onClick={() => onShowCards(!showCards)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+            >
+              <IdCard size={12} style={{ verticalAlign: '-1px' }} />
+              <span>Cards</span>
+            </button>
+          )}
           <button
             type="button"
             className={`scene-pill ${glow ? 'active' : ''}`}

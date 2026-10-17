@@ -199,15 +199,43 @@ export default function App() {
     [layout2d, layoutSignature2d]
   );
 
-  // Positions come from the selected arrangement rather than from the data
-  // fetch, so switching layout rearranges the canvas without waiting for the
-  // next poll - and a poll can't silently snap nodes back to a different shape.
+  // User manual node dragging / rearrangements in 2D Architecture tab
+  const [draggedPositions, setDraggedPositions] = useState<Record<string, { x: number; y: number }>>({});
+
+  const handleNodesChange = useCallback((changes: any[]) => {
+    onNodesChange(changes);
+    let hasMovement = false;
+    const updates: Record<string, { x: number; y: number }> = {};
+    for (const c of changes) {
+      if (c.type === 'position' && c.position) {
+        updates[c.id] = c.position;
+        hasMovement = true;
+      }
+    }
+    if (hasMovement) {
+      setDraggedPositions((prev) => ({ ...prev, ...updates }));
+    }
+  }, [onNodesChange]);
+
+  const handleLayout2DChange = useCallback((newLayout: Layout2DId) => {
+    setLayout2d(newLayout);
+    // Reset manual drags when switching arrangement layout so the new layout is cleanly applied
+    setDraggedPositions({});
+  }, []);
+
+  const handleResetArrangement = useCallback(() => {
+    setDraggedPositions({});
+  }, []);
+
+  // Positions come from the manual drag position (if user rearranged), or the selected
+  // arrangement layout. When the user rearranges nodes, their custom positions persist
+  // across telemetry polls.
   const arrangedNodes = useMemo(() => {
     return filteredNodes.map((n) => {
-      const p = layoutPositions2d[n.id];
+      const p = draggedPositions[n.id] ?? layoutPositions2d[n.id];
       return p ? { ...n, position: p } : n;
     });
-  }, [filteredNodes, layoutPositions2d]);
+  }, [filteredNodes, layoutPositions2d, draggedPositions]);
 
   const projectSummary = useCallback((project: string) => {
     const projectNodes = nodes.filter(
@@ -376,16 +404,18 @@ export default function App() {
               filters={filters}
               setFilters={setFilters}
               layout2d={layout2d}
-              setLayout2d={setLayout2d}
+              setLayout2d={handleLayout2DChange}
               nodeCount={arrangedNodes.length}
               edgeCount={filteredEdges.length}
+              hasCustomPositions={Object.keys(draggedPositions).length > 0}
+              onResetPositions={handleResetArrangement}
             />
             
             <GraphCanvas
               nodes={arrangedNodes}
               edges={filteredEdges}
               layoutKey={layout2d}
-              onNodesChange={onNodesChange}
+              onNodesChange={handleNodesChange}
               onNodeClick={(n) => {
                 setSelectedNodeId(n.id);
                 setSelectedEdgeId(null);

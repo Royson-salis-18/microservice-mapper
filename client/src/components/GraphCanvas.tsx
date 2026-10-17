@@ -55,6 +55,10 @@ export function GraphCanvas({ nodes, edges, layoutKey, onNodeClick, onEdgeClick,
         onNodeClick={(_, node) => onNodeClick(node)}
         onEdgeClick={(_, edge) => onEdgeClick?.(edge)}
         onPaneClick={onPaneClick}
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
+        selectNodesOnDrag={false}
         fitView
         colorMode="dark"
         minZoom={0.05}

@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react';
 import { LAYOUTS_2D, type Layout2DId } from './layouts2d';
 
 interface LayoutPicker2DProps {
@@ -5,6 +6,8 @@ interface LayoutPicker2DProps {
   onChange: (layout: Layout2DId) => void;
   nodeCount: number;
   edgeCount: number;
+  hasCustomPositions?: boolean;
+  onResetPositions?: () => void;
 }
 
 /**
@@ -13,12 +16,27 @@ interface LayoutPicker2DProps {
  * positioned panel it overlapped the filters above it at shorter viewport
  * heights, hiding half the buttons.
  */
-export function LayoutPicker2D({ layout, onChange, nodeCount, edgeCount }: LayoutPicker2DProps) {
+export function LayoutPicker2D({
+  layout, onChange, nodeCount, edgeCount, hasCustomPositions, onResetPositions,
+}: LayoutPicker2DProps) {
   const active = LAYOUTS_2D.find((l) => l.id === layout);
 
   return (
     <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--color-border)' }}>
-      <div className="mm-eyebrow" style={{ marginBottom: '10px' }}>Arrangement</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <div className="mm-eyebrow">Arrangement</div>
+        {hasCustomPositions && onResetPositions && (
+          <button
+            type="button"
+            className="layout-realign-btn"
+            onClick={onResetPositions}
+            title="Reset dragged positions back to this layout"
+          >
+            <RotateCcw size={11} strokeWidth={2.2} />
+            <span>Re-align</span>
+          </button>
+        )}
+      </div>
 
       <div className="mm-seg">
         {LAYOUTS_2D.map((opt) => (

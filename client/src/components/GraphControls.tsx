@@ -14,6 +14,8 @@ interface GraphControlsProps {
   setLayout2d: (layout: Layout2DId) => void;
   nodeCount: number;
   edgeCount: number;
+  hasCustomPositions?: boolean;
+  onResetPositions?: () => void;
 }
 
 const filterIcons: Record<string, LucideIcon> = {
@@ -25,7 +27,10 @@ const filterIcons: Record<string, LucideIcon> = {
   all: LayoutGrid,
 };
 
-export function GraphControls({ viewMode, setViewMode, filters, setFilters, layout2d, setLayout2d, nodeCount, edgeCount }: GraphControlsProps) {
+export function GraphControls({
+  viewMode, setViewMode, filters, setFilters, layout2d, setLayout2d, nodeCount, edgeCount,
+  hasCustomPositions, onResetPositions,
+}: GraphControlsProps) {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
   const handleFilterToggle = (key: string) => {
@@ -127,7 +132,14 @@ export function GraphControls({ viewMode, setViewMode, filters, setFilters, layo
         })}
       </div>
 
-      <LayoutPicker2D layout={layout2d} onChange={setLayout2d} nodeCount={nodeCount} edgeCount={edgeCount} />
+      <LayoutPicker2D
+        layout={layout2d}
+        onChange={setLayout2d}
+        nodeCount={nodeCount}
+        edgeCount={edgeCount}
+        hasCustomPositions={hasCustomPositions}
+        onResetPositions={onResetPositions}
+      />
     </div>
   );
 }
