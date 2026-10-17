@@ -62,34 +62,84 @@ export function doorTexture(): THREE.CanvasTexture {
 }
 
 /**
- * The backdrop behind everything: near-black at the edges, deep navy with a
- * blue bloom behind the site. Drawn into the scene rather than left to CSS,
- * because the bloom pass renders into an opaque target.
+ * The backdrop behind everything: near-black at the edges, deep atmospheric glow behind the site.
  */
 export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
   return make(`backdrop_${preset}`, [1024, 1024], (ctx, w, h) => {
-    const bg = preset === 'holo' ? '#070312' : preset === 'studio' ? '#0c0d10' : '#060810';
+    const bg = preset === 'holo' ? '#080214' : preset === 'studio' ? '#090a0f' : '#05070e';
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
-    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, w * 0.7);
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.44, 0, w * 0.5, h * 0.44, w * 0.68);
     if (preset === 'holo') {
-      g.addColorStop(0, '#2b104a');
-      g.addColorStop(0.35, '#1b0a30');
-      g.addColorStop(0.68, '#10051e');
-      g.addColorStop(1, '#070312');
+      g.addColorStop(0, '#4a0e78');
+      g.addColorStop(0.25, '#350a58');
+      g.addColorStop(0.52, '#1e0534');
+      g.addColorStop(0.82, '#0f021c');
+      g.addColorStop(1, '#080214');
     } else if (preset === 'studio') {
-      g.addColorStop(0, '#20222a');
-      g.addColorStop(0.35, '#16181f');
-      g.addColorStop(0.68, '#101116');
-      g.addColorStop(1, '#0c0d10');
+      g.addColorStop(0, '#262a36');
+      g.addColorStop(0.32, '#181c25');
+      g.addColorStop(0.68, '#101219');
+      g.addColorStop(1, '#090a0f');
     } else {
-      g.addColorStop(0, '#162238');
-      g.addColorStop(0.32, '#0f1726');
-      g.addColorStop(0.68, '#090d16');
-      g.addColorStop(1, '#060810');
+      // cyber: vibrant electric navy and teal-cyan horizon haze
+      g.addColorStop(0, '#1c345a');
+      g.addColorStop(0.28, '#12233e');
+      g.addColorStop(0.62, '#0a1424');
+      g.addColorStop(0.88, '#060a13');
+      g.addColorStop(1, '#05070e');
     }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
+  });
+}
+
+/**
+ * Procedural skyscraper window facade:
+ * Grids of illuminated office windows and dark panels for realistic high-rise towers.
+ */
+export function facadeTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
+  return make(`facade_${preset}`, [256, 512], (ctx, w, h) => {
+    ctx.fillStyle = '#080a0e';
+    ctx.fillRect(0, 0, w, h);
+
+    const cols = 8;
+    const rows = 32;
+    const colW = w / cols;
+    const rowH = h / rows;
+    const padX = 4;
+    const padY = 3;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const hash = Math.imul(r * 37 + c * 19 + 11, 2654435761) >>> 0;
+        const lit = (hash % 100) < 45; // ~45% of windows illuminated
+        const x = c * colW + padX;
+        const y = r * rowH + padY;
+        const winW = colW - padX * 2;
+        const winH = rowH - padY * 2;
+
+        if (!lit) {
+          ctx.fillStyle = '#101216';
+          ctx.fillRect(x, y, winW, winH);
+          continue;
+        }
+
+        // Color palette based on environment preset
+        if (preset === 'holo') {
+          const pal = ['#c084fc', '#22d3ee', '#f472b6', '#a855f7', '#38bdf8'];
+          ctx.fillStyle = pal[hash % pal.length];
+        } else if (preset === 'studio') {
+          const pal = ['#e2e8f0', '#94a3b8', '#cbd5e1', '#64748b'];
+          ctx.fillStyle = pal[hash % pal.length];
+        } else {
+          // cyber: warm amber, electric cyan, hot magenta
+          const pal = ['#fbbf24', '#00f0ff', '#38bdf8', '#f59e0b', '#f43f5e', '#3ecf8e'];
+          ctx.fillStyle = pal[hash % pal.length];
+        }
+        ctx.fillRect(x, y, winW, winH);
+      }
+    }
   });
 }
 
