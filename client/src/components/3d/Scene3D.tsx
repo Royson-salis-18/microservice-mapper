@@ -1013,8 +1013,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
           {/* Atmospheric floating data dust */}
           <AmbientParticles preset={envPreset} />
-          {/* Physical tiered platforms for stepped architectural flow or tiers */}
-          {(layout === 'flow' || layout === 'tiers') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
+          {/* Physical architectural platforms for Flow, Tiers, and Topology */}
+          {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
           {/* The dark city skyline: provides rich ambient cyberpunk skyline backdrop across all layouts (excluded only in sterile studio preset) */}
           {envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={site ? 70 : 50} />}
 
