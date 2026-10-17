@@ -9,7 +9,7 @@ import { Edge3D, type LinkRouting } from './Edge3D';
 import { SceneHud, type ZoneSummary } from './SceneHud';
 import { Callouts, SelectedCard, type CalloutItem } from './Callouts3D';
 import { Backdrop, Bloom } from './Effects';
-import { glowTexture, tiledFloor } from './textures';
+import { facadeTexture, glowTexture, tiledFloor } from './textures';
 import { cpuShown } from '../shared/serviceVisuals';
 import { computeSite, islandRoleOf, type Rect, type Site } from './site';
 import { Islands, type IslandAlert, type IslandCardInfo } from './Islands';
@@ -311,101 +311,256 @@ function cellHash(x: number, z: number): number {
 const BLOCK_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 
 /**
- * The surrounding city: low dark blocks on a street grid around the site,
- * kept clear of the content and low on the camera's side so it never hides
- * anything. Purely setting, one instanced draw call, and invisible to the
- * pointer.
+ * Living Sci-Fi City Skyline:
+ * Renders an expansive nocturnal metropolitan horizon with:
+ * - Varied tower classes: megatowers (heights up to 46), high-rises, and data hubs
+ * - Procedural skyscraper facades with illuminated office window matrices
+ * - Communication antenna spires with pulsing red/amber aviation hazard beacons
+ * - Neon roof crown perimeters glowing in the theme's signature accent colors
+ * - Elevated skyway transit bridges spanning across distant towers
  */
-function CityBlocks({ target, clearance = 26 }: { target: Positions; clearance?: number }) {
-  const blocks = useMemo(() => {
+function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Positions; clearance?: number; preset?: EnvPreset }) {
+  const { blocks, spires, beacons, crowns, skyways } = useMemo(() => {
     const pts = Object.values(target);
-    if (pts.length === 0) return [];
+    if (pts.length === 0) return { blocks: [], spires: [], beacons: [], crowns: [], skyways: [] };
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (const [x, , z] of pts) {
       minX = Math.min(minX, x); maxX = Math.max(maxX, x);
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
-    const CELL = 15, MARGIN = clearance, REACH = 200;
-    const out: { x: number; z: number; w: number; d: number; h: number; shade: number }[] = [];
-    for (let gx = Math.floor((minX - REACH) / CELL); gx <= Math.ceil((maxX + REACH) / CELL); gx++) {
-      for (let gz = Math.floor((minZ - REACH) / CELL); gz <= Math.ceil((maxZ + REACH) / CELL); gz++) {
+    const CELL = 15, MARGIN = clearance, REACH = 220;
+    const bOut: { x: number; z: number; w: number; d: number; h: number; shade: number }[] = [];
+    const sOut: { x: number; y: number; z: number; h: number }[] = [];
+    const beaconOut: { x: number; y: number; z: number; color: string }[] = [];
+    const crownOut: { x: number; y: number; z: number; w: number; d: number; color: string }[] = [];
+    const skyOut: { x: number; y: number; z: number; w: number; d: number; color: string }[] = [];
+
+    const minGX = Math.floor((minX - REACH) / CELL);
+    const maxGX = Math.ceil((maxX + REACH) / CELL);
+    const minGZ = Math.floor((minZ - REACH) / CELL);
+    const maxGZ = Math.ceil((maxZ + REACH) / CELL);
+
+    const tallTowers: { x: number; y: number; z: number }[] = [];
+
+    for (let gx = minGX; gx <= maxGX; gx++) {
+      for (let gz = minGZ; gz <= maxGZ; gz++) {
         const x = gx * CELL, z = gz * CELL;
         if (x > minX - MARGIN && x < maxX + MARGIN && z > minZ - MARGIN && z < maxZ + MARGIN) continue;
-        // Streets every few cells, and the odd empty lot.
         if (gx % 4 === 0 || gz % 5 === 0) continue;
         const h = cellHash(gx, gz);
-        if (h % 6 === 0) continue;
+        if (h % 7 === 0) continue;
+
         const r = ((h >>> 8) % 1000) / 1000;
         const inFront = x > maxX + MARGIN || z > maxZ + MARGIN;
-        const height = inFront ? 0.5 + r * 1.6 : 0.6 + Math.pow(r, 2.2) * 11;
-        out.push({
-          x: x + (((h >>> 4) % 5) - 2) * 0.4,
-          z: z + (((h >>> 12) % 5) - 2) * 0.4,
-          w: CELL * (0.55 + ((h >>> 16) % 6) / 20),
-          d: CELL * (0.55 + ((h >>> 20) % 6) / 20),
-          h: height,
-          shade: 0.8 + ((h >>> 24) % 10) / 25,
+
+        let height: number;
+        if (inFront) {
+          // Keep foreground buildings low so they never obstruct any node or platform
+          height = 0.8 + r * 2.2;
+        } else {
+          const isMega = h % 11 === 0;
+          const isHigh = h % 3 === 0;
+          if (isMega) {
+            height = 24 + Math.pow(r, 1.3) * 22; // 24 to 46 units high!
+          } else if (isHigh) {
+            height = 12 + r * 14; // 12 to 26 units high
+          } else {
+            height = 4 + r * 8; // 4 to 12 units high
+          }
+        }
+
+        const bw = CELL * (0.62 + ((h >>> 16) % 6) / 24);
+        const bd = CELL * (0.62 + ((h >>> 20) % 6) / 24);
+        const bx = x + (((h >>> 4) % 5) - 2) * 0.4;
+        const bz = z + (((h >>> 12) % 5) - 2) * 0.4;
+        const shade = 0.75 + ((h >>> 24) % 12) / 28;
+
+        bOut.push({ x: bx, z: bz, w: bw, d: bd, h: height, shade });
+
+        if (!inFront && height > 16) {
+          const spireH = 5 + (h % 5);
+          sOut.push({ x: bx, y: height + spireH / 2, z: bz, h: spireH });
+          const beaconCol = h % 2 === 0 ? '#ef4444' : preset === 'holo' ? '#f43f5e' : '#f59e0b';
+          beaconOut.push({ x: bx, y: height + spireH + 0.25, z: bz, color: beaconCol });
+          tallTowers.push({ x: bx, y: height * 0.7, z: bz });
+        }
+
+        if (!inFront && height > 9) {
+          const crownCol = preset === 'holo'
+            ? h % 2 === 0 ? '#c084fc' : '#22d3ee'
+            : preset === 'studio'
+              ? '#94a3b8'
+              : h % 2 === 0 ? '#00f0ff' : '#f43f5e';
+          crownOut.push({ x: bx, y: height + 0.05, z: bz, w: bw, d: bd, color: crownCol });
+        }
+      }
+    }
+
+    // Skyway transit bridges between adjacent tall towers
+    for (let i = 0; i < tallTowers.length - 1 && skyOut.length < 16; i++) {
+      const t1 = tallTowers[i];
+      const t2 = tallTowers[i + 1];
+      const dx = t2.x - t1.x;
+      const dz = t2.z - t1.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 16 && dist < 52) {
+        const mx = (t1.x + t2.x) / 2;
+        const mz = (t1.z + t2.z) / 2;
+        const my = Math.min(t1.y, t2.y);
+        const col = preset === 'holo' ? '#a855f7' : preset === 'studio' ? '#64748b' : '#00f0ff';
+        skyOut.push({
+          x: mx,
+          y: my,
+          z: mz,
+          w: Math.abs(dx) > Math.abs(dz) ? dist : 0.45,
+          d: Math.abs(dx) > Math.abs(dz) ? 0.45 : dist,
+          color: col,
         });
       }
     }
-    return out;
-  }, [target, clearance]);
 
-  // A few roofs carry a small light, the sparkle of a city at night. Chosen
-  // by hash so they stay put, and only on the taller blocks at the back.
-  const roofLights = useMemo(
-    () => blocks.filter((b, i) => b.h > 3 && (Math.imul(i + 7, 2654435761) >>> 0) % 5 === 0),
-    [blocks]
-  );
-  const lightsRef = useRef<THREE.InstancedMesh>(null);
-  useLayoutEffect(() => {
-    const mesh = lightsRef.current;
-    if (!mesh) return;
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const p = new THREE.Vector3();
-    const s = new THREE.Vector3();
-    roofLights.forEach((b, i) => {
-      p.set(b.x, b.h - 0.12, b.z + b.d / 2 - 0.3);
-      s.set(b.w * 0.7, 0.12, 0.12);
-      mesh.setMatrixAt(i, m.compose(p, q, s));
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [roofLights]);
+    return { blocks: bOut, spires: sOut, beacons: beaconOut, crowns: crownOut, skyways: skyOut };
+  }, [target, clearance, preset]);
 
-  const ref = useRef<THREE.InstancedMesh>(null);
+  const bodyRef = useRef<THREE.InstancedMesh>(null);
+  const spiresRef = useRef<THREE.InstancedMesh>(null);
+  const beaconsRef = useRef<THREE.InstancedMesh>(null);
+  const crownsRef = useRef<THREE.InstancedMesh>(null);
+  const skywaysRef = useRef<THREE.InstancedMesh>(null);
+  const beaconMatRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  // Position building bodies
   useLayoutEffect(() => {
-    const mesh = ref.current;
-    if (!mesh) return;
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const p = new THREE.Vector3();
-    const s = new THREE.Vector3();
-    const c = new THREE.Color();
+    const mesh = bodyRef.current;
+    if (!mesh || blocks.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
     blocks.forEach((b, i) => {
       p.set(b.x, b.h / 2 - 0.2, b.z);
       s.set(b.w, b.h, b.d);
       mesh.setMatrixAt(i, m.compose(p, q, s));
-      mesh.setColorAt(i, c.set('#212123').multiplyScalar(b.shade));
+      mesh.setColorAt(i, c.set('#ffffff').multiplyScalar(b.shade));
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [blocks]);
 
+  // Position antenna spires
+  useLayoutEffect(() => {
+    const mesh = spiresRef.current;
+    if (!mesh || spires.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
+    spires.forEach((sp, i) => {
+      p.set(sp.x, sp.y, sp.z);
+      s.set(0.24, sp.h, 0.24);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [spires]);
+
+  // Position aviation beacons
+  useLayoutEffect(() => {
+    const mesh = beaconsRef.current;
+    if (!mesh || beacons.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
+    beacons.forEach((bc, i) => {
+      p.set(bc.x, bc.y, bc.z);
+      s.set(0.42, 0.42, 0.42);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+      mesh.setColorAt(i, c.set(bc.color));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [beacons]);
+
+  // Position rooftop neon crowns
+  useLayoutEffect(() => {
+    const mesh = crownsRef.current;
+    if (!mesh || crowns.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
+    crowns.forEach((cr, i) => {
+      p.set(cr.x, cr.y, cr.z);
+      s.set(cr.w, 0.16, cr.d);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+      mesh.setColorAt(i, c.set(cr.color));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [crowns]);
+
+  // Position skyways
+  useLayoutEffect(() => {
+    const mesh = skywaysRef.current;
+    if (!mesh || skyways.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
+    skyways.forEach((sk, i) => {
+      p.set(sk.x, sk.y, sk.z);
+      s.set(sk.w, 0.22, sk.d);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+      mesh.setColorAt(i, c.set(sk.color));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [skyways]);
+
+  // Rhythmic aviation beacon flash in useFrame
+  useFrame(({ clock }) => {
+    if (beaconMatRef.current) {
+      beaconMatRef.current.opacity = 0.35 + (Math.sin(clock.elapsedTime * 4.2) + 1) * 0.32;
+    }
+  });
+
+  const facadeTex = useMemo(() => {
+    const t = facadeTexture(preset).clone();
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(2, 4);
+    t.needsUpdate = true;
+    return t;
+  }, [preset]);
+
+  useEffect(() => () => facadeTex.dispose(), [facadeTex]);
+
   if (blocks.length === 0) return null;
+
   return (
-    <>
-      <instancedMesh key={blocks.length} ref={ref} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
-        <meshStandardMaterial color="#ffffff" roughness={0.85} metalness={0.25} />
+    <group>
+      {/* 1. Skyscraper Bodies with Illuminated Window Matrices */}
+      <instancedMesh key={`b${blocks.length}_${preset}`} ref={bodyRef} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
+        <meshStandardMaterial map={facadeTex} color="#ffffff" roughness={0.42} metalness={0.58} />
       </instancedMesh>
-      {roofLights.length > 0 && (
-        <instancedMesh key={`l${roofLights.length}`} ref={lightsRef} args={[BLOCK_GEOMETRY, undefined, roofLights.length]} raycast={() => null}>
-          <meshBasicMaterial color="#8ab4ff" toneMapped={false} />
+
+      {/* 2. Communication Spire Antenna Masts */}
+      {spires.length > 0 && (
+        <instancedMesh key={`s${spires.length}`} ref={spiresRef} args={[BLOCK_GEOMETRY, undefined, spires.length]} raycast={() => null}>
+          <meshStandardMaterial color="#2d3748" roughness={0.3} metalness={0.8} />
         </instancedMesh>
       )}
-    </>
+
+      {/* 3. Pulsing Aviation Hazard Beacons on Spire Tips */}
+      {beacons.length > 0 && (
+        <instancedMesh key={`bc${beacons.length}`} ref={beaconsRef} args={[BLOCK_GEOMETRY, undefined, beacons.length]} raycast={() => null}>
+          <meshBasicMaterial ref={beaconMatRef} color="#ffffff" toneMapped={false} transparent opacity={0.85} />
+        </instancedMesh>
+      )}
+
+      {/* 4. Glowing Neon Roof Crown Outlines */}
+      {crowns.length > 0 && (
+        <instancedMesh key={`cr${crowns.length}`} ref={crownsRef} args={[BLOCK_GEOMETRY, undefined, crowns.length]} raycast={() => null}>
+          <meshBasicMaterial color="#ffffff" toneMapped={false} transparent opacity={0.7} />
+        </instancedMesh>
+      )}
+
+      {/* 5. Elevated Skyway Transit Beams */}
+      {skyways.length > 0 && (
+        <instancedMesh key={`sk${skyways.length}`} ref={skywaysRef} args={[BLOCK_GEOMETRY, undefined, skyways.length]} raycast={() => null}>
+          <meshBasicMaterial color="#ffffff" toneMapped={false} transparent opacity={0.55} />
+        </instancedMesh>
+      )}
+    </group>
   );
 }
 
@@ -959,8 +1114,14 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
       >
         <Suspense fallback={null}>
           <Backdrop preset={envPreset} />
-          <fog attach="fog" args={[envPreset === 'studio' ? '#090a0d' : envPreset === 'holo' ? '#070412' : FOG_COLOR, 400, 1400]} />
-          {glow && <Bloom />}
+          <fog attach="fog" args={[envPreset === 'studio' ? '#090a0f' : envPreset === 'holo' ? '#080214' : FOG_COLOR, 380, 1350]} />
+          {glow && (
+            <Bloom
+              strength={envPreset === 'holo' ? 0.72 : envPreset === 'cyber' ? 0.58 : 0.32}
+              radius={envPreset === 'holo' ? 0.26 : envPreset === 'cyber' ? 0.22 : 0.14}
+              threshold={envPreset === 'holo' ? 0.76 : envPreset === 'cyber' ? 0.80 : 0.88}
+            />
+          )}
 
           <PerspectiveCamera makeDefault position={[120, 110, 120]} fov={FOV} near={0.5} far={4000} />
           <OrbitControls
@@ -979,34 +1140,45 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             }}
           />
 
-          {/* Cool, low light: tops and the faces toward the camera catch a
-              soft blue, sides fall away into navy. */}
-          <ambientLight intensity={envPreset === 'studio' ? 0.45 : site ? 0.12 : 0.35} color={envPreset === 'studio' ? '#f1f5f9' : '#cfd3da'} />
+          {/* Theme-adaptive ambient and directional lighting */}
+          <ambientLight
+            intensity={envPreset === 'studio' ? 0.5 : envPreset === 'holo' ? 0.32 : 0.35}
+            color={envPreset === 'studio' ? '#f1f5f9' : envPreset === 'holo' ? '#c084fc' : '#a5f3fc'}
+          />
           <hemisphereLight
             args={[
-              envPreset === 'holo' ? '#818cf8' : envPreset === 'studio' ? '#94a3b8' : (site ? '#3a3e45' : '#8ab4ff'),
-              envPreset === 'studio' ? '#090a0d' : '#05060b',
-              envPreset === 'studio' ? 0.6 : (site ? 0.3 : 0.55),
+              envPreset === 'holo' ? '#c084fc' : envPreset === 'studio' ? '#94a3b8' : '#38bdf8',
+              envPreset === 'holo' ? '#1e0534' : envPreset === 'studio' ? '#090a0f' : '#040812',
+              envPreset === 'studio' ? 0.6 : envPreset === 'holo' ? 0.65 : 0.6,
             ]}
           />
           <KeyLight site={site} preset={envPreset} />
-          <directionalLight position={[80, 40, -40]} intensity={envPreset === 'studio' ? 0.6 : 0.9} color={envPreset === 'holo' ? '#a5b4fc' : '#8ab4ff'} />
-          <directionalLight position={[40, 25, 90]} intensity={envPreset === 'studio' ? 0.2 : 0.35} color={envPreset === 'holo' ? '#c084fc' : '#8ab4ff'} />
+          {/* Main Key Light */}
+          <directionalLight
+            position={[80, 48, -40]}
+            intensity={envPreset === 'studio' ? 0.85 : envPreset === 'holo' ? 1.25 : 1.15}
+            color={envPreset === 'holo' ? '#e879f9' : envPreset === 'studio' ? '#f8fafc' : '#38bdf8'}
+          />
+          {/* Dual-Tone Cyberpunk / Synthwave Backlight Rim */}
+          <directionalLight
+            position={[-70, 32, 75]}
+            intensity={envPreset === 'studio' ? 0.35 : envPreset === 'holo' ? 0.95 : 0.75}
+            color={envPreset === 'holo' ? '#22d3ee' : envPreset === 'studio' ? '#94a3b8' : '#f43f5e'}
+          />
 
-          {/* In the building arrangement the floor is a slab lifted above the
-              ground grid; otherwise the grid is the floor. */}
+          {/* Floor grid with distinct, rich theme colors */}
           <Ground y={groundY - 0.02} tiled={Boolean(site)} preset={envPreset} />
           <Grid
             position={[0, groundY, 0]}
             args={[10, 10]}
             cellSize={5}
-            cellThickness={envPreset === 'studio' ? 0.4 : 0.5}
-            cellColor={envPreset === 'studio' ? '#222329' : envPreset === 'holo' ? '#2e1065' : (site ? '#2a2a2c' : '#242426')}
+            cellThickness={envPreset === 'studio' ? 0.45 : 0.55}
+            cellColor={envPreset === 'studio' ? '#222530' : envPreset === 'holo' ? '#4c1d95' : '#0e2b3d'}
             sectionSize={30}
-            sectionThickness={envPreset === 'studio' ? 0.7 : 0.9}
-            sectionColor={envPreset === 'studio' ? '#33353f' : envPreset === 'holo' ? '#4c1d95' : (site ? '#474749' : '#373739')}
-            fadeDistance={520}
-            fadeStrength={2}
+            sectionThickness={envPreset === 'studio' ? 0.75 : envPreset === 'holo' ? 1.2 : 1.1}
+            sectionColor={envPreset === 'studio' ? '#475569' : envPreset === 'holo' ? '#d946ef' : '#00f0ff'}
+            fadeDistance={560}
+            fadeStrength={1.8}
             infiniteGrid
           />
 
@@ -1015,8 +1187,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <AmbientParticles preset={envPreset} />
           {/* Physical architectural platforms for Flow, Tiers, and Topology */}
           {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
-          {/* The dark city skyline: provides rich ambient cyberpunk skyline backdrop across all layouts (excluded only in sterile studio preset) */}
-          {envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={site ? 70 : 50} />}
+          {/* Living Sci-Fi City Skyline */}
+          <CityBlocks target={targetPositions} clearance={site ? 70 : 50} preset={envPreset} />
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
