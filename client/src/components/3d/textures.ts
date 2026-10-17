@@ -92,54 +92,7 @@ export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): 
   });
 }
 
-/**
- * Procedural skyscraper window facade:
- * Grids of illuminated office windows and dark panels for realistic high-rise towers.
- */
-export function facadeTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
-  return make(`facade_${preset}`, [256, 512], (ctx, w, h) => {
-    ctx.fillStyle = '#080a0e';
-    ctx.fillRect(0, 0, w, h);
 
-    const cols = 8;
-    const rows = 32;
-    const colW = w / cols;
-    const rowH = h / rows;
-    const padX = 4;
-    const padY = 3;
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const hash = Math.imul(r * 37 + c * 19 + 11, 2654435761) >>> 0;
-        const lit = (hash % 100) < 45; // ~45% of windows illuminated
-        const x = c * colW + padX;
-        const y = r * rowH + padY;
-        const winW = colW - padX * 2;
-        const winH = rowH - padY * 2;
-
-        if (!lit) {
-          ctx.fillStyle = '#101216';
-          ctx.fillRect(x, y, winW, winH);
-          continue;
-        }
-
-        // Color palette based on environment preset
-        if (preset === 'holo') {
-          const pal = ['#c084fc', '#22d3ee', '#f472b6', '#a855f7', '#38bdf8'];
-          ctx.fillStyle = pal[hash % pal.length];
-        } else if (preset === 'studio') {
-          const pal = ['#e2e8f0', '#94a3b8', '#cbd5e1', '#64748b'];
-          ctx.fillStyle = pal[hash % pal.length];
-        } else {
-          // cyber: warm amber, electric cyan, hot magenta
-          const pal = ['#fbbf24', '#00f0ff', '#38bdf8', '#f59e0b', '#f43f5e', '#3ecf8e'];
-          ctx.fillStyle = pal[hash % pal.length];
-        }
-        ctx.fillRect(x, y, winW, winH);
-      }
-    }
-  });
-}
 
 /**
  * Raised-floor tiles: a dark panel grid with a faint seam and a little

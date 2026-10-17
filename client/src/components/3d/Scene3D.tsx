@@ -325,7 +325,7 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
     const CELL = 15, MARGIN = clearance, REACH = 210;
-    const out: { x: number; z: number; w: number; d: number; h: number; shade: number }[] = [];
+    const out: { x: number; z: number; w: number; d: number; h: number; shade: number; inFront: boolean }[] = [];
     for (let gx = Math.floor((minX - REACH) / CELL); gx <= Math.ceil((maxX + REACH) / CELL); gx++) {
       for (let gz = Math.floor((minZ - REACH) / CELL); gz <= Math.ceil((maxZ + REACH) / CELL); gz++) {
         const x = gx * CELL, z = gz * CELL;
@@ -336,8 +336,8 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
         if (h % 6 === 0) continue;
         const r = ((h >>> 8) % 1000) / 1000;
         const inFront = x > maxX + MARGIN || z > maxZ + MARGIN;
-        // Clean height: modest foreground, taller background blocks up to ~17
-        const height = inFront ? 0.6 + r * 1.8 : 1.2 + Math.pow(r, 1.8) * 16;
+        // Clean height: low foreground so view is never obstructed, taller background blocks up to ~16
+        const height = inFront ? 0.4 + r * 1.2 : 1.2 + Math.pow(r, 1.8) * 15;
         out.push({
           x: x + (((h >>> 4) % 5) - 2) * 0.4,
           z: z + (((h >>> 12) % 5) - 2) * 0.4,
@@ -345,38 +345,39 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
           d: CELL * (0.55 + ((h >>> 20) % 6) / 20),
           h: height,
           shade: 0.8 + ((h >>> 24) % 10) / 25,
+          inFront,
         });
       }
     }
     return out;
   }, [target, clearance]);
 
-  // Subtle window lights and roof lights on taller background blocks:
-  // A gentle sparkle in the night that doesn't compete with the architecture
+  // A subtle sparkle of roof and window lights only on the taller blocks at the back.
+  // Single harmonious color matching the theme — zero rainbow clutter.
   const windowLights = useMemo(() => {
     const list: { x: number; y: number; z: number; w: number; d: number }[] = [];
     blocks.forEach((b, i) => {
-      if (b.h <= 3.5) return;
-      const hVal = (Math.imul(i + 13, 2654435761) >>> 0);
-      if (hVal % 4 !== 0) return; // ~25% of taller buildings have lights
+      if (b.inFront || b.h <= 4) return;
+      const hVal = (Math.imul(i + 7, 2654435761) >>> 0);
+      if (hVal % 5 !== 0) return; // ~20% of taller back buildings have lights
 
-      // Top roof edge light
+      // Clean top roof light strip
       list.push({
         x: b.x,
-        y: b.h - 0.1,
-        z: b.z + b.d / 2 - 0.25,
-        w: b.w * 0.65,
+        y: b.h - 0.12,
+        z: b.z + b.d / 2 - 0.28,
+        w: b.w * 0.68,
         d: 0.12,
       });
 
       // Subtle horizontal window slit on taller blocks
-      if (b.h > 7) {
+      if (b.h > 8) {
         list.push({
           x: b.x,
-          y: b.h * 0.65,
-          z: b.z + b.d / 2 + 0.02,
-          w: b.w * 0.45,
-          d: 0.08,
+          y: b.h * 0.62,
+          z: b.z + b.d / 2 - 0.05,
+          w: b.w * 0.48,
+          d: 0.1,
         });
       }
     });
@@ -394,7 +395,7 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
       p.set(b.x, b.h / 2 - 0.2, b.z);
       s.set(b.w, b.h, b.d);
       mesh.setMatrixAt(i, m.compose(p, q, s));
-      // Dark monolith block shade
+      // Dark slate monolith tone — realistic, deep, and harmonious
       mesh.setColorAt(i, c.set('#212123').multiplyScalar(b.shade));
     });
     mesh.instanceMatrix.needsUpdate = true;
@@ -422,7 +423,7 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
   return (
     <group>
       <instancedMesh key={`b${blocks.length}`} ref={bodyRef} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
-        <meshStandardMaterial color="#ffffff" roughness={0.85} metalness={0.25} />
+        <meshStandardMaterial color="#ffffff" roughness={0.82} metalness={0.28} />
       </instancedMesh>
       {windowLights.length > 0 && (
         <instancedMesh
@@ -1063,7 +1064,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           {/* Physical architectural platforms strictly for Flow and Tiers (Topology sits directly on the clean tiled floor) */}
           {(layout === 'flow' || layout === 'tiers') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
           {/* Distant city skyline blocks */}
-          <CityBlocks target={targetPositions} clearance={site ? 70 : 50} preset={envPreset} />
+          <CityBlocks target={targetPositions} clearance={site ? 80 : 60} preset={envPreset} />
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
