@@ -24,7 +24,7 @@ export function AmbientParticles({ preset }: AmbientParticlesProps) {
 
     const c = new THREE.Color();
     const holoPalette = ['#c084fc', '#e879f9', '#22d3ee', '#f43f5e'];
-    const cyberPalette = ['#00f0ff', '#38bdf8', '#fbbf24', '#f59e0b', '#3ecf8e'];
+    const cyberPalette = ['#00f0ff', '#38bdf8', '#7dd3fc', '#a5f3fc', '#818cf8'];
     const studioPalette = ['#94a3b8', '#cbd5e1', '#e2e8f0'];
 
     for (let i = 0; i < count; i++) {

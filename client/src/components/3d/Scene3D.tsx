@@ -404,7 +404,33 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
         }
       }
 
-      // 2. Side Facade (facing +X towards camera viewpoint)
+      // 2. Back Facade (facing -Z towards camera viewpoint when rotated)
+      if (numColsFront > 0) {
+        const startX = b.x - ((numColsFront - 1) * COL_PITCH) / 2;
+        const backZ = b.z - b.d / 2 - 0.03;
+
+        for (let fl = 0; fl < numFloors; fl++) {
+          const y = 1.2 + fl * FLOOR_PITCH;
+          for (let col = 0; col < numColsFront; col++) {
+            const h = cellHash(bIdx * 100 + col + 19, fl * 23 + 5);
+            if ((h % 100) < 36) {
+              const x = startX + col * COL_PITCH;
+              const color = pal[h % pal.length];
+              list.push({
+                x,
+                y,
+                z: backZ,
+                w: WIN_W,
+                h: WIN_H,
+                d: 0.04,
+                color,
+              });
+            }
+          }
+        }
+      }
+
+      // 3. Right Facade (facing +X towards camera viewpoint)
       const numColsSide = Math.floor((b.d - 1.4) / COL_PITCH);
       if (numColsSide > 0) {
         const startZ = b.z - ((numColsSide - 1) * COL_PITCH) / 2;
@@ -431,13 +457,51 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
           }
         }
       }
+
+      // 4. Left Facade (facing -X towards camera viewpoint when rotated)
+      if (numColsSide > 0) {
+        const startZ = b.z - ((numColsSide - 1) * COL_PITCH) / 2;
+        const sideLeftX = b.x - b.w / 2 - 0.03;
+
+        for (let fl = 0; fl < numFloors; fl++) {
+          const y = 1.2 + fl * FLOOR_PITCH;
+          for (let col = 0; col < numColsSide; col++) {
+            const h = cellHash(bIdx * 100 + col + 71, fl * 29 + 11);
+            if ((h % 100) < 36) {
+              const z = startZ + col * COL_PITCH;
+              const color = pal[(h >>> 4) % pal.length];
+              list.push({
+                x: sideLeftX,
+                y,
+                z,
+                w: 0.04,
+                h: WIN_H,
+                d: WIN_W,
+                color,
+              });
+            }
+          }
+        }
+      }
     });
 
     return list;
   }, [blocks, preset]);
 
+  // Subtle red rooftop aviation obstruction beacons on tallest towers (b.h > 11)
+  const beacons = useMemo(() => {
+    const list: { x: number; y: number; z: number }[] = [];
+    blocks.forEach((b) => {
+      if (!b.inFront && b.h > 11) {
+        list.push({ x: b.x, y: b.h - 0.1, z: b.z });
+      }
+    });
+    return list;
+  }, [blocks]);
+
   const bodyRef = useRef<THREE.InstancedMesh>(null);
   const cellsRef = useRef<THREE.InstancedMesh>(null);
+  const beaconsRef = useRef<THREE.InstancedMesh>(null);
 
   useLayoutEffect(() => {
     const mesh = bodyRef.current;
@@ -470,6 +534,18 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
     mesh.computeBoundingSphere();
   }, [windowCells]);
 
+  useLayoutEffect(() => {
+    const mesh = beaconsRef.current;
+    if (!mesh || beacons.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(0.3, 0.3, 0.3);
+    beacons.forEach((bc, i) => {
+      p.set(bc.x, bc.y, bc.z);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [beacons]);
+
   if (blocks.length === 0) return null;
 
   return (
@@ -485,6 +561,16 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
           raycast={() => null}
         >
           <meshBasicMaterial color="#ffffff" toneMapped={false} transparent opacity={0.85} />
+        </instancedMesh>
+      )}
+      {beacons.length > 0 && (
+        <instancedMesh
+          key={`bc${beacons.length}`}
+          ref={beaconsRef}
+          args={[BLOCK_GEOMETRY, undefined, beacons.length]}
+          raycast={() => null}
+        >
+          <meshBasicMaterial color="#ef4444" toneMapped={false} />
         </instancedMesh>
       )}
     </group>
