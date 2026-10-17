@@ -25,6 +25,13 @@ interface PlatformData {
   subLabel?: string;
 }
 
+interface ConduitTrack {
+  x: number;
+  z: number;
+  len: number;
+  color: string;
+}
+
 const BOX_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 const PLANE_GEOMETRY = new THREE.PlaneGeometry(1, 1);
 
@@ -44,7 +51,7 @@ function PlatformTopPlate({ w, d, cx, cz, topY }: { w: number; d: number; cx: nu
       raycast={() => null}
       receiveShadow
     >
-      <meshStandardMaterial map={map} color="#1c1f26" roughness={0.45} metalness={0.5} />
+      <meshStandardMaterial map={map} color="#dedee0" roughness={0.45} metalness={0.5} />
     </mesh>
   );
 }
@@ -96,8 +103,8 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
   const isTiers = layout === 'tiers';
   const isTopology = layout === 'topology';
 
-  const { platforms, topologySubPods } = useMemo(() => {
-    if (!isFlow && !isTiers && !isTopology) return { platforms: [], topologySubPods: [] };
+  const { platforms, conduits, topologySubPods } = useMemo(() => {
+    if (!isFlow && !isTiers && !isTopology) return { platforms: [], conduits: [], topologySubPods: [] };
 
     // --- 1. FLOW LAYOUT: 4 horizontal non-overlapping conveyor pads ---
     if (isFlow) {
@@ -136,14 +143,34 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
           w,
           depth,
           topY: 0,
-          slabY: -0.09,
-          thickness: 0.18,
+          slabY: -0.16,
+          thickness: 0.32,
         });
       });
-      return { platforms: out, topologySubPods: [] };
+
+      // Ground data conduit walkways bridging consecutive stages
+      const tracks: ConduitTrack[] = [];
+      for (let i = 0; i < out.length - 1; i++) {
+        const cur = out[i];
+        const nxt = out[i + 1];
+        const rightEdgeCur = cur.cx + cur.w / 2;
+        const leftEdgeNxt = nxt.cx - nxt.w / 2;
+        const gap = leftEdgeNxt - rightEdgeCur;
+        if (gap > 0.5) {
+          tracks.push({
+            x: (rightEdgeCur + leftEdgeNxt) / 2,
+            z: (cur.cz + nxt.cz) / 2,
+            len: gap + 0.6,
+            color: '#38bdf8',
+          });
+        }
+      }
+
+      return { platforms: out, conduits: tracks, topologySubPods: [] };
     }
 
     // --- 2. TIERS LAYOUT: 4 stepped amphitheater terrace platforms ---
+    // Grounded monolithic terrace podiums reaching down to ground level (Y = 0)
     if (isTiers) {
       const map = new Map<string, { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; count: number }>();
       TIER_STAGES.forEach((s) => map.set(s.key, { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, minY: Infinity, count: 0 }));
@@ -172,7 +199,9 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         const cx = (b.minX + b.maxX) / 2;
         const cz = (b.minZ + b.maxZ) / 2;
         const topY = b.minY;
-        const thickness = 0.35;
+        // Monolithic terrace: reaches down to ground Y = 0 so steps don't float
+        const thickness = Math.max(0.35, topY + 0.35);
+        const slabY = topY - thickness / 2;
         out.push({
           key: s.key,
           label: s.label,
@@ -183,11 +212,11 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
           w,
           depth,
           topY,
-          slabY: topY - thickness / 2,
+          slabY,
           thickness,
         });
       });
-      return { platforms: out, topologySubPods: [] };
+      return { platforms: out, conduits: [], topologySubPods: [] };
     }
 
     // --- 3. TOPOLOGY LAYOUT: Unified Master Datacenter Facility Platform ---
@@ -204,7 +233,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         maxZ = Math.max(maxZ, p[2]);
       }
 
-      if (!Number.isFinite(minX)) return { platforms: [], topologySubPods: [] };
+      if (!Number.isFinite(minX)) return { platforms: [], conduits: [], topologySubPods: [] };
 
       const pad = 14;
       const w = maxX - minX + pad * 2;
@@ -222,8 +251,8 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         w,
         depth,
         topY: 0,
-        slabY: -0.09,
-        thickness: 0.18,
+        slabY: -0.16,
+        thickness: 0.32,
         subLabel: 'unified datacenter mesh',
       };
 
@@ -244,7 +273,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         b.count++;
       }
 
-      const subPods: { key: string; label: string; color: string; cx: number; cz: number; w: number; depth: number }[] = [];
+      const subPods: { key: string; label: string; count: number; color: string; cx: number; cz: number; w: number; depth: number }[] = [];
       FLOW_STAGES.forEach((s) => {
         const b = roleMap.get(s.key)!;
         if (b.count === 0) return;
@@ -252,6 +281,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         subPods.push({
           key: s.key,
           label: s.label,
+          count: b.count,
           color: s.color,
           cx: (b.minX + b.maxX) / 2,
           cz: (b.minZ + b.maxZ) / 2,
@@ -260,40 +290,82 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         });
       });
 
-      return { platforms: [masterPlatform], topologySubPods: subPods };
+      return { platforms: [masterPlatform], conduits: [], topologySubPods: subPods };
     }
 
-    return { platforms: [], topologySubPods: [] };
+    return { platforms: [], conduits: [], topologySubPods: [] };
   }, [layout, nodes, positions, isFlow, isTiers, isTopology]);
 
   if (platforms.length === 0) return null;
 
   return (
     <group>
+      {/* 1. Conduit walkways connecting consecutive Flow conveyor stages */}
+      {isFlow && conduits.map((c, idx) => (
+        <group key={`cond_${idx}`}>
+          {/* Conduit base track */}
+          <mesh position={[c.x, 0.04, c.z]} scale={[c.len, 0.08, 3.2]} geometry={BOX_GEOMETRY} raycast={() => null} receiveShadow>
+            <meshStandardMaterial color="#212123" roughness={0.5} metalness={0.5} />
+            <Edges color="#38bdf8" threshold={20} />
+          </mesh>
+          {/* Lit center neon pulse bar */}
+          <mesh position={[c.x, 0.085, c.z]} scale={[c.len, 0.015, 0.55]} geometry={BOX_GEOMETRY} raycast={() => null}>
+            <meshBasicMaterial color={c.color} toneMapped={false} transparent opacity={0.8} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 2. Platform bodies with raised tiled floors, rims, and typography */}
       {platforms.map((plat) => {
-        const labelX = plat.cx - plat.w / 2 + 1.2;
-        const labelZ = plat.cz + plat.depth / 2 - 1.2;
+        const labelX = plat.cx - plat.w / 2 + 2.0;
+        const labelZ = plat.cz + plat.depth / 2 - 2.8;
 
         return (
           <group key={plat.key}>
-            {/* 1. Ground contact soft glow decal underneath */}
-            <mesh position={[plat.cx, 0.02, plat.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[plat.w + 8, plat.depth + 8, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
-              <meshBasicMaterial map={glowTexture()} color={plat.color} transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+            {/* Soft color glow spill decal on ground around the platform */}
+            <mesh position={[plat.cx, 0.02, plat.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[plat.w + 6, plat.depth + 6, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
+              <meshBasicMaterial map={glowTexture()} color={plat.color} transparent opacity={0.14} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
             </mesh>
 
-            {/* 2. Solid architectural slab with chamfered outline edges (matching Clusters Zone) */}
+            {/* Dark contact shadow decal underneath so platform sits solidly grounded */}
+            <mesh position={[plat.cx, 0.03, plat.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[plat.w * 1.08, plat.depth * 1.08, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
+              <meshBasicMaterial map={glowTexture()} color="#000000" transparent opacity={0.65} depthWrite={false} />
+            </mesh>
+
+            {/* Solid architectural slab with chamfered outline edges (matching Clusters Zone) */}
             <mesh position={[plat.cx, plat.slabY, plat.cz]} scale={[plat.w, plat.thickness, plat.depth]} geometry={BOX_GEOMETRY} raycast={() => null} receiveShadow>
               <meshStandardMaterial color="#181a20" roughness={0.55} metalness={0.45} />
               <Edges color={plat.color} threshold={15} />
             </mesh>
 
-            {/* 3. Authentic machine-room tiled floor top plate (matching Islands TopPlate) */}
+            {/* Camera-facing neon accent bands on the slab facade, matching Islands */}
+            <mesh
+              position={[plat.cx, plat.topY - Math.min(plat.thickness, 2) * 0.45, plat.cz + plat.depth / 2 + 0.015]}
+              scale={[plat.w - 0.4, 0.07, 0.02]}
+              geometry={BOX_GEOMETRY}
+              raycast={() => null}
+            >
+              <meshBasicMaterial color={plat.color} toneMapped={false} />
+            </mesh>
+            <mesh
+              position={[plat.cx + plat.w / 2 + 0.015, plat.topY - Math.min(plat.thickness, 2) * 0.45, plat.cz]}
+              scale={[0.02, 0.07, plat.depth - 0.4]}
+              geometry={BOX_GEOMETRY}
+              raycast={() => null}
+            >
+              <meshBasicMaterial color={plat.color} toneMapped={false} />
+            </mesh>
+
+            {/* Ground perimeter neon base rim */}
+            <NeonRim cx={plat.cx} cz={plat.cz} w={plat.w} d={plat.depth} y={0.04} color={`${plat.color}99`} />
+
+            {/* Authentic machine-room tiled floor top plate (matching Islands TopPlate) */}
             <PlatformTopPlate w={plat.w} d={plat.depth} cx={plat.cx} cz={plat.cz} topY={plat.topY} />
 
-            {/* 4. Lit neon rim perimeter around the platform top edge */}
+            {/* Lit neon rim perimeter around the platform top edge */}
             <NeonRim cx={plat.cx} cz={plat.cz} w={plat.w} d={plat.depth} y={plat.topY + 0.025} color={plat.color} />
 
-            {/* 5. Flat 3D typography painted directly on the platform floor in front */}
+            {/* Flat 3D typography painted directly on the platform floor in front */}
             <Suspense fallback={null}>
               <group position={[labelX, plat.topY + 0.035, labelZ]}>
                 <Text
@@ -322,15 +394,34 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         );
       })}
 
-      {/* For Topology: subtle district floor outlines marking each pod */}
-      {isTopology && topologySubPods.map((sub) => (
-        <group key={`sub_${sub.key}`}>
-          <mesh position={[sub.cx, 0.025, sub.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[sub.w, sub.depth, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
-            <meshBasicMaterial map={glowTexture()} color={sub.color} transparent opacity={0.05} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-          </mesh>
-          <NeonRim cx={sub.cx} cz={sub.cz} w={sub.w} d={sub.depth} y={0.028} color={`${sub.color}66`} />
-        </group>
-      ))}
+      {/* 3. For Topology: subtle district floor outlines and district titles marking each pod */}
+      {isTopology && topologySubPods.map((sub) => {
+        const subLabelX = sub.cx - sub.w / 2 + 1.2;
+        const subLabelZ = sub.cz + sub.depth / 2 - 1.4;
+
+        return (
+          <group key={`sub_${sub.key}`}>
+            <mesh position={[sub.cx, 0.025, sub.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[sub.w, sub.depth, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
+              <meshBasicMaterial map={glowTexture()} color={sub.color} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+            </mesh>
+            <NeonRim cx={sub.cx} cz={sub.cz} w={sub.w} d={sub.depth} y={0.028} color={`${sub.color}77`} />
+            <Suspense fallback={null}>
+              <group position={[subLabelX, 0.035, subLabelZ]}>
+                <Text
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  fontSize={0.92}
+                  color={sub.color}
+                  anchorX="left"
+                  anchorY="bottom"
+                  letterSpacing={0.06}
+                >
+                  {sub.label}
+                </Text>
+              </group>
+            </Suspense>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -338,3 +429,4 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
 function nodeType(node: LayoutNode): string {
   return node.type || '';
 }
+
