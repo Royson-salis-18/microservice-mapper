@@ -68,25 +68,25 @@ export function doorTexture(): THREE.CanvasTexture {
  */
 export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
   return make(`backdrop_${preset}`, [1024, 1024], (ctx, w, h) => {
-    const bg = preset === 'holo' ? '#04020a' : preset === 'studio' ? '#0a0a0d' : '#030509';
+    const bg = preset === 'holo' ? '#070312' : preset === 'studio' ? '#0c0d10' : '#060810';
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
-    const g = ctx.createRadialGradient(w * 0.58, h * 0.42, 0, w * 0.58, h * 0.42, w * 0.76);
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, w * 0.7);
     if (preset === 'holo') {
-      g.addColorStop(0, '#2e1065');
-      g.addColorStop(0.35, '#1e1b4b');
-      g.addColorStop(0.7, '#0f0a1c');
-      g.addColorStop(1, '#04020a');
+      g.addColorStop(0, '#2b104a');
+      g.addColorStop(0.35, '#1b0a30');
+      g.addColorStop(0.68, '#10051e');
+      g.addColorStop(1, '#070312');
     } else if (preset === 'studio') {
-      g.addColorStop(0, '#26282e');
-      g.addColorStop(0.35, '#18191d');
-      g.addColorStop(0.7, '#101114');
-      g.addColorStop(1, '#0a0a0d');
+      g.addColorStop(0, '#20222a');
+      g.addColorStop(0.35, '#16181f');
+      g.addColorStop(0.68, '#101116');
+      g.addColorStop(1, '#0c0d10');
     } else {
-      g.addColorStop(0, '#1e293b');
-      g.addColorStop(0.32, '#0f172a');
-      g.addColorStop(0.68, '#080d1a');
-      g.addColorStop(1, '#030509');
+      g.addColorStop(0, '#162238');
+      g.addColorStop(0.32, '#0f1726');
+      g.addColorStop(0.68, '#090d16');
+      g.addColorStop(1, '#060810');
     }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);

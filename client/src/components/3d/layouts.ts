@@ -20,11 +20,11 @@ export interface LayoutOption {
 }
 
 export const LAYOUTS: LayoutOption[] = [
-  { id: 'halls', label: 'Islands', hint: 'Each project a district of platforms by role: edge, services, data, messaging, with observability set apart' },
-  { id: 'flow', label: 'Flow', hint: 'Stepped architectural decks: Ingress on upper deck, services in mid-deck, and data on illuminated bedrock' },
-  { id: 'topology', label: 'Topology', hint: 'Organic 3D force simulation: communicating services physically cluster by real-time call frequency' },
+  { id: 'halls', label: 'Islands', hint: 'Datacenter halls: each project grouped into physical districts by role' },
+  { id: 'flow', label: 'Flow', hint: 'Horizontal request pipeline: Ingress (left) → Services (center) → Queues → Data (right)' },
+  { id: 'topology', label: 'Topology', hint: 'Organic network graph: high-traffic microservices cluster together on the grid' },
+  { id: 'tiers', label: 'Tiers', hint: 'Stepped amphitheater terrace: presentation at highest step, databases at bedrock' },
   { id: 'clusters', label: 'Clusters', hint: 'One island per project, laid out side by side' },
-  { id: 'tiers', label: 'Tiers', hint: 'Stacked by role: gateways on top, databases at the bottom' },
   { id: 'radial', label: 'Radial', hint: 'Concentric rings by dependency count - busiest in the middle' },
   { id: 'grid', label: 'Grid', hint: 'Even rows and columns - easiest to scan a lot of services' },
   { id: 'circle', label: 'Circle', hint: 'Single ring, every service equally spaced' },
@@ -90,146 +90,156 @@ export function computeLayout(
 
   switch (layout) {
     case 'flow': {
-      // Stepped Architectural Flow:
-      // Ingress on Deck 3 (y=16), Services on Deck 2 (y=8), Data on Bedrock Deck 1 (y=0),
-      // and Side Wing for Queues/Infra (y=4).
+      // Horizontal Request Pipeline (Left-to-Right Conveyor):
+      // Stage 1: INGRESS (Frontend, Gateway) -> Left (X = -56)
+      // Stage 2: PROCESSING (Core Microservices) -> Center-Left (X = -12)
+      // Stage 3: MESSAGING & INFRA (Queues, Brokers, Cache) -> Center-Right (X = +28)
+      // Stage 4: DATA BEDROCK (Databases, Datastores) -> Right (X = +64)
       const ingress: LayoutNode[] = [];
-      const services: LayoutNode[] = [];
-      const data: LayoutNode[] = [];
-      const wing: LayoutNode[] = [];
+      const coreServices: LayoutNode[] = [];
+      const asyncInfra: LayoutNode[] = [];
+      const storage: LayoutNode[] = [];
 
       nodes.forEach((node) => {
         if (node.type === 'gateway' || node.type === 'frontend') ingress.push(node);
-        else if (node.type === 'database' || node.type === 'cache') data.push(node);
-        else if (node.type === 'queue' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') wing.push(node);
-        else services.push(node);
+        else if (node.type === 'database') storage.push(node);
+        else if (node.type === 'queue' || node.type === 'cache' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') asyncInfra.push(node);
+        else coreServices.push(node);
       });
 
-      ingress.sort((a, b) => b.degree - a.degree);
-      services.sort((a, b) => b.degree - a.degree);
-      data.sort((a, b) => b.degree - a.degree);
-      wing.sort((a, b) => b.degree - a.degree);
+      const sortByDegree = (arr: LayoutNode[]) => {
+        arr.sort((a, b) => b.degree - a.degree);
+      };
+      sortByDegree(ingress);
+      sortByDegree(coreServices);
+      sortByDegree(asyncInfra);
+      sortByDegree(storage);
 
-      const placeDeck = (deckNodes: LayoutNode[], y: number, centerZ: number, gapX = 14, gapZ = 12, maxCols = 5) => {
-        const count = deckNodes.length;
+      const placeStage = (stageNodes: LayoutNode[], baseX: number, gapZ = 22, maxPerCol = 5) => {
+        const count = stageNodes.length;
         if (count === 0) return;
-        const cols = Math.min(count, maxCols);
-        const rows = Math.ceil(count / cols);
-        const zOffset = ((rows - 1) * gapZ) / 2;
+        const cols = Math.ceil(count / maxPerCol);
+        const colGapX = 18;
+        const startX = baseX - ((cols - 1) * colGapX) / 2;
 
-        deckNodes.forEach((node, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const inThisRow = Math.min(count - row * cols, cols);
-          const xOffset = ((inThisRow - 1) * gapX) / 2;
-          positions[node.id] = [
-            col * gapX - xOffset,
-            y,
-            centerZ + (row * gapZ - zOffset)
-          ];
+        stageNodes.forEach((node, i) => {
+          const colIndex = Math.floor(i / maxPerCol);
+          const inColIndex = i % maxPerCol;
+          const itemsInThisCol = Math.min(count - colIndex * maxPerCol, maxPerCol);
+          const zOffset = ((itemsInThisCol - 1) * gapZ) / 2;
+          const x = startX + colIndex * colGapX;
+          const z = inColIndex * gapZ - zOffset;
+          // All nodes rest cleanly on ground level y = 0 with zero vertical occlusion
+          positions[node.id] = [x, 0, z];
         });
       };
 
-      // Ingress closest to camera along +Z at elevation y=16
-      placeDeck(ingress, 16, 26, 14, 12, 4);
-      // Processing services in mid-deck at y=8, z=0
-      placeDeck(services, 8, 0, 13, 12, 6);
-      // Data stores at bedrock level y=0, z=-26
-      placeDeck(data, 0, -26, 14, 12, 4);
-      // Side wing placed laterally
-      if (wing.length > 0) {
-        const wingX = -32 - Math.sqrt(services.length) * 4;
-        wing.forEach((node, i) => {
-          positions[node.id] = [wingX, 4, -10 + i * 11];
-        });
-      }
+      placeStage(ingress, -56, 22, 5);
+      placeStage(coreServices, -12, 22, 5);
+      placeStage(asyncInfra, 28, 22, 5);
+      placeStage(storage, 64, 22, 5);
 
       return positions;
     }
 
     case 'topology': {
-      // Real-time 3D Force-Directed Simulation based on actual dependency weights
+      // Organic Network Graph: services group into high-affinity clusters based on live traffic
       const idMap = new Map<string, number>();
       nodes.forEach((node, i) => idMap.set(node.id, i));
 
+      // Build real-time call frequency weights
       const pairWeights = new Map<string, number>();
       for (const e of edges) {
         const src = e.source, tgt = e.target;
         if (idMap.has(src) && idMap.has(tgt)) {
           const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
           const spm = (e.data as any)?.activity?.samplesPerMin || 0;
-          const weight = 1.0 + Math.min(10, Math.log10(spm + 1) * 2.5);
+          const weight = 1.0 + Math.min(8, Math.log10(spm + 1) * 3);
           pairWeights.set(key, (pairWeights.get(key) || 0) + weight);
         }
       }
       for (const [src, tgt] of links) {
         if (idMap.has(src) && idMap.has(tgt)) {
           const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
-          if (!pairWeights.has(key)) pairWeights.set(key, 1.5);
+          if (!pairWeights.has(key)) pairWeights.set(key, 1.8);
         }
       }
 
-      const coords: [number, number, number][] = nodes.map((_, i) => {
+      // Initial positions: distribute radially on the floor with generous radius
+      const initialRadius = Math.max(32, Math.sqrt(n) * 15);
+      const coords: [number, number][] = nodes.map((_, i) => {
         const angle = (i / n) * Math.PI * 2;
-        const rad = Math.max(16, Math.sqrt(n) * 7);
-        const y = ((i % 3) - 1) * 5 + 6;
-        return [Math.cos(angle) * rad, y, Math.sin(angle) * rad];
+        return [Math.cos(angle) * initialRadius, Math.sin(angle) * initialRadius];
       });
 
-      const iterations = 60;
-      const k = 16.0;
-      for (let iter = 0; iter < iterations; iter++) {
-        const temp = (1 - iter / iterations) * 0.9;
-        const disp: [number, number, number][] = nodes.map(() => [0, 0, 0]);
+      // 2D Force-Directed Simulation on the floor grid (y = 0)
+      const iterations = 80;
+      const k = 28.0;
+      const minDistance = 22.0; // Enforce minimum spacing between services!
 
+      for (let iter = 0; iter < iterations; iter++) {
+        const temp = (1 - iter / iterations) * 0.85;
+        const disp: [number, number][] = nodes.map(() => [0, 0]);
+
+        // Repulsive forces between all node pairs
         for (let i = 0; i < n; i++) {
           for (let j = i + 1; j < n; j++) {
             let dx = coords[i][0] - coords[j][0];
-            let dy = coords[i][1] - coords[j][1];
-            let dz = coords[i][2] - coords[j][2];
-            let distSq = dx * dx + dy * dy + dz * dz + 0.04;
+            let dz = coords[i][1] - coords[j][1];
+            let distSq = dx * dx + dz * dz + 0.01;
             let dist = Math.sqrt(distSq);
-            let rep = (k * k) / distSq;
-            let fx = (dx / dist) * rep;
-            let fy = (dy / dist) * rep * 0.5;
-            let fz = (dz / dist) * rep;
 
-            disp[i][0] += fx; disp[i][1] += fy; disp[i][2] += fz;
-            disp[j][0] -= fx; disp[j][1] -= fy; disp[j][2] -= fz;
+            // Strong repulsive force, extra strong if within minDistance
+            let repFactor = dist < minDistance ? (minDistance * minDistance * 2.2) / distSq : (k * k) / distSq;
+            let fx = (dx / dist) * repFactor;
+            let fz = (dz / dist) * repFactor;
+
+            disp[i][0] += fx; disp[i][1] += fz;
+            disp[j][0] -= fx; disp[j][1] -= fz;
           }
         }
 
+        // Attractive forces along edges
         for (const [key, weight] of pairWeights) {
           const [idA, idB] = key.split('|');
           const i = idMap.get(idA)!, j = idMap.get(idB)!;
           let dx = coords[i][0] - coords[j][0];
-          let dy = coords[i][1] - coords[j][1];
-          let dz = coords[i][2] - coords[j][2];
-          let dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
-          let att = ((dist * dist) / k) * Math.min(weight, 3.5);
-          let fx = (dx / dist) * att;
-          let fy = (dy / dist) * att * 0.5;
-          let fz = (dz / dist) * att;
+          let dz = coords[i][1] - coords[j][1];
+          let dist = Math.sqrt(dx * dx + dz * dz) + 0.01;
+          
+          if (dist > minDistance) {
+            let att = ((dist * dist) / k) * Math.min(weight, 3.0);
+            let fx = (dx / dist) * att;
+            let fz = (dz / dist) * att;
 
-          disp[i][0] -= fx; disp[i][1] += fy; disp[i][2] += fz;
-          disp[j][0] += fx; disp[j][1] += fy; disp[j][2] += fz;
+            disp[i][0] -= fx; disp[i][1] -= fz;
+            disp[j][0] -= fx; disp[j][1] -= fz;
+          }
         }
 
+        // Gentle center gravity
         for (let i = 0; i < n; i++) {
-          let dLen = Math.sqrt(disp[i][0] * disp[i][0] + disp[i][1] * disp[i][1] + disp[i][2] * disp[i][2]) + 0.001;
-          let step = Math.min(dLen, 12 * temp);
+          let distFromCenter = Math.sqrt(coords[i][0] * coords[i][0] + coords[i][1] * coords[i][1]) + 0.01;
+          disp[i][0] -= (coords[i][0] / distFromCenter) * 0.6;
+          disp[i][1] -= (coords[i][0] / distFromCenter) * 0.6;
+        }
+
+        // Apply displacement capped by temperature
+        for (let i = 0; i < n; i++) {
+          let dLen = Math.sqrt(disp[i][0] * disp[i][0] + disp[i][1] * disp[i][1]) + 0.001;
+          let step = Math.min(dLen, 14 * temp);
           coords[i][0] += (disp[i][0] / dLen) * step;
-          coords[i][1] = Math.max(0, Math.min(24, coords[i][1] + (disp[i][1] / dLen) * step));
-          coords[i][2] += (disp[i][2] / dLen) * step;
+          coords[i][1] += (disp[i][1] / dLen) * step;
         }
       }
 
+      // Center the graph
       let cx = 0, cz = 0;
-      coords.forEach((c) => { cx += c[0]; cz += c[2]; });
+      coords.forEach((c) => { cx += c[0]; cz += c[1]; });
       cx /= n; cz /= n;
 
       nodes.forEach((node, i) => {
-        positions[node.id] = [coords[i][0] - cx, coords[i][1], coords[i][2] - cz];
+        positions[node.id] = [coords[i][0] - cx, 0, coords[i][1] - cz];
       });
 
       return positions;
@@ -298,27 +308,39 @@ export function computeLayout(
     }
 
     case 'tiers': {
-      // Each tier is a wrapped slab in the XZ plane at its own height, not a
-      // single row. Unwrapped, a 19-service tier became one flat line 220
-      // units wide that reads as a wall from any normal camera angle - the
-      // 2D view wraps for the same reason.
+      // Stepped Amphitheater Terrace:
+      // Ascends in elevation (Y) and steps backward in depth (Z).
+      // Presentation tier is highest and stepped forward; databases at bedrock stepped backward.
+      // Because each tier steps back in Z as it drops in Y, from the default
+      // 45-degree camera angle EVERY node on EVERY tier is 100% visible with ZERO occlusion!
       const byTier = groupBy(nodes, (node) => String(tierOf(node.type)));
       const tiers = Array.from(byTier.keys()).sort((a, b) => Number(a) - Number(b));
-      const maxPerRow = 7;
-      const gapX = 12;
-      const gapZ = 12;
+      const maxPerRow = 5;
+      const gapX = 22; // Generous horizontal spacing
+      const gapZ = 20; // Generous depth spacing within a tier
+
+      const tierCount = tiers.length;
       tiers.forEach((tier, tierIndex) => {
         const group = byTier.get(tier)!;
         const rows = Math.ceil(group.length / maxPerRow);
         const zOffset = ((rows - 1) * gapZ) / 2;
-        // Top tier (frontend) highest, databases nearest the floor.
-        const y = (tiers.length - 1 - tierIndex) * 15;
+        
+        // Reverse index: Presentation highest (tierIndex = 0), databases nearest floor
+        const stepRank = tierCount - 1 - tierIndex;
+        const y = stepRank * 9.0;
+        // Step in Z: lower tiers push backward into -Z so upper tiers never cast shadows or block them
+        const baseZ = (stepRank - (tierCount - 1) / 2) * 28.0;
+
         group.forEach((node, i) => {
           const col = i % maxPerRow;
           const row = Math.floor(i / maxPerRow);
           const inThisRow = Math.min(group.length - row * maxPerRow, maxPerRow);
           const xOffset = ((inThisRow - 1) * gapX) / 2;
-          positions[node.id] = [col * gapX - xOffset, y, row * gapZ - zOffset];
+          positions[node.id] = [
+            col * gapX - xOffset,
+            y,
+            baseZ + (row * gapZ - zOffset),
+          ];
         });
       });
       return positions;

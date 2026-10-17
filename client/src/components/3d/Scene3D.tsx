@@ -36,7 +36,7 @@ const MAX_CALLOUTS = 8;
 const AZIMUTH = Math.PI / 4;
 const FOV = 30;
 
-const FOG_COLOR = '#0c0c0e';
+const FOG_COLOR = '#060810';
 
 /**
  * Eases every node toward the position its layout wants, writing into a
@@ -573,11 +573,11 @@ function KeyLight({ site, preset = 'cyber' }: { site: Site | null; preset?: EnvP
 function Ground({ y, tiled, preset = 'cyber' }: { y: number; tiled: boolean; preset?: EnvPreset }) {
   const map = useMemo(() => (tiled ? tiledFloor(4000 / 14, 4000 / 14) : null), [tiled]);
   useEffect(() => () => map?.dispose(), [map]);
-  const groundColor = preset === 'holo' ? (tiled ? '#4c1d95' : '#070412')
-    : preset === 'studio' ? (tiled ? '#282a30' : '#0a0b0d')
-    : (tiled ? '#64748b' : '#090d16');
-  const roughness = preset === 'studio' ? 0.95 : preset === 'holo' ? 0.65 : 0.7;
-  const metalness = preset === 'studio' ? 0.05 : preset === 'holo' ? 0.45 : 0.4;
+  const groundColor = preset === 'holo' ? (tiled ? '#2e1065' : '#070312')
+    : preset === 'studio' ? (tiled ? '#20222a' : '#0c0d10')
+    : (tiled ? '#1e293b' : '#060810');
+  const roughness = tiled ? (preset === 'studio' ? 0.95 : 0.7) : 0.98;
+  const metalness = tiled ? (preset === 'studio' ? 0.05 : 0.4) : 0.02;
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} raycast={() => null} receiveShadow>
       <planeGeometry args={[4000, 4000]} />
@@ -596,7 +596,9 @@ function SiteGlow({ target, y, spread, color = '#8ab4ff', preset = 'cyber' }: { 
       minX = Math.min(minX, x); maxX = Math.max(maxX, x);
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
-    return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w: maxX - minX + spread, d: maxZ - minZ + spread };
+    const w = Math.max(maxX - minX + spread, 140);
+    const d = Math.max(maxZ - minZ + spread, 140);
+    return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w, d };
   }, [target, spread]);
   if (!bounds || preset === 'studio') return null;
   const glowColor = preset === 'holo' ? '#a855f7' : color;
@@ -1011,11 +1013,10 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
           {/* Atmospheric floating data dust */}
           <AmbientParticles preset={envPreset} />
-          {/* Physical tiered platforms for stepped architectural flow */}
-          {layout === 'flow' && <FlowPlatforms nodes={layoutNodes} positions={targetPositions} />}
-          {/* The dark city around the site: close in for the flat
-              arrangements, pushed back to a skyline for the islands. Disabled in minimalist studio mode. */}
-          {envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={site ? 70 : 26} />}
+          {/* Physical tiered platforms for stepped architectural flow or tiers */}
+          {(layout === 'flow' || layout === 'tiers') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
+          {/* The dark city skyline: only for the Islands hall campus where buildings sit on a central site. Never in open architectural layouts! */}
+          {Boolean(site) && envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={70} />}
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
