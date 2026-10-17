@@ -66,15 +66,28 @@ export function doorTexture(): THREE.CanvasTexture {
  * blue bloom behind the site. Drawn into the scene rather than left to CSS,
  * because the bloom pass renders into an opaque target.
  */
-export function backdropTexture(): THREE.CanvasTexture {
-  return make('backdrop', [1024, 1024], (ctx, w, h) => {
-    ctx.fillStyle = '#05060b';
+export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
+  return make(`backdrop_${preset}`, [1024, 1024], (ctx, w, h) => {
+    const bg = preset === 'holo' ? '#04020a' : preset === 'studio' ? '#0a0a0d' : '#030509';
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
-    const g = ctx.createRadialGradient(w * 0.6, h * 0.4, 0, w * 0.6, h * 0.4, w * 0.75);
-    g.addColorStop(0, '#303032');
-    g.addColorStop(0.35, '#1c1c1e');
-    g.addColorStop(0.7, '#0e0e10');
-    g.addColorStop(1, '#05060b');
+    const g = ctx.createRadialGradient(w * 0.58, h * 0.42, 0, w * 0.58, h * 0.42, w * 0.76);
+    if (preset === 'holo') {
+      g.addColorStop(0, '#2e1065');
+      g.addColorStop(0.35, '#1e1b4b');
+      g.addColorStop(0.7, '#0f0a1c');
+      g.addColorStop(1, '#04020a');
+    } else if (preset === 'studio') {
+      g.addColorStop(0, '#26282e');
+      g.addColorStop(0.35, '#18191d');
+      g.addColorStop(0.7, '#101114');
+      g.addColorStop(1, '#0a0a0d');
+    } else {
+      g.addColorStop(0, '#1e293b');
+      g.addColorStop(0.32, '#0f172a');
+      g.addColorStop(0.68, '#080d1a');
+      g.addColorStop(1, '#030509');
+    }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   });

@@ -58,12 +58,12 @@ export function Bloom({ strength = 0.45, radius = 0.18, threshold = 0.85 }: { st
 }
 
 /** The backdrop, as the scene's background, with the fog matched to its edge. */
-export function Backdrop() {
+export function Backdrop({ preset = 'cyber' }: { preset?: 'cyber' | 'studio' | 'holo' }) {
   const scene = useThree((s) => s.scene);
   useEffect(() => {
     const previous = scene.background;
-    scene.background = backdropTexture();
+    scene.background = backdropTexture(preset);
     return () => { scene.background = previous; };
-  }, [scene]);
+  }, [scene, preset]);
   return null;
 }

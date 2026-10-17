@@ -14,6 +14,8 @@ import { cpuShown } from '../shared/serviceVisuals';
 import { computeSite, islandRoleOf, type Rect, type Site } from './site';
 import { Islands, type IslandAlert, type IslandCardInfo } from './Islands';
 import { LAYOUTS, ZONED_LAYOUTS, LABELLED_LAYOUTS, HALL_PADDING, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
+import { AmbientParticles, type EnvPreset } from './AmbientParticles';
+import { FlowPlatforms } from './FlowPlatforms';
 
 interface Scene3DProps {
   nodes: Node[];
@@ -526,7 +528,7 @@ function SelectionLight({ live, selectedId }: { live: PositionMap; selectedId: s
  * units, walls and islands throwing shade on the floor is most of what makes
  * the room read as a real space.
  */
-function KeyLight({ site }: { site: Site | null }) {
+function KeyLight({ site, preset = 'cyber' }: { site: Site | null; preset?: EnvPreset }) {
   const ref = useRef<THREE.DirectionalLight>(null);
   const fit = useMemo(() => {
     if (!site?.building) return null;
@@ -547,12 +549,14 @@ function KeyLight({ site }: { site: Site | null }) {
     cam.updateProjectionMatrix();
     light.shadow.needsUpdate = true;
   }, [fit]);
+  const color = preset === 'holo' ? '#e0e7ff' : preset === 'studio' ? '#ffffff' : '#f8fafc';
+  const intensity = preset === 'studio' ? (site ? 2.2 : 1.6) : (site ? 2.8 : 2.0);
   return (
     <directionalLight
       ref={ref}
       position={[-60, 110, 50]}
-      intensity={site ? 2.6 : 1.5}
-      color="#e6e8ec"
+      intensity={intensity}
+      color={color}
       castShadow={Boolean(fit)}
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
@@ -566,19 +570,24 @@ function KeyLight({ site }: { site: Site | null }) {
  * space between districts has a surface rather than being a flat colour;
  * elsewhere a plain dark plane under the grid.
  */
-function Ground({ y, tiled }: { y: number; tiled: boolean }) {
+function Ground({ y, tiled, preset = 'cyber' }: { y: number; tiled: boolean; preset?: EnvPreset }) {
   const map = useMemo(() => (tiled ? tiledFloor(4000 / 14, 4000 / 14) : null), [tiled]);
   useEffect(() => () => map?.dispose(), [map]);
+  const groundColor = preset === 'holo' ? (tiled ? '#4c1d95' : '#070412')
+    : preset === 'studio' ? (tiled ? '#282a30' : '#0a0b0d')
+    : (tiled ? '#64748b' : '#090d16');
+  const roughness = preset === 'studio' ? 0.95 : preset === 'holo' ? 0.65 : 0.7;
+  const metalness = preset === 'studio' ? 0.05 : preset === 'holo' ? 0.45 : 0.4;
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} raycast={() => null} receiveShadow>
       <planeGeometry args={[4000, 4000]} />
-      <meshStandardMaterial map={map} color={tiled ? '#8d939c' : '#151517'} roughness={0.9} metalness={0.15} />
+      <meshStandardMaterial map={map} color={groundColor} roughness={roughness} metalness={metalness} />
     </mesh>
   );
 }
 
-/** A broad, faint blue light spill on the ground under the whole site. */
-function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread: number }) {
+/** A broad, faint blue/accent light spill on the ground under the whole site. */
+function SiteGlow({ target, y, spread, color = '#8ab4ff', preset = 'cyber' }: { target: Positions; y: number; spread: number; color?: string; preset?: EnvPreset }) {
   const bounds = useMemo(() => {
     const pts = Object.values(target);
     if (pts.length === 0) return null;
@@ -589,11 +598,12 @@ function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread:
     }
     return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w: maxX - minX + spread, d: maxZ - minZ + spread };
   }, [target, spread]);
-  if (!bounds) return null;
+  if (!bounds || preset === 'studio') return null;
+  const glowColor = preset === 'holo' ? '#a855f7' : color;
   return (
     <mesh position={[bounds.cx, y, bounds.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[bounds.w, bounds.d, 1]} raycast={() => null}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={glowTexture()} color="#8ab4ff" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      <meshBasicMaterial map={glowTexture()} color={glowColor} transparent opacity={preset === 'holo' ? 0.16 : 0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </mesh>
   );
 }
@@ -660,6 +670,7 @@ function shortId(id: string | null | undefined): string {
 
 export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick }: Scene3DProps) {
   const [layout, setLayout] = useState<LayoutId>(() => readStored('mm.scene3d.layout', LAYOUTS.map((l) => l.id), 'halls'));
+  const [envPreset, setEnvPreset] = useState<EnvPreset>(() => readStored('mm.scene3d.env', ['cyber', 'studio', 'holo'] as const, 'cyber'));
   const [routing, setRouting] = useState<LinkRouting>(() => readStored('mm.scene3d.routing', ['conduit', 'arc'] as const, 'conduit'));
   const [showLabels, setShowLabels] = useState(true);
   const [showCards, setShowCards] = useState<boolean>(() => readStored('mm.scene3d.cards', ['on', 'off'] as const, 'on') === 'on');
@@ -686,11 +697,12 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   useEffect(() => {
     try {
       localStorage.setItem('mm.scene3d.layout', layout);
+      localStorage.setItem('mm.scene3d.env', envPreset);
       localStorage.setItem('mm.scene3d.routing', routing);
       localStorage.setItem('mm.scene3d.bloom', glow ? 'on' : 'off');
       localStorage.setItem('mm.scene3d.cards', showCards ? 'on' : 'off');
     } catch { /* private mode */ }
-  }, [layout, routing, glow, showCards]);
+  }, [layout, envPreset, routing, glow, showCards]);
 
   // R3F sizes its canvas from a measured container. When this view mounts
   // while the layout is still settling (a tab switch, a panel opening, the
@@ -752,8 +764,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   // well, for the scene to draw; every other arrangement is just positions.
   const site = useMemo(() => (layout === 'halls' ? computeSite(layoutNodes, links) : null), [layout, layoutNodes, links]);
   const targetPositions = useMemo(
-    () => site?.positions ?? computeLayout(layout, layoutNodes),
-    [site, layout, layoutNodes]
+    () => site?.positions ?? computeLayout(layout, layoutNodes, edges, links),
+    [site, layout, layoutNodes, edges, links]
   );
 
   // A new arrangement starts from the whole view (the rig refits on the
@@ -944,8 +956,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         }}
       >
         <Suspense fallback={null}>
-          <Backdrop />
-          <fog attach="fog" args={[FOG_COLOR, 400, 1400]} />
+          <Backdrop preset={envPreset} />
+          <fog attach="fog" args={[envPreset === 'studio' ? '#090a0d' : envPreset === 'holo' ? '#070412' : FOG_COLOR, 400, 1400]} />
           {glow && <Bloom />}
 
           <PerspectiveCamera makeDefault position={[120, 110, 120]} fov={FOV} near={0.5} far={4000} />
@@ -967,33 +979,43 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
 
           {/* Cool, low light: tops and the faces toward the camera catch a
               soft blue, sides fall away into navy. */}
-          <ambientLight intensity={site ? 0.12 : 0.35} color="#cfd3da" />
-          <hemisphereLight args={[site ? '#3a3e45' : '#8ab4ff', '#05060b', site ? 0.3 : 0.55]} />
-          <KeyLight site={site} />
-          <directionalLight position={[80, 40, -40]} intensity={0.9} color="#8ab4ff" />
-          <directionalLight position={[40, 25, 90]} intensity={0.35} color="#8ab4ff" />
+          <ambientLight intensity={envPreset === 'studio' ? 0.45 : site ? 0.12 : 0.35} color={envPreset === 'studio' ? '#f1f5f9' : '#cfd3da'} />
+          <hemisphereLight
+            args={[
+              envPreset === 'holo' ? '#818cf8' : envPreset === 'studio' ? '#94a3b8' : (site ? '#3a3e45' : '#8ab4ff'),
+              envPreset === 'studio' ? '#090a0d' : '#05060b',
+              envPreset === 'studio' ? 0.6 : (site ? 0.3 : 0.55),
+            ]}
+          />
+          <KeyLight site={site} preset={envPreset} />
+          <directionalLight position={[80, 40, -40]} intensity={envPreset === 'studio' ? 0.6 : 0.9} color={envPreset === 'holo' ? '#a5b4fc' : '#8ab4ff'} />
+          <directionalLight position={[40, 25, 90]} intensity={envPreset === 'studio' ? 0.2 : 0.35} color={envPreset === 'holo' ? '#c084fc' : '#8ab4ff'} />
 
           {/* In the building arrangement the floor is a slab lifted above the
               ground grid; otherwise the grid is the floor. */}
-          <Ground y={groundY - 0.02} tiled={Boolean(site)} />
+          <Ground y={groundY - 0.02} tiled={Boolean(site)} preset={envPreset} />
           <Grid
             position={[0, groundY, 0]}
             args={[10, 10]}
             cellSize={5}
-            cellThickness={0.5}
-            cellColor={site ? '#2a2a2c' : '#242426'}
+            cellThickness={envPreset === 'studio' ? 0.4 : 0.5}
+            cellColor={envPreset === 'studio' ? '#222329' : envPreset === 'holo' ? '#2e1065' : (site ? '#2a2a2c' : '#242426')}
             sectionSize={30}
-            sectionThickness={0.9}
-            sectionColor={site ? '#474749' : '#373739'}
+            sectionThickness={envPreset === 'studio' ? 0.7 : 0.9}
+            sectionColor={envPreset === 'studio' ? '#33353f' : envPreset === 'holo' ? '#4c1d95' : (site ? '#474749' : '#373739')}
             fadeDistance={520}
             fadeStrength={2}
             infiniteGrid
           />
 
-          <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} />
+          <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
+          {/* Atmospheric floating data dust */}
+          <AmbientParticles preset={envPreset} />
+          {/* Physical tiered platforms for stepped architectural flow */}
+          {layout === 'flow' && <FlowPlatforms nodes={layoutNodes} positions={targetPositions} />}
           {/* The dark city around the site: close in for the flat
-              arrangements, pushed back to a skyline for the islands. */}
-          <CityBlocks target={targetPositions} clearance={site ? 70 : 26} />
+              arrangements, pushed back to a skyline for the islands. Disabled in minimalist studio mode. */}
+          {envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={site ? 70 : 26} />}
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
@@ -1087,6 +1109,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         onShowCards={setShowCards}
         glow={glow}
         onGlow={setGlow}
+        envPreset={envPreset}
+        onEnvPreset={setEnvPreset}
         zones={zones}
         focusZone={focusZone}
         onFocusZone={onFocusZone}
