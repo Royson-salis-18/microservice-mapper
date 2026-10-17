@@ -43,7 +43,21 @@ export interface LayoutNode {
 
 export type Positions = Record<string, [number, number, number]>;
 
-const TIER_ORDER = ['frontend', 'gateway', 'service', 'queue', 'cache', 'database', 'infrastructure'];
+export type ArchTier = 'ingress' | 'services' | 'infra' | 'data';
+
+export function archTierOf(type: string): ArchTier {
+  if (type === 'gateway' || type === 'frontend') return 'ingress';
+  if (type === 'database') return 'data';
+  if (type === 'queue' || type === 'cache' || type === 'infrastructure' || type === 'external' || type === 'observability') return 'infra';
+  return 'services';
+}
+
+export const ARCH_TIERS: { id: ArchTier; label: string; badge: string; color: string }[] = [
+  { id: 'ingress', label: 'TIER 04 // PRESENTATION & GATEWAY', badge: 'L4', color: '#8ab4ff' },
+  { id: 'services', label: 'TIER 03 // CORE MICROSERVICES', badge: 'L3', color: '#38bdf8' },
+  { id: 'infra', label: 'TIER 02 // MESSAGING & INFRA', badge: 'L2', color: '#a855f7' },
+  { id: 'data', label: 'TIER 01 // DATA BEDROCK', badge: 'L1', color: '#3ecf8e' },
+];
 
 /** Layouts that keep each project in its own patch of floor, so a zone can
  *  be drawn under it without overlapping another project's. */
@@ -56,11 +70,6 @@ export const LABELLED_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['grid'
 
 /** Margin between a hall's outermost services and its walls. */
 export const HALL_PADDING = 6;
-
-function tierOf(type: string): number {
-  const i = TIER_ORDER.indexOf(type);
-  return i === -1 ? TIER_ORDER.indexOf('service') : i;
-}
 
 function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
   const out = new Map<string, T[]>();
@@ -81,8 +90,8 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
 export function computeLayout(
   layout: LayoutId,
   nodes: LayoutNode[],
-  edges: any[] = [],
-  links: [string, string][] = []
+  _edges: any[] = [],
+  _links: [string, string][] = []
 ): Positions {
   const positions: Positions = {};
   const n = nodes.length;
@@ -91,155 +100,176 @@ export function computeLayout(
   switch (layout) {
     case 'flow': {
       // Horizontal Request Pipeline (Left-to-Right Conveyor):
-      // Stage 1: INGRESS (Frontend, Gateway) -> Left (X = -56)
-      // Stage 2: PROCESSING (Core Microservices) -> Center-Left (X = -12)
-      // Stage 3: MESSAGING & INFRA (Queues, Brokers, Cache) -> Center-Right (X = +28)
-      // Stage 4: DATA BEDROCK (Databases, Datastores) -> Right (X = +64)
+      // Stage 1: INGRESS (Left)
+      // Stage 2: CORE MICROSERVICES (Center-Left)
+      // Stage 3: MESSAGING & INFRA (Center-Right)
+      // Stage 4: DATA BEDROCK (Right)
       const ingress: LayoutNode[] = [];
       const coreServices: LayoutNode[] = [];
       const asyncInfra: LayoutNode[] = [];
       const storage: LayoutNode[] = [];
 
       nodes.forEach((node) => {
-        if (node.type === 'gateway' || node.type === 'frontend') ingress.push(node);
-        else if (node.type === 'database') storage.push(node);
-        else if (node.type === 'queue' || node.type === 'cache' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') asyncInfra.push(node);
+        const t = archTierOf(node.type);
+        if (t === 'ingress') ingress.push(node);
+        else if (t === 'data') storage.push(node);
+        else if (t === 'infra') asyncInfra.push(node);
         else coreServices.push(node);
       });
 
-      const sortByDegree = (arr: LayoutNode[]) => {
-        arr.sort((a, b) => b.degree - a.degree);
-      };
+      const sortByDegree = (arr: LayoutNode[]) => arr.sort((a, b) => b.degree - a.degree);
       sortByDegree(ingress);
       sortByDegree(coreServices);
       sortByDegree(asyncInfra);
       sortByDegree(storage);
 
-      const placeStage = (stageNodes: LayoutNode[], baseX: number, gapZ = 22, maxPerCol = 5) => {
-        const count = stageNodes.length;
-        if (count === 0) return;
-        const cols = Math.ceil(count / maxPerCol);
-        const colGapX = 18;
-        const startX = baseX - ((cols - 1) * colGapX) / 2;
+      const stages = [
+        { nodes: ingress, maxPerCol: 4, gapX: 24, gapZ: 22 },
+        { nodes: coreServices, maxPerCol: 5, gapX: 24, gapZ: 22 },
+        { nodes: asyncInfra, maxPerCol: 4, gapX: 24, gapZ: 22 },
+        { nodes: storage, maxPerCol: 4, gapX: 24, gapZ: 22 },
+      ];
 
-        stageNodes.forEach((node, i) => {
-          const colIndex = Math.floor(i / maxPerCol);
-          const inColIndex = i % maxPerCol;
-          const itemsInThisCol = Math.min(count - colIndex * maxPerCol, maxPerCol);
-          const zOffset = ((itemsInThisCol - 1) * gapZ) / 2;
-          const x = startX + colIndex * colGapX;
-          const z = inColIndex * gapZ - zOffset;
-          // All nodes rest cleanly on ground level y = 0 with zero vertical occlusion
+      // Dynamically calculate stage widths so consecutive platforms never collide
+      const stageWidths = stages.map((s) => {
+        if (s.nodes.length === 0) return 0;
+        const cols = Math.ceil(s.nodes.length / s.maxPerCol);
+        return Math.max(28, (cols - 1) * s.gapX + 28);
+      });
+
+      const STAGE_GAP = 20; // Clear runway gap between consecutive platforms
+      let totalWidth = 0;
+      const validStages = stageWidths.filter((w) => w > 0);
+      if (validStages.length > 0) {
+        totalWidth = validStages.reduce((sum, w) => sum + w, 0) + (validStages.length - 1) * STAGE_GAP;
+      }
+
+      let currentLeft = -totalWidth / 2;
+      stages.forEach((stage, sIdx) => {
+        const count = stage.nodes.length;
+        if (count === 0) return;
+        const w = stageWidths[sIdx];
+        const stageCenterX = currentLeft + w / 2;
+        currentLeft += w + STAGE_GAP;
+
+        const cols = Math.ceil(count / stage.maxPerCol);
+        const startX = stageCenterX - ((cols - 1) * stage.gapX) / 2;
+
+        stage.nodes.forEach((node, i) => {
+          const colIndex = Math.floor(i / stage.maxPerCol);
+          const inColIndex = i % stage.maxPerCol;
+          const itemsInThisCol = Math.min(count - colIndex * stage.maxPerCol, stage.maxPerCol);
+          const zOffset = ((itemsInThisCol - 1) * stage.gapZ) / 2;
+          const x = startX + colIndex * stage.gapX;
+          const z = inColIndex * stage.gapZ - zOffset;
           positions[node.id] = [x, 0, z];
         });
-      };
-
-      placeStage(ingress, -56, 22, 5);
-      placeStage(coreServices, -12, 22, 5);
-      placeStage(asyncInfra, 28, 22, 5);
-      placeStage(storage, 64, 22, 5);
+      });
 
       return positions;
     }
 
     case 'topology': {
-      // Organic Network Graph: services group into high-affinity clusters based on live traffic
+      // Cohesive Network Graph:
+      // Groups services into balanced domain pods on the 2D plane (Y=0).
+      // If multiple projects exist, pod by project.
+      // If single project, pod by architectural role: Ingress, Core Services, Data, Infra/Observability.
+      const byProject = groupBy(nodes, (n) => n.project || 'core');
+      const projectList = Array.from(byProject.entries());
+
+      type Pod = { id: string; nodes: LayoutNode[]; center: [number, number] };
+      const pods: Pod[] = [];
+
+      if (projectList.length > 1) {
+        // Multi-project: pod by project
+        const numPods = projectList.length;
+        const ringRad = Math.max(32, numPods * 14);
+        projectList.forEach(([proj, pNodes], idx) => {
+          const angle = (idx / numPods) * Math.PI * 2 - Math.PI / 2;
+          pods.push({
+            id: proj,
+            nodes: pNodes,
+            center: [Math.cos(angle) * ringRad, Math.sin(angle) * ringRad],
+          });
+        });
+      } else {
+        // Single project: pod by architectural role
+        const ingress: LayoutNode[] = [];
+        const coreServices: LayoutNode[] = [];
+        const asyncInfra: LayoutNode[] = [];
+        const storage: LayoutNode[] = [];
+
+        nodes.forEach((node) => {
+          const t = archTierOf(node.type);
+          if (t === 'ingress') ingress.push(node);
+          else if (t === 'data') storage.push(node);
+          else if (t === 'infra') asyncInfra.push(node);
+          else coreServices.push(node);
+        });
+
+        // Symmetrical 4-quadrant layout:
+        // Ingress at West/Front (-34, +14)
+        // Core Services at Center/North (0, -18)
+        // Storage at East/North (+36, -14)
+        // Infra & Telemetry at South (+4, +26)
+        if (ingress.length > 0) pods.push({ id: 'ingress', nodes: ingress, center: [-34, 14] });
+        if (coreServices.length > 0) pods.push({ id: 'services', nodes: coreServices, center: [0, -18] });
+        if (storage.length > 0) pods.push({ id: 'data', nodes: storage, center: [36, -14] });
+        if (asyncInfra.length > 0) pods.push({ id: 'infra', nodes: asyncInfra, center: [4, 26] });
+      }
+
       const idMap = new Map<string, number>();
       nodes.forEach((node, i) => idMap.set(node.id, i));
+      const coords: [number, number][] = nodes.map(() => [0, 0]);
 
-      // Build real-time call frequency weights
-      const pairWeights = new Map<string, number>();
-      for (const e of edges) {
-        const src = e.source, tgt = e.target;
-        if (idMap.has(src) && idMap.has(tgt)) {
-          const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
-          const spm = (e.data as any)?.activity?.samplesPerMin || 0;
-          const weight = 1.0 + Math.min(8, Math.log10(spm + 1) * 3);
-          pairWeights.set(key, (pairWeights.get(key) || 0) + weight);
-        }
-      }
-      for (const [src, tgt] of links) {
-        if (idMap.has(src) && idMap.has(tgt)) {
-          const key = src < tgt ? `${src}|${tgt}` : `${tgt}|${src}`;
-          if (!pairWeights.has(key)) pairWeights.set(key, 1.8);
-        }
-      }
+      // Distribute nodes in each pod around the pod center
+      pods.forEach((pod) => {
+        const [cx, cz] = pod.center;
+        pod.nodes.sort((a, b) => b.degree - a.degree);
+        const count = pod.nodes.length;
+        const podRadius = Math.max(10, Math.sqrt(count) * 8.5);
 
-      // Initial positions: distribute radially on the floor with generous radius
-      const initialRadius = Math.max(32, Math.sqrt(n) * 15);
-      const coords: [number, number][] = nodes.map((_, i) => {
-        const angle = (i / n) * Math.PI * 2;
-        return [Math.cos(angle) * initialRadius, Math.sin(angle) * initialRadius];
+        pod.nodes.forEach((node, idx) => {
+          const nodeIdx = idMap.get(node.id)!;
+          if (idx === 0 && count > 1) {
+            coords[nodeIdx] = [cx, cz];
+          } else {
+            const angle = ((idx - (count > 1 ? 1 : 0)) / Math.max(1, count - 1)) * Math.PI * 2;
+            coords[nodeIdx] = [
+              cx + Math.cos(angle) * podRadius,
+              cz + Math.sin(angle) * podRadius,
+            ];
+          }
+        });
       });
 
-      // 2D Force-Directed Simulation on the floor grid (y = 0)
-      const iterations = 80;
-      const k = 28.0;
-      const minDistance = 22.0; // Enforce minimum spacing between services!
-
-      for (let iter = 0; iter < iterations; iter++) {
-        const temp = (1 - iter / iterations) * 0.85;
-        const disp: [number, number][] = nodes.map(() => [0, 0]);
-
-        // Repulsive forces between all node pairs
+      // Relaxation pass: ensure 22-unit minimum separation so labels never overlap
+      const minDistance = 22.0;
+      for (let iter = 0; iter < 24; iter++) {
         for (let i = 0; i < n; i++) {
           for (let j = i + 1; j < n; j++) {
             let dx = coords[i][0] - coords[j][0];
             let dz = coords[i][1] - coords[j][1];
-            let distSq = dx * dx + dz * dz + 0.01;
+            let distSq = dx * dx + dz * dz + 0.001;
             let dist = Math.sqrt(distSq);
-
-            // Strong repulsive force, extra strong if within minDistance
-            let repFactor = dist < minDistance ? (minDistance * minDistance * 2.2) / distSq : (k * k) / distSq;
-            let fx = (dx / dist) * repFactor;
-            let fz = (dz / dist) * repFactor;
-
-            disp[i][0] += fx; disp[i][1] += fz;
-            disp[j][0] -= fx; disp[j][1] -= fz;
+            if (dist < minDistance) {
+              let overlap = (minDistance - dist) / 2;
+              let nx = (dx / dist) * overlap;
+              let nz = (dz / dist) * overlap;
+              coords[i][0] += nx; coords[i][1] += nz;
+              coords[j][0] -= nx; coords[j][1] -= nz;
+            }
           }
-        }
-
-        // Attractive forces along edges
-        for (const [key, weight] of pairWeights) {
-          const [idA, idB] = key.split('|');
-          const i = idMap.get(idA)!, j = idMap.get(idB)!;
-          let dx = coords[i][0] - coords[j][0];
-          let dz = coords[i][1] - coords[j][1];
-          let dist = Math.sqrt(dx * dx + dz * dz) + 0.01;
-          
-          if (dist > minDistance) {
-            let att = ((dist * dist) / k) * Math.min(weight, 3.0);
-            let fx = (dx / dist) * att;
-            let fz = (dz / dist) * att;
-
-            disp[i][0] -= fx; disp[i][1] -= fz;
-            disp[j][0] -= fx; disp[j][1] -= fz;
-          }
-        }
-
-        // Gentle center gravity
-        for (let i = 0; i < n; i++) {
-          let distFromCenter = Math.sqrt(coords[i][0] * coords[i][0] + coords[i][1] * coords[i][1]) + 0.01;
-          disp[i][0] -= (coords[i][0] / distFromCenter) * 0.6;
-          disp[i][1] -= (coords[i][0] / distFromCenter) * 0.6;
-        }
-
-        // Apply displacement capped by temperature
-        for (let i = 0; i < n; i++) {
-          let dLen = Math.sqrt(disp[i][0] * disp[i][0] + disp[i][1] * disp[i][1]) + 0.001;
-          let step = Math.min(dLen, 14 * temp);
-          coords[i][0] += (disp[i][0] / dLen) * step;
-          coords[i][1] += (disp[i][1] / dLen) * step;
         }
       }
 
-      // Center the graph
-      let cx = 0, cz = 0;
-      coords.forEach((c) => { cx += c[0]; cz += c[1]; });
-      cx /= n; cz /= n;
+      // Center the entire graph
+      let avgX = 0, avgZ = 0;
+      coords.forEach((c) => { avgX += c[0]; avgZ += c[1]; });
+      avgX /= n; avgZ /= n;
 
       nodes.forEach((node, i) => {
-        positions[node.id] = [coords[i][0] - cx, 0, coords[i][1] - cz];
+        positions[node.id] = [coords[i][0] - avgX, 0, coords[i][1] - avgZ];
       });
 
       return positions;
@@ -309,40 +339,48 @@ export function computeLayout(
 
     case 'tiers': {
       // Stepped Amphitheater Terrace:
-      // Ascends in elevation (Y) and steps backward in depth (Z).
-      // Presentation tier is highest and stepped forward; databases at bedrock stepped backward.
-      // Because each tier steps back in Z as it drops in Y, from the default
-      // 45-degree camera angle EVERY node on EVERY tier is 100% visible with ZERO occlusion!
-      const byTier = groupBy(nodes, (node) => String(tierOf(node.type)));
-      const tiers = Array.from(byTier.keys()).sort((a, b) => Number(a) - Number(b));
-      const maxPerRow = 5;
-      const gapX = 22; // Generous horizontal spacing
-      const gapZ = 20; // Generous depth spacing within a tier
+      // Ascends in elevation (Y) and steps backward into depth (-Z).
+      // Bedrock / Data is in front (Z = +36, ground level Y = 0).
+      // Messaging & Infra is step 1 (Z = +10, elevated Y = 8).
+      // Core Microservices is step 2 (Z = -18, elevated Y = 16).
+      // Presentation & Gateway is the highest terrace at the back (Z = -46, highest Y = 24).
+      // From the default camera angle (viewing from +Z, +Y looking toward -Z),
+      // each terrace rises upward behind the foreground like an amphitheater!
+      // Every server and tier label is 100% visible with ZERO occlusion!
+      const byTier = groupBy(nodes, (node) => archTierOf(node.type));
+      
+      const tierConfig: Record<ArchTier, { y: number; z: number; maxCols: number; gapX: number; gapZ: number }> = {
+        data:     { y:  0, z:  36, maxCols: 4, gapX: 26, gapZ: 22 },
+        infra:    { y:  8, z:  10, maxCols: 5, gapX: 26, gapZ: 22 },
+        services: { y: 16, z: -18, maxCols: 6, gapX: 24, gapZ: 22 },
+        ingress:  { y: 24, z: -46, maxCols: 4, gapX: 26, gapZ: 22 },
+      };
 
-      const tierCount = tiers.length;
-      tiers.forEach((tier, tierIndex) => {
-        const group = byTier.get(tier)!;
-        const rows = Math.ceil(group.length / maxPerRow);
-        const zOffset = ((rows - 1) * gapZ) / 2;
-        
-        // Reverse index: Presentation highest (tierIndex = 0), databases nearest floor
-        const stepRank = tierCount - 1 - tierIndex;
-        const y = stepRank * 9.0;
-        // Step in Z: lower tiers push backward into -Z so upper tiers never cast shadows or block them
-        const baseZ = (stepRank - (tierCount - 1) / 2) * 28.0;
+      (Object.keys(tierConfig) as ArchTier[]).forEach((tierId) => {
+        const group = byTier.get(tierId) || [];
+        const count = group.length;
+        if (count === 0) return;
+
+        const cfg = tierConfig[tierId];
+        group.sort((a, b) => b.degree - a.degree);
+
+        const cols = Math.min(count, cfg.maxCols);
+        const rows = Math.ceil(count / cols);
+        const zTotalOffset = ((rows - 1) * cfg.gapZ) / 2;
 
         group.forEach((node, i) => {
-          const col = i % maxPerRow;
-          const row = Math.floor(i / maxPerRow);
-          const inThisRow = Math.min(group.length - row * maxPerRow, maxPerRow);
-          const xOffset = ((inThisRow - 1) * gapX) / 2;
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const inThisRow = Math.min(count - row * cols, cols);
+          const xOffset = ((inThisRow - 1) * cfg.gapX) / 2;
           positions[node.id] = [
-            col * gapX - xOffset,
-            y,
-            baseZ + (row * gapZ - zOffset),
+            col * cfg.gapX - xOffset,
+            cfg.y,
+            cfg.z + (row * cfg.gapZ - zTotalOffset),
           ];
         });
       });
+
       return positions;
     }
 
