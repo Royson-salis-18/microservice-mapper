@@ -352,40 +352,92 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
     return out;
   }, [target, clearance]);
 
-  // A subtle sparkle of roof and window lights only on the taller blocks at the back.
-  // Single harmonious color matching the theme — zero rainbow clutter.
-  const windowLights = useMemo(() => {
-    const list: { x: number; y: number; z: number; w: number; d: number }[] = [];
-    blocks.forEach((b, i) => {
-      if (b.inFront || b.h <= 4) return;
-      const hVal = (Math.imul(i + 7, 2654435761) >>> 0);
-      if (hVal % 5 !== 0) return; // ~20% of taller back buildings have lights
+  // Individual illuminated office window cells (not continuous rows):
+  // Dotted across building facades like real skyscrapers at night.
+  const windowCells = useMemo(() => {
+    const list: { x: number; y: number; z: number; w: number; h: number; d: number; color: string }[] = [];
 
-      // Clean top roof light strip
-      list.push({
-        x: b.x,
-        y: b.h - 0.12,
-        z: b.z + b.d / 2 - 0.28,
-        w: b.w * 0.68,
-        d: 0.12,
-      });
+    // Authentic, harmonious architectural office window palettes (warm whites, pale daylights, soft cool whites)
+    const pal = preset === 'holo'
+      ? ['#ede9fe', '#e0e7ff', '#f5f3ff', '#f8fafc', '#ddd6fe']
+      : preset === 'studio'
+        ? ['#fefce8', '#fef9c3', '#f1f5f9', '#e2e8f0', '#cbd5e1']
+        : ['#fef3c7', '#fef08a', '#fde68a', '#e0f2fe', '#f1f5f9', '#bae6fd'];
 
-      // Subtle horizontal window slit on taller blocks
-      if (b.h > 8) {
-        list.push({
-          x: b.x,
-          y: b.h * 0.62,
-          z: b.z + b.d / 2 - 0.05,
-          w: b.w * 0.48,
-          d: 0.1,
-        });
+    const WIN_W = 0.55;
+    const WIN_H = 0.65;
+    const COL_PITCH = 1.35;
+    const FLOOR_PITCH = 1.4;
+
+    blocks.forEach((b, bIdx) => {
+      // Only background buildings with sufficient height (never foreground)
+      if (b.inFront || b.h < 3.2) return;
+
+      const numFloors = Math.floor((b.h - 1.8) / FLOOR_PITCH);
+      if (numFloors <= 0) return;
+
+      // 1. Front Facade (facing +Z towards camera viewpoint)
+      const numColsFront = Math.floor((b.w - 1.4) / COL_PITCH);
+      if (numColsFront > 0) {
+        const startX = b.x - ((numColsFront - 1) * COL_PITCH) / 2;
+        const frontZ = b.z + b.d / 2 + 0.03;
+
+        for (let fl = 0; fl < numFloors; fl++) {
+          const y = 1.2 + fl * FLOOR_PITCH;
+          for (let col = 0; col < numColsFront; col++) {
+            const h = cellHash(bIdx * 100 + col, fl * 17 + 3);
+            // ~35% of office windows are lit
+            if ((h % 100) < 36) {
+              const x = startX + col * COL_PITCH;
+              const color = pal[h % pal.length];
+              list.push({
+                x,
+                y,
+                z: frontZ,
+                w: WIN_W,
+                h: WIN_H,
+                d: 0.04,
+                color,
+              });
+            }
+          }
+        }
+      }
+
+      // 2. Side Facade (facing +X towards camera viewpoint)
+      const numColsSide = Math.floor((b.d - 1.4) / COL_PITCH);
+      if (numColsSide > 0) {
+        const startZ = b.z - ((numColsSide - 1) * COL_PITCH) / 2;
+        const sideX = b.x + b.w / 2 + 0.03;
+
+        for (let fl = 0; fl < numFloors; fl++) {
+          const y = 1.2 + fl * FLOOR_PITCH;
+          for (let col = 0; col < numColsSide; col++) {
+            const h = cellHash(bIdx * 100 + col + 43, fl * 19 + 7);
+            // ~35% of office windows are lit
+            if ((h % 100) < 36) {
+              const z = startZ + col * COL_PITCH;
+              const color = pal[(h >>> 4) % pal.length];
+              list.push({
+                x: sideX,
+                y,
+                z,
+                w: 0.04,
+                h: WIN_H,
+                d: WIN_W,
+                color,
+              });
+            }
+          }
+        }
       }
     });
+
     return list;
-  }, [blocks]);
+  }, [blocks, preset]);
 
   const bodyRef = useRef<THREE.InstancedMesh>(null);
-  const lightsRef = useRef<THREE.InstancedMesh>(null);
+  const cellsRef = useRef<THREE.InstancedMesh>(null);
 
   useLayoutEffect(() => {
     const mesh = bodyRef.current;
@@ -404,35 +456,35 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
   }, [blocks]);
 
   useLayoutEffect(() => {
-    const mesh = lightsRef.current;
-    if (!mesh || windowLights.length === 0) return;
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
-    windowLights.forEach((l, i) => {
-      p.set(l.x, l.y, l.z);
-      s.set(l.w, 0.12, l.d);
+    const mesh = cellsRef.current;
+    if (!mesh || windowCells.length === 0) return;
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
+    windowCells.forEach((cell, i) => {
+      p.set(cell.x, cell.y, cell.z);
+      s.set(cell.w, cell.h, cell.d);
       mesh.setMatrixAt(i, m.compose(p, q, s));
+      mesh.setColorAt(i, c.set(cell.color));
     });
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [windowLights]);
+  }, [windowCells]);
 
   if (blocks.length === 0) return null;
-
-  const lightColor = preset === 'holo' ? '#c084fc' : preset === 'studio' ? '#94a3b8' : '#38bdf8';
 
   return (
     <group>
       <instancedMesh key={`b${blocks.length}`} ref={bodyRef} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
         <meshStandardMaterial color="#ffffff" roughness={0.82} metalness={0.28} />
       </instancedMesh>
-      {windowLights.length > 0 && (
+      {windowCells.length > 0 && (
         <instancedMesh
-          key={`l${windowLights.length}_${preset}`}
-          ref={lightsRef}
-          args={[BLOCK_GEOMETRY, undefined, windowLights.length]}
+          key={`wc${windowCells.length}_${preset}`}
+          ref={cellsRef}
+          args={[BLOCK_GEOMETRY, undefined, windowCells.length]}
           raycast={() => null}
         >
-          <meshBasicMaterial color={lightColor} toneMapped={false} transparent opacity={0.7} />
+          <meshBasicMaterial color="#ffffff" toneMapped={false} transparent opacity={0.85} />
         </instancedMesh>
       )}
     </group>
