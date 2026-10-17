@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Billboard, Edges, Text } from '@react-three/drei';
-import type { LayoutId, LayoutNode, Positions } from './layouts';
+import { archTierOf, type ArchTier, type LayoutId, type LayoutNode, type Positions } from './layouts';
 
 interface FlowPlatformsProps {
   layout: LayoutId;
@@ -9,7 +9,7 @@ interface FlowPlatformsProps {
 }
 
 interface PlatformMeta {
-  key: string;
+  key: ArchTier;
   label: string;
   badge: string;
   color: string;
@@ -18,29 +18,19 @@ interface PlatformMeta {
 const FLOW_STAGES: PlatformMeta[] = [
   { key: 'ingress', label: '01 // INGRESS PIPELINE', badge: 'GATEWAY', color: '#8ab4ff' },
   { key: 'services', label: '02 // CORE SERVICES', badge: 'LOGIC', color: '#38bdf8' },
-  { key: 'async', label: '03 // ASYNC & QUEUES', badge: 'STREAM', color: '#a855f7' },
-  { key: 'storage', label: '04 // DATA BEDROCK', badge: 'PERSISTENCE', color: '#3ecf8e' },
+  { key: 'infra', label: '03 // ASYNC & INFRA', badge: 'STREAM', color: '#a855f7' },
+  { key: 'data', label: '04 // DATA BEDROCK', badge: 'PERSISTENCE', color: '#3ecf8e' },
 ];
 
 const TIER_STAGES: PlatformMeta[] = [
-  { key: 'tier_frontend', label: 'TIER 04 // PRESENTATION', badge: 'L4', color: '#8ab4ff' },
-  { key: 'tier_service', label: 'TIER 03 // CORE SERVICES', badge: 'L3', color: '#38bdf8' },
-  { key: 'tier_queue', label: 'TIER 02 // MESSAGING & INFRA', badge: 'L2', color: '#a855f7' },
-  { key: 'tier_data', label: 'TIER 01 // DATA BEDROCK', badge: 'L1', color: '#3ecf8e' },
+  { key: 'ingress', label: 'TIER 04 // PRESENTATION & GATEWAY', badge: 'L4', color: '#8ab4ff' },
+  { key: 'services', label: 'TIER 03 // CORE MICROSERVICES', badge: 'L3', color: '#38bdf8' },
+  { key: 'infra', label: 'TIER 02 // MESSAGING & INFRA', badge: 'L2', color: '#a855f7' },
+  { key: 'data', label: 'TIER 01 // DATA BEDROCK', badge: 'L1', color: '#3ecf8e' },
 ];
 
-function stageOf(node: LayoutNode, layout: LayoutId): string {
-  if (layout === 'flow') {
-    if (node.type === 'gateway' || node.type === 'frontend') return 'ingress';
-    if (node.type === 'database') return 'storage';
-    if (node.type === 'queue' || node.type === 'cache' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') return 'async';
-    return 'services';
-  }
-  // tiers
-  if (node.type === 'frontend' || node.type === 'gateway') return 'tier_frontend';
-  if (node.type === 'database') return 'tier_data';
-  if (node.type === 'queue' || node.type === 'cache' || node.type === 'infrastructure' || node.type === 'external' || node.type === 'observability') return 'tier_queue';
-  return 'tier_service';
+function stageOf(node: LayoutNode): ArchTier {
+  return archTierOf(node.type);
 }
 
 /**
@@ -57,7 +47,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
   const platformsData = useMemo(() => {
     if (!isFlow && !isTiers) return [];
 
-    const map = new Map<string, { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number; count: number }>();
+    const map = new Map<ArchTier, { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number; count: number }>();
     for (const s of stagesList) {
       map.set(s.key, { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity, minY: Infinity, maxY: -Infinity, count: 0 });
     }
@@ -65,7 +55,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
     for (const n of nodes) {
       const p = positions[n.id];
       if (!p) continue;
-      const key = stageOf(n, layout);
+      const key = stageOf(n);
       const b = map.get(key);
       if (!b) continue;
       b.minX = Math.min(b.minX, p[0]);
@@ -82,8 +72,8 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
       if (b.count === 0) return null;
       const padX = isFlow ? 10 : 12;
       const padZ = isFlow ? 12 : 10;
-      const w = Math.max(26, b.maxX - b.minX + padX * 2);
-      const depth = Math.max(22, b.maxZ - b.minZ + padZ * 2);
+      const w = Math.max(28, b.maxX - b.minX + padX * 2);
+      const depth = Math.max(24, b.maxZ - b.minZ + padZ * 2);
       const cx = (b.minX + b.maxX) / 2;
       const cz = (b.minZ + b.maxZ) / 2;
       const baseY = b.minY;
@@ -98,7 +88,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         count: b.count,
       };
     }).filter(Boolean);
-  }, [stagesList, nodes, positions, isFlow, isTiers, layout]);
+  }, [stagesList, nodes, positions, isFlow, isTiers]);
 
   if (!isFlow && !isTiers) return null;
 
@@ -107,12 +97,12 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
       {platformsData.map((plat) => {
         if (!plat) return null;
 
-        // In Flow layout, platforms are low-profile sleek floor pads (y=0.03, thickness 0.08)
-        // In Tiers layout, platforms are floating terrace slabs directly beneath each tier's elevation
-        const thickness = isFlow ? 0.1 : 0.25;
-        const platformY = isFlow ? 0.04 : plat.baseY - thickness / 2 - 0.05;
-        const signZ = isFlow ? plat.cz - plat.depth / 2 - 3.8 : plat.cz + plat.depth / 2 + 3.0;
-        const signY = isFlow ? 2.0 : plat.baseY + 2.2;
+        const thickness = isFlow ? 0.12 : 0.35;
+        const platformY = isFlow ? 0.05 : plat.baseY - thickness / 2 - 0.05;
+        // Position signboard cleanly at the front-left corner so it never obscures any server
+        const signX = plat.cx - plat.w / 2 + 3.2;
+        const signZ = plat.cz + plat.depth / 2 + 2.0;
+        const signY = isFlow ? 1.8 : plat.baseY + 1.8;
 
         return (
           <group key={plat.key}>
@@ -120,41 +110,44 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
             <mesh position={[plat.cx, platformY, plat.cz]} receiveShadow>
               <boxGeometry args={[plat.w, thickness, plat.depth]} />
               <meshStandardMaterial
-                color="#0e1017"
-                roughness={0.7}
-                metalness={0.2}
+                color="#0c0e14"
+                roughness={0.65}
+                metalness={0.3}
               />
-              <Edges threshold={15} color={`${plat.color}66`} />
+              <Edges threshold={15} color={`${plat.color}99`} lineWidth={1.5} />
             </mesh>
 
-            {/* Glowing neon perimeter line on the platform surface */}
-            <mesh position={[plat.cx, platformY + thickness / 2 + 0.01, plat.cz]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[plat.w + 0.2, plat.depth + 0.2]} />
+            {/* Glowing translucent floor tint matching the tier color */}
+            <mesh position={[plat.cx, platformY + thickness / 2 + 0.005, plat.cz]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[plat.w - 0.4, plat.depth - 0.4]} />
               <meshBasicMaterial
                 color={plat.color}
-                wireframe
                 transparent
-                opacity={0.3}
+                opacity={isFlow ? 0.06 : 0.08}
               />
             </mesh>
 
-            {/* Clean 3D Stage / Tier billboard signboard placed clearly outside node bounds */}
-            <group position={[plat.cx, signY, signZ]}>
+            {/* Clean 3D Stage / Tier billboard signboard placed at front-left edge */}
+            <group position={[signX, signY, signZ]}>
               <Billboard>
                 <Text
-                  fontSize={1.4}
+                  fontSize={1.25}
                   color={plat.color}
-                  anchorX="center"
+                  anchorX="left"
+                  anchorY="middle"
                   outlineWidth={0.06}
                   outlineColor="#07080c"
                 >
                   {plat.label}
                 </Text>
                 <Text
-                  position={[0, -1.2, 0]}
-                  fontSize={0.95}
-                  color="rgba(255,255,255,0.45)"
-                  anchorX="center"
+                  position={[0, -1.05, 0]}
+                  fontSize={0.85}
+                  color="rgba(255,255,255,0.55)"
+                  anchorX="left"
+                  anchorY="middle"
+                  outlineWidth={0.03}
+                  outlineColor="#07080c"
                 >
                   {`${plat.count} service${plat.count === 1 ? '' : 's'}`}
                 </Text>

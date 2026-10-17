@@ -1015,8 +1015,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <AmbientParticles preset={envPreset} />
           {/* Physical tiered platforms for stepped architectural flow or tiers */}
           {(layout === 'flow' || layout === 'tiers') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
-          {/* The dark city skyline: only for the Islands hall campus where buildings sit on a central site. Never in open architectural layouts! */}
-          {Boolean(site) && envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={70} />}
+          {/* The dark city skyline: provides rich ambient cyberpunk skyline backdrop across all layouts (excluded only in sterile studio preset) */}
+          {envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={site ? 70 : 50} />}
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
