@@ -419,12 +419,13 @@ const NEON_T = 0.11;
  * Back walls are taller than the ones facing the camera, like a cutaway
  * plan, so the front row is never hidden.
  */
-function Zone({ project, ids, live, focused, summary }: {
+function Zone({ project, ids, live, focused, summary, showLabel = true }: {
   project: string;
   ids: string[];
   live: PositionMap;
   focused: boolean;
   summary?: ZoneSummary;
+  showLabel?: boolean;
 }) {
   const slab = useRef<THREE.Mesh>(null);
   const walls = useRef<(THREE.Mesh | null)[]>([]);
@@ -485,16 +486,18 @@ function Zone({ project, ids, live, focused, summary }: {
           <meshBasicMaterial color={neonColor} toneMapped={false} />
         </mesh>
       ))}
-      <group ref={label}>
-        <Suspense fallback={null}>
-          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#cfd3da' : '#8ab4ff'} anchorX="left" anchorY="top" letterSpacing={0.06}>
-            {project}
-          </Text>
-          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5d636c" anchorX="left" anchorY="top">
-            {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
-          </Text>
-        </Suspense>
-      </group>
+      {showLabel && (
+        <group ref={label}>
+          <Suspense fallback={null}>
+            <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#cfd3da' : '#8ab4ff'} anchorX="left" anchorY="top" letterSpacing={0.06}>
+              {project}
+            </Text>
+            <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5d636c" anchorX="left" anchorY="top">
+              {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
+            </Text>
+          </Suspense>
+        </group>
+      )}
     </group>
   );
 }
@@ -659,6 +662,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   const [layout, setLayout] = useState<LayoutId>(() => readStored('mm.scene3d.layout', LAYOUTS.map((l) => l.id), 'halls'));
   const [routing, setRouting] = useState<LinkRouting>(() => readStored('mm.scene3d.routing', ['conduit', 'arc'] as const, 'conduit'));
   const [showLabels, setShowLabels] = useState(true);
+  const [showCards, setShowCards] = useState<boolean>(() => readStored('mm.scene3d.cards', ['on', 'off'] as const, 'on') === 'on');
   // Bloom is opt-in: at full strength it washed the scene out, and it costs
   // a few full-screen passes per frame. Off unless switched on in the HUD.
   const [glow, setGlow] = useState<boolean>(() => readStored('mm.scene3d.bloom', ['on', 'off'] as const, 'off') === 'on');
@@ -684,8 +688,9 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
       localStorage.setItem('mm.scene3d.layout', layout);
       localStorage.setItem('mm.scene3d.routing', routing);
       localStorage.setItem('mm.scene3d.bloom', glow ? 'on' : 'off');
+      localStorage.setItem('mm.scene3d.cards', showCards ? 'on' : 'off');
     } catch { /* private mode */ }
-  }, [layout, routing, glow]);
+  }, [layout, routing, glow, showCards]);
 
   // R3F sizes its canvas from a measured container. When this view mounts
   // while the layout is still settling (a tab switch, a panel opening, the
@@ -870,11 +875,11 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
       else if (status === 'degraded' && prev !== 'critical') alertsOut.set(key, 'degraded');
       else if (!alertsOut.has(key)) alertsOut.set(key, null);
     }
+    if (!showCards) return { islandAlerts: alertsOut, islandCards: null };
     let cards: Map<string, IslandCardInfo> | null = counts;
     if (focusZone) cards = new Map([...counts].filter(([k]) => k.startsWith(`${focusZone}:`)));
-    else if (site.islands.length > 12) cards = null;
     return { islandAlerts: alertsOut, islandCards: cards };
-  }, [site, layoutNodes, byId, focusZone]);
+  }, [site, showCards, layoutNodes, byId, focusZone]);
 
   const zoneMembers = useMemo(() => {
     const m = new Map<string, string[]>();
@@ -1001,7 +1006,16 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             site={site}
           />
 
-          {site && <Islands site={site} focusZone={focusZone} summaries={zoneById} alerts={islandAlerts} cards={islandCards} />}
+          {site && (
+            <Islands
+              site={site}
+              focusZone={focusZone}
+              summaries={zoneById}
+              alerts={islandAlerts}
+              cards={islandCards}
+              onToggleCards={() => setShowCards(false)}
+            />
+          )}
 
           {zoned && !site && zoneMembers.map(([project, ids]) => (
             <Zone
@@ -1011,6 +1025,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               live={live}
               focused={focusZone === project}
               summary={zoneById.get(project)}
+              showLabel={showCards}
             />
           ))}
 
@@ -1051,7 +1066,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           {/* Its own boundary: troika's Text suspends while it fetches a
               font, and if that request hangs a shared boundary takes the
               whole scene down with it. */}
-          {LABELLED_LAYOUTS.has(layout) && (
+          {LABELLED_LAYOUTS.has(layout) && showCards && (
             <Suspense fallback={null}>
               <ProjectLabels nodes={layoutNodes} live={live} />
             </Suspense>
@@ -1068,6 +1083,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         onRouting={setRouting}
         showLabels={showLabels}
         onShowLabels={setShowLabels}
+        showCards={showCards}
+        onShowCards={setShowCards}
         glow={glow}
         onGlow={setGlow}
         zones={zones}

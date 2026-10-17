@@ -18,7 +18,7 @@ import { backdropTexture } from './textures';
  * Takes over rendering (useFrame priority 1) and renders through a
  * multisampled half-float target, so thin lines stay antialiased.
  */
-export function Bloom({ strength = 0.32, radius = 0.35, threshold = 0.6 }: { strength?: number; radius?: number; threshold?: number }) {
+export function Bloom({ strength = 0.45, radius = 0.18, threshold = 0.85 }: { strength?: number; radius?: number; threshold?: number }) {
   const { gl, scene, camera, size } = useThree();
 
   const { composer, renderPass, bloom } = useMemo(() => {

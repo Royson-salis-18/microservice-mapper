@@ -100,7 +100,7 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
         position: 'relative',
         opacity: nodeOpacity,
         transition: 'border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-normal)',
-        cursor: 'pointer'
+        cursor: 'grab'
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

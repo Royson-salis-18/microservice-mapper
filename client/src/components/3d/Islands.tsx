@@ -2,6 +2,7 @@ import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode }
 import { useFrame } from '@react-three/fiber';
 import { Html, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import { X } from 'lucide-react';
 import { ISLAND_STYLE, type Island, type Pad, type Road, type Room, type Site, type Track } from './site';
 import { glowTexture, grilleTexture, screenTexture, tiledFloor } from './textures';
 import type { ZoneSummary } from './SceneHud';
@@ -496,7 +497,7 @@ export interface IslandCardInfo {
 }
 
 /** A floating card over an island's back corner, as in a facility dashboard. */
-function IslandCard({ isl, info }: { isl: Island; info: IslandCardInfo }) {
+function IslandCard({ isl, info, onHide }: { isl: Island; info: IslandCardInfo; onHide?: () => void }) {
   const style = ISLAND_STYLE[isl.role];
   // Everything the services on this island are showing, so the card never
   // says "all healthy" over a unit drawn as flagged or at risk.
@@ -512,11 +513,26 @@ function IslandCard({ isl, info }: { isl: Island; info: IslandCardInfo }) {
     // its services.
     <group position={[isl.x0, isl.top * 0.5, isl.z1]}>
       <Html zIndexRange={[4, 0]} pointerEvents="none">
-        <div className="island-card" style={{ borderColor: `${style.color}55` }}>
+        <div className="island-card" style={{ borderColor: `${style.color}55`, boxShadow: `0 2px 0 rgba(255,255,255,0.05) inset, 0 12px 28px rgba(0,0,0,0.6), 0 0 10px ${style.color}15` }}>
           <div className="island-card-title">
-            <span style={{ background: style.color, boxShadow: `0 0 8px ${style.color}` }} />
+            <span style={{ background: style.color, boxShadow: `0 0 5px ${style.color}` }} />
             {style.label}
+            {onHide && (
+              <button
+                type="button"
+                className="island-card-hide"
+                title="Hide section title cards (toggle back on from toolbar)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onHide();
+                }}
+                aria-label="Hide section title cards"
+              >
+                <X size={10} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
+          <div className="island-card-divider" />
           <div className="island-card-row">
             <b>{isl.count}</b> service{isl.count === 1 ? '' : 's'}
             {status.length === 1 && <em style={{ color: status[0].color }}>{status[0].text}</em>}
@@ -534,7 +550,7 @@ function IslandCard({ isl, info }: { isl: Island; info: IslandCardInfo }) {
   );
 }
 
-export function Islands({ site, focusZone, summaries, alerts, cards }: {
+export function Islands({ site, focusZone, summaries, alerts, cards, onToggleCards }: {
   site: Site;
   focusZone: string | null;
   summaries: Map<string, ZoneSummary>;
@@ -542,6 +558,7 @@ export function Islands({ site, focusZone, summaries, alerts, cards }: {
   alerts: Map<string, IslandAlert>;
   /** Per-island counts for the floating cards; absent to hide the cards. */
   cards: Map<string, IslandCardInfo> | null;
+  onToggleCards?: () => void;
 }) {
   return (
     <group>
@@ -560,7 +577,7 @@ export function Islands({ site, focusZone, summaries, alerts, cards }: {
       {cards && site.islands.map((isl) => {
         const key = `${isl.project}:${isl.role}`;
         const info = cards.get(key);
-        return info ? <IslandCard key={`card:${key}`} isl={isl} info={info} /> : null;
+        return info ? <IslandCard key={`card:${key}`} isl={isl} info={info} onHide={onToggleCards} /> : null;
       })}
     </group>
   );
