@@ -1113,8 +1113,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
           {/* Atmospheric floating data dust */}
           <AmbientParticles preset={envPreset} />
-          {/* Physical architectural platforms strictly for Flow and Tiers (Topology sits directly on the clean tiled floor) */}
-          {(layout === 'flow' || layout === 'tiers') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
+          {/* Architectural platforms for Flow, Topology, and Tiers styled like Islands & Clusters */}
+          {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
           {/* Distant city skyline blocks */}
           <CityBlocks target={targetPositions} clearance={site ? 80 : 60} preset={envPreset} />
 
