@@ -310,12 +310,12 @@ function cellHash(x: number, z: number): number {
 const BLOCK_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 
 /**
- * Distant city skyline blocks:
- * Monolithic dark building forms with modest height in the background and
- * subtle window and roof lights, keeping the background dark and ambient so the
- * architecture remains the clear primary highlight.
+ * The surrounding city: low dark blocks on a street grid around the site,
+ * kept clear of the content and low on the camera's side so it never hides
+ * anything. Purely setting, one instanced draw call, and invisible to the
+ * pointer.
  */
-function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Positions; clearance?: number; preset?: EnvPreset }) {
+function CityBlocks({ target, clearance = 26 }: { target: Positions; clearance?: number }) {
   const blocks = useMemo(() => {
     const pts = Object.values(target);
     if (pts.length === 0) return [];
@@ -324,20 +324,19 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
       minX = Math.min(minX, x); maxX = Math.max(maxX, x);
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
-    const CELL = 15, MARGIN = clearance, REACH = 210;
-    const out: { x: number; z: number; w: number; d: number; h: number; shade: number; inFront: boolean }[] = [];
+    const CELL = 15, MARGIN = clearance, REACH = 200;
+    const out: { x: number; z: number; w: number; d: number; h: number; shade: number }[] = [];
     for (let gx = Math.floor((minX - REACH) / CELL); gx <= Math.ceil((maxX + REACH) / CELL); gx++) {
       for (let gz = Math.floor((minZ - REACH) / CELL); gz <= Math.ceil((maxZ + REACH) / CELL); gz++) {
         const x = gx * CELL, z = gz * CELL;
         if (x > minX - MARGIN && x < maxX + MARGIN && z > minZ - MARGIN && z < maxZ + MARGIN) continue;
-        // Streets every few cells, and the odd empty lot
+        // Streets every few cells, and the odd empty lot.
         if (gx % 4 === 0 || gz % 5 === 0) continue;
         const h = cellHash(gx, gz);
         if (h % 6 === 0) continue;
         const r = ((h >>> 8) % 1000) / 1000;
         const inFront = x > maxX + MARGIN || z > maxZ + MARGIN;
-        // Clean height: low foreground so view is never obstructed, taller background blocks up to ~16
-        const height = inFront ? 0.4 + r * 1.2 : 1.2 + Math.pow(r, 1.8) * 15;
+        const height = inFront ? 0.5 + r * 1.6 : 0.6 + Math.pow(r, 2.2) * 11;
         out.push({
           x: x + (((h >>> 4) % 5) - 2) * 0.4,
           z: z + (((h >>> 12) % 5) - 2) * 0.4,
@@ -345,173 +344,48 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
           d: CELL * (0.55 + ((h >>> 20) % 6) / 20),
           h: height,
           shade: 0.8 + ((h >>> 24) % 10) / 25,
-          inFront,
         });
       }
     }
     return out;
   }, [target, clearance]);
 
-  // Individual illuminated office window cells (not continuous rows):
-  // Dotted across building facades like real skyscrapers at night.
-  const windowCells = useMemo(() => {
-    const list: { x: number; y: number; z: number; w: number; h: number; d: number; color: string }[] = [];
-
-    // Authentic, harmonious architectural office window palettes (warm whites, pale daylights, soft cool whites)
-    const pal = preset === 'holo'
-      ? ['#ede9fe', '#e0e7ff', '#f5f3ff', '#f8fafc', '#ddd6fe']
-      : preset === 'studio'
-        ? ['#fefce8', '#fef9c3', '#f1f5f9', '#e2e8f0', '#cbd5e1']
-        : ['#fef3c7', '#fef08a', '#fde68a', '#e0f2fe', '#f1f5f9', '#bae6fd'];
-
-    const WIN_W = 0.55;
-    const WIN_H = 0.65;
-    const COL_PITCH = 1.35;
-    const FLOOR_PITCH = 1.4;
-
-    blocks.forEach((b, bIdx) => {
-      // Only background buildings with sufficient height (never foreground)
-      if (b.inFront || b.h < 3.2) return;
-
-      const numFloors = Math.floor((b.h - 1.8) / FLOOR_PITCH);
-      if (numFloors <= 0) return;
-
-      // 1. Front Facade (facing +Z towards camera viewpoint)
-      const numColsFront = Math.floor((b.w - 1.4) / COL_PITCH);
-      if (numColsFront > 0) {
-        const startX = b.x - ((numColsFront - 1) * COL_PITCH) / 2;
-        const frontZ = b.z + b.d / 2 + 0.03;
-
-        for (let fl = 0; fl < numFloors; fl++) {
-          const y = 1.2 + fl * FLOOR_PITCH;
-          for (let col = 0; col < numColsFront; col++) {
-            const h = cellHash(bIdx * 100 + col, fl * 17 + 3);
-            // ~35% of office windows are lit
-            if ((h % 100) < 36) {
-              const x = startX + col * COL_PITCH;
-              const color = pal[h % pal.length];
-              list.push({
-                x,
-                y,
-                z: frontZ,
-                w: WIN_W,
-                h: WIN_H,
-                d: 0.04,
-                color,
-              });
-            }
-          }
-        }
-      }
-
-      // 2. Back Facade (facing -Z towards camera viewpoint when rotated)
-      if (numColsFront > 0) {
-        const startX = b.x - ((numColsFront - 1) * COL_PITCH) / 2;
-        const backZ = b.z - b.d / 2 - 0.03;
-
-        for (let fl = 0; fl < numFloors; fl++) {
-          const y = 1.2 + fl * FLOOR_PITCH;
-          for (let col = 0; col < numColsFront; col++) {
-            const h = cellHash(bIdx * 100 + col + 19, fl * 23 + 5);
-            if ((h % 100) < 36) {
-              const x = startX + col * COL_PITCH;
-              const color = pal[h % pal.length];
-              list.push({
-                x,
-                y,
-                z: backZ,
-                w: WIN_W,
-                h: WIN_H,
-                d: 0.04,
-                color,
-              });
-            }
-          }
-        }
-      }
-
-      // 3. Right Facade (facing +X towards camera viewpoint)
-      const numColsSide = Math.floor((b.d - 1.4) / COL_PITCH);
-      if (numColsSide > 0) {
-        const startZ = b.z - ((numColsSide - 1) * COL_PITCH) / 2;
-        const sideX = b.x + b.w / 2 + 0.03;
-
-        for (let fl = 0; fl < numFloors; fl++) {
-          const y = 1.2 + fl * FLOOR_PITCH;
-          for (let col = 0; col < numColsSide; col++) {
-            const h = cellHash(bIdx * 100 + col + 43, fl * 19 + 7);
-            // ~35% of office windows are lit
-            if ((h % 100) < 36) {
-              const z = startZ + col * COL_PITCH;
-              const color = pal[(h >>> 4) % pal.length];
-              list.push({
-                x: sideX,
-                y,
-                z,
-                w: 0.04,
-                h: WIN_H,
-                d: WIN_W,
-                color,
-              });
-            }
-          }
-        }
-      }
-
-      // 4. Left Facade (facing -X towards camera viewpoint when rotated)
-      if (numColsSide > 0) {
-        const startZ = b.z - ((numColsSide - 1) * COL_PITCH) / 2;
-        const sideLeftX = b.x - b.w / 2 - 0.03;
-
-        for (let fl = 0; fl < numFloors; fl++) {
-          const y = 1.2 + fl * FLOOR_PITCH;
-          for (let col = 0; col < numColsSide; col++) {
-            const h = cellHash(bIdx * 100 + col + 71, fl * 29 + 11);
-            if ((h % 100) < 36) {
-              const z = startZ + col * COL_PITCH;
-              const color = pal[(h >>> 4) % pal.length];
-              list.push({
-                x: sideLeftX,
-                y,
-                z,
-                w: 0.04,
-                h: WIN_H,
-                d: WIN_W,
-                color,
-              });
-            }
-          }
-        }
-      }
-    });
-
-    return list;
-  }, [blocks, preset]);
-
-  // Subtle red rooftop aviation obstruction beacons on tallest towers (b.h > 11)
-  const beacons = useMemo(() => {
-    const list: { x: number; y: number; z: number }[] = [];
-    blocks.forEach((b) => {
-      if (!b.inFront && b.h > 11) {
-        list.push({ x: b.x, y: b.h - 0.1, z: b.z });
-      }
-    });
-    return list;
-  }, [blocks]);
-
-  const bodyRef = useRef<THREE.InstancedMesh>(null);
-  const cellsRef = useRef<THREE.InstancedMesh>(null);
-  const beaconsRef = useRef<THREE.InstancedMesh>(null);
-
+  // A few roofs carry a small light, the sparkle of a city at night. Chosen
+  // by hash so they stay put, and only on the taller blocks at the back.
+  const roofLights = useMemo(
+    () => blocks.filter((b, i) => b.h > 3 && (Math.imul(i + 7, 2654435761) >>> 0) % 5 === 0),
+    [blocks]
+  );
+  const lightsRef = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
-    const mesh = bodyRef.current;
-    if (!mesh || blocks.length === 0) return;
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
+    const mesh = lightsRef.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const p = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    roofLights.forEach((b, i) => {
+      p.set(b.x, b.h - 0.12, b.z + b.d / 2 - 0.3);
+      s.set(b.w * 0.7, 0.12, 0.12);
+      mesh.setMatrixAt(i, m.compose(p, q, s));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [roofLights]);
+
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const p = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    const c = new THREE.Color();
     blocks.forEach((b, i) => {
       p.set(b.x, b.h / 2 - 0.2, b.z);
       s.set(b.w, b.h, b.d);
       mesh.setMatrixAt(i, m.compose(p, q, s));
-      // Dark slate monolith tone — realistic, deep, and harmonious
       mesh.setColorAt(i, c.set('#212123').multiplyScalar(b.shade));
     });
     mesh.instanceMatrix.needsUpdate = true;
@@ -519,61 +393,18 @@ function CityBlocks({ target, clearance = 26, preset = 'cyber' }: { target: Posi
     mesh.computeBoundingSphere();
   }, [blocks]);
 
-  useLayoutEffect(() => {
-    const mesh = cellsRef.current;
-    if (!mesh || windowCells.length === 0) return;
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
-    windowCells.forEach((cell, i) => {
-      p.set(cell.x, cell.y, cell.z);
-      s.set(cell.w, cell.h, cell.d);
-      mesh.setMatrixAt(i, m.compose(p, q, s));
-      mesh.setColorAt(i, c.set(cell.color));
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [windowCells]);
-
-  useLayoutEffect(() => {
-    const mesh = beaconsRef.current;
-    if (!mesh || beacons.length === 0) return;
-    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(0.3, 0.3, 0.3);
-    beacons.forEach((bc, i) => {
-      p.set(bc.x, bc.y, bc.z);
-      mesh.setMatrixAt(i, m.compose(p, q, s));
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [beacons]);
-
   if (blocks.length === 0) return null;
-
   return (
-    <group>
-      <instancedMesh key={`b${blocks.length}`} ref={bodyRef} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
-        <meshStandardMaterial color="#ffffff" roughness={0.82} metalness={0.28} />
+    <>
+      <instancedMesh key={blocks.length} ref={ref} args={[BLOCK_GEOMETRY, undefined, blocks.length]} raycast={() => null}>
+        <meshStandardMaterial color="#ffffff" roughness={0.85} metalness={0.25} />
       </instancedMesh>
-      {windowCells.length > 0 && (
-        <instancedMesh
-          key={`wc${windowCells.length}_${preset}`}
-          ref={cellsRef}
-          args={[BLOCK_GEOMETRY, undefined, windowCells.length]}
-          raycast={() => null}
-        >
-          <meshBasicMaterial color="#ffffff" toneMapped={false} transparent opacity={0.85} />
+      {roofLights.length > 0 && (
+        <instancedMesh key={`l${roofLights.length}`} ref={lightsRef} args={[BLOCK_GEOMETRY, undefined, roofLights.length]} raycast={() => null}>
+          <meshBasicMaterial color="#8ab4ff" toneMapped={false} />
         </instancedMesh>
       )}
-      {beacons.length > 0 && (
-        <instancedMesh
-          key={`bc${beacons.length}`}
-          ref={beaconsRef}
-          args={[BLOCK_GEOMETRY, undefined, beacons.length]}
-          raycast={() => null}
-        >
-          <meshBasicMaterial color="#ef4444" toneMapped={false} />
-        </instancedMesh>
-      )}
-    </group>
+    </>
   );
 }
 
@@ -1180,8 +1011,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             color={envPreset === 'holo' ? '#22d3ee' : envPreset === 'studio' ? '#94a3b8' : '#f43f5e'}
           />
 
-          {/* Floor uses authentic datacenter tiled panels across all layouts (Islands, Clusters, Flow, Topology, Tiers) */}
-          <Ground y={groundY - 0.02} tiled={true} preset={envPreset} />
+          {/* Floor is tiled for the building campus arrangement, otherwise clean grid */}
+          <Ground y={groundY - 0.02} tiled={Boolean(site)} preset={envPreset} />
           <Grid
             position={[0, groundY, 0]}
             args={[10, 10]}
@@ -1199,10 +1030,10 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
           {/* Atmospheric floating data dust */}
           <AmbientParticles preset={envPreset} />
-          {/* Architectural platforms for Flow, Topology, and Tiers styled like Islands & Clusters */}
+          {/* Architectural platforms for Flow, Topology, and Tiers */}
           {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
-          {/* Distant city skyline blocks */}
-          <CityBlocks target={targetPositions} clearance={site ? 80 : 60} preset={envPreset} />
+          {/* The dark city skyline: only for the Islands hall campus where buildings sit on a central site, kept minimal and in the far background */}
+          {Boolean(site) && envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={70} />}
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
