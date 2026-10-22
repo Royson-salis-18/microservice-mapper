@@ -22,7 +22,7 @@
   },
   "death-star": {
     "targetId": "death-star",
-    "baseUrl": "http://13.232.161.204:8080",
+    "baseUrl": "http://15.252.17.211:8080",
     "settings": {
       "profile": "HEAVY",
       "endpointPaths": [
@@ -33,7 +33,7 @@
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
-    "baseUrl": "http://13.233.155.34:8080",
+    "baseUrl": "http://13.201.78.55:8080",
     "settings": {
       "profile": "BASELINE",
       "endpointPaths": [],

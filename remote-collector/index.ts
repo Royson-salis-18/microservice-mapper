@@ -4,6 +4,7 @@ import path from 'node:path';
 import Docker from 'dockerode';
 import { parseRequestLines, summarize, mergeWindows, throttledPercent, COLLECTOR_PARAMS, type RequestStats, type RequestWindow } from '../server/algorithms/detection/requestStats.js';
 import axios from 'axios';
+import { parseTcpTable, callDirection } from './sockets.js';
 
 // Default to 127.0.0.1:3001 - the server opens a reverse SSH tunnel so this reaches the mapper.
 const MAPPER_URL = process.env.MAPPER_URL || 'http://127.0.0.1:3001';
@@ -99,8 +100,9 @@ function determineType(name: string, image: string): string {
   if (n.includes('db') || /(^|[-_])(store|cache|redis|memcached|mongo|postgres|mysql)([-_]|$)/.test(n)
       || /mongo|mysql|postgres|redis|memcached|valkey/.test(img)) return 'database';
   if (/rabbitmq|queue|kafka|nats|(^|[-_])bus([-_]|$)/.test(n) || /rabbitmq|kafka|nats/.test(img)) return 'queue';
-  if (n.includes('edge-router') || n.includes('gateway') || img.includes('traefik')) return 'gateway';
-  if (n.includes('front-end') || n.includes('ui')) return 'frontend';
+  if (n.includes('edge-router') || n.includes('gateway') || img.includes('traefik') || /(^|[-_])proxy([-_]|$)/.test(n)) return 'gateway';
+  // front-end, frontend, media-frontend, nginx-web-server, web-ui ...; plain "ui" inside a word (guide, build) does not count
+  if (n.includes('front-end') || /(^|[-_])(frontend|ui|web|webserver|nginx)([-_]|$)/.test(n) || n.includes('web-server')) return 'frontend';
   return 'service';
 }
 
@@ -142,15 +144,6 @@ function calculateCpuPercent(stats: any): number | undefined {
     }
   } catch (e) {}
   return undefined;
-}
-
-function hexToIp(hex: string): string {
-  if (hex.length !== 8) return '';
-  const a = parseInt(hex.substring(6, 8), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const c = parseInt(hex.substring(2, 4), 16);
-  const d = parseInt(hex.substring(0, 2), 16);
-  return `${a}.${b}.${c}.${d}`;
 }
 
 function demuxDockerLogs(buffer: Buffer): string[] {
@@ -320,6 +313,9 @@ async function extractLogInteractions(ipToNameMap: Map<string, string>): Promise
   return interactionEvents;
 }
 
+/** Containers already reported as unreadable, so the warning is not repeated every poll. */
+const warnedNoTable = new Set<string>();
+
 async function discoverAndCollect() {
   const containers = (await docker.listContainers({ all: true })).filter(inProject);
   
@@ -478,30 +474,26 @@ async function discoverAndCollect() {
         setTimeout(resolve, 500);
       });
 
-      const lines = output.split('\n');
-      for (const line of lines) {
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 4 && parts[3] === '01') { // ESTABLISHED TCP (state 01)
-          const remoteHexIp = parts[2].split(':')[0];
-          const remoteHexPort = parts[2].split(':')[1];
-          const remoteIp = hexToIp(remoteHexIp);
-          const remotePort = remoteHexPort ? parseInt(remoteHexPort, 16) : 0;
-          const targetName = ipToNameMap.get(remoteIp);
-          if (targetName && targetName !== friendlyName) {
-            observedPairs.add(`${friendlyName}->${targetName}`);
-            // Emit raw connection event for the Traces feature
-            connectionEvents.push({
-              timestamp: now,
-              targetId: TARGET_ID,
-              sourceServiceId: `${TARGET_ID}:${friendlyName}`,
-              destServiceId: `${TARGET_ID}:${targetName}`,
-              destPort: remotePort,
-              state: 'ESTABLISHED',
-            });
-          }
-        }
+      if (!output.trim()) throw new Error('empty /proc/net/tcp (no cat in the image?)');
+      for (const sock of parseTcpTable(output)) {
+        const peerName = ipToNameMap.get(sock.remoteIp);
+        if (!peerName || peerName === friendlyName) continue;
+        const { caller, callee, port } = callDirection(sock, friendlyName, peerName);
+        observedPairs.add(`${caller}->${callee}`);
+        // Emit raw connection event for the Traces feature
+        connectionEvents.push({
+          timestamp: now,
+          targetId: TARGET_ID,
+          sourceServiceId: `${TARGET_ID}:${caller}`,
+          destServiceId: `${TARGET_ID}:${callee}`,
+          destPort: port,
+          state: sock.state === '01' ? 'ESTABLISHED' : 'RECENT',
+        });
       }
-    } catch (e) {}
+    } catch (e: any) {
+      // Silent before: a container whose image has no `cat` (distroless, scratch) simply never showed an edge.
+      if (!warnedNoTable.has(friendlyName)) { warnedNoTable.add(friendlyName); console.warn(`[collector] cannot read connections inside ${friendlyName}: ${e?.message ?? e}`); }
+    }
   }));
 
   for (const pair of observedPairs) {

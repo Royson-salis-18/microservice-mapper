@@ -3,15 +3,15 @@
     "sshUsername": "ubuntu",
     "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "displayName": "death-star",
-    "ec2PublicIp": "13.232.161.204",
+    "ec2PublicIp": "15.252.17.211",
     "updatedAt": "2026-10-14T01:21:12.592Z"
   },
   "open-telemetry": {
     "sshUsername": "ubuntu",
     "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "displayName": "open-telemetry",
-    "ec2PublicIp": "13.233.155.34",
-    "trafficBaseUrl": "http://43.204.211.231:8080",
+    "ec2PublicIp": "13.201.78.55",
+    "trafficBaseUrl": "http://13.201.78.55:8080",
     "updatedAt": "2026-10-14T02:15:09.961Z"
   },
   "bench1": {

@@ -65,6 +65,10 @@ export function parseNetDev(text: string): { rxBytes: number; txBytes: number } 
 export class MetricCollector {
   private previous = new Map<string, PreviousSample>();
   private serviceByIp = new Map<string, Service>();
+  /** Which service publishes each host port, from docker inspect. A container that calls another through the host's
+   *  address (a UI pointed at host:8080, not at the service's own name) shows up as a connection to an address no
+   *  container owns, and used to be dropped as an unknown peer. */
+  private serviceByHostPort = new Map<number, Service>();
   /** Latest exact network counters per service, from /proc/<pid>/net/dev. */
   readonly network = new Map<string, NetworkReading>();
   /** Container ids already inspected for addresses and CPU limits. */
@@ -291,11 +295,17 @@ export class MetricCollector {
       this.inspected.add(service.containerId);
       try {
         const inspected = JSON.parse(inspectRes.stdout) as Array<{
-          NetworkSettings?: { Networks?: Record<string, { IPAddress?: string }> };
+          NetworkSettings?: { Networks?: Record<string, { IPAddress?: string }>; Ports?: Record<string, { HostIp?: string; HostPort?: string }[] | null> };
           HostConfig?: { NanoCpus?: number; CpuQuota?: number; CpuPeriod?: number };
         }>;
         for (const network of Object.values(inspected[0]?.NetworkSettings?.Networks ?? {})) {
           if (network.IPAddress) this.serviceByIp.set(network.IPAddress, service);
+        }
+        for (const bindings of Object.values(inspected[0]?.NetworkSettings?.Ports ?? {})) {
+          for (const b of bindings ?? []) {
+            const hostPort = Number(b.HostPort);
+            if (hostPort > 0) this.serviceByHostPort.set(hostPort, service);
+          }
         }
         const hc = inspected[0]?.HostConfig ?? {};
         const limit = (hc.NanoCpus ?? 0) > 0
@@ -378,12 +388,18 @@ export class MetricCollector {
         const state = RELEVANT_TCP_STATES[parts[3]];
         if (parts.length < 4 || !state) continue;
         const remoteIp = decodeProcNetIp(parts[2]?.split(':')[0] ?? '');
-        const peer = this.serviceByIp.get(remoteIp);
-        if (!peer || peer.serviceId === service.serviceId) continue;
-
         const localIp = decodeProcNetIp(parts[1]?.split(':')[0] ?? '');
         const localPort = parseInt(parts[1]?.split(':')[1] ?? '', 16);
         const remotePort = parseInt(parts[2]?.split(':')[1] ?? '', 16);
+        let peer = this.serviceByIp.get(remoteIp);
+        let viaPublishedPort = false;
+        // Not a container address: if it is one of the host's own (bridge gateway, private address) and the port is one a
+        // service publishes, the call was to that service by way of the host.
+        if (!peer && isHostSideAddress(remoteIp)) {
+          peer = this.serviceByHostPort.get(remotePort);
+          viaPublishedPort = !!peer;
+        }
+        if (!peer || peer.serviceId === service.serviceId) continue;
         const peerListenPorts = listenPortsByService.get(peer.serviceId) ?? new Set<number>();
 
         const orientation = orientConnection(localPort, remotePort, myListenPorts, peerListenPorts);
@@ -406,7 +422,7 @@ export class MetricCollector {
             source: callerId,
             target: calleeId,
             protocol: 'tcp',
-            evidenceSources: ['network-tcp', how],
+            evidenceSources: viaPublishedPort ? ['network-tcp', how, 'published-port'] : ['network-tcp', how],
           });
         }
 
@@ -490,6 +506,15 @@ export function orientConnection(
  * IPv6 socket was silently dropped. Genuine IPv6 addresses return '' (no
  * container on these networks has one, so they cannot be a service).
  */
+/** An address that belongs to the host rather than to the internet: loopback, link-local, or a private range (which
+ *  includes every Docker bridge gateway). Calls to these on a published port are calls to that service. */
+export function isHostSideAddress(ip: string): boolean {
+  const m = /^(\d+)\.(\d+)\.\d+\.\d+$/.exec(ip);
+  if (!m) return false;
+  const a = Number(m[1]), b = Number(m[2]);
+  return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
+}
+
 export function decodeProcNetIp(hex: string): string {
   const word = (w: string) => {
     const bytes = [0, 2, 4, 6].map((offset) => parseInt(w.slice(offset, offset + 2), 16));
