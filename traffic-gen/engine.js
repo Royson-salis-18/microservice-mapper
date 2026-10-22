@@ -191,6 +191,9 @@ class VirtualUser {
   async _runStep(workflow, step) {
     const cfg = this.engine.config;
     let path = step.path;
+    // A fresh value per request, for fields that must be unique each time (an idempotency key: reusing one makes the server replay the
+    // first answer instead of doing the work).
+    this.vars.uuid = randomUUID();
     // substitute extracted vars: /product/${slug}
     path = path.replace(/\$\{(\w+)\}/g, (_, k) => this.vars[k] ?? '');
 
@@ -213,7 +216,7 @@ class VirtualUser {
       const controller = new AbortController();
       const timeoutMs = step.timeoutMs || cfg.requestTimeoutMs || 8000;
       const timer = setTimeout(() => controller.abort(), timeoutMs);
-      const headers = { ...(step.headers || {}) };
+      const headers = resolveTemplate({ ...(step.headers || {}) }, this.vars);
       if (step.auth && cfg.auth?.username && cfg.auth?.password) {
         headers.authorization = `Basic ${Buffer.from(`${cfg.auth.username}:${cfg.auth.password}`).toString('base64')}`;
       }

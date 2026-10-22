@@ -12,12 +12,16 @@ const vertikal = require('./workflows/vertikal');
 const deathstar = require('./workflows/deathstar');
 const trainticket = require('./workflows/trainticket');
 const opentelemetry = require('./workflows/opentelemetry');
+const shopflow = require('./workflows/shopflow');
+const ledgerline = require('./workflows/ledgerline');
 const generic = require('./workflows/generic');
 
 const TARGETS = {
   'sock-shop': sockshop,
   vertikal: vertikal,
   'death-star': deathstar,
+  shopflow,
+  ledgerline,
   'train-ticket': trainticket,
   'open-telemetry': opentelemetry,
 };
