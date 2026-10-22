@@ -340,45 +340,42 @@ export function computeLayout(
     case 'tiers': {
       // Stepped Amphitheater Terrace:
       // Ascends in elevation (Y) and steps backward into depth (-Z).
-      // Bedrock / Data is in front (Z = +36, ground level Y = 0).
-      // Messaging & Infra is step 1 (Z = +10, elevated Y = 8).
-      // Core Microservices is step 2 (Z = -18, elevated Y = 16).
-      // Presentation & Gateway is the highest terrace at the back (Z = -46, highest Y = 24).
+      // Bedrock / Data is in front (ground level, Y = 0); Messaging & Infra is step 1 (Y = 8);
+      // Core Microservices is step 2 (Y = 16); Presentation & Gateway is the highest terrace at the back (Y = 24).
       // From the default camera angle (viewing from +Z, +Y looking toward -Z),
       // each terrace rises upward behind the foreground like an amphitheater!
       // Every server and tier label is 100% visible with ZERO occlusion!
       const byTier = groupBy(nodes, (node) => archTierOf(node.type));
-      
-      const tierConfig: Record<ArchTier, { y: number; z: number; maxCols: number; gapX: number; gapZ: number }> = {
-        data:     { y:  0, z:  36, maxCols: 4, gapX: 26, gapZ: 22 },
-        infra:    { y:  8, z:  10, maxCols: 5, gapX: 26, gapZ: 22 },
-        services: { y: 16, z: -18, maxCols: 6, gapX: 24, gapZ: 22 },
-        ingress:  { y: 24, z: -46, maxCols: 4, gapX: 26, gapZ: 22 },
-      };
 
-      (Object.keys(tierConfig) as ArchTier[]).forEach((tierId) => {
-        const group = byTier.get(tierId) || [];
-        const count = group.length;
-        if (count === 0) return;
-
-        const cfg = tierConfig[tierId];
-        group.sort((a, b) => b.degree - a.degree);
-
-        const cols = Math.min(count, cfg.maxCols);
-        const rows = Math.ceil(count / cols);
-        const zTotalOffset = ((rows - 1) * cfg.gapZ) / 2;
-
-        group.forEach((node, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const inThisRow = Math.min(count - row * cols, cols);
-          const xOffset = ((inThisRow - 1) * cfg.gapX) / 2;
-          positions[node.id] = [
-            col * cfg.gapX - xOffset,
-            cfg.y,
-            cfg.z + (row * cfg.gapZ - zTotalOffset),
-          ];
+      // Each terrace is sized from its own content and the terraces are stacked from the back (highest) to the front
+      // (bedrock), so a tier with many rows can never spill into its neighbour's depth range. The fixed depths this
+      // replaces overlapped as soon as one tier needed more than two rows (19 services made four).
+      const GAP_X = 24;        // between servers in a row
+      const GAP_Z = 22;        // between rows inside a terrace
+      const BAND_GAP = 32;     // between the last row of one terrace and the first row of the next (plates add 8 to 10 each side)
+      const MAX_COLS = 5;      // keeps every row narrower than 120 units
+      const order: { id: ArchTier; y: number }[] = [
+        { id: 'ingress', y: 24 }, { id: 'services', y: 16 }, { id: 'infra', y: 8 }, { id: 'data', y: 0 },
+      ];
+      const bands = order
+        .map(({ id, y }) => {
+          const group = [...(byTier.get(id) || [])].sort((a, b) => b.degree - a.degree);
+          const cols = Math.max(1, Math.min(group.length, MAX_COLS));
+          return { y, group, cols, rows: Math.ceil(group.length / cols) };
+        })
+        .filter((b) => b.group.length > 0);
+      const total = bands.reduce((sum, b, k) => sum + (b.rows - 1) * GAP_Z + (k > 0 ? BAND_GAP : 0), 0);
+      let z = -total / 2;
+      bands.forEach((b, k) => {
+        if (k > 0) z += BAND_GAP;
+        b.group.forEach((node, i) => {
+          const col = i % b.cols;
+          const row = Math.floor(i / b.cols);
+          const inThisRow = Math.min(b.group.length - row * b.cols, b.cols);
+          const xOffset = ((inThisRow - 1) * GAP_X) / 2;
+          positions[node.id] = [col * GAP_X - xOffset, b.y, z + row * GAP_Z];
         });
+        z += (b.rows - 1) * GAP_Z;
       });
 
       return positions;

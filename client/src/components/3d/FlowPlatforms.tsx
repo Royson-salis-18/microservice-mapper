@@ -60,19 +60,22 @@ function PlatformTopPlate({ w, d, cx, cz, topY }: { w: number; d: number; cx: nu
 function NeonRim({ cx, cz, w, d, y, color }: { cx: number; cz: number; w: number; d: number; y: number; color: string }) {
   const t = 0.12;
   const h = 0.05;
+  // three.js rejects 8-digit hex, so an alpha suffix is split into an opacity
+  const alpha = /^#[0-9a-f]{8}$/i.test(color) ? parseInt(color.slice(7), 16) / 255 : 1;
+  const rgb = alpha < 1 || color.length === 9 ? color.slice(0, 7) : color;
   return (
     <group>
       <mesh position={[cx, y, cz - d / 2]} scale={[w + t, h, t]} geometry={BOX_GEOMETRY} raycast={() => null}>
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={rgb} opacity={alpha} transparent={alpha < 1} toneMapped={false} />
       </mesh>
       <mesh position={[cx, y, cz + d / 2]} scale={[w + t, h, t]} geometry={BOX_GEOMETRY} raycast={() => null}>
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={rgb} opacity={alpha} transparent={alpha < 1} toneMapped={false} />
       </mesh>
       <mesh position={[cx - w / 2, y, cz]} scale={[t, h, d]} geometry={BOX_GEOMETRY} raycast={() => null}>
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={rgb} opacity={alpha} transparent={alpha < 1} toneMapped={false} />
       </mesh>
       <mesh position={[cx + w / 2, y, cz]} scale={[t, h, d]} geometry={BOX_GEOMETRY} raycast={() => null}>
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial color={rgb} opacity={alpha} transparent={alpha < 1} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -199,8 +202,8 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
         const cx = (b.minX + b.maxX) / 2;
         const cz = (b.minZ + b.maxZ) / 2;
         const topY = b.minY;
-        // Monolithic terrace: reaches down to ground Y = 0 so steps don't float
-        const thickness = Math.max(0.35, topY + 0.35);
+        // Slim floating deck per tier; a full-height block hid the tiers behind it
+        const thickness = Math.min(2.2, Math.max(0.35, topY + 0.35));
         const slabY = topY - thickness / 2;
         out.push({
           key: s.key,
