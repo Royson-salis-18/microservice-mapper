@@ -127,7 +127,7 @@ function edgeLook(data: DependencyEdge | undefined, dimmed: boolean, targetStatu
   if (telemetry) radius = 0.04;
   // Bucketed to tenths: weights drift a little with every traffic reading,
   // and a raw radius would rebuild the tube geometry on nearly every push.
-  else if (typeof w === 'number') radius = 0.05 + 0.13 * Math.round(Math.min(Math.max(w, 0), 1) * 10) / 10;
+  else if (typeof w === 'number') radius = 0.04 + 0.085 * Math.round(Math.min(Math.max(w, 0), 1) * 10) / 10;
   else radius = !observed ? 0.05
     : appearance.heat === 'saturated' || appearance.heat === 'failed' ? 0.15
     : appearance.heat === 'heavy' || appearance.heat === 'degraded' ? 0.12
@@ -192,7 +192,7 @@ function Edge3DInner({ edge, sourceId, targetId, live, routing, targetStatus, di
       transparent: true,
       // Visible without bloom: at 0.08 the sheath all but vanished and links
       // read as dull wires on the dark ground.
-      opacity: intensity * 0.24,
+      opacity: intensity * 0.14,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.BackSide,
@@ -247,7 +247,7 @@ function Edge3DInner({ edge, sourceId, targetId, live, routing, targetStatus, di
       staleCore?.dispose();
 
       if (glowRef.current) {
-        const nextGlow = new THREE.TubeGeometry(curve, segments, radius * 2.4, 6, false);
+        const nextGlow = new THREE.TubeGeometry(curve, segments, radius * 2.1, 6, false);
         const staleGlow = glowGeom.current;
         glowGeom.current = nextGlow;
         glowRef.current.geometry = nextGlow;

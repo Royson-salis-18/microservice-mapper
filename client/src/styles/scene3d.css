@@ -798,3 +798,34 @@
 }
 .scene-collapse:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); }
 .scene-stat-sub, .scene-stat-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Deck badges for the Flow, Topology and Tiers arrangements */
+.plat-badge {
+  --plat: #8ab4ff;
+  transform: translate(0, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 8px;
+  background: rgba(11, 14, 22, 0.88);
+  border: 1px solid color-mix(in srgb, var(--plat) 45%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e6e8ec;
+  white-space: nowrap;
+}
+.plat-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--plat); box-shadow: 0 0 8px var(--plat); }
+.plat-badge-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--plat) 18%, transparent);
+  color: var(--plat);
+  font-size: 10px;
+}
+.plat-badge-small { font-size: 10px; padding: 3px 9px 3px 8px; letter-spacing: 0.05em; }

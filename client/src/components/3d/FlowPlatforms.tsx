@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo } from 'react';
-import { Edges, Text } from '@react-three/drei';
+import { Edges, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { glowTexture, tiledFloor } from './textures';
 import { archTierOf, type LayoutId, type LayoutNode, type Positions } from './layouts';
@@ -51,7 +51,7 @@ function PlatformTopPlate({ w, d, cx, cz, topY }: { w: number; d: number; cx: nu
       raycast={() => null}
       receiveShadow
     >
-      <meshStandardMaterial map={map} color="#dedee0" roughness={0.45} metalness={0.5} />
+      <meshStandardMaterial map={map} color="#dedee0" roughness={0.45} metalness={0.3} emissive="#7d8bb0" emissiveMap={map} emissiveIntensity={0.22} />
     </mesh>
   );
 }
@@ -238,7 +238,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
 
       if (!Number.isFinite(minX)) return { platforms: [], conduits: [], topologySubPods: [] };
 
-      const pad = 14;
+      const pad = 9;
       const w = maxX - minX + pad * 2;
       const depth = maxZ - minZ + pad * 2;
       const cx = (minX + maxX) / 2;
@@ -320,14 +320,11 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
 
       {/* 2. Platform bodies with raised tiled floors, rims, and typography */}
       {platforms.map((plat) => {
-        const labelX = plat.cx - plat.w / 2 + 2.0;
-        const labelZ = plat.cz + plat.depth / 2 - 2.8;
-
-        return (
+                return (
           <group key={plat.key}>
             {/* Soft color glow spill decal on ground around the platform */}
             <mesh position={[plat.cx, 0.02, plat.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[plat.w + 6, plat.depth + 6, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
-              <meshBasicMaterial map={glowTexture()} color={plat.color} transparent opacity={0.14} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+              <meshBasicMaterial map={glowTexture()} color={plat.color} transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
             </mesh>
 
             {/* Dark contact shadow decal underneath so platform sits solidly grounded */}
@@ -337,7 +334,7 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
 
             {/* Solid architectural slab with chamfered outline edges (matching Clusters Zone) */}
             <mesh position={[plat.cx, plat.slabY, plat.cz]} scale={[plat.w, plat.thickness, plat.depth]} geometry={BOX_GEOMETRY} raycast={() => null} receiveShadow>
-              <meshStandardMaterial color="#181a20" roughness={0.55} metalness={0.45} />
+              <meshStandardMaterial color="#202737" roughness={0.5} metalness={0.4} />
               <Edges color={plat.color} threshold={15} />
             </mesh>
 
@@ -368,60 +365,33 @@ export function FlowPlatforms({ layout, nodes, positions }: FlowPlatformsProps) 
             {/* Lit neon rim perimeter around the platform top edge */}
             <NeonRim cx={plat.cx} cz={plat.cz} w={plat.w} d={plat.depth} y={plat.topY + 0.025} color={plat.color} />
 
-            {/* Flat 3D typography painted directly on the platform floor in front */}
-            <Suspense fallback={null}>
-              <group position={[labelX, plat.topY + 0.035, labelZ]}>
-                <Text
-                  rotation={[-Math.PI / 2, 0, 0]}
-                  fontSize={1.4}
-                  color={plat.color}
-                  anchorX="left"
-                  anchorY="bottom"
-                  letterSpacing={0.08}
-                >
-                  {plat.label}
-                </Text>
-                <Text
-                  rotation={[-Math.PI / 2, 0, 0]}
-                  position={[0, 0, 1.4]}
-                  fontSize={0.88}
-                  color="#717a8c"
-                  anchorX="left"
-                  anchorY="bottom"
-                >
-                  {plat.subLabel ?? `${plat.count} service${plat.count === 1 ? '' : 's'}`}
-                </Text>
-              </group>
-            </Suspense>
+            {/* Tier badge: a crisp HTML chip on the front edge, readable at any zoom */}
+            <Html position={[plat.cx - plat.w / 2 + 1.2, plat.topY + 0.2, plat.key === 'topology-master' ? plat.cz - plat.depth / 2 : plat.cz + plat.depth / 2]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+              <div className="plat-badge" style={{ ['--plat' as string]: plat.color }}>
+                <span className="plat-badge-dot" />
+                <span className="plat-badge-name">{plat.label.replace(/^(TIER|0)\d* ?\/\/ ?/i, '').replace(/^TIER \d+ \/\/ /, '')}</span>
+                <span className="plat-badge-count">{plat.subLabel ?? `${plat.count}`}</span>
+              </div>
+            </Html>
           </group>
         );
       })}
 
       {/* 3. For Topology: subtle district floor outlines and district titles marking each pod */}
       {isTopology && topologySubPods.map((sub) => {
-        const subLabelX = sub.cx - sub.w / 2 + 1.2;
-        const subLabelZ = sub.cz + sub.depth / 2 - 1.4;
-
-        return (
+                return (
           <group key={`sub_${sub.key}`}>
             <mesh position={[sub.cx, 0.025, sub.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[sub.w, sub.depth, 1]} geometry={PLANE_GEOMETRY} raycast={() => null}>
               <meshBasicMaterial map={glowTexture()} color={sub.color} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
             </mesh>
             <NeonRim cx={sub.cx} cz={sub.cz} w={sub.w} d={sub.depth} y={0.028} color={`${sub.color}77`} />
-            <Suspense fallback={null}>
-              <group position={[subLabelX, 0.035, subLabelZ]}>
-                <Text
-                  rotation={[-Math.PI / 2, 0, 0]}
-                  fontSize={0.92}
-                  color={sub.color}
-                  anchorX="left"
-                  anchorY="bottom"
-                  letterSpacing={0.06}
-                >
-                  {sub.label}
-                </Text>
-              </group>
-            </Suspense>
+            <Html position={[sub.cx - sub.w / 2 + 0.6, 0.2, sub.cz - sub.depth / 2]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+              <div className="plat-badge plat-badge-small" style={{ ['--plat' as string]: sub.color }}>
+                <span className="plat-badge-dot" />
+                <span className="plat-badge-name">{sub.label.replace(/^\d+ \/\/ /, '')}</span>
+                <span className="plat-badge-count">{sub.count}</span>
+              </div>
+            </Html>
           </group>
         );
       })}

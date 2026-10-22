@@ -261,14 +261,16 @@ function CameraRig({ target, nodes, fitTrigger, request, site }: {
       if (resized && lastPlan.current && !userMoved.current) plan(state, lastPlan.current.points, lastPlan.current.pad);
     }
     const all = Object.values(target);
+    // Flow, Topology and Tiers draw decks wider than the nodes on them
+    const deckPad = ['flow', 'tiers', 'topology'].includes(fitTrigger.split(':')[0]) ? 11 : 4;
     const whole = site?.building ? [...all, ...cornersOf(site.building, 3)] : all;
     if (all.length > 0 && lastTrigger.current !== fitTrigger) {
       lastTrigger.current = fitTrigger;
-      plan(state, whole, site ? 1 : 4);
+      plan(state, whole, site ? 1 : deckPad);
     }
     if (all.length > 0 && lastNonce.current !== request.nonce) {
       lastNonce.current = request.nonce;
-      if (request.kind === 'all') plan(state, whole, site ? 1 : 4);
+      if (request.kind === 'all') plan(state, whole, site ? 1 : deckPad);
       else if (request.kind === 'zone') {
         const ids = nodes.filter((n) => n.project === request.id).map((n) => n.id);
         const room = site?.rooms.find((r) => r.project === request.id);
@@ -1106,7 +1108,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           {/* Its own boundary: troika's Text suspends while it fetches a
               font, and if that request hangs a shared boundary takes the
               whole scene down with it. */}
-          {LABELLED_LAYOUTS.has(layout) && showCards && (
+          {LABELLED_LAYOUTS.has(layout) && showCards && !['flow', 'tiers', 'topology'].includes(layout) && (
             <Suspense fallback={null}>
               <ProjectLabels nodes={layoutNodes} live={live} />
             </Suspense>

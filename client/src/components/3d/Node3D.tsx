@@ -438,14 +438,14 @@ function Node3DInner({ node, live, loads, isSelected, onSelect, showLabel = true
           // never take the rest of the scene down with it.
           <Suspense fallback={null}>
             <Billboard position={[0, pinned ? 9.4 : 6.1, 0]}>
-              <Text fontSize={highlight ? 0.9 : 0.76} color={highlight ? '#ffffff' : '#e6e8ec'} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#0d0e10">
+              <Text fontSize={highlight ? 1.5 : 1.3} color={highlight ? '#ffffff' : '#e6e8ec'} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#0d0e10">
                 {shortName}
               </Text>
-              <Text position={[0, -0.92, 0]} fontSize={0.52} color="#8ab4ff" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
+              <Text position={[0, -1.55, 0]} fontSize={0.82} color="#8ab4ff" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
                 {`${Math.round(cpu)}% cpu · ${Math.round(mem)}% mem`}
               </Text>
               {atRisk && (
-                <Text position={[0, -1.7, 0]} fontSize={0.5} color={riskColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
+                <Text position={[0, -2.6, 0]} fontSize={0.76} color={riskColor} anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor="#0d0e10">
                   {`at risk ${Math.round(predicted * 100)}%${analytics.cascadeVia ? ` via ${String(analytics.cascadeVia).split(':').pop()}` : ''}`}
                 </Text>
               )}
