@@ -36,10 +36,22 @@ if ! "${SSH[@]}" 'echo ok' >/dev/null 2>&1; then
 fi
 ok "logged in"
 
-echo "4. docker on the host"
-OUT=$("${SSH[@]}" "docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>&1; echo; free -m | sed -n 2p; nproc" 2>&1)
-if echo "$OUT" | grep -qi "permission denied\|cannot connect"; then
-  bad "the ssh user cannot use docker"; note "run on the host: sudo usermod -aG docker $USER_NAME   (then log in again)"; exit 1
+echo "4. the host itself (memory, load, disk)"
+LOAD=$("${SSH[@]}" -o ServerAliveInterval=5 -o ServerAliveCountMax=3 "uptime; free -m | sed -n 2,3p; df -h / | tail -n 1; nproc" 2>&1)
+if [ -z "$LOAD" ]; then bad "the host did not answer a plain command"; note "HOST side: it is overloaded or frozen. Reboot it from the EC2 console, or use a larger instance."; exit 1; fi
+echo "$LOAD" | sed 's/^/         /'
+note "(free -m: Mem total/used/free, Swap; the last number is the CPU count)"
+
+echo "5. docker on the host (waits 25 s)"
+OUT=$("${SSH[@]}" -o ServerAliveInterval=5 -o ServerAliveCountMax=6 "timeout 25 docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}' 2>&1; echo EXIT=\$?" 2>&1)
+if echo "$OUT" | grep -q "EXIT=124"; then
+  bad "docker did not answer within 25 s"
+  note "HOST side: the machine is too busy for docker to respond (look at step 4: low free memory, heavy swap or load above the CPU count)."
+  note "The mapper's own scan asks docker the same way, so it would see nothing from this host either. Use a larger instance or stop other stacks on it."
+  exit 1
+fi
+if echo "$OUT" | grep -qi "permission denied\|cannot connect\|command not found"; then
+  bad "docker is not usable by $USER_NAME"; note "$(echo "$OUT" | head -n 1)"; note "run on the host: sudo usermod -aG docker $USER_NAME   (then log in again), or install docker"; exit 1
 fi
 N=$(echo "$OUT" | grep -c '|')
 if [ "$N" -eq 0 ]; then
@@ -49,19 +61,17 @@ if [ "$N" -eq 0 ]; then
 fi
 ok "$N containers running"
 echo "$OUT" | grep '|' | grep -iE "restarting|unhealthy|exited" | sed 's/^/       PROBLEM: /'
-note "host memory (MB: total used free ...) then cores:"
-echo "$OUT" | tail -n 2 | sed 's/^/         /'
 
-echo "5. the app answers on port $PORT"
+echo "6. the app answers on port $PORT"
 CODE=$(curl -s -m 8 -o /dev/null -w '%{http_code}' "http://$IP:$PORT/" 2>/dev/null)
 if [ "$CODE" = "000" ] || [ -z "$CODE" ]; then
   bad "no answer from http://$IP:$PORT/"
   note "HOST side: the front end is not up yet, crashed (low memory), or the security group does not allow $PORT from this machine."
 else ok "http $CODE"; fi
 
-echo "6. the mapper"
+echo "7. the mapper"
 MAPPER="${MAPPER_URL:-http://localhost:3001}"
 if curl -s -m 5 "$MAPPER/api/status" >/dev/null 2>&1; then
   ok "mapper server answers at $MAPPER"
-  note "If steps 1-5 passed and the mapper still shows nothing for this host, the cause is on the mapper side: send the server log lines for this project."
+  note "If steps 1-6 passed and the mapper still shows nothing for this host, the cause is on the mapper side: send the server log lines for this project."
 else bad "mapper server is not running at $MAPPER"; fi
