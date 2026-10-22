@@ -21,6 +21,7 @@ import { HYBRID_DEFAULTS } from '../algorithms/ml/hybrid.js';
 import { RULES_LINE } from '../algorithms/detection/scoring.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 import { config } from '../config.js';
+import { Consoles } from '../labs/Consoles.js';
 
 /**
  * Normalises the load knobs that arrive from the UI as strings or nulls.
@@ -1336,6 +1337,17 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
 
   // Clear cached data (learned baselines, metric history, links, traces, incidents) for one project, or for all of them.
   // Saved projects and their connection settings are kept; collection starts again from scratch.
+  // --- CONSOLES: links to each host's UI, Grafana, FaultLab (opening the ssh tunnels the private ones need) ---
+  const consoles = new Consoles(
+    () => readJsonSafe(path.join(process.cwd(), 'data', 'remote_config.json')) || {},
+    (targetId) => {
+      try { const u = new URL(trafficController?.resolveBaseUrl(targetId) ?? ''); return Number(u.port) || (u.protocol === 'https:' ? 443 : 80); } catch { return 80; }
+    },
+  );
+  router.get('/consoles', async (_req, res) => { res.json(await consoles.list()); });
+  router.post('/consoles/:targetId/open', async (req, res) => { res.json(await consoles.open(req.params.targetId)); });
+  router.post('/consoles/:targetId/close', async (req, res) => { res.json(await consoles.close(req.params.targetId)); });
+
   router.post('/data/clear', (req, res) => {
     const targetId: string | undefined = req.body?.targetId || undefined;
     const ids = targetId ? [targetId] : [...graphStore.targets.keys()];

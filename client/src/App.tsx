@@ -22,6 +22,7 @@ import { TracesView } from './components/TracesView';
 import { MLPipelineView } from './components/MLPipelineView';
 import { FindingsView } from './components/FindingsView';
 import { EnginesView } from './components/EnginesView';
+import { ConsolesView } from './components/ConsolesView';
 import { ProjectSections } from './components/ProjectSections';
 import { computeLayout2D, type Layout2DId } from './components/layouts2d';
 import type { ServiceNode, DependencyEdge } from './types';
@@ -392,6 +393,8 @@ export default function App() {
           </ProjectSections>
         ) : activeTab === 'ENGINES' ? (
           <EnginesView selectedProject={selectedProjectId} />
+        ) : activeTab === 'CONSOLES' ? (
+          <ConsolesView selectedProject={selectedProjectId} />
         ) : activeTab === 'RELIABILITY' ? (
           <ReliabilityView selectedProject={selectedProjectId} nodes={filteredNodes} />
         ) : activeTab === 'EXPERIMENTS' ? (

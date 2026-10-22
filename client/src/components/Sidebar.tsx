@@ -12,6 +12,7 @@ import {
   Gauge,
   Microscope,
   ShieldAlert,
+  ExternalLink,
   Plus,
   PanelLeftClose,
   PanelLeftOpen,
@@ -49,6 +50,12 @@ const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
       { id: 'TRACES', icon: Waypoints, label: 'Traces' },
       { id: 'Dependencies', icon: GitMerge, label: 'Dependencies' },
       { id: 'Analytics', icon: BarChart3, label: 'Analytics' },
+    ],
+  },
+  {
+    title: 'Miscellaneous',
+    items: [
+      { id: 'CONSOLES', icon: ExternalLink, label: 'Consoles & links' },
     ],
   },
   {
