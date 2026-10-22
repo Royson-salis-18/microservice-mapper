@@ -28,20 +28,16 @@ export function replayTop(observedText: string, subject: string, params: Partial
 
 /** The same replay, handing the full engine verdict of every moment to `each` (for the hybrid and prediction experiments). */
 export function replayEach(observedText: string, subject: string, params: Partial<EngineParams>, each: (r: EngineResult, services: string[], snap: Snapshot) => void): void {
-  const engine = new MLEngine({ ...ENGINE_DEFAULTS, ...params, baseline: { ...ENGINE_DEFAULTS.baseline, ...(params.baseline ?? {}) }, walk: { ...ENGINE_DEFAULTS.walk, ...(params.walk ?? {}) } });
+  const engine = new MLEngine({ ...ENGINE_DEFAULTS, ...params, baseline: { ...ENGINE_DEFAULTS.baseline, ...(params.baseline ?? {}) }, walk: { ...ENGINE_DEFAULTS.walk, ...(params.walk ?? {}) }, load: { ...ENGINE_DEFAULTS.load, ...(params.load ?? {}) }, pca: { ...ENGINE_DEFAULTS.pca, ...(params.pca ?? {}) } });
   const snaps: Snapshot[] = parseObserved(observedText).filter((s) => s.metrics && Object.keys(s.metrics).length);
-  const last = new Map<string, string>();
   let edges: [string, string][] = [];
   for (const s of snaps) {
     if (s.edges?.length) edges = s.edges;
     const services = Object.keys(s.metrics!).filter((id) => id !== 'traffic').sort();
     const fresh = new Map<string, MetricSnapshot[]>();
-    for (const id of services) {
-      const m = s.metrics![id], k = JSON.stringify(m);
-      if (last.get(id) === k) continue;
-      last.set(id, k);
-      fresh.set(id, [toSnapshot(s.ts, m)]);
-    }
+    // Every recorded moment is one reading, as on the live server (the collector reports every cycle). An idle service
+    // reports the same zeros again and again; dropping those repeats would hide the whole idle period from the model.
+    for (const id of services) fresh.set(id, [toSnapshot(s.ts, s.metrics![id])]);
     const nodes = services.map((id) => ({ id, name: id, type: 'service', status: s.status[id] ?? 'unknown',
       metadata: { state: s.metrics![id].state ?? undefined, networkDetached: s.metrics![id].networkDetached === true, exitCode: s.metrics![id].exitCode, project: subject } }));
     const r = engine.step(nodes, edges.map(([source, target]) => ({ source, target })), fresh);

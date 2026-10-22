@@ -12,6 +12,8 @@
  * fact is present. PURE: the caller supplies readings, nodes and edges; the engine keeps only the learned state.
  */
 import { ServiceBaseline, readingVector, BASELINE_DEFAULTS, type BaselineParams } from './serviceBaseline.js';
+import { LoadModel, LOAD_DEFAULTS, vectorize, type LoadParams, type RoundInfo, type Level } from './loadModel.js';
+import { PcaModel, PCA_DEFAULTS, type PcaParams } from './pcaModel.js';
 import { PropagationModel } from './propagation.js';
 import type { Forecast } from './serviceBaseline.js';
 import { rootCauseWalk, pageRankScores, WALK_DEFAULTS, type WalkParams, type WalkEdge } from './randomWalk.js';
@@ -20,6 +22,10 @@ import type { MetricSnapshot } from '../../models/MetricSnapshot.js';
 
 export interface EngineParams {
   baseline: BaselineParams; walk: WalkParams;
+  /** What learns a service's normal: the forest (per service, blind to load) or the load-aware residual model. */
+  levels: 'forest' | 'load' | 'pca';
+  load: LoadParams;
+  pca: PcaParams;
   anomalyFloor: number;     // levels below this count as healthy for the walk
   servicePersist: number;   // readings in a row above the line before a service counts as anomalous
   hardFirst: boolean;       // a container fact (stopped, paused, restarting) ranks ahead of statistical evidence
@@ -32,12 +38,14 @@ export interface EngineParams {
   warnAt: number;           // early warning when a service's trend reaches this level within the forecast horizon
   stoppedIsDown: boolean;   // exit code 0 after a minute of running counts as down (docker stop), not as a finished job
 }
-export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
+export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, levels: 'forest', load: LOAD_DEFAULTS, pca: PCA_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
 
 export interface EngineNode { id: string; name: string; type?: string; status?: string; metadata?: Record<string, any> }
 export interface EngineEdge { source: string; target: string; weight?: number }
 
-export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number; fact?: string; forecast?: Forecast }
+export interface ServiceView { level: number; anomaly: number; own: number; hard: boolean; ready: boolean; score: number; ownLevel: number; symptomLevel: number; fact?: string; forecast?: Forecast;
+  /** The signal furthest from what the current load predicts, and by how many spreads (load-aware model only). */
+  top?: { feature: string; z: number } | null }
 export interface EngineResult {
   services: Map<string, ServiceView>;
   rank: Map<string, number>;        // random-walk share, sums to 1 over services
@@ -50,6 +58,8 @@ export interface EngineResult {
   warnings: { id: string; feature: string; inSec: number | null; level: number }[];
   /** Learned cascade: risk that the current top suspect's trouble reaches each healthy service. */
   atRisk: Map<string, number>;
+  /** The workload the whole project moved by this step (load-aware model only), so a change of load is reported as such. */
+  workload: RoundInfo | null;
 }
 
 const STORE = /(^|[-_])(db|store|cache|redis|memcached|mongo|mongodb|postgres|mysql|queue|bus|kafka|nats|rabbitmq)([-_]|$)/i;
@@ -87,6 +97,7 @@ const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; 
 
 export class MLEngine {
   private models = new Map<string, ServiceBaseline>();
+  private loadModel: { round(r: Map<string, (number | null)[]>): Map<string, Level>; info: RoundInfo; forget(): void };
   private last = new Map<string, ServiceView>();
   private streak = new Map<string, number>();
   private sinceFact = new Map<string, number>();
@@ -98,7 +109,7 @@ export class MLEngine {
   private propagation = new PropagationModel();
   private warnStreak = new Map<string, number>();   // step at which the service last became anomalous
 
-  constructor(private readonly p: EngineParams = ENGINE_DEFAULTS) {}
+  constructor(private readonly p: EngineParams = ENGINE_DEFAULTS) { this.loadModel = p.levels === 'pca' ? new PcaModel(p.pca) : new LoadModel(p.load); }
 
   /** Feed the readings that arrived since the previous step (per service, oldest first) and get the current verdict. */
   step(nodes: EngineNode[], edges: EngineEdge[], fresh: Map<string, MetricSnapshot[]>): EngineResult {
@@ -106,6 +117,9 @@ export class MLEngine {
     this.clock++;
     const onsets: string[] = [];
     const watched = nodes.filter((n) => !isLoadGenerator(n.name));
+    // Pass 1: container facts and hard states, which need no model.
+    interface Pending { n: EngineNode; fact: string | null; stopped: boolean; restarted: boolean; hard: boolean; hardNow: boolean; looping: boolean; readings: MetricSnapshot[] }
+    const pending: Pending[] = [];
     for (const n of watched) {
       let fact = containerFact(n as any);
       // `docker stop` exits with code 0, which reads like a one-shot job that finished. A service that had been running
@@ -115,9 +129,6 @@ export class MLEngine {
       let stopped = false;
       if (fact === 'benign' && this.p.stoppedIsDown && state.startsWith('exited') && (this.runningFor.get(n.id) ?? 0) >= 12) { fact = 'down'; stopped = true; }
       if (fact === 'benign') { services.set(n.id, { level: 0, anomaly: 0, own: 0, hard: false, ready: false, score: 0, ownLevel: 0, symptomLevel: 0 }); continue; }
-      let model = this.models.get(n.id);
-      if (!model) { model = new ServiceBaseline(hash(n.id), this.p.baseline); this.models.set(n.id, model); }
-      let view = this.last.get(n.id) ?? { level: 0, anomaly: 0, own: 0, hard: false, ready: false, score: 0, ownLevel: 0, symptomLevel: 0 };
       const readings = fresh.get(n.id) ?? [];
       const restarted = readings.some((r) => (r.restartDelta ?? 0) > 0);
       const hardNow = fact === 'down' || fact === 'paused' || fact === 'restarting' || fact === 'detached' || restarted;
@@ -130,15 +141,47 @@ export class MLEngine {
       this.onsets.set(n.id, ons);
       this.wasHard.set(n.id, hardNow);
       const looping = this.p.loopWindow > 0 && !hardNow && ons.length >= 2 && since <= this.p.loopHold;
-      const hard = hardNow || looping;
-      if (!hard) {
-        for (const r of readings) {
-          const v = model.observe(readingVector(r, this.p.baseline.minRequests));
-          view = { level: v.level, anomaly: 0, own: 0, hard: false, ready: v.ready, score: v.score, ownLevel: v.own, symptomLevel: v.symptom, forecast: v.forecast };
-          this.streak.set(n.id, v.level >= 1 ? (this.streak.get(n.id) ?? 0) + 1 : 0);
+      pending.push({ n, fact, stopped, restarted, hard: hardNow || looping, hardNow, looping, readings });
+    }
+
+    // Pass 2: what the model makes of the new readings.
+    const views = new Map<string, ServiceView>();
+    const readyOf = new Map<string, boolean>();
+    let workload: RoundInfo | null = null;
+    if (this.p.levels !== 'forest') {
+      const live = pending.filter((q) => !q.hard);
+      const rounds = Math.max(0, ...live.map((q) => q.readings.length));
+      for (let k = 0; k < rounds; k++) {
+        const vecs = new Map<string, (number | null)[]>();
+        for (const q of live) if (q.readings[k]) vecs.set(q.n.id, vectorize(q.readings[k], this.p.load));
+        const res = this.loadModel.round(vecs);
+        workload = this.loadModel.info;
+        for (const [id, v] of res) {
+          views.set(id, { level: v.level, anomaly: 0, own: 0, hard: false, ready: v.ready, score: v.score, ownLevel: v.own, symptomLevel: v.symptom, forecast: v.forecast, top: v.top });
+          this.streak.set(id, v.level >= 1 ? (this.streak.get(id) ?? 0) + 1 : 0);
+          readyOf.set(id, v.ready);
         }
       }
-      // a level must hold for a few readings before the service counts, and below the floor the forest's ordinary
+    }
+
+    // Pass 3: persistence, the anomaly the walk sees, the label.
+    for (const q of pending) {
+      const { n, fact, stopped, restarted, hard, hardNow, looping, readings } = q;
+      let view = views.get(n.id) ?? this.last.get(n.id) ?? { level: 0, anomaly: 0, own: 0, hard: false, ready: false, score: 0, ownLevel: 0, symptomLevel: 0 };
+      let ready = readyOf.get(n.id) ?? view.ready;
+      if (this.p.levels === 'forest') {
+        let model = this.models.get(n.id);
+        if (!model) { model = new ServiceBaseline(hash(n.id), this.p.baseline); this.models.set(n.id, model); }
+        if (!hard) {
+          for (const r of readings) {
+            const v = model.observe(readingVector(r, this.p.baseline.minRequests));
+            view = { level: v.level, anomaly: 0, own: 0, hard: false, ready: v.ready, score: v.score, ownLevel: v.own, symptomLevel: v.symptom, forecast: v.forecast };
+            this.streak.set(n.id, v.level >= 1 ? (this.streak.get(n.id) ?? 0) + 1 : 0);
+          }
+        }
+        ready = model.ready;
+      }
+      // a level must hold for a few readings before the service counts, and below the floor the model's ordinary
       // wobble is not evidence
       const persistent = (this.streak.get(n.id) ?? 0) >= this.p.servicePersist;
       const lvl = hard ? HARD_LEVEL : persistent ? view.level : Math.min(view.level, 0.99);
@@ -146,7 +189,7 @@ export class MLEngine {
       const anomaly = hard ? 1 : toA(lvl);
       const own = hard ? 1 : persistent ? toA(view.ownLevel) : 0;
       const label = looping ? 'crash loop' : stopped ? 'stopped' : restarted && !fact ? 'restarted' : hardNow ? fact ?? undefined : undefined;
-      view = { ...view, level: lvl, anomaly, own, hard, ready: model.ready, fact: label };
+      view = { ...view, level: lvl, anomaly, own, hard, ready, fact: label };
       this.last.set(n.id, view);
       services.set(n.id, view);
       if (anomaly > 0) { if (!this.onsetAt.has(n.id)) { this.onsetAt.set(n.id, this.clock); onsets.push(n.id); } } else this.onsetAt.delete(n.id);
@@ -180,7 +223,7 @@ export class MLEngine {
       this.warnStreak.set(id, warn ? (this.warnStreak.get(id) ?? 0) + 1 : 0);
       if (warn && this.warnStreak.get(id)! >= 2) warnings.push({ id, feature: f!.feature!, inSec: f!.inSteps === null ? null : f!.inSteps * 5, level: f!.level });
     }
-    return { services, rank, ranked, maxLevel, hot, ready: learned > 0, learnedServices: learned, warnings, atRisk };
+    return { services, rank, ranked, maxLevel, hot, ready: learned > 0, learnedServices: learned, warnings, atRisk, workload };
   }
 
   /** Root-cause scores among the anomalous services, by the configured method. */
@@ -201,5 +244,5 @@ export class MLEngine {
     return walk;
   }
 
-  forget(): void { this.models.clear(); this.last.clear(); this.streak.clear(); this.sinceFact.clear(); this.runningFor.clear(); this.onsets.clear(); this.wasHard.clear(); this.onsetAt.clear(); this.propagation.forget(); this.warnStreak.clear(); }
+  forget(): void { this.loadModel.forget(); this.models.clear(); this.last.clear(); this.streak.clear(); this.sinceFact.clear(); this.runningFor.clear(); this.onsets.clear(); this.wasHard.clear(); this.onsetAt.clear(); this.propagation.forget(); this.warnStreak.clear(); }
 }
