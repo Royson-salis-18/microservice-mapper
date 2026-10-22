@@ -805,7 +805,45 @@ test('3D islands: tracks only join sections that call each other', () => {
   ];
   const site = computeSite(nodes, [['p:web', 'p:api'], ['p:api', 'p:db'], ['p:api', 'p:api']]);
   const pairs = site.tracks.map((t) => [t.from, t.to].sort().join('-')).sort();
-  assert.deepEqual(pairs, ['data-services', 'edge-services']);
+  assert.deepEqual(pairs, ['p:data-p:services', 'p:edge-p:services']);
+  // every call goes one way, so each track carries its direction
+  assert.ok(site.tracks.every((t) => t.directed));
+});
+
+const chain = [
+  { id: 'p:web', project: 'p', type: 'gateway', degree: 1 },
+  { id: 'p:api', project: 'p', type: 'service', degree: 3 },
+  { id: 'p:pay', project: 'p', type: 'service', degree: 2 },
+  { id: 'p:db', project: 'p', type: 'database', degree: 2 },
+  { id: 'p:worker', project: 'p', type: 'service', degree: 0 },
+];
+const chainLinks: [string, string][] = [['p:web', 'p:api'], ['p:api', 'p:pay'], ['p:pay', 'p:db'], ['p:api', 'p:db']];
+
+test('3D flow: one platform per hop from the entry, unreached services apart', () => {
+  const site = computeSite(chain, chainLinks, 'flow');
+  assert.equal(site.memberOf['p:web'], 'p:hop0');
+  assert.equal(site.memberOf['p:api'], 'p:hop1');
+  assert.equal(site.memberOf['p:db'], 'p:hop2'); // shortest path wins: api calls db directly
+  assert.equal(site.memberOf['p:worker'], 'p:offpath');
+  const hop2 = site.islands.find((i) => i.key === 'p:hop2')!;
+  assert.match(hop2.note!, /reach 2 callers/); // web and api call into hop 2
+});
+
+test('3D topology: the most depended-on service stands highest', () => {
+  const site = computeSite(chain, chainLinks, 'topology');
+  const islandOf = (id: string) => site.islands.find((i) => i.key === site.memberOf[id])!;
+  assert.equal(site.memberOf['p:db'], 'p:hub'); // web, api and pay all reach db
+  assert.equal(site.memberOf['p:web'], 'p:callers');
+  assert.equal(site.memberOf['p:worker'], 'p:alone');
+  assert.equal(site.memberOf['p:api'], 'p:shared'); // only web depends on api
+  assert.ok(islandOf('p:db').top > islandOf('p:api').top && islandOf('p:api').top > islandOf('p:web').top);
+});
+
+test('3D tiers: layers climb from data to edge and upward calls are counted', () => {
+  const site = computeSite(chain, [...chainLinks, ['p:db', 'p:api']], 'tiers');
+  const top = (key: string) => site.islands.find((i) => i.key === key)!.top;
+  assert.ok(top('p:data') < top('p:services') && top('p:services') < top('p:edge'));
+  assert.match(site.islands.find((i) => i.key === 'p:data')!.note!, /1 go up a layer/);
 });
 
 test('3D islands: empty input is an empty site', () => {
