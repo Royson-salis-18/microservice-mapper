@@ -12,6 +12,7 @@ const vertikal = require('./workflows/vertikal');
 const deathstar = require('./workflows/deathstar');
 const trainticket = require('./workflows/trainticket');
 const opentelemetry = require('./workflows/opentelemetry');
+const generic = require('./workflows/generic');
 
 const TARGETS = {
   'sock-shop': sockshop,
@@ -20,6 +21,9 @@ const TARGETS = {
   'train-ticket': trainticket,
   'open-telemetry': opentelemetry,
 };
+
+/** A project with no workflow of its own gets the generic one, rather than a refusal. */
+const moduleFor = (id) => TARGETS[id] || generic;
 
 const TARGETS_CONFIG_PATH = path.join(__dirname, 'targets.json');
 function loadSavedUrls() {
@@ -189,7 +193,6 @@ app.post('/api/projects', (req, res) => {
   if (!projectId || !/^[A-Za-z0-9._-]+$/.test(projectId)) {
     return res.status(400).json({ error: 'projectId is required and may contain only letters, numbers, ., _, or -' });
   }
-  if (!TARGETS[targetId]) return res.status(400).json({ error: `unknown targetId: ${targetId}` });
   if (loadSavedUrls()[projectId]) return res.status(409).json({ error: `project ${projectId} already exists` });
   saveUrl(targetId, baseUrl || '', projectId);
   res.status(201).json({ ok: true, projectId, targetId, baseUrl: baseUrl || null, endpoints: [] });
@@ -198,7 +201,6 @@ app.post('/api/projects', (req, res) => {
 app.post('/api/discover', (req, res) => {
   const { targetId, host, sshUser, keyPath, port } = req.body;
   const projectId = req.body.projectId || targetId;
-  if (!TARGETS[targetId]) return res.status(400).json({ error: `unknown targetId: ${targetId}` });
   if (!host || !keyPath) return res.status(400).json({ error: 'host and keyPath are required' });
   const resolvedKeyPath = keyPath.replace(/^~(?=$|\/)/, process.env.HOME || '');
   if (!fs.existsSync(resolvedKeyPath)) return res.status(400).json({ error: `key file not found on this server at: ${resolvedKeyPath}` });
@@ -282,8 +284,7 @@ app.post('/api/probe', async (req, res) => {
  * workflow's own value pool when it has one, since those are real values.
  */
 app.get('/api/targets/:targetId/paths', (req, res) => {
-  const mod = TARGETS[req.params.targetId];
-  if (!mod) return res.status(404).json({ error: `unknown targetId: ${req.params.targetId}` });
+  const mod = moduleFor(req.params.targetId);
 
   const paths = [];
   for (const wf of Object.values(mod.workflows || {})) {
@@ -312,8 +313,7 @@ app.post('/api/start', (req, res) => {
     const { targetId, profile, users, workflowWeights: requestedWorkflowWeights, durationSec, maxUsers, maxConcurrency, endpointPaths } = req.body;
     const projectId = req.body.projectId || targetId;
     let { baseUrl, targetUrl } = req.body;
-    const mod = TARGETS[targetId];
-    if (!mod) return res.status(400).json({ error: `unknown targetId: ${targetId}` });
+    const mod = moduleFor(targetId);
     if (!baseUrl) {
       const saved = loadSavedUrls()[projectId];
       baseUrl = typeof saved === 'string' ? saved : saved?.baseUrl;

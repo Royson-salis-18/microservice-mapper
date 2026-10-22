@@ -8,12 +8,6 @@ const TRAFFIC_GEN_PORT = process.env.TRAFFIC_GEN_PORT || '4400';
 const TRAFFIC_GEN_URL = `http://localhost:${TRAFFIC_GEN_PORT}`;
 const TRAFFIC_GEN_WS_URL = `ws://localhost:${TRAFFIC_GEN_PORT}/ws`;
 
-// only targets with a workflow file under traffic-gen/workflows/
-// [AGY] Added 'open-telemetry' because without being in this set, 
-// TrafficController actively rejects start requests with an error, 
-// causing silent UI failures for the OpenTelemetry target.
-const KNOWN_TRAFFIC_GEN_TARGETS = new Set(['sock-shop', 'vertikal', 'death-star', 'train-ticket', 'open-telemetry']);
-
 // old lowercase UI profile names -> traffic-gen's PROFILES keys
 const PROFILE_MAP: Record<string, string> = {
   normal: 'BASELINE',
@@ -673,13 +667,7 @@ export class TrafficController {
       return { targetId, isRunning: true, profileName: profile, mode, routeId: options.routeId, serviceId: options.serviceId, endpointId, startTime, pid: null, resolvedUrl, workloadSource };
     }
 
-    if (!KNOWN_TRAFFIC_GEN_TARGETS.has(targetId)) {
-      return {
-        targetId, isRunning: false, profileName: profile, mode, startTime: null, pid: null,
-        error: `traffic-gen has no workflow defined for target "${targetId}"`,
-      };
-    }
-
+    // Any target is passed through: traffic-gen falls back to a generic front-page workflow for one it has no file for.
     const startTime = new Date().toISOString();
     this.tracked.set(targetId, { startTime, profile, mode, resolvedUrl, workloadSource });
 
@@ -774,7 +762,7 @@ export class TrafficController {
 
     if (existing?.workloadSource === 'USER_SIM') {
       console.log(`[TrafficController] Stopping USER_SIM for ${targetId} - delegated to environment orchestrator`);
-      // Not limited to KNOWN_TRAFFIC_GEN_TARGETS: a stop must be able to
+      // Not limited to a fixed list of targets: a stop must be able to
       // reach a project id traffic-gen knows but this list doesn't (e.g.
       // "vertikal-prod"). Stopping something that isn't running is a
       // harmless no-op, whereas failing to stop something that is running
