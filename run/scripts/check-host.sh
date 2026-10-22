@@ -69,9 +69,57 @@ if [ "$CODE" = "000" ] || [ -z "$CODE" ]; then
   note "HOST side: the front end is not up yet, crashed (low memory), or the security group does not allow $PORT from this machine."
 else ok "http $CODE"; fi
 
-echo "7. the mapper"
+echo "8. who do the front-end containers talk to?  (the mapper can only draw an edge to another container)"
+FRONT="${FRONT:-front|nginx|proxy|gateway|web}"
+"${SSH[@]}" python3 - "$FRONT" <<'PY' 2>&1 | sed 's/^/       /'
+import re, socket, struct, subprocess, sys, collections
+def sh(c):
+    return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
+pattern = re.compile(sys.argv[1], re.I)
+ip2name = {}
+boxes = []
+for line in sh("docker ps --format '{{.ID}} {{.Names}}'").splitlines():
+    cid, name = line.split(None, 1)
+    boxes.append((cid, name))
+    for ip in sh("docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' " + cid).split():
+        ip2name[ip] = name
+def hexaddr(h):
+    ip, port = h.split(':')
+    return socket.inet_ntoa(struct.pack('<I', int(ip, 16))), int(port, 16)
+found = False
+for cid, name in boxes:
+    if not pattern.search(name):
+        continue
+    found = True
+    pid = sh("docker inspect -f '{{.State.Pid}}' " + cid).strip()
+    try:
+        rows = open('/proc/%s/net/tcp' % pid).read().splitlines()[1:]
+    except Exception as e:
+        print('%s: cannot read its sockets (%s)' % (name, e))
+        continue
+    seen = collections.Counter()
+    for r in rows:
+        f = r.split()
+        if len(f) < 4 or f[3] not in ('01', '06', '08', '04', '05'):
+            continue
+        lip, lport = hexaddr(f[1]); rip, rport = hexaddr(f[2])
+        if lport < 32768 and rport >= 32768:
+            continue  # someone calling this container, not this container calling out
+        seen[(rip, rport)] += 1
+    if not seen:
+        print('%s: no outgoing sockets right now (it makes none, or none are open at this moment)' % name)
+        continue
+    print('%s calls:' % name)
+    for (rip, rport), n in seen.most_common(8):
+        who = ip2name.get(rip)
+        print('   %s:%d  x%d  -> %s' % (rip, rport, n, who if who else 'NOT A CONTAINER (host or outside address): the mapper cannot name this peer'))
+if not found:
+    print('no container name matches %s; run again with FRONT=<part of its name>' % sys.argv[1])
+PY
+
+echo "9. the mapper"
 MAPPER="${MAPPER_URL:-http://localhost:3001}"
 if curl -s -m 5 "$MAPPER/api/status" >/dev/null 2>&1; then
   ok "mapper server answers at $MAPPER"
-  note "If steps 1-6 passed and the mapper still shows nothing for this host, the cause is on the mapper side: send the server log lines for this project."
+  note "If steps 1-8 passed and the mapper still shows nothing for this host, the cause is on the mapper side: send the server log lines for this project."
 else bad "mapper server is not running at $MAPPER"; fi
