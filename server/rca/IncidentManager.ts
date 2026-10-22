@@ -38,6 +38,8 @@ interface Shadow {
   engines: { rules: EngineVerdict; ml: EngineVerdict; hybrid: EngineVerdict };
   services: ServiceRow[];
   history: { t: number; rules: number; ml: number; hybrid: number }[];
+  /** Per service, the same 90 cycles as `history`: what each engine made of it, so one service can be followed over time. */
+  trail: Record<string, { t: number; rules: number; own: number; symptom: number; walk: number; blend: number }[]>;
 }
 export interface EngineTally { incidents: number; since: string; last: { at: string; target: string; root: string | null; severity: string } | null }
 
@@ -138,7 +140,8 @@ export class IncidentManager {
       const mlTop = Math.max(0, ...[...r.services.values()].map((v) => v.level / ENGINE_DEFAULTS.alarmLevel));
       const prev = st.shadow?.prev ?? { rules: false, ml: false, hybrid: false };
       const sh: Shadow = st.shadow ?? { moments: 0, rulesHot: 0, mlHot: 0, hybridHot: 0, prev, now: { rulesTop: 0, mlTop: 0, hybridMax: 0, rulesRanked: [], mlRanked: [], hybridRanked: [] }, at: '',
-        engines: { rules: { alarm: false, peak: 0, suspects: [] }, ml: { alarm: false, peak: 0, suspects: [] }, hybrid: { alarm: false, peak: 0, suspects: [] } }, services: [], history: [] };
+        engines: { rules: { alarm: false, peak: 0, suspects: [] }, ml: { alarm: false, peak: 0, suspects: [] }, hybrid: { alarm: false, peak: 0, suspects: [] } }, services: [], history: [], trail: {} };
+      sh.trail ??= {};
       const rulesHotNow = rulesTop >= 1, mlHotNow = r.hot, hybridHotNow = fused.max >= 1;
       sh.moments++;
       if (rulesHotNow) sh.rulesHot++;
@@ -163,6 +166,13 @@ export class IncidentManager {
         .sort((x, y) => Number(y.hard) - Number(x.hard) || y.blend - x.blend || y.rules - x.rules);
       sh.history.push({ t: Date.now(), rules: round(Math.min(rulesTop, 6)), ml: round(Math.min(mlTop, 6)), hybrid: round(Math.min(fused.max, 6)) });
       if (sh.history.length > 90) sh.history.shift();
+      const t = Date.now();
+      for (const row of sh.services) {
+        const trail = (sh.trail[row.id] ??= []);
+        trail.push({ t, rules: Math.min(row.rules, 6), own: Math.min(row.own, 6), symptom: Math.min(row.symptom, 6), walk: row.walk, blend: Math.min(row.blend, 6) });
+        if (trail.length > 90) trail.shift();
+      }
+      for (const id of Object.keys(sh.trail)) if (!r.services.has(id)) delete sh.trail[id];
       st.shadow = sh;
     }
     const alarm = hotNow && st.hot;

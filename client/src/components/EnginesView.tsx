@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { PageShell, PageHeader, Panel, Stat, StatRow, EmptyNote } from './ui/Panel';
 import { useEngineMode, type EngineMode } from '../hooks/useEngineMode';
+import { AgreementStrip, BlameChart, ChartCard, PeaksChart, ServiceBars, ServiceTrail, SourceVictimScatter, type TrailPoint } from './EngineCharts';
 
 /**
  * Detection engines: what each of Rules, ML and Hybrid is, how each is configured, what each is doing on the
@@ -15,6 +16,7 @@ interface Shadow {
   engines: { rules: Verdict; ml: Verdict; hybrid: Verdict };
   services: ServiceRow[];
   history: { t: number; rules: number; ml: number; hybrid: number }[];
+  trail?: Record<string, TrailPoint[]>;
 }
 interface Target {
   targetId: string; ready: boolean; learnedServices: number; services: number; needReadings: number; shadow: Shadow | null;
@@ -150,30 +152,9 @@ function EngineColumn({ id, name, active, v: raw, warnings, next, hot, moments }
   );
 }
 
-function ParallelChart({ history }: { history: Shadow['history'] }) {
-  if (history.length < 2) return <div style={{ fontSize: 12, ...muted }}>The chart appears after a few cycles.</div>;
-  const W = 760, H = 150, top = 6;
-  const max = Math.min(6, Math.max(2, ...history.flatMap((p) => [p.rules, p.ml, p.hybrid])));
-  const x = (i: number) => (i / (history.length - 1)) * W;
-  const y = (v: number) => H - (Math.min(v, max) / max) * (H - top);
-  const line = (k: 'rules' | 'ml' | 'hybrid') => history.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(' ');
-  return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H + 4}`} width="100%" height="150" role="img" aria-label="Peak of each engine against its own alarm line over the last cycles">
-        <line x1="0" x2={W} y1={y(1)} y2={y(1)} stroke="var(--color-border-hover)" strokeDasharray="4 4" />
-        <text x="4" y={y(1) - 4} fontSize="10" fill="var(--color-text-dim)">alarm line (1.0)</text>
-        {(['rules', 'ml', 'hybrid'] as const).map((k) => <path key={k} d={line(k)} fill="none" stroke={COLORS[k]} strokeWidth="1.8" />)}
-      </svg>
-      <div style={{ display: 'flex', gap: 16, fontSize: 12, ...muted }}>
-        {(['rules', 'ml', 'hybrid'] as const).map((k) => <span key={k}><i className="mm-dot" style={{ background: COLORS[k], marginRight: 6 }} />{k === 'ml' ? 'ML' : k[0].toUpperCase() + k.slice(1)}</span>)}
-        <span style={{ marginLeft: 'auto' }}>last {history.length} cycles, scale 0 to {max.toFixed(0)}×</span>
-      </div>
-    </div>
-  );
-}
-
 function ParallelTarget({ t, mode }: { t: Target; mode: EngineMode | null }) {
   const s = t.shadow;
+  const [picked, setPicked] = useState<string | null>(null);
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ fontSize: 12, marginBottom: 8, ...muted }}>
@@ -188,7 +169,21 @@ function ParallelTarget({ t, mode }: { t: Target; mode: EngineMode | null }) {
             <EngineColumn id="ml" name="ML" active={mode === 'ml'} v={s.engines.ml} warnings={t.warnings} next={t.cascade} hot={s.mlHot} moments={s.moments} />
             <EngineColumn id="hybrid" name="Hybrid" active={mode === 'hybrid'} v={s.engines.hybrid} warnings={t.warnings} next={t.cascade} hot={s.hybridHot} moments={s.moments} />
           </div>
-          <div style={{ marginTop: 16 }}><ParallelChart history={s.history} /></div>
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 12 }}>
+            <ChartCard title="Peak against the alarm line" about="Each engine's strongest service, cycle by cycle; 1.0 is the line. Enlarge to zoom into a stretch of time."
+              render={(x) => <PeaksChart history={s.history} expanded={x} />} />
+            <ChartCard title="Where the engines agree" about="One cell per cycle, lit when that engine was over its line. Hover a cell for its time and value."
+              render={(x) => <AgreementStrip history={s.history} expanded={x} />} />
+            <ChartCard title="Every service, every engine" about="Rules, ML level and Hybrid score per service against the same line. Click a service to follow it."
+              render={(x) => <ServiceBars rows={s.services} expanded={x} onPick={setPicked} picked={picked} />} />
+            <ChartCard title="Source or victim" about="ML's two forests per service: high own level points at a source, high symptoms alone at a victim. Dot size is the walk blame."
+              render={(x) => <SourceVictimScatter rows={s.services} expanded={x} onPick={setPicked} />}
+              footer={<>red: container fact · amber: own resources over the line · blue: symptoms over the line · grey: calm</>} />
+            <ChartCard title="Who the random walk blames" about="Share of the blame over the call graph right now; the top one is ML's named source."
+              render={(x) => <BlameChart rows={s.services} expanded={x} onPick={setPicked} />} />
+            <ChartCard title="Follow one service" about="What each engine made of one service over the last cycles. Pick it here or click it in any chart."
+              render={(x) => <ServiceTrail trail={s.trail ?? {}} ids={s.services.map((r) => r.id)} picked={picked} onPick={setPicked} expanded={x} />} />
+          </div>
           <div style={{ marginTop: 16, overflowX: 'auto' }}>
             <div className="mm-eyebrow" style={{ marginBottom: 6 }}>Every service, every engine</div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
