@@ -37,7 +37,7 @@ node "$BENCH/lab/faultlab/faultlab.mjs" "$SUBJECT" run --profile stormy --seed "
 log "campaign done; 90 s of grace"
 sleep 90
 curl -sf "$MAPPER/api/engine/info" >"$OUT/engine-info.json" || true
-grep -c "restart" "$OUT/server.log" | xargs -I{} echo "restart log lines: {}" | tee -a "$OUT/run.log"
+echo "restarts performed: $(grep -c "Restarted " "$OUT/server.log" || true)" | tee -a "$OUT/run.log"
 kill $OBS 2>/dev/null || true; sleep 2
 node "$TSX" run/cli/eval/run.ts all --subject "$SUBJECT" --ledger "$OUT/ledger-$SUBJECT.jsonl" --observed "$OUT/observed-$SUBJECT.jsonl" --out "$OUT" --warmup 0 --traffic "$SUBJECT-traffic-1" >"$OUT/score.log" 2>&1 || true
 log "scored: $OUT/eval-$SUBJECT.json"

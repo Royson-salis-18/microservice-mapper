@@ -2,7 +2,7 @@
 \chapter[RESULTS, ANALYSIS AND DISCUSSION]{Results, Analysis and Discussion}
 \label{ch:results}
 
-\section{Results}
+\section{Results}\label{sec:resultsmain}
 
 \subsection{Detection and root cause}
 Table~\ref{tab:main} compares the engines in one harness. On the real systems the hybrid names the true cause first for 74\% of all faults, against 65\% for the rule layer, 71\% for ranking by anomaly alone and 73\% for the ML engine. The paired differences are in Figure~\ref{fig:forest} and Table~\ref{tab:paired}. Hybrid over rules is significant on the real systems ($+9.7$ points, 95\% CI $[+1.6, +17.7]$, $p = 0.032$) but not on the synthetic set ($+2.2$, $[-3.9, +8.4]$); hybrid over the severity ranking is positive but not significant in either set ($+3.2$ and $+1.1$ points).
@@ -233,6 +233,79 @@ Operating the benchmark hosts produced three findings that changed the tools.
 \item \textbf{Hard-coded project names blocked traffic.} The traffic controller accepted only five named projects, so benchmark hosts with other names could not be driven. Unknown projects now get a generic workflow.
 \end{itemize}
 
+
+\section{Live Fault Lab Experiments: Auto-restart On and Off}
+\label{sec:live}
+The 62-fault evaluation above was made on recorded campaigns. To test the mapper once more against a system it cannot see into, and to settle whether its optional auto-restart changes the results, both benchmark benches (Section~\ref{sec:benches}) were run live inside Docker, reached by the mapper over SSH exactly like a remote host (auto-restart exists only on that path). The Fault Lab replayed the \emph{same} plan every time (seed 11, the \texttt{stormy} profile, crash, stop, pause and brownout faults, 18 minutes, 21 faults), once with \texttt{MAPPER\_AUTO\_RESTART} on and once with it off, after a 6-minute warm-up. The hybrid engine decided the incidents and the harness scored them against the injector's private ledger. Only one bench ran at a time. The run scripts and every recorded file are in the repository (\texttt{run/scripts/autorestart-experiment.sh}, \texttt{run/recorded-runs/autorestart/}).
+
+\begin{table}[!htbp]
+\centering
+\caption{Live campaigns, same fault plan, auto-restart on and off (21 faults each; 95\% Wilson intervals).}
+\label{tab:live}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Bench} & \textbf{Auto-restart} & \textbf{Detected} & \textbf{Top-1 (\%)} & \textbf{Top-3 (\%)} & \textbf{Delay (s)} & \textbf{FA/h}\\
+\midrule
+ShopFlow & on  & 100\% & 33 [17, 55] & 71 [50, 86] & 3.3 & 9.2\\
+ShopFlow & off & 100\% & 24 [11, 45] & 71 [50, 86] & 2.6 & 0.0\\
+LedgerLine & on  & 95\% & 55 [34, 74] & 65 [43, 82] & 9.7 & 0.0\\
+LedgerLine & off & 95\% & 40 [22, 61] & 70 [48, 85] & 3.9 & 3.1\\
+\bottomrule
+\end{tabular}
+
+\smallskip
+{\footnotesize Delay is the median time from fault onset to the first alarm; FA/h is false-alarm episodes per fault-free hour.}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Top-1 and Top-3 root-cause accuracy (\%) by fault class in the live campaigns (on / off).}
+\label{tab:liveclass}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lrrrr}
+\toprule
+ & & & \textbf{ShopFlow} & \textbf{LedgerLine}\\
+\textbf{Fault class} & \textbf{Faults} & & \textbf{Top-1 / Top-3} & \textbf{Top-1 / Top-3}\\
+\midrule
+Brownout & 6 & on / off & 0 / 17 \hspace{4pt} 0 / 0 & 0 / 0 \hspace{4pt} 0 / 20\\
+Crash & 6 & on / off & 33 / 83 \hspace{4pt} 33 / 100 & 80 / 80 \hspace{4pt} 33 / 83\\
+Pause & 7 & on / off & 57 / 100 \hspace{4pt} 29 / 100 & 86 / 100 \hspace{4pt} 86 / 100\\
+Stop & 2 & on / off & 50 / 100 \hspace{4pt} 50 / 100 & 50 / 100 \hspace{4pt} 0 / 50\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{What the numbers show.} Every fault but one was detected in both systems, and the true cause was within the top three suspects in 65 to 71\,\% of the faults. The differences between the on and off rows are 9 and 15 points of Top-1, and the false-alarm column moves in opposite directions (more with auto-restart on in ShopFlow, fewer in LedgerLine). With 21 faults the intervals overlap completely, so none of these differences can be called an effect of auto-restart. Brownouts are the weak class in all four runs (no Top-1 at all), which agrees with the 62-fault results of Section~\ref{sec:resultsmain}.
+
+\textbf{Why there was no effect to find.} The log of each run shows what auto-restart actually did. It restarted no container of the bench under test. The one restart in each ``on'' run was of the \emph{other} bench's message bus, which had been stopped by hand to keep one bench per run and which exited with code 1; the mapper, which sees every container on the host, restarted it. That is an artefact of the setup and is reported as such. Three properties of the mapper and the benches explain the rest:
+\begin{itemize}
+\item the benches set \texttt{restart: always}, so Docker brings a crashed container back within seconds, before the mapper's next pass;
+\item the mapper only looks for dead containers once per discovery cycle (180\,s), longer than the 20-second crash faults;
+\item it skips containers that exited with code 0, and a container stopped with \texttt{docker stop} exits with code 0.
+\end{itemize}
+
+\textbf{A direct test with long outages.} To give auto-restart a chance to act, \texttt{cart} and \texttt{payments} were each stopped for 5 minutes by the Fault Lab (\texttt{run/scripts/autorestart-stop-test.sh}), with the state of each container sampled every 2 seconds. Table~\ref{tab:stoptest} shows no difference: the mapper left the containers down in both modes.
+
+\begin{table}[!htbp]
+\centering
+\caption{Time a stopped container stayed down, with auto-restart on and off (injector releases it after 300\,s).}
+\label{tab:stoptest}
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Container} & \textbf{On (s)} & \textbf{Off (s)}\\
+\midrule
+cart & 299 & 298\\
+payments & 301 & 301\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion.} On these benchmarks auto-restart is inert: it neither helped nor hurt detection or root-cause accuracy beyond run-to-run variation, and the rule that skips exit code 0 means a deliberate stop is never undone. It would matter on a host whose containers have no restart policy and exit with a failure code, which these benches do not model, so that case is untested. Switching it off for evaluation remains the safe default, because the mapper then cannot heal what the injector breaks.
+
 \section{Analysis}
 \textbf{What the evidence supports.} Three results are robust. The fact-aware hybrid names the true cause more often than the rules on the real systems (the paired interval excludes zero). The container facts are the single most valuable component (the ablation shows 19 and 16 points). And the learned propagation model discriminates better than fixed edge probabilities on observed cascades (AUROC 0.847 against 0.784).
 
@@ -249,7 +322,7 @@ Operating the benchmark hosts produced three findings that changed the tools.
 
 \textbf{Conclusion validity.} With 62 real faults a difference below about eight points cannot be resolved, and overlapping faults make the intervals optimistic.
 
-\textbf{A caution about auto-restart.} The mapper can restart crashed containers on a target (Section~\ref{sec:tools} and Chapter~\ref{ch:system}). Evaluation runs should be made with it switched off, so that the mapper does not heal the faults the injector applies; the reader of this report should confirm the setting of any run it intends to repeat.
+\textbf{A caution about auto-restart.} The mapper can restart crashed containers on a target (Section~\ref{sec:tools} and Chapter~\ref{ch:system}). Section~\ref{sec:live} compares live campaigns with it on and off and finds no effect on these benches; evaluation runs are still best made with it switched off, so that the mapper cannot heal the faults the injector applies.
 
 \section{Comparison with Existing Approaches}
 The published methods in Table~\ref{tab:litreview} were not re-implemented on our recordings, so there is no head-to-head accuracy table against them. What is compared head to head are the baselines that those methods build on: the rule layer, ranking by anomaly alone (the severity ranking), the walk, and the ML engine. Table~\ref{tab:vsexisting} sets the measured results beside the qualitative properties of Chapter~\ref{ch:lit}.

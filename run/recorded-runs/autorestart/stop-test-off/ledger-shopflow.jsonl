@@ -1,0 +1,4 @@
+{"ts":1792701219037,"subject":"shopflow","type":"fault-start","id":"mmvk00pgb","class":"stop","target":"cart","durationSec":300,"source":"manual","truth":{"rootCause":"cart","expectedAffected":["api-gateway","notifier","orders"]},"plannedAt":0,"startedAt":1792701219036}
+{"ts":1792701519790,"subject":"shopflow","type":"fault-end","id":"mmvk00pgb","target":"cart","class":"stop","appliedAt":1792701219428,"healedAt":1792701519790,"endedAt":1792701519790}
+{"ts":1792701564853,"subject":"shopflow","type":"fault-start","id":"mmvk084ac","class":"stop","target":"payments","durationSec":300,"source":"manual","truth":{"rootCause":"payments","expectedAffected":["api-gateway","notifier","orders"]},"plannedAt":0,"startedAt":1792701564853}
+{"ts":1792701865576,"subject":"shopflow","type":"fault-end","id":"mmvk084ac","target":"payments","class":"stop","appliedAt":1792701565246,"healedAt":1792701865576,"endedAt":1792701865576}
