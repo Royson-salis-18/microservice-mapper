@@ -1,5 +1,10 @@
-\begin{center}{\bfseries\Large LIST OF ALGORITHMS AND LISTINGS\par}\end{center}
-\vspace{4pt}
-\listofalgorithms
-\vspace{10pt}
-\lstlistoflistings
+\begingroup
+\makeatletter
+\renewcommand{\listalgorithmname}{LIST OF ALGORITHMS}
+\renewcommand{\lstlistlistingname}{LIST OF LISTINGS}
+{\small\listofalgorithms}
+\vspace{14pt}
+\let\clearpage\relax\let\newpage\relax\let\cleardoublepage\relax
+{\small\lstlistoflistings}
+\makeatother
+\endgroup

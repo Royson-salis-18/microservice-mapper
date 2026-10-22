@@ -20,7 +20,7 @@ The evaluation then replays recorded runs through the engines and scores them ag
 \section{Measurement and Evaluation Parameters}
 Table~\ref{tab:measures} defines the measures. They are event-level on purpose: point-wise scoring with a window adjustment rewards an engine that flags one point of a long fault, which is not how an operator experiences an alarm \cite{wu2021flawed,kim2022rigorous,tatbul2018precision}.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Measures used in the evaluation.}
 \label{tab:measures}
@@ -47,7 +47,7 @@ Cost & Milliseconds per decision window on one core\\
 \paragraph{Two operating contracts.} An operator can budget false-alarm \emph{episodes} per fault-free hour, but one unbroken alarm counts as a single episode, so an engine can meet an episode budget while alarming almost continuously. We therefore also report \emph{alarm time}. An earlier version of our own detector had a low episode rate and an alarm time of 86\% on the real systems; the refinements of Section~\ref{sec:forest} bring it to 5\%.
 
 \section{Tools, Equipment and Resources}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Tools, equipment and resources.}
 \label{tab:tools}
@@ -90,7 +90,26 @@ Each edge has a \emph{confidence} $c(e)$, the strongest evidence behind it: $1.0
 \[
 w(e) = \operatorname{clip}\bigl(c(e)\, d(e)\, \phi,\, 0,\, 1\bigr),
 \]
-with $\phi$ discounting fire-and-forget telemetry edges to a tenth. \emph{The offline benchmarks replay recordings that do not keep edge evidence, so they use unit weights; the effect of the evidence weighting is therefore not measured in this report.}
+with $\phi$ discounting fire-and-forget telemetry edges to a tenth. Table~\ref{tab:conf} lists the confidence of each kind of evidence. \emph{The offline benchmarks replay recordings that do not keep edge evidence, so they use unit weights; the effect of the evidence weighting is therefore not measured in this report.}
+
+
+\begin{table}[!htbp]
+\centering
+\caption{Edge evidence and its confidence $c(e)$.}
+\label{tab:conf}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Evidence} & \textbf{Confidence $c(e)$}\\
+\midrule
+Seen in request logs, or oriented by a listening port & 1.00\\
+Oriented only by the ephemeral-port range & 0.85\\
+Observed, no direction evidence recorded & 0.70\\
+Observed, direction could not be decided & 0.50\\
+Declared in the Compose file, never seen carrying traffic & 0.40\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Learned call directions}
 \label{sec:dirs}
@@ -143,10 +162,10 @@ P(r) = 1, \qquad P(c) = 1 - \prod_{x \in C(c)} \bigl(1 - P(x)\, \hat p(c \leftar
 \end{equation}
 Services above a risk cut are reported as likely next, and $\sum_c P(c)$ estimates the blast radius. Calibration is assessed with the Brier score $\mathrm{BS} = \frac1n \sum_i (p_i - y_i)^2$ \cite{brier1950verification}, the expected calibration error $\mathrm{ECE} = \sum_b \frac{n_b}{n} \lvert \bar p_b - \bar y_b \rvert$ over equal-width bins \cite{guo2017calibration}, and reliability diagrams.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \resizebox{0.85\linewidth}{!}{\input{fig_prop.tex}}
-\caption{The cascade model on a four-service example. Edge labels are learned propagation probabilities $\hat p(c \leftarrow x)$; risk at the gateway combines its two routes by noisy-OR.}
+\caption[The cascade model on a four-service example]{The cascade model on a four-service example. Edge labels are learned propagation probabilities $\hat p(c \leftarrow x)$; risk at the gateway combines its two routes by noisy-OR.}
 \label{fig:prop}
 \end{figure}
 
@@ -154,7 +173,7 @@ Services above a risk cut are reported as likely next, and $\sum_c P(c)$ estimat
 For each rising-only feature a least-squares line is fitted over the last two minutes and projected two minutes ahead through the range guard; a service not yet at the alarm level whose trend will reach it is flagged. Separately, online Page--Hinkley change-point detection \cite{page1954cusum} on the raw metrics can raise the alarm before the forest line is crossed. At the alarm, 35 features of the top suspect's telemetry (container-state history, exit code, number of separate outages, memory slope, CPU and throttling change, latency and error ratios against a pre-fault baseline, network drop, number of anomalous callers) go to a random forest \cite{breiman2001rf} that names the fault type (crash, stop, pause, crash-loop, flap, memory, brownout, latency, partition). A short runbook of two to four concrete checks per type is attached. This layer changes neither detection nor ranking.
 
 \section{Error Sources and Mitigation}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Error sources and how each is handled.}
 \label{tab:errors}
@@ -180,6 +199,32 @@ Ledger parsing & A regression test after a bug that hid half of the real faults 
 
 \section{Data Processing and Analysis}
 Readings keep missing values as missing. Each recorded trace stores, per window, the readings, container facts and the engine inputs, so the engines can be replayed deterministically. Warm-up (the first five minutes of each run) is excluded from false-alarm and ROC counts. Intervals are 95\% percentile bootstrap intervals over faults \cite{efron1979bootstrap}; comparisons between engines are \emph{paired} bootstrap differences over the same faults, with two-sided $p$ values; seed-averaged results are means over seeds. Overlapping faults within a run are not independent, so intervals are, if anything, optimistic. With 62 real faults a difference below about 8 points cannot be resolved, and no claim is made below that.
+
+
+\section{Computational Cost and Complexity}
+\label{sec:complexity}
+Table~\ref{tab:complexity} states the cost of one decision window in terms of $N$ services, $E$ edges and $K$ open sockets. Only the measured total (6 to 7\,ms at 12 and 13 services) is an experimental result; the growth rates are read off the algorithms, and the cost beyond 13 services was not benchmarked.
+
+\begin{table}[!htbp]
+\centering
+\caption{Cost per decision window.}
+\label{tab:complexity}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Step} & \textbf{Cost} & \textbf{Note}\\
+\midrule
+Orient sockets & $O(K)$ & One pass over the socket rows of all containers\\
+Score a reading with the forests & $O(N \cdot T \cdot \log\psi)$ & $T = 100$ trees, sample size $\psi = 64$, two forests per service\\
+Refit the forests & $O(N \cdot T\,\psi\log\psi)$ every 10 readings & Independent per service, so it parallelises\\
+Rule scores & $O(N)$ & Median and MAD over a short window\\
+Random walk & $O\bigl(I\,(N+E)\bigr)$ & $I = 60$ iterations\\
+Noisy-OR risk & $O(\text{sweeps}\cdot E)$ & Four sweeps\\
+Fusion and sorting & $O(N \log N)$ & Ranking of suspects\\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \section{Evaluation Design}
 

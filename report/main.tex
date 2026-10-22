@@ -7,7 +7,7 @@
 \usepackage{mathptmx}                       % Times for text and maths
 \usepackage[scaled=0.9]{helvet}
 \usepackage{microtype}
-\usepackage[a4paper,left=1.25in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage[a4paper,left=1.3in,right=1.05in,top=1.15in,bottom=1.1in,headsep=16pt,footskip=26pt]{geometry}
 \usepackage{setspace}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
@@ -19,6 +19,7 @@
 \usepackage{enumitem}
 \usepackage{pdflscape}
 \usepackage{fancyhdr}
+\usepackage{eso-pic}
 \usepackage{titlesec}
 \usepackage{tocloft}
 \usepackage{listings}
@@ -36,14 +37,27 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist{itemsep=2pt,topsep=4pt,parsep=2pt}
-\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}
-\renewcommand{\textfraction}{0.08}\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\topfraction}{0.92}\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.07}\renewcommand{\floatpagefraction}{0.6}
+\setcounter{topnumber}{3}\setcounter{bottomnumber}{2}\setcounter{totalnumber}{5}
+\setlength{\textfloatsep}{14pt plus 4pt minus 4pt}\setlength{\floatsep}{12pt plus 3pt minus 3pt}\setlength{\intextsep}{12pt plus 3pt minus 3pt}
+
+% double-line border on every page (outer heavy, inner light)
+\AddToShipoutPictureBG{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \draw[line width=1.3pt] ($(current page.north west)+(0.5in,-0.5in)$) rectangle ($(current page.south east)+(-0.5in,0.5in)$);
+    \draw[line width=0.4pt] ($(current page.north west)+(0.56in,-0.56in)$) rectangle ($(current page.south east)+(-0.56in,0.56in)$);
+  \end{tikzpicture}}
 
 \pagestyle{fancy}
 \fancyhf{}
-\renewcommand{\headrulewidth}{0pt}
-\fancyfoot[C]{Page \thepage}
-\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{Page \thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\itshape\nouppercase{\leftmark}}
+\fancyhead[R]{\small Phase II Project Report}
+\fancyfoot[L]{\footnotesize Dept.\ of AI \& ML, MITE Mangalore}
+\fancyfoot[R]{\footnotesize \AcademicYear}
+\fancyfoot[C]{\small Page \thepage}
+\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[L]{\footnotesize Dept.\ of AI \& ML, MITE Mangalore}\fancyfoot[R]{\footnotesize \AcademicYear}\fancyfoot[C]{\small Page \thepage}}
 
 % chapter and section headings as in the department's reports
 \titleformat{\chapter}[display]{\centering\bfseries\fontsize{16}{20}\selectfont}{CHAPTER \thechapter}{8pt}{\fontsize{16}{20}\selectfont\MakeUppercase}
@@ -75,7 +89,21 @@
 \setcounter{secnumdepth}{3}
 \renewcommand{\cftfigpresnum}{Figure }\renewcommand{\cftfigaftersnum}{:}
 \renewcommand{\cfttabpresnum}{Table }\renewcommand{\cfttabaftersnum}{:}
-\setlength{\cftfignumwidth}{4.6em}\setlength{\cfttabnumwidth}{4.2em}
+\setlength{\cftfignumwidth}{2.2em}\setlength{\cfttabnumwidth}{2.2em}
+\setlength{\cftfigindent}{0pt}\setlength{\cfttabindent}{0pt}
+\setlength{\cftfignumwidth}{4.9em}\setlength{\cfttabnumwidth}{4.9em}
+\setlength{\cftbeforefigskip}{3pt}\setlength{\cftbeforetabskip}{3pt}
+\renewcommand{\cftfigleader}{\cftdotfill{\cftdotsep}}\renewcommand{\cfttableader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftdotsep}{1.5}
+\renewcommand{\cftfigpagefont}{\bfseries}\renewcommand{\cfttabpagefont}{\bfseries}
+\setlength{\cftafterloftitleskip}{12pt}\setlength{\cftafterlottitleskip}{12pt}
+\renewcommand{\cftloftitlefont}{\hfill\bfseries\Large}\renewcommand{\cftafterloftitle}{\hfill}
+\renewcommand{\cftlottitlefont}{\hfill\bfseries\Large}\renewcommand{\cftafterlottitle}{\hfill}
+% group entries by chapter with a thin gap
+\let\oldchapterlists\chapter
+\makeatletter
+\renewcommand{\chapter}{\addtocontents{lof}{\protect\addvspace{9pt}}\addtocontents{lot}{\protect\addvspace{9pt}}\oldchapterlists}
+\makeatother
 
 % source listings
 \lstset{
@@ -108,8 +136,9 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\code}[1]{\texttt{\small #1}}
 \newcommand{\figdiagram}[3]{% file, caption, label
-  \begin{figure}[H]\centering\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{#1}\caption{#2}\label{#3}\end{figure}}
+  \begin{figure}[!htbp]\centering\includegraphics[width=\linewidth,height=0.58\textheight,keepaspectratio]{#1}\caption{#2}\label{#3}\end{figure}}
 
+\renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{#1}}{}}
 \begin{document}
 
 \input{frontmatter/cover}
@@ -124,9 +153,9 @@
 \begingroup\singlespacing
 \tableofcontents
 \clearpage
-\listoffigures
+{\small\renewcommand{\baselinestretch}{1.12}\listoffigures}
 \clearpage
-\listoftables
+{\small\renewcommand{\baselinestretch}{1.12}\listoftables}
 \clearpage
 \input{frontmatter/listings}
 \clearpage

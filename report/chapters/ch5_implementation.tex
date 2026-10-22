@@ -3,7 +3,7 @@
 \label{ch:impl}
 
 \section{Implementation Environment}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Implementation environment.}
 \label{tab:env}
@@ -78,7 +78,7 @@ The traffic controller starts and stops load through the traffic generator's HTT
 \section{Algorithms}
 Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, \ref{alg:cascade} and \ref{alg:parallel} give the observation, learning and parallel-engine steps.
 
-\begin{algorithm}[H]
+\begin{algorithm}[!htbp]
 \caption{One decision window of the diagnosis assistant}
 \label{alg:window}
 \begin{algorithmic}[1]
@@ -95,7 +95,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[H]
+\begin{algorithm}[!htbp]
 \caption{Orienting the sockets of one container}
 \label{alg:orient}
 \begin{algorithmic}[1]
@@ -117,7 +117,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[H]
+\begin{algorithm}[!htbp]
 \caption{Learning propagation and predicting the next services}
 \label{alg:cascade}
 \begin{algorithmic}[1]
@@ -133,7 +133,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[H]
+\begin{algorithm}[!htbp]
 \caption{Computing the three engines in parallel on one cycle}
 \label{alg:parallel}
 \begin{algorithmic}[1]
@@ -151,7 +151,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \section{Application Programming Interfaces}
 The server exposes 64 REST endpoints and one WebSocket. Table~\ref{tab:api} groups them.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{The REST API by area (the full list is in Appendix~\ref{app:api}).}
 \label{tab:api}
@@ -178,7 +178,7 @@ Ingest & \texttt{POST /api/ingest} & Push from the optional standalone collector
 The WebSocket carries \texttt{graph-update} (nodes, edges, targets, every 5 seconds), \texttt{incident.updated}, \texttt{trace-events} (the live connection feed) and the embedded terminal's data. The dashboard does no polling for graph state.
 
 \section{Configuration and Deployment}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Environment variables.}
 \label{tab:envvars}
@@ -204,7 +204,7 @@ The WebSocket carries \texttt{graph-update} (nodes, edges, targets, every 5 seco
 
 A host is added in the dashboard with its address, SSH user and key path. The configuration is saved to \texttt{server/data/remote\_config.json}; private keys are never copied into the repository, and \texttt{*.pem} is git-ignored as a backstop. \texttt{npm start} installs what is missing and starts the server and the dashboard; \texttt{npm run doctor} checks the machine; \texttt{npm run hosts} lists hosts and tests port 22; \texttt{npm run check-host} and \texttt{npm run mapper-edges} diagnose a host and what the mapper holds for it (Section~\ref{sec:tools}).
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Engine parameters (defaults).}
 \label{tab:params}
@@ -231,7 +231,7 @@ Forecast window / horizon / $R^2$ & 24 / 24 / 0.6 & Two minutes fitted, two minu
 \end{table}
 
 \section{Experimental Setup and Test Cases}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Experimental setup.}
 \label{tab:setup}
@@ -259,7 +259,7 @@ The figures below are screenshots of the running dashboard. They were taken on a
 \subsection{Architecture view}
 The 2D view draws the dependency graph with a choice of arrangements (clusters, hierarchy, tiers, grid, circle, polygon, radial, spiral) and filters by service type. Nodes show CPU and memory against the container's own allowance; edges show the dependency and, when observed, its activity.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_architecture.jpg}
 \caption{Architecture view: the dependency graph of the simulated shop, with arrangement and filter controls.}
@@ -269,7 +269,7 @@ The 2D view draws the dependency graph with a choice of arrangements (clusters, 
 \subsection{Incidents and cascade}
 When the alarm is raised the page shows the most likely root cause, the confidence, the severity and the number of affected services. Below it, the cascade panel shows the source, the services already affected (observed) and those next in line (predicted); the ranking lists each service with the strongest signal behind its score; the ``Why'' panel splits a score into its own-forest, symptom-forest and walk components and lists the evidence that raised it; and the next steps give concrete commands for the host.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_incident_active.png}
 \caption{An active incident after \texttt{orders-db} was killed: root cause, cascade, ranking, evidence breakdown and next steps.}
@@ -296,7 +296,7 @@ The Detection engines page (Figure~\ref{fig:ui-engines}) is the place to see tha
 \subsection{Cascade risk}
 The cascade-risk page shows what is failing now and on its own measurements, what is exposed, and what would happen if a chosen service failed (what-if), with the model's name and parameter beside every prediction rather than a bare number.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_cascade_risk_fault.png}
 \caption{Cascade risk during the fault: the origin and the services failing on their own measurements, expected failures and transmission.}
@@ -304,28 +304,28 @@ The cascade-risk page shows what is failing now and on its own measurements, wha
 \end{figure}
 
 \subsection{Telemetry, traces, dependencies and analytics}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_telemetry.png}
 \caption{Telemetry: fleet totals, the live connection log and a sortable per-service table with a history chart.}
 \label{fig:ui-telemetry}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_traces.png}
 \caption{Traces: connection tracing with a ring, matrix and event-stream view, summary counters and the live feed of sampled TCP sockets (not requests).}
 \label{fig:ui-traces}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_dependencies.png}
-\caption{Dependencies: every connection with its declared and observed flags and its evidence sources (here \emph{network-tcp} and \emph{direction:listen-port}).}
+\caption[Dependencies: every connection with its declared and observed flags and its evidence sources]{Dependencies: every connection with its declared and observed flags and its evidence sources (here \emph{network-tcp} and \emph{direction:listen-port}).}
 \label{fig:ui-deps}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_analytics.png}
 \caption{Analytics: system health index, counts of healthy, degraded and critical services, the most connected services and the top CPU and memory users.}
@@ -335,31 +335,31 @@ The cascade-risk page shows what is failing now and on its own measurements, wha
 \subsection{The 3D spatial view}
 The 3D scene shows the same graph as a small city. Services are units on platforms; links are cables whose thickness shows the dependency weight and whose colour shows the heat of the link, with pulses that move at a rate driven by the link's request rate. Several arrangements are available (islands, flow, topology, tiers and clusters in the toolbar, more under ``More''); Figures~\ref{fig:3d-islands} to~\ref{fig:3d-tiers} show four. In Flow the platforms follow the architectural tiers from ingress to data; Topology puts the services on one master deck with a district per role; Tiers stacks the decks in terraces.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui3d_islands.jpg}
 \caption{Islands: a district with a raised platform per role.}
 \label{fig:3d-islands}
 \end{figure}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui3d_flow.jpg}
 \caption{Flow: platforms in the order of the request path, from ingress to data.}
 \label{fig:3d-flow}
 \end{figure}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui3d_topology.jpg}
 \caption{Topology: one master deck with a labelled zone per role.}
 \label{fig:3d-topology}
 \end{figure}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui3d_tiers.jpg}
 \caption{Tiers: decks stacked in terraces, one per architectural tier.}
 \label{fig:3d-tiers}
 \end{figure}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui3d_islands_fault.jpg}
 \caption{Islands during the fault: the failing unit is marked and its callers are lit.}
@@ -369,17 +369,31 @@ The 3D scene shows the same graph as a small city. Services are units on platfor
 \subsection{Research pages}
 Three pages that belong to the study rather than daily operation are hidden until the operator switches them on: the ML pipeline (what the hybrid engine sees per service), the model findings of the optional Python sidecar, and the experiment history.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{ui_ml_pipeline.jpg}
 \caption{ML pipeline page: what the hybrid engine has learned for each service.}
 \label{fig:ui-ml}
 \end{figure}
 
+
+\section{Security Considerations}
+\label{sec:security}
+The tool holds SSH access to hosts, so it was built to expose as little as it can.
+\begin{itemize}
+\item \textbf{Keys stay on the operator's machine.} The configuration stores only the path of the key file. Private keys are never copied into the repository, and \texttt{*.pem} files are git-ignored as a backstop.
+\item \textbf{A fixed command catalogue.} Every command the server can run on a host is built by a function in one file, and every argument that reaches a shell is checked against the shapes Docker itself produces (container identifiers, timestamps, tail lengths, paths). A test checks that an identifier with shell metacharacters is refused before a command is built.
+\item \textbf{Bounded output and time.} Each command has a timeout and a maximum output size, so a misbehaving host cannot make the server wait or buffer without limit.
+\item \textbf{Local control surfaces.} The Fault Lab panel listens on localhost only and its requests need a header the page itself sets. Grafana and Prometheus listen on localhost and are reached through an SSH tunnel.
+\item \textbf{Ingest token.} The push endpoint is protected by a token. The built-in default is for local use and must be changed when the server can be reached by others.
+\item \textbf{One write on the host.} The only change the mapper makes on a host is restarting a container that exited with a non-zero code, a few attempts at most per container, never for load generators, and switched off with \texttt{MAPPER\_AUTO\_RESTART=off}.
+\item \textbf{Load limits.} The traffic generator clamps the number of virtual users to a fixed ceiling and starts only from the traffic controller.
+\end{itemize}
+
 \section{Testing and Validation}
 The suite has 329 tests in 19 suites and runs in under a minute with \texttt{npm test}. Table~\ref{tab:tests} groups them by area. Three kinds of test deserve a note. \emph{Purity tests} check that algorithm modules do not touch the filesystem or the network, so they can be replayed. \emph{Regression tests} hold each bug that was found (for example the ledger-reader bug and the tier layout). \emph{Security tests} check that the command catalogue refuses unsafe identifiers.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{The test suites.}
 \label{tab:tests}
@@ -400,7 +414,7 @@ The suite has 329 tests in 19 suites and runs in under a minute with \texttt{npm
 \end{tabularx}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Representative test cases and the assertions that hold them.}
 \label{tab:testcases}
@@ -425,7 +439,7 @@ Ledger with two campaigns & All faults from both campaigns are scored\\
 \label{sec:benches}
 The two real systems of the evaluation are not borrowed demos. They were built for this study as \emph{test benches for root-cause-analysis tooling}, each in its own repository and each running on its own EC2 host. The code of both is correct and defensive: every failure comes from configuration, data volume, sizing, topology or a third party, and every failure ships with a machine-readable ground truth (the true root cause, what a monitor should and should not be able to see, and the fix). Each bench has the same four parts: the application, a monitoring stack with Grafana, an always-on traffic generator, and a Fault Lab.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{The two benchmark hosts.}
 \label{tab:benches}
@@ -480,7 +494,7 @@ The control page (Figures~\ref{fig:faultlab-sf} and~\ref{fig:faultlab-ll}) runs 
 \begin{figure}[p]
 \centering
 \includegraphics[width=0.92\textwidth,height=0.85\textheight,keepaspectratio]{faultlab_shopflow.png}
-\caption{The Fault Lab control page of the ShopFlow bench: a random campaign (profile, duration, rate, seed, allowed fault types and services), one fault by hand, traffic control and the service list.}
+\caption[The Fault Lab control page of the ShopFlow bench: a random campaign]{The Fault Lab control page of the ShopFlow bench: a random campaign (profile, duration, rate, seed, allowed fault types and services), one fault by hand, traffic control and the service list.}
 \label{fig:faultlab-sf}
 \end{figure}
 
@@ -494,7 +508,7 @@ The control page (Figures~\ref{fig:faultlab-sf} and~\ref{fig:faultlab-ll}) runs 
 \subsection{Scenarios with ground truth}
 Besides random campaigns, each bench offers scripted scenarios. A scenario applies a defined cause, drives the load that triggers it, and writes a report beside the expected result stated in its \texttt{scenario.yaml}. Tables~\ref{tab:scen-sf} and~\ref{tab:scen-ll} list them. They cover cascades, retry amplification, silent degradation, undocumented dependencies and a circular dependency, which are the cases a diagnosis tool most easily gets wrong.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{ShopFlow scenarios and their true root causes.}
 \label{tab:scen-sf}
@@ -520,7 +534,7 @@ sf-11-wrong-hostname & A renamed service still referenced by its old name & none
 \end{tabularx}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{LedgerLine scenarios and their true root causes.}
 \label{tab:scen-ll}
@@ -552,7 +566,7 @@ Two tools were added after operating the benchmark hosts showed that ``nothing a
 \textbf{\texttt{npm run mapper-edges}} prints what the running mapper holds for a project or service: the target's status and last-seen time, the matching nodes and their status, and every edge in or out with its evidence and last-seen time. Together the two tools separate a host problem from a mapper problem in minutes.
 
 \section{The Evaluation Harness}
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{The evaluation harness and the experiments built on it.}
 \label{tab:harness}

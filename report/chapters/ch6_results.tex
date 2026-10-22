@@ -7,9 +7,9 @@
 \subsection{Detection and root cause}
 Table~\ref{tab:main} compares the engines in one harness. On the real systems the hybrid names the true cause first for 74\% of all faults, against 65\% for the rule layer, 71\% for ranking by anomaly alone and 73\% for the ML engine. The paired differences are in Figure~\ref{fig:forest} and Table~\ref{tab:paired}. Hybrid over rules is significant on the real systems ($+9.7$ points, 95\% CI $[+1.6, +17.7]$, $p = 0.032$) but not on the synthetic set ($+2.2$, $[-3.9, +8.4]$); hybrid over the severity ranking is positive but not significant in either set ($+3.2$ and $+1.1$ points).
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
-\caption{Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults). Det.: faults detected (\%). \acc{1}, \acc{3}: true cause first or in the top three among detected (\%). \cn: caught and named first over all faults (\%). FA/h: false-alarm episodes per fault-free hour. Alarm: share of fault-free time in alarm (\%).}
+\caption[Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults)]{Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults). Det.: faults detected (\%). \acc{1}, \acc{3}: true cause first or in the top three among detected (\%). \cn: caught and named first over all faults (\%). FA/h: false-alarm episodes per fault-free hour. Alarm: share of fault-free time in alarm (\%).}
 \label{tab:main}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -41,18 +41,18 @@ The operating curves (Figure~\ref{fig:op}) show why the comparison is delicate: 
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{fig_op.pdf}
-\caption{Operating curves. Sweeping the alarm threshold of each engine traces detection rate (top) and caught-and-named rate (bottom) against false-alarm episodes per fault-free hour (symmetric-log axis); stars mark the default threshold. The hybrid sits on the upper envelope in both the real systems (a, c) and the synthetic held-out set (b, d).}
+\caption[Operating curves. Sweeping the alarm threshold of each engine traces detection rate]{Operating curves. Sweeping the alarm threshold of each engine traces detection rate (top) and caught-and-named rate (bottom) against false-alarm episodes per fault-free hour (symmetric-log axis); stars mark the default threshold. The hybrid sits on the upper envelope in both the real systems (a, c) and the synthetic held-out set (b, d).}
 \label{fig:op}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_forest.pdf}
-\caption{Paired differences in caught-and-named rate between engines (percentage points, 95\% paired-bootstrap interval); filled markers exclude zero.}
+\caption[Paired differences in caught-and-named rate between engines]{Paired differences in caught-and-named rate between engines (percentage points, 95\% paired-bootstrap interval); filled markers exclude zero.}
 \label{fig:forest}
 \end{figure}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Paired bootstrap tests behind Figure~\ref{fig:forest} (difference in caught-and-named rate).}
 \label{tab:paired}
@@ -80,7 +80,7 @@ Synth. & Learned directions vs name rule & +0.0 & [+0.0, +0.0] & 1.000 \\
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{fig_class.pdf}
-\caption{Caught-and-named rate by fault class (percent; $n$ faults per class), for four rankers on the real systems (a) and the synthetic held-out set (b). Brownouts are the open problem on the real systems.}
+\caption[Caught-and-named rate by fault class]{Caught-and-named rate by fault class (percent; $n$ faults per class), for four rankers on the real systems (a) and the synthetic held-out set (b). Brownouts are the open problem on the real systems.}
 \label{fig:class}
 \end{figure}
 
@@ -89,9 +89,9 @@ Figure~\ref{fig:roc} and Table~\ref{tab:roc} score each detector as a service-le
 
 The Isolation Forest is therefore kept for what it adds to the hybrid, not for discrimination alone. It is the quietest detector (alarm time of 5\% against 9\% for the rules on the real systems, Table~\ref{tab:main}); it separates own from symptom evidence; and its alarms complement those of the rules, so their union detects more faults than either (92\% against 89\% on the synthetic set). The ensemble of four detectors was not run on the synthetic set to completion and is reported for the real systems only.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
-\caption{Service-level detection by detector (mean $\pm$ s.d. over three seeds; the rule layer is deterministic). Dashes: not run.}
+\caption[Service-level detection by detector (mean $\pm$ s.d]{Service-level detection by detector (mean $\pm$ s.d. over three seeds; the rule layer is deterministic). Dashes: not run.}
 \label{tab:roc}
 \footnotesize
 \begin{tabular}{lcccc}
@@ -112,7 +112,7 @@ Ensemble of four & 0.648$\pm$0.001 & 0.323$\pm$0.003 & -- & -- \\
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{fig_roc.pdf}
-\caption{Service-level detection by detector: ROC (top) and precision--recall (bottom) for the real systems (left) and the synthetic held-out set (right); legends give AUROC and average precision (means over three seeds for the randomised detectors). Positives are the faulted service during a fault; negatives are any service when no fault is active; container facts are excluded.}
+\caption[Service-level detection by detector: ROC]{Service-level detection by detector: ROC (top) and precision--recall (bottom) for the real systems (left) and the synthetic held-out set (right); legends give AUROC and average precision (means over three seeds for the randomised detectors). Positives are the faulted service during a fault; negatives are any service when no fault is active; container facts are excluded.}
 \label{fig:roc}
 \end{figure}
 
@@ -122,14 +122,14 @@ Figure~\ref{fig:delay} shows detection delay as a cumulative distribution. On th
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{fig_delay.pdf}
-\caption{Detection delay after fault onset as a cumulative distribution (symmetric-log axis); legends give the median over detected faults. The curves plateau at each engine's detection rate.}
+\caption[Detection delay after fault onset as a cumulative distribution]{Detection delay after fault onset as a cumulative distribution (symmetric-log axis); legends give the median over detected faults. The curves plateau at each engine's detection rate.}
 \label{fig:delay}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_atk.pdf}
-\caption{Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals (offset for legibility), for the real systems (a) and the synthetic held-out set (b).}
+\caption[Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals]{Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals (offset for legibility), for the real systems (a) and the synthetic held-out set (b).}
 \label{fig:atk}
 \end{figure}
 
@@ -137,37 +137,37 @@ Figure~\ref{fig:delay} shows detection delay as a cumulative distribution. On th
 \label{sec:ablation}
 Figure~\ref{fig:abl} removes one mechanism at a time. The most important single component is the \code{docker stop} fact: without it \cn{} falls by 19 points on the real systems and 16 on the synthetic set, because every stopped service goes unnamed. The crash-loop fact (3 and 7 points), the range guard (4 and 11 points) and the random walk (3 and 1 points) each contribute. Two mechanisms act on the contract rather than on accuracy. Removing the one-sided features raises alarm time on the real systems from 5\% to 30\%. Alarming at level one instead of two raises it to 22\% and false alarms to 11.3 per hour while changing \cn{} by only $+2$ points. The one-sided features do not matter on the synthetic set, where restarts do not lower memory: an effect of the real systems that the simulator does not reproduce.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_ablation.pdf}
-\caption{Ablation. Each bar removes one mechanism from the full engine. (a), (b): change in caught-and-named rate (percentage points) on the real systems and the synthetic held-out set. (c): share of fault-free time in alarm on the real systems; the dashed line marks the full engine.}
+\caption[Ablation. Each bar removes one mechanism from the full engine.]{Ablation. Each bar removes one mechanism from the full engine. (a), (b): change in caught-and-named rate (percentage points) on the real systems and the synthetic held-out set. (c): share of fault-free time in alarm on the real systems; the dashed line marks the full engine.}
 \label{fig:abl}
 \end{figure}
 
 \subsection{When does the graph matter? The amplification study}
 Standard benchmarks have faults whose own service is also the loudest, which is the case where ranking by severity cannot fail. To probe the regime in which it can, soft faults (brownout, latency, memory) were regenerated with the amplification factor $A \in \{1, 1.5, 2, 3, 4\}$, the hybrid's alarms were kept identical for every ranker, and only the ranking varied (Figure~\ref{fig:amp}). As $A$ grows, the share of faults in which some victim is louder than the true cause rises from 15\% to 25\% (panel c), the severity ranking falls from 67\% to 62\%, and the walk holds near 67\%, so the gain of the walk over severity grows from about one point to about five (panel b). Its intervals include zero at every level ($+4.7$ points, 95\% CI $[-0.9, +11.3]$, at $A = 4$). The strongest ranker on soft faults throughout is the own-versus-explained decomposition used by the rule layer (69 to 75\%; $+5.7$ to $+9.4$ points over severity, with intervals excluding zero at $A = 1.5$ and $A = 4$). A router that uses it whenever no container fact holds did not change the full benchmarks (within $\pm 2$ points), so the shipped ranking is unchanged. Graph-aware ranking is a modest, regime-dependent gain, and the decomposition matters more than the walk.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_amp.pdf}
-\caption{Amplification study on soft faults (106 per level). (a) Caught-and-named rate of four rankers on identical alarms. (b) Gain over the severity ranking with 95\% paired-bootstrap intervals. (c) Share of faults in which a victim is louder than the true cause.}
+\caption[Amplification study on soft faults (106 per level)]{Amplification study on soft faults (106 per level). (a) Caught-and-named rate of four rankers on identical alarms. (b) Gain over the severity ranking with 95\% paired-bootstrap intervals. (c) Share of faults in which a victim is louder than the true cause.}
 \label{fig:amp}
 \end{figure}
 
 \subsection{The cascade model}
 Figure~\ref{fig:cal} evaluates who-is-next predictions at the first alarm of each fault: for every service still healthy, the probability that it turns unhealthy before the fault ends. On the synthetic set (159 faults, 1\,196 predictions, 80 cascades) the learned propagation model reaches AUROC 0.847 against 0.784 for the same noisy-OR with every edge fixed at 0.7, a Brier score of 0.055 against 0.060 and an ECE of 0.039 against 0.058. The reliability curve is noisy in the upper bins, which hold few predictions. \emph{On the real systems the experiment cannot be done well:} only 5 of 420 predictions were followed by a cascade (54 faults), so the real-system comparison (AUROC 0.685 against 0.661; the live mapper's own risk values 0.530) is not informative. The real faults are mostly single-service outages that the systems absorb; whether learned propagation helps on a real cascade is untested.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_calibration.pdf}
-\caption{Who-is-next prediction on the synthetic held-out set. (a) Reliability diagram with equal-width bins and marker area proportional to the logarithm of the bin count. (b) ROC curves. (c) Distribution of the learned predicted probabilities.}
+\caption[Who-is-next prediction on the synthetic held-out set]{Who-is-next prediction on the synthetic held-out set. (a) Reliability diagram with equal-width bins and marker area proportional to the logarithm of the bin count. (b) ROC curves. (c) Distribution of the learned predicted probabilities.}
 \label{fig:cal}
 \end{figure}
 
 \subsection{Learned directions}
 Figure~\ref{fig:dirs} reports direction accuracy on observed pairs that are true calls. With names available the name rule is correct for 21 of 31 real pairs (and leaves 10 undecided); the learned rule is correct for 28 of 31 (3 wrong). With service names hidden the name rule is undecided for every pair while the learned rule is unchanged; the same holds on the synthetic set (95 of 204 against 197 of 204 correct). The effect on ranking is smaller than the effect on directions. With names available the learned directions do \emph{not} beat the name rule (71\% against 74\% on the real systems, $-3.2$ points, not significant). With names hidden they reach 71\% against 69\% for the name rule and 73\% for the true graph. Learned directions are a robustness mechanism, not an accuracy gain.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_dirs.pdf}
 \caption{Call directions. (a) Share of observed true-call pairs oriented correctly, wrongly, or left unresolved by the name rule and by the learned rule, with service names shown or hidden. (b) Correct share of each individual signal on the synthetic set with names hidden.}
@@ -177,17 +177,17 @@ Figure~\ref{fig:dirs} reports direction accuracy on observed pairs that are true
 \subsection{Early warning and fault diagnosis}
 The trend forecast warns before the alarm for 16 of 178 synthetic faults (7 of 18 memory leaks) with a median lead of 30\,s and about one false warning per fault-free hour (Figure~\ref{fig:early}); on the real systems it fired for one of 62 faults, since those faults are abrupt. Figure~\ref{fig:diag} shows fault-type diagnosis. With the true service the forest is correct for 99\% of synthetic faults 60\,s after the alarm; on the engine's own suspect it is 77\%, because a wrong suspect is rarely typed correctly. On the real systems a hand-written decision list generalises best (59\% on the suspect, 84\% on the true service), because real flaps are pause cycles and real brownouts on idle services show no throttling: differences between the simulator and the real systems that the learned models absorb as synthetic-specific patterns.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_early.pdf}
 \caption{Early warning. (a) Share of faults warned before the alarm, by fault class. (b) Lead time of the warnings over the alarm as a cumulative distribution.}
 \label{fig:early}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_diag.pdf}
-\caption{Fault-type diagnosis. (a) Confusion matrix (counts; shading is row-normalised) of the random forest on the engine's suspect 60\,s after the alarm, synthetic held-out set. (b) Accuracy against seconds of telemetry after the alarm, for the true service and the engine's suspect.}
+\caption[Fault-type diagnosis]{Fault-type diagnosis. (a) Confusion matrix (counts; shading is row-normalised) of the random forest on the engine's suspect 60\,s after the alarm, synthetic held-out set. (b) Accuracy against seconds of telemetry after the alarm, for the true service and the engine's suspect.}
 \label{fig:diag}
 \end{figure}
 
@@ -200,14 +200,14 @@ Figure~\ref{fig:case} shows three real incidents, chosen by class before looking
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{fig_case.pdf}
-\caption{Three real incidents. Heat maps show the ML level of the most relevant services; the blue box is the fault, grey dashed boxes are other faults running at the same time, black squares mark container facts, the green line is the first alarm in the window (an alarm already ongoing from an earlier fault starts at the left edge), and the strip below each map shows whether the engine's top-ranked service was the true cause.}
+\caption[Three real incidents]{Three real incidents. Heat maps show the ML level of the most relevant services; the blue box is the fault, grey dashed boxes are other faults running at the same time, black squares mark container facts, the green line is the first alarm in the window (an alarm already ongoing from an earlier fault starts at the left edge), and the strip below each map shows whether the engine's top-ranked service was the true cause.}
 \label{fig:case}
 \end{figure}
 
 \subsection{The three engines on one live fault}
 \label{sec:engineslive}
 To show what the Detection engines page adds, the simulator was run with a slow \texttt{payment} service, the ground-truth root cause being \texttt{payment}, while the hybrid was the active engine. All three engines alarmed. Their suspects differed (Figure~\ref{fig:ui-engines-alarm} shows the page for a different fault, the loss of the datastore):
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{One simulated fault (slow \texttt{payment}); each engine's first suspect and peak against its own line.}
 \label{tab:live}
@@ -254,7 +254,7 @@ Operating the benchmark hosts produced three findings that changed the tools.
 \section{Comparison with Existing Approaches}
 The published methods in Table~\ref{tab:litreview} were not re-implemented on our recordings, so there is no head-to-head accuracy table against them. What is compared head to head are the baselines that those methods build on: the rule layer, ranking by anomaly alone (the severity ranking), the walk, and the ML engine. Table~\ref{tab:vsexisting} sets the measured results beside the qualitative properties of Chapter~\ref{ch:lit}.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{This project beside the approaches it builds on. Accuracy figures are caught-and-named on the 62 real faults.}
 \label{tab:vsexisting}

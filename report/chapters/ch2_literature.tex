@@ -25,7 +25,7 @@ Open benchmark applications such as DeathStarBench \cite{gan2019deathstar} and T
 \subsection{Observability tooling}
 Production observability usually combines three kinds of tool. \emph{Metric systems} scrape numbers from endpoints that each service exposes. \emph{Distributed tracing} follows a request across services and needs the application, or a proxy in front of it, to propagate trace identifiers. \emph{Application performance monitoring} products add agents inside the runtime. All three give an accurate picture once the instrumentation exists; none works on a stack that nobody is willing to modify. Service meshes can supply topology without code changes, but they require a sidecar in every pod. The site-reliability literature \cite{beyer2016sre} is clear that the hard part is not collecting signals but deciding what to look at first, which is the gap that root-cause ranking targets.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Review of existing work (what each documents, what it needs, and where it stops).}
 \label{tab:litreview}
@@ -50,7 +50,7 @@ Change-point tests \cite{page1954cusum,adams2007bocpd} & Detect a shift in a str
 \section{Comparative Analysis}
 Table~\ref{tab:approaches} compares the approaches on the properties that decide whether a method can be used on an unmodified Docker stack. The proposed system is deliberately not the most accurate method one could imagine; it is the one that can be switched on in minutes, explains itself, and has been measured honestly.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering
 \caption{Approaches compared on practical properties (\checkmark\ yes, -- no, $\sim$ partly).}
 \label{tab:approaches}
