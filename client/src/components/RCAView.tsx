@@ -104,6 +104,13 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
     return { rootName: rootId ? nameOf(rootId) : null, hit, next: [...next.values()].sort((x, y) => y.risk - x.risk).slice(0, 8) };
   }, [activeIncident, nodes]);
 
+  // Services the status feed marks as not healthy while no incident is open: shown under "All clear" so the
+  // sidebar count and this page tell the same story.
+  const warned = useMemo(() => nodes
+    .map(n => n.data as any)
+    .filter(d => String(d?.project ?? '').toLowerCase() === String(targetId).toLowerCase() && d?.status && d.status !== 'healthy' && d.status !== 'unknown')
+    .map(d => ({ name: getCleanName(String(d.name ?? d.id)), status: String(d.status) })), [nodes, targetId]);
+
   const Command = ({ cmd }: { cmd: string }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0c0d10', border: '1px solid var(--color-border)', borderRadius: 8, padding: '0 6px 0 12px', height: 34 }}>
       <span style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>$</span>
@@ -175,6 +182,11 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
             <div style={sub}>{model?.state === 'learning'
               ? <>Learning what normal looks like for <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b> ({learningText(model)} of baseline). Until then only stopped, paused or restarting containers raise an incident.</>
               : <>No active incident on <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{targetId}</b>. Every service is within its learned baseline{model ? ` (${model.scorer === 'learned' ? 'learned model' : 'rules'}, alarm threshold ${model.threshold.toFixed(2)} from this project's own baseline)` : ''}.</>}</div>
+            {warned.length > 0 && (
+              <div style={{ ...sub, marginTop: 8, color: 'var(--color-degraded)' }}>
+                {warned.length} service{warned.length === 1 ? '' : 's'} flagged but below the incident threshold: {warned.map(w => `${w.name} (${w.status})`).join(', ')}. This is what the sidebar count shows.
+              </div>
+            )}
           </div>
         </section>
       )}

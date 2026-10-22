@@ -122,7 +122,7 @@ export function Sidebar({ activeTab, onTabChange, status, onAddProject }: Sideba
               >
                 <Icon size={16} strokeWidth={1.75} />
                 <span className="label">{item.label}</span>
-                {showCount && <span className="count" title={`${troubled} services need attention`}>{troubled}</span>}
+                {showCount && <span className={`count${status && status.critical === 0 ? ' warn' : ''}`} title={`${troubled} service${troubled === 1 ? '' : 's'} not healthy${status && status.critical === 0 ? ' (degraded, no incident raised)' : ''}`}>{troubled}</span>}
               </div>
             );
           })}
