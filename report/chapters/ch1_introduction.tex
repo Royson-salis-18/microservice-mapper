@@ -1,0 +1,71 @@
+\clearpage
+\chapter[INTRODUCTION]{Introduction}
+\label{ch:intro}
+
+\section{Background}
+Most large applications today are built as many small services that talk to each other over the network. A shopping site, for example, has separate services for the catalogue, the cart, payment, shipping and orders, each with its own database or cache \cite{dragoni2017microservices}. The style lets teams deploy and scale each piece on its own. It also creates a kind of failure that a single program does not have: a fault does not stay where it starts.
+
+Take a slow database. The service that queries it starts waiting, so it answers slowly. The services that call \emph{that} service begin to time out, retry, and add load on top of load. Within a minute a dozen services are raising alarms together, and the operator on call is looking at a wall of red where the first thing that broke is no louder than the things it broke. Practitioners call this an alert storm. The real cost is not the number of alerts but the time spent deciding which one deserves action \cite{beyer2016sre,notaro2021survey}.
+
+Two facts make the problem manageable. First, trouble travels along the call graph: from a callee to the services that wait on it, not in random directions. Second, it travels \emph{probabilistically}. A caller that has a timeout, a cache or a circuit breaker may live through a failing dependency; a caller without those protections will not. A tool that knows the call graph, and how likely trouble is to cross each edge, can answer two questions that a ranked list of alarms cannot: which service is the origin, and which healthy services are about to be pulled in.
+
+Recent research answers the first question with heavy machinery: models that fuse metrics, traces and logs into learned representations and localise the fault with graph neural networks \cite{zhang2023diagfusion,sun2024deephunt,lee2023eadro}. They work, but they need labelled failure data that most teams do not have, they need accelerated hardware at inference time, and their output (a cluster number, an embedding ranking) cannot be checked by the engineer against the numbers on the dashboard. Classic observability products, on the other hand, usually ask for changes inside the application, such as client libraries, agents or a sidecar in every pod, before they show anything.
+
+This project takes a different route. It watches the containers \emph{from outside}, over SSH and the Docker socket, so that nothing in the monitored system is modified. From those observations it builds a live dependency graph, and on top of that graph it runs an unsupervised, single-core diagnosis pipeline that proposes a root cause, a prediction of what fails next, a fault type and a short runbook, each backed by numbers the operator can inspect.
+
+\section{Problem Statement}
+The project addresses four linked problems that a team running containerised microservices meets in practice:
+
+\begin{itemize}
+\item \textbf{Invisible dependencies.} The real call graph of a running system is rarely documented, and it drifts. Compose files list what was \emph{declared}, not what is actually talking. Without instrumentation, nobody can say which service calls which, or in which direction.
+\item \textbf{Alert storms.} When one service fails, its callers fail too. Ranking alarms by severity points at the loudest service, which is often a victim and not the cause.
+\item \textbf{No view of what comes next.} Operators learn that a service is affected only after it alarms. A model of how failure spreads on this particular system could warn earlier.
+\item \textbf{Black-box diagnosis.} Methods that need training data and return an opaque score are hard to trust at three in the morning. An engineer needs to see the evidence and how it was combined.
+\end{itemize}
+
+The problem is therefore to \emph{observe a containerised system without touching it, recover its call graph, detect trouble per service against that service's own normal, rank the likely origin of an incident, predict how it will spread, and show every step in a form an engineer can verify}, with no labelled data and no specialised hardware.
+
+\section{Motivation and Need for the Project}
+Small teams and student projects run exactly the systems for which heavyweight AIOps products are a poor fit: a handful of Docker hosts on a cloud account, no budget for per-host licences, and applications that nobody wants to re-instrument. Yet these systems fail in the same cascading way as large ones. We saw it ourselves while running the benchmark applications for this project: killing one datastore container produced alarms on the services that call it within seconds.
+
+Three observations shaped the work. First, much of what an operator needs is already visible from the host: container state, CPU and memory against the container's own limit, network counters, and the table of open TCP sockets inside each container. Second, a per-service model of ``normal'' removes the need for global thresholds, which fail because services differ by orders of magnitude in every metric. Third, a result that cannot be reproduced or audited is of little use, so the evaluation had to be as careful as the tool: ground truth that the detector never sees, confidence intervals, paired tests, and an honest account of what did not work.
+
+\section{Objectives}
+\begin{enumerate}[label=\arabic*.]
+\item To build a platform that connects to Docker hosts over SSH, discovers the service topology, and shows live health, metrics and dependencies in a 2D and a 3D view, without changing the monitored applications.
+\item To recover call \emph{directions} from observed sockets and, where names carry no information, from the services' own behaviour.
+\item To detect trouble per service against its own recent history with a hybrid of a learned detector (Isolation Forest) and a robust statistical rule layer, treating container facts such as ``stopped'' or ``crash-looping'' as evidence rather than degree.
+\item To rank the root cause of an incident by separating a service's own deviation from what its neighbours explain, and by running a random walk over the call graph.
+\item To model cascading failure with learned per-edge propagation probabilities, predict which services are next, and warn early about gradual faults.
+\item To classify the fault type and attach a short runbook, so the output is something an engineer can act on.
+\item To make the three engines (Rules, ML, Hybrid) switchable and to show, side by side and on the same readings, what each one detects, computes and predicts.
+\item To evaluate all of it on real and synthetic fault campaigns with ground truth the detector never sees, reporting confidence intervals, paired tests, an ablation and the negative results.
+\end{enumerate}
+
+\section{Scope of the Project}
+The system targets Docker-based microservice stacks on Linux hosts that can be reached over SSH. It reads container state, statistics and socket tables; it does not read application payloads and it does not require code changes. It was developed and measured on the following applications:
+
+\begin{itemize}
+\item \textbf{ShopFlow}, a 13-service retail checkout system and \textbf{LedgerLine}, a 12-service retail-banking transfer system. Both were built for this study as test benches, each on its own EC2 host with its own Fault Lab and a Prometheus--Grafana--Loki monitoring stack (Section~\ref{sec:benches}); both were run under open-loop traffic for 217 minutes with 62 faults injected;
+\item \textbf{Sock Shop}, the open microservices demo, used for development;
+\item a social-network application from the DeathStarBench suite \cite{gan2019deathstar} (27 containers) and the OpenTelemetry demo, used to check that discovery works on third-party systems;
+\item a synthetic generator that writes runs in the same recorded format over 16 random topologies, used to enlarge the evaluation.
+\end{itemize}
+
+The mapper is not a distributed tracing tool: there are no request identifiers or spans, and the ``Traces'' page shows sampled TCP connection snapshots. It does not replace an application performance monitoring suite. No language model takes part in the diagnosis; the ``assistant'' is a transparent composition of statistical models, and Chapter~\ref{ch:conclusion} discusses where a language-model agent could be added.
+
+\section{Significance and Expected Contribution}
+The project shows that useful root-cause analysis does not need instrumentation, labels or a GPU, and it measures how far that goes. Its contributions are:
+
+\begin{itemize}
+\item an \textbf{instrumentation-free observation layer} that recovers topology and call direction from container sockets and Docker state;
+\item a \textbf{probabilistic cascading-failure model} whose per-edge propagation probabilities are Beta--Binomial posteriors learned online from the system's own incidents, with risk flowing over the graph by noisy-OR;
+\item a \textbf{hybrid detector} in which a per-service Isolation Forest and a robust rule layer jointly raise the alarm and container facts count as evidence, with an operating contract that reports alarm \emph{time} as well as false-alarm episodes;
+\item a \textbf{fact-aware, decomposition-based ranker} for the root cause, and \textbf{call directions learned from telemetry};
+\item a \textbf{Detection engines page} that runs Rules, ML and Hybrid in parallel and shows what each detected, computed and predicted;
+\item a \textbf{reproducible evaluation} with a blind fault injector, a held-out synthetic benchmark, bootstrap intervals, paired tests, an ablation and an amplification study, together with the results that did not help and a measurement bug that had hidden half of the real faults;
+\item a working \textbf{platform} of about 36\,000 lines of TypeScript with 329 automated tests, a traffic generator and a host-check tool, used throughout the experiments.
+\end{itemize}
+
+\section{Organization of the Report}
+Chapter~2 reviews related work on anomaly detection, root-cause localisation, cascade modelling and observability tooling, and states the gap. Chapter~3 formulates the problem and presents the proposed system, its architecture and its two agents. Chapter~4 describes the methodology: the models, the evaluation measures, the blind fault injector and the statistics. Chapter~5 describes the implementation: modules, interfaces, core code, algorithms, configuration, the prototype and testing. Chapter~6 reports the results of the experiments, the comparison with existing approaches, and the operational findings from the hosts. Chapter~7 concludes and lists limitations and future work. The appendices give the configuration constants, the fault classes, the test suites and a short user guide.

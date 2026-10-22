@@ -1,0 +1,7 @@
+flowchart TB
+  A["Per service: own level o(s), symptom level sigma(s)"] --> B["Subtract what a sick callee explains<br/>raw(s) = max(o, sigma - gamma x max callee anomaly)"]
+  B --> C["Personalised random walk on the call graph<br/>restart 0.15; to callee, back to caller, or stay"]
+  C --> D["Rank by walk share"]
+  E["Container facts<br/>stopped, paused, crash-looping"] --> F
+  D --> F["Facts first, then walk share"]
+  F --> G["Ranked suspects with evidence breakdown"]

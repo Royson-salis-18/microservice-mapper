@@ -1,0 +1,86 @@
+\clearpage
+\chapter[LITERATURE REVIEW]{Literature Review}
+\label{ch:lit}
+
+\section{Introduction}
+This project draws on five bodies of work: anomaly detection on time series, root-cause localisation in microservice systems, models of how failure spreads, evaluation practice for anomaly and diagnosis methods, and the observability tools that supply the data. Each statement about a cited work below restates what that work documents; where we compare, we say what we compared.
+
+\section{Review of Existing Work}
+
+\subsection{Anomaly detection}
+Isolation Forest \cite{liu2008isolation,liu2012isolation} isolates an outlier with few random cuts and needs no density estimate, which suits per-service streams of mixed and skewed metrics. Distance and density methods \cite{ramaswamy2000efficient,breunig2000lof}, the histogram-based score HBOS \cite{goldstein2012hbos} and the multivariate control chart of Hotelling \cite{hotelling1931,mahalanobis1936} with a shrinkage covariance estimate \cite{ledoit2004} are natural alternatives, and we compare all of them in Chapter~\ref{ch:results}. Robust location and scale from the median and the median absolute deviation \cite{hampel1974,rousseeuw1993} underpin the rule layer of the proposed system. Surveys of streaming and learned anomaly detection \cite{gama2014survey,chandola2009survey,ahmad2017unsupervised} and deployed detectors for monitoring data \cite{laptev2015egads,su2019omnianomaly} describe the setting we work in: unlabelled streams, drifting baselines and a high cost of false alarms.
+
+\subsection{Evaluation of anomaly detectors}
+Several studies criticise the common practice of scoring anomaly detectors point by point with an adjustment that credits a whole event if any point inside it is flagged \cite{wu2021flawed,kim2022rigorous}, and argue for range-based precision and recall that respect the duration of an event \cite{tatbul2018precision}. This is why the evaluation in Chapter~\ref{ch:method} is event-level: a fault counts as detected only when an alarm names a truly involved service while the fault is active, and false alarms are counted as episodes outside every fault window.
+
+\subsection{Root-cause localisation in microservices}
+MonitorRank \cite{kim2013monitorrank} introduced a personalised random walk over the call graph, biased by how anomalous each service looks, and ranks the services by the walk's stationary share. MicroRCA \cite{wu2020microrca}, CloudRanger \cite{wang2018cloudranger}, Microscope \cite{lin2018microscope}, AutoMAP \cite{ma2020automap} and MicroRank \cite{yu2021microrank} extend the idea with anomaly-weighted transitions, causal-graph construction and trace spectra. Causal approaches recover structure with the PC algorithm or hierarchical discovery \cite{ikram2022rcd,li2022circa,xin2023causalrca}. Learned methods localise with graph autoencoders and multi-source fusion of metrics, traces and logs \cite{sun2024deephunt,zhang2023diagfusion,lee2023eadro,wang2021groot}. A survey of AIOps approaches to failure management \cite{notaro2021survey} and one of anomaly and root-cause work specific to microservices \cite{soldani2022survey} place these methods in context. Most of them need traces, labelled failures or training, and some need accelerated hardware; the random-walk family needs only the call graph and an anomaly score, which is the family this project builds on.
+
+\subsection{Cascading failure and change detection}
+The independent-cascade model of influence spread \cite{kempe2003influence} is the basis of our propagation model, with the edge probabilities estimated online instead of assumed. Probabilistic forecasts are judged with proper scoring rules, reliability diagrams and expected calibration error \cite{brier1950verification,niculescu2005predicting,guo2017calibration}. Detection latency can be attacked with classical change-point detection \cite{page1954cusum,adams2007bocpd}. PageRank \cite{page1999pagerank} and reciprocal-rank fusion \cite{cormack2009rrf} inform ranking; Granger causality \cite{granger1969} and transfer entropy \cite{schreiber2000te} inform the study of call direction; random forests and CART \cite{breiman2001rf,breiman1984cart} back the fault-type classifier.
+
+\subsection{Benchmarks and chaos engineering}
+Open benchmark applications such as DeathStarBench \cite{gan2019deathstar} and Train-Ticket \cite{zhou2018trainticket} provide realistic microservice systems to test on, and chaos-engineering practice \cite{basiri2016chaos} provides the method for injecting faults on purpose. Our fault injector follows that practice but, importantly, keeps its ledger private: nothing inside the system under test is labelled.
+
+\subsection{Observability tooling}
+Production observability usually combines three kinds of tool. \emph{Metric systems} scrape numbers from endpoints that each service exposes. \emph{Distributed tracing} follows a request across services and needs the application, or a proxy in front of it, to propagate trace identifiers. \emph{Application performance monitoring} products add agents inside the runtime. All three give an accurate picture once the instrumentation exists; none works on a stack that nobody is willing to modify. Service meshes can supply topology without code changes, but they require a sidecar in every pod. The site-reliability literature \cite{beyer2016sre} is clear that the hard part is not collecting signals but deciding what to look at first, which is the gap that root-cause ranking targets.
+
+\begin{table}[H]
+\centering
+\caption{Review of existing work (what each documents, what it needs, and where it stops).}
+\label{tab:litreview}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{3.3cm}}
+\toprule
+\textbf{Work} & \textbf{Approach} & \textbf{Needs} & \textbf{Limitation for our setting}\\
+\midrule
+Isolation Forest \cite{liu2008isolation} & Isolate outliers with random trees; score by path length & Unlabelled history & Gives a score, not a cause\\
+MonitorRank \cite{kim2013monitorrank} & Personalised random walk over the call graph & Call graph, anomaly score & Direction and edge weights are inputs\\
+MicroRCA \cite{wu2020microrca}, CloudRanger \cite{wang2018cloudranger}, Microscope \cite{lin2018microscope}, AutoMAP \cite{ma2020automap} & Extend the walk with anomaly-weighted transitions and graph construction & A graph and monitoring data (sources differ by method) & The graph is built from data the host alone does not give\\
+MicroRank \cite{yu2021microrank} & Trace spectrum analysis with PageRank & Request traces & Needs tracing in every service\\
+RCD \cite{ikram2022rcd}, CIRCA \cite{li2022circa} & Causal discovery or structural causal graph for localisation & Metrics, structure & Assumes a faithful causal model\\
+Eadro \cite{lee2023eadro}, DeepHunt \cite{sun2024deephunt}, DiagFusion \cite{zhang2023diagfusion} & Learned fusion of metrics, traces, logs; graph neural or autoencoder models & Labelled or curated failures; GPU & Not auditable; training data needed\\
+Independent cascade \cite{kempe2003influence} & Probabilistic spread over a graph & Edge probabilities & Probabilities must be estimated\\
+Change-point tests \cite{page1954cusum,adams2007bocpd} & Detect a shift in a stream & A stream & Alone, no cause or graph\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Comparative Analysis}
+Table~\ref{tab:approaches} compares the approaches on the properties that decide whether a method can be used on an unmodified Docker stack. The proposed system is deliberately not the most accurate method one could imagine; it is the one that can be switched on in minutes, explains itself, and has been measured honestly.
+
+\begin{table}[H]
+\centering
+\caption{Approaches compared on practical properties (\checkmark\ yes, -- no, $\sim$ partly).}
+\label{tab:approaches}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.2cm}>{\centering\arraybackslash}p{1.45cm}>{\centering\arraybackslash}p{1.45cm}>{\centering\arraybackslash}p{1.45cm}>{\centering\arraybackslash}p{1.45cm}>{\centering\arraybackslash}p{1.45cm}}
+\toprule
+\textbf{Property} & \textbf{Metric tools} & \textbf{Tracing} & \textbf{Learned fusion} & \textbf{Walk RCA} & \textbf{This project}\\
+\midrule
+No change to applications & -- & -- & -- & $\sim$ & \checkmark\\
+Works without labelled failures & \checkmark & \checkmark & -- & \checkmark & \checkmark\\
+Recovers the call graph itself & -- & \checkmark & $\sim$ & -- & \checkmark\\
+Learns call direction & -- & \checkmark & -- & -- & \checkmark\\
+Per-service learned baseline & $\sim$ & -- & \checkmark & $\sim$ & \checkmark\\
+Ranks a root cause & -- & $\sim$ & \checkmark & \checkmark & \checkmark\\
+Predicts what fails next & -- & -- & -- & -- & \checkmark\\
+Needs a GPU & -- & -- & \checkmark & -- & --\\
+Every score can be audited & \checkmark & \checkmark & -- & $\sim$ & \checkmark\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Research and Design Gap}
+Four gaps motivate the design.
+\begin{enumerate}
+\item \textbf{Observation without instrumentation.} The graph that random-walk and causal methods assume is usually given. Recovering it, with direction, from the host alone is rarely addressed, and the observation noise that results (a socket is seen from both ends) changes what the downstream methods must tolerate.
+\item \textbf{Facts are not degrees.} A stopped container is not ``very anomalous''; it is a fact. Methods that fold container state into one score lose the most reliable signal there is, and our ablation shows how much that costs.
+\item \textbf{Propagation is assumed, not learned.} Cascade prediction normally uses fixed edge probabilities. Learning them from the system's own incidents, with a prior that makes rarely used edges behave sensibly, is cheap and measurable.
+\item \textbf{Evaluation is optimistic.} Point-adjusted scoring, tuned thresholds and a single data set make results look better than they are. We use event-level scoring, a held-out split, paired tests, and we publish what failed.
+\end{enumerate}
+
+\section{Summary}
+Existing root-cause methods are strong on accuracy but assume instrumentation, labels or hardware that small teams do not have, and they are usually evaluated optimistically. The proposed system occupies a different point in the design space: instrumentation-free, unsupervised, auditable and honest about its limits. The next chapter formulates the problem and describes the system.

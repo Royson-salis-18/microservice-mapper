@@ -1,0 +1,14 @@
+flowchart TB
+  subgraph RUN["One run, 217 minutes per system"]
+    direction TB
+    TR["Open-loop traffic<br/>daily wave, bursts, flash crowds"] --> SYS["System under test<br/>ShopFlow or LedgerLine"]
+    INJ["Blind fault injector<br/>Poisson arrivals, role-weighted targets,<br/>heavy-tailed durations"] -->|"SIGKILL, pause,<br/>cgroup limits, detach"| SYS
+    SYS --> COL["Collector: readings every 5 s"]
+  end
+  INJ -.->|"written, never read by the detector"| LED[("Private ledger:<br/>true root cause,<br/>structurally affected services")]
+  COL --> TRACE[("Recorded trace")]
+  SYN["Synthetic generator: 16 topologies<br/>tuned on seed 1, scored once on seed 2"] --> TRACE
+  TRACE --> ENG["Engines replayed on the trace"]
+  ENG --> SC["Event-level scoring against the ledger"]
+  LED --> SC
+  SC --> STAT["Bootstrap intervals, paired tests,<br/>ablation, amplification study"]

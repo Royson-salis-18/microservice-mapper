@@ -1,0 +1,223 @@
+\clearpage
+\chapter[PROPOSED SYSTEM AND SCOPE]{Proposed System and Scope}
+\label{ch:system}
+
+\section{Problem Formulation}
+A system is a set $S$ of $N$ services with a directed call graph. An edge $u \to v$ means that $u$ calls $v$, so a failure travels \emph{against} the arrow, from $v$ to the callers that wait on it. Every $\Delta = 5$\,s the collector produces, for each service $s$, a reading
+\[
+x_s(t) \in (\mathbb{R} \cup \{\varnothing\})^{8},
+\]
+holding CPU, memory, CPU throttling, network in and out, request rate, error share and 95th-percentile latency. The symbol $\varnothing$ marks a metric that was not reported. It is never replaced by zero, because a stopped container must be distinguishable from an idle one. Each reading comes with a container state (running, paused, restarting, exited, detached).
+
+At time $t$ the pipeline must decide four things, using only readings up to $t$:
+\begin{enumerate}[label=(\roman*)]
+\item whether an incident is in progress;
+\item which service is its root cause $r$;
+\item which currently healthy services will be affected before the incident ends;
+\item what kind of fault it is.
+\end{enumerate}
+The pipeline must do this without labelled failures, without changing any application, and fast enough that a decision window finishes well inside the 5\,s collection period.
+
+\section{Proposed Solution}
+The proposed system is an \emph{agent-assisted} pipeline in a concrete sense. A \textbf{collector agent} observes the containers from outside the application. A \textbf{diagnosis assistant} turns those observations into a cause, a forecast of what fails next, a fault type, a runbook and an explanation the operator can check. Between the two sits the evidence-weighted dependency graph. Figure~\ref{fig:arch} shows the whole system and Figure~\ref{fig:poll} one 5-second cycle.
+
+The solution has seven steps, each described in Chapter~\ref{ch:method}:
+\begin{enumerate}
+\item \textbf{Observe.} Read container state, statistics and socket tables over SSH; install nothing on the host.
+\item \textbf{Build the graph.} Merge declared dependencies (from the Compose file) with observed ones; orient each observed socket by the listening port; give each edge a confidence and a dependency share.
+\item \textbf{Learn directions.} Where the heuristic cannot tell who calls whom, vote over dynamic and structural signals.
+\item \textbf{Detect.} Judge every service against its own recent past with two Isolation Forests and a robust rule layer; treat container facts as evidence.
+\item \textbf{Rank.} Split each service's deviation into what its callees explain and what they do not; run a personalised random walk over the call graph; put facts first.
+\item \textbf{Predict.} Spread risk over the graph by noisy-OR with edge probabilities learned from the system's own incidents; warn early about gradual faults.
+\item \textbf{Diagnose and explain.} Classify the fault type, attach a short runbook and show the evidence behind every number.
+\end{enumerate}
+
+\figdiagram{d_architecture.pdf}{System architecture. The server reaches the target host over SSH and reads Docker and the container socket tables; nothing is installed on the host. The three detection engines share the same readings and graph; the dashboard receives updates over a WebSocket.}{fig:arch}
+
+\figdiagram{d_poll_cycle.pdf}{One 5-second cycle: observation, graph update, the three engines in parallel, ranking and the push to the dashboard.}{fig:poll}
+
+\section{Requirements}
+
+\subsection{Functional requirements}
+\begin{table}[H]
+\centering
+\caption{Functional requirements and where they are met.}
+\label{tab:fr}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.2cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Component}\\
+\midrule
+FR1 & Connect to a Docker host over SSH with a key pair and discover its containers and Compose dependencies & Connection manager, discovery engine\\
+FR2 & Collect CPU, memory, throttling, network, restarts and request statistics every 5 s & Metric collector, MetricStore\\
+FR3 & Recover observed dependencies and their direction from container socket tables & Collector, GraphStore, EdgeWeights\\
+FR4 & Show the live topology in 2D and in 3D, with health, link activity and layouts to choose from & Dashboard (graph canvas, 3D scene)\\
+FR5 & Detect abnormal behaviour per service against its own baseline & Rules, ML and Hybrid engines\\
+FR6 & Raise an incident and rank the root cause with an evidence breakdown & RCAEngine, IncidentManager\\
+FR7 & Predict which healthy services are likely next and give an early warning for gradual faults & CascadeEngine, ML engine\\
+FR8 & Classify the fault type and give a runbook & Diagnosis layer, remediation guide\\
+FR9 & Let the operator switch the engine and compare all three on the same readings & Engine switch, Detection engines page\\
+FR10 & Generate load and run experiments against a target & TrafficController, traffic-gen\\
+FR11 & Record runs and score the engines against a private fault ledger & Evaluation harness (\texttt{run/cli})\\
+FR12 & Report host and mapper problems separately & \texttt{check-host}, \texttt{mapper-edges}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Non-functional requirements}
+\begin{table}[H]
+\centering
+\caption{Non-functional requirements.}
+\label{tab:nfr}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Quality} & \textbf{Requirement}\\
+\midrule
+Non-intrusive & No code, agent or sidecar is added to the monitored application; the host needs only Docker and SSH access\\
+Unsupervised & No labelled failures and no training phase beyond the first minutes of normal readings\\
+Auditable & Every score shown to the operator can be traced to a measurement and a stated rule\\
+Fast & A decision window finishes in a small fraction of the 5-second collection period on one CPU core\\
+Honest & Container state is shown as a fact, missing metrics as missing, and measured limits are stated rather than hidden\\
+Safe to connect & Remote commands come from a fixed catalogue whose arguments are sanitised; keys stay outside the repository\\
+Reproducible & Every reported number is regenerated by a script in the repository\\
+Portable & Runs on macOS, Linux and Windows with Node.js; a Python sidecar is optional\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{System Architecture}
+The architecture has five layers (Figure~\ref{fig:arch}).
+
+\textbf{Dashboard.} A React~19 application built with Vite. It holds no polling logic: the server pushes graph and incident updates over a WebSocket, and REST calls fetch history and configuration. The views are described in Section~\ref{sec:prototype}.
+
+\textbf{Server.} A Node.js process (Express~5, TypeScript) that owns all state and is the only component that writes to disk. The \texttt{GraphStore} keeps nodes, edges and targets; the \texttt{MetricStore} keeps a ring buffer of readings per service; the \texttt{TraceStore} keeps connection events; the \texttt{IncidentManager} drives the engines and turns their verdicts into incidents.
+
+\textbf{Connection and collection.} A connection manager keeps one SSH session per target and runs commands from a fixed catalogue (\code{docker ps}, \code{inspect}, \code{stats}, \code{logs}, and reads of \code{/proc/<pid>/net/tcp}). Reading the socket table from the host through the container's process id works for every image, including images with no shell. An optional standalone collector can run on a host and push to the same ingest endpoint.
+
+\textbf{Target workloads.} Unmodified Docker Compose applications.
+
+\textbf{Test tools.} A traffic generator with per-application workflows and profiles, and a fault injector that works on containers (kill, pause, resource limits, network detach) and writes its ledger to a file the detector never reads.
+
+Table~\ref{tab:ports} lists the network endpoints.
+
+\begin{table}[H]
+\centering
+\caption{Network endpoints used by the system.}
+\label{tab:ports}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{llll}
+\toprule
+\textbf{Port} & \textbf{Component} & \textbf{Protocol} & \textbf{Direction}\\
+\midrule
+3001 & Mapper server & HTTP and WebSocket & Dashboard to server\\
+5173 & Dashboard (Vite) & HTTP & Browser to dashboard\\
+4400 & Traffic generator & HTTP and WebSocket & Server to traffic generator\\
+22 & Target host & SSH & Server to host\\
+8080 (typical) & Target application front end & HTTP & Traffic generator to host\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Agent Design}
+
+\subsection{The two agents}
+Table~\ref{tab:peas} describes the two agents with the PEAS scheme (performance measure, environment, actuators, sensors).
+
+\begin{table}[H]
+\centering
+\caption{PEAS description of the two agents.}
+\label{tab:peas}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+ & \textbf{Collector agent} & \textbf{Diagnosis assistant}\\
+\midrule
+Performance & Complete, timely and truthful readings; correct edges and directions & Caught-and-named rate; alarm time; calibration of predictions\\
+Environment & A Docker host reached over SSH, running an unknown microservice stack & The evidence-weighted graph and the readings it holds\\
+Actuators & SSH commands from a fixed catalogue & Incidents, rankings, predictions, runbooks, explanations in the dashboard\\
+Sensors & Docker state and statistics, socket tables, logs, interface counters & Readings, container facts, graph, learned directions\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision logic of the diagnosis assistant}
+The assistant runs one decision window per cycle. Its alarm rule is shown in Figure~\ref{fig:detect}; its ranking is shown in Figure~\ref{fig:rca}. An incident moves through the states in Figure~\ref{fig:states}.
+
+\figdiagram{d_detection_flow.pdf}{The hybrid alarm rule. A container fact raises the alarm at once; the forest and rule conditions must hold for two windows in a row.}{fig:detect}
+\figdiagram{d_rca_flow.pdf}{Root-cause ranking: split each deviation into own and explained parts, run the random walk, put facts first.}{fig:rca}
+\figdiagram{d_incident_states.pdf}{Incident lifecycle as implemented in the incident manager.}{fig:states}
+
+\subsection{Three engines on the same readings}
+The dashboard has a switch with three positions: Rules, Hybrid and ML. Only the active engine decides the incident, but all three are computed on every cycle from the same readings and graph (Figure~\ref{fig:parallel}). This makes two things possible: switching engines does not start the learned detector from nothing, and the Detection engines page can show what each engine detected, computed and predicted at the same moment.
+
+\figdiagram{d_engines_parallel.pdf}{The three engines in parallel. The rules score, the ML engine and the fused Hybrid rule are computed on the same inputs; the switch only chooses which one decides the incident.}{fig:parallel}
+
+\subsection{Messages and data exchanged}
+\begin{table}[H]
+\centering
+\caption{The main messages exchanged between components.}
+\label{tab:messages}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Message} & \textbf{From $\rightarrow$ to} & \textbf{Content}\\
+\midrule
+Reading & Collector $\rightarrow$ MetricStore & Eight metrics per service with missing values kept as missing\\
+Connection event & Collector $\rightarrow$ TraceStore & Caller, callee, port, state, connection key\\
+Graph update & Server $\rightarrow$ dashboard & Nodes, edges, weights, targets (WebSocket)\\
+Incident update & IncidentManager $\rightarrow$ dashboard & Root cause, ranking, evidence, cascade, runbook\\
+Engine info & Server $\rightarrow$ dashboard & Mode, per-engine verdicts, configuration, offline scores\\
+Ingest payload & Standalone collector $\rightarrow$ server & Nodes, edges, metrics, connection events\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Functional Components}
+Table~\ref{tab:components} lists the main components with their responsibility and location in the repository.
+
+\begin{table}[H]
+\centering
+\caption{Main components.}
+\label{tab:components}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.9cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.2cm}}
+\toprule
+\textbf{Component} & \textbf{Responsibility} & \textbf{Location}\\
+\midrule
+ConnectionManager & One SSH session per target; fixed command catalogue; timeouts sized for a loaded host & {\ttfamily\scriptsize server/telemetry-platform}\\
+MetricCollector & Docker statistics, socket tables, interface counters; orients each socket & {\ttfamily\scriptsize server/telemetry-platform}\\
+EndpointDiscoveryEngine & Topology from Compose and running containers; routes and endpoint health & {\ttfamily\scriptsize server/discovery}\\
+GraphStore & Nodes, edges, targets; merges declared and observed edges; prunes stale ones & {\ttfamily\scriptsize server/graph}\\
+EdgeWeights & Evidence confidence and dependency share per edge & {\ttfamily\scriptsize server/graph}\\
+MetricStore, TraceStore & Ring buffers of readings; connection events with a 24-hour window & {\ttfamily\scriptsize server/telemetry}, {\ttfamily\scriptsize server/traces}\\
+Detection algorithms & Rule scores, container facts, features, thresholds & {\ttfamily\scriptsize server/algorithms/detection}\\
+ML engine & Isolation Forests, random walk, forecast, learned cascade, hybrid fusion & {\ttfamily\scriptsize server/algorithms/ml}\\
+RCAEngine, IncidentManager & Ranking, explanation, incident lifecycle & {\ttfamily\scriptsize server/algorithms/rca}, {\ttfamily\scriptsize server/rca}\\
+RiskEngine, CascadeEngine & Per-service risk, what-if failure, blast radius & {\ttfamily\scriptsize server/graph}\\
+TrafficController & Starts and stops load; resolves the target URL; any project is accepted & {\ttfamily\scriptsize server/traffic}\\
+traffic-gen & Workflows, profiles, virtual users & {\ttfamily\scriptsize traffic-gen}\\
+Evaluation harness & Records runs, scores engines against a ledger & {\ttfamily\scriptsize run/cli}, {\ttfamily\scriptsize v2}\\
+Dashboard & Views, 3D scene, engine switch & {\ttfamily\scriptsize client/src}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Scope and Constraints}
+\textbf{In scope.} Docker-based services on Linux hosts reachable over SSH; container-level metrics, socket tables and logs; unsupervised detection; ranking; cascade prediction; fault typing; a dashboard; a reproducible evaluation.
+
+\textbf{Out of scope.} Distributed tracing (the ``Traces'' page shows sampled TCP connection snapshots, not requests); application payloads; Kubernetes clusters (not tested); a language-model agent (discussed as future work); training on labelled data.
+
+\textbf{Constraints that shape the design.}
+\begin{itemize}
+\item \emph{Coarse signals.} Observation from outside gives eight metrics per service every 5\,s. A brownout on an almost idle service moves none of them enough to alarm; Chapter~\ref{ch:results} reports this as an open problem.
+\item \emph{Each socket is seen from both ends.} Direction has to be recovered, or every dependency would appear as a cycle.
+\item \emph{Loaded hosts answer slowly.} Command timeouts are sized for a host under heavy load. A host that cannot answer \code{docker ps} at all shows nothing, and Section~\ref{sec:hostfindings} gives a measured example.
+\item \emph{One write.} The collection path only reads. The one write the mapper makes on a host is restarting a container that exited with a non-zero code, limited to a few attempts per container and switched off with \texttt{MAPPER\_AUTO\_RESTART=off}. Load generators are never restarted by it.
+\end{itemize}

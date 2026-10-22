@@ -1,0 +1,151 @@
+% Project report, Mangalore Institute of Technology & Engineering, Dept. of AI & ML.
+% Build: report/build.sh   (renders the Mermaid diagrams, then pdflatex + bibtex)
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}                       % Times for text and maths
+\usepackage[scaled=0.9]{helvet}
+\usepackage{microtype}
+\usepackage[a4paper,left=1.25in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs,array,tabularx,longtable,multirow}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{enumitem}
+\usepackage{pdflscape}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+
+\input{meta}
+\graphicspath{{figures/}{diagrams/}}
+
+% ---- layout -------------------------------------------------------------
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist{itemsep=2pt,topsep=4pt,parsep=2pt}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.08}\renewcommand{\floatpagefraction}{0.75}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{Page \thepage}
+\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{Page \thepage}}
+
+% chapter and section headings as in the department's reports
+\titleformat{\chapter}[display]{\centering\bfseries\fontsize{16}{20}\selectfont}{CHAPTER \thechapter}{8pt}{\fontsize{16}{20}\selectfont\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-10pt}{22pt}
+\titleformat{\section}{\bfseries\fontsize{13}{16}\selectfont}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\bfseries\fontsize{12}{15}\selectfont}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\bfseries\itshape\fontsize{12}{15}\selectfont}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{14pt}{4pt}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{8pt}{2pt}
+
+% numbering per chapter: Figure 3.1, Table 3.4, Listing 5.2, Algorithm 5.1
+\captionsetup{font=small,labelfont=bf,labelsep=colon,skip=6pt}
+\captionsetup[table]{position=above}
+\captionsetup[figure]{position=below}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\renewcommand{\thealgorithm}{\thechapter.\arabic{algorithm}}
+\makeatletter
+\@addtoreset{figure}{chapter}\@addtoreset{table}{chapter}\@addtoreset{algorithm}{chapter}
+\makeatother
+
+% contents, lists
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{\bfseries}
+\setlength{\cftbeforechapskip}{6pt}
+\renewcommand{\cftdotsep}{2}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\renewcommand{\cftfigpresnum}{Figure }\renewcommand{\cftfigaftersnum}{:}
+\renewcommand{\cfttabpresnum}{Table }\renewcommand{\cfttabaftersnum}{:}
+\setlength{\cftfignumwidth}{4.6em}\setlength{\cfttabnumwidth}{4.2em}
+
+% source listings
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  numbers=left,numberstyle=\tiny\color{gray},numbersep=6pt,
+  frame=single,framerule=0.3pt,rulecolor=\color{gray},
+  breaklines=true,breakatwhitespace=false,columns=fixed,keepspaces=true,
+  keywordstyle=\bfseries\color{blue!50!black},commentstyle=\itshape\color{green!40!black},
+  stringstyle=\color{red!50!black},showstringspaces=false,tabsize=2,
+  captionpos=b,xleftmargin=1.5em,aboveskip=8pt,belowskip=8pt,
+  literate={→}{$\rightarrow$}1 {≥}{$\geq$}1 {≤}{$\leq$}1 {×}{$\times$}1
+}
+\lstdefinelanguage{TS}{
+  morekeywords={const,let,var,function,return,if,else,for,of,in,while,new,class,interface,type,export,import,from,async,await,null,undefined,true,false,private,public,readonly,as,extends,implements},
+  sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]',morestring=[b]"
+}
+\renewcommand{\lstlistingname}{Listing}
+\makeatletter
+\@addtoreset{lstlisting}{chapter}
+\def\thelstlisting{\thechapter.\arabic{lstlisting}}
+\makeatother
+
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\floatname{algorithm}{Algorithm}
+
+% small helpers
+\newcommand{\acc}[1]{\textrm{A@}#1}
+\newcommand{\cn}{\textrm{C+N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\figdiagram}[3]{% file, caption, label
+  \begin{figure}[H]\centering\includegraphics[width=\linewidth,height=0.78\textheight,keepaspectratio]{#1}\caption{#2}\label{#3}\end{figure}}
+
+\begin{document}
+
+\input{frontmatter/cover}
+\input{frontmatter/certificate}
+\input{frontmatter/declaration}
+\input{frontmatter/acknowledgements}
+\input{frontmatter/abstract}
+
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\begingroup\singlespacing
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+\input{frontmatter/listings}
+\clearpage
+\input{frontmatter/abbreviations}
+\endgroup
+
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_literature}
+\input{chapters/ch3_system}
+\input{chapters/ch4_methodology}
+\input{chapters/ch5_implementation}
+\input{chapters/ch6_results}
+\input{chapters/ch7_conclusion}
+
+\clearpage
+\addcontentsline{toc}{chapter}{REFERENCES}
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\input{chapters/appendices}
+
+\end{document}

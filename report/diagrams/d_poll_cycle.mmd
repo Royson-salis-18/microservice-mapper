@@ -1,0 +1,24 @@
+sequenceDiagram
+  autonumber
+  participant S as Server (every 5 s)
+  participant H as Target host over SSH
+  participant G as GraphStore
+  participant E as Engines (Rules, ML, Hybrid)
+  participant R as IncidentManager
+  participant U as Dashboard
+  S->>H: docker ps, inspect, stats
+  H-->>S: states, IPs, CPU, memory, restarts
+  S->>H: read /proc/PID/net/tcp per container
+  H-->>S: socket tables (ESTABLISHED, TIME_WAIT)
+  S->>G: orient each socket (listen port), merge edges, update weights
+  G->>E: readings x_s(t), container facts, graph
+  par three engines on the same readings
+    E->>E: Rules score and line
+  and
+    E->>E: Isolation Forests, walk, forecast
+  and
+    E->>E: Fused Hybrid rule
+  end
+  E->>R: verdict of the active engine
+  R->>R: rank, cascade risk, fault type, runbook
+  R->>U: incident.updated, graph-update (WebSocket)

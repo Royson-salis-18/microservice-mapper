@@ -1,0 +1,576 @@
+\clearpage
+\chapter[IMPLEMENTATION AND EXPERIMENTAL WORK]{Implementation and Experimental Work}
+\label{ch:impl}
+
+\section{Implementation Environment}
+\begin{table}[H]
+\centering
+\caption{Implementation environment.}
+\label{tab:env}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Part} & \textbf{Technology}\\
+\midrule
+Language and runtime & TypeScript on Node.js 22 (server run with \texttt{tsx}); a small amount of JavaScript in the traffic generator; optional Python~3\\
+Server & Express~5, \texttt{ws} for WebSocket, \texttt{ssh2} for SSH (no \texttt{ssh} binary needed)\\
+Dashboard & React~19, Vite~8, \texttt{@xyflow/react} for the 2D graph, Three.js with react-three-fiber for the 3D scene, Recharts, Framer Motion\\
+Persistence & JSON files under \texttt{server/data} (graph state, remote configuration, per-target connection events); metric ring buffers in memory\\
+Source size & About 18\,400 lines of TypeScript in the server and 17\,200 in the dashboard; 5\,400 in the evaluation tools; 2\,500 in the \texttt{v2} studies\\
+Tests & 329 automated tests in 19 suites, run with Node's built-in test runner\\
+Version control & Git, with GitHub as the remote\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Module-wise Implementation}
+
+\subsection{Connection and collection}
+The connection manager keeps one SSH session per target and runs commands from a fixed catalogue. The catalogue is a list of command builders; every argument that reaches a shell is sanitised (container identifiers must match the shapes Docker itself produces, timestamps and tail lengths are validated). Timeouts are sized for a loaded host: on a swap-thrashing 2\,GB machine with eighteen JVM services, \code{docker ps} was measured at 45 seconds, and a timeout shorter than that does not degrade gracefully, it makes the whole target disappear from the graph.
+
+Each cycle the collector asks for the container list, inspects containers it has not seen, reads statistics, and reads each container's socket table. Reading the table through the container's process id on the host (Listing~\ref{lst:hosttcp}) works for every image, including images with no shell, which had silently hidden the front end of one benchmark for weeks before it was changed. The same command returns the interface byte counters, which are exact, where \code{docker stats} prints values rounded to three significant figures.
+
+\lstinputlisting[language=TS,caption={Reading a container's socket table and interface counters from the host (RemoteCommand.ts).},label={lst:hosttcp}]{listings/hosttcp.ts}
+
+\subsection{Edge direction, weights and the graph}
+Every connection appears in the socket tables of both ends. Recording ``scanned container calls peer'' on both sides produced a reverse duplicate for every real link, so the graph was effectively undirected: it put a cycle on every pair, which made ``downstream of X'' reach almost the whole graph and made blast radius and criticality saturate. Direction is now recovered from listening ports: whichever end owns the listening port is the callee (Listing~\ref{lst:orient}). The ephemeral port range is a fallback when a container's listen table could not be read, and when neither settles it the edge is marked unresolved instead of being given a coin flip dressed as a measurement.
+
+\lstinputlisting[language=TS,caption={Which end of a TCP connection made the call (MetricCollector.ts).},label={lst:orient}]{listings/orient.ts}
+
+Observed and declared edges are merged, and an observed edge expires ten minutes after it was last seen. A connection that is seen only as a recently closed socket (TIME\_WAIT, which lingers about a minute) is counted once by its connection key, so a burst of short calls does not look like many links. A call made through the host's address to a port that one service publishes is attributed to that service (a connection to a private or bridge-gateway address on a published port).
+
+\subsection{Container facts}
+Listing~\ref{lst:facts} turns the container runtime's state into one of a few facts. A load generator and a container that finished cleanly are \emph{benign}: traffic is started and stopped by people, not by faults.
+
+\lstinputlisting[language=TS,caption={Container state as a fact (containerFacts.ts).},label={lst:facts}]{listings/facts.ts}
+
+\subsection{The Isolation Forest level}
+Listing~\ref{lst:judge} is the judgement of one reading by a fitted forest: the one-sided guard, the level relative to the line, and the range guard.
+
+\lstinputlisting[language=TS,caption={Judging a reading (serviceBaseline.ts).},label={lst:judge}]{listings/judge.ts}
+
+\subsection{Ranking by random walk}
+Listing~\ref{lst:walk} is the personalised random walk. The ``stay'' weight is what lets the true source keep the walker: a service whose trouble nothing downstream explains collects the most time.
+
+\lstinputlisting[language=TS,caption={Root cause by random walk (randomWalk.ts).},label={lst:walk}]{listings/walk.ts}
+
+\subsection{Learned propagation}
+Listings~\ref{lst:propupd} and~\ref{lst:proprisk} are the two halves of the cascade model: counting trials and successes per edge, and spreading risk up the graph by noisy-OR.
+
+\lstinputlisting[language=TS,caption={Settling and opening propagation trials (propagation.ts).},label={lst:propupd}]{listings/propagation_update.ts}
+\lstinputlisting[language=TS,caption={Risk by noisy-OR from a suspected root (propagation.ts).},label={lst:proprisk}]{listings/propagation_risk.ts}
+
+\subsection{Hybrid fusion and the three engines in parallel}
+Listing~\ref{lst:fuse} is the fusion of rules and ML. The default detection mode is \texttt{or-strict}: the alarm value is the larger of the ML level and the rule score divided by 1.25. Listing~\ref{lst:parallel} is the part of the incident manager that records, on every cycle, the verdict of each engine whichever one is active.
+
+\lstinputlisting[language=TS,caption={Fusing rules and ML (hybrid.ts).},label={lst:fuse}]{listings/fuse.ts}
+\lstinputlisting[language=TS,caption={Recording each engine's verdict on the same cycle (IncidentManager.ts).},label={lst:parallel}]{listings/parallel.ts}
+
+\subsection{Incidents}
+The incident manager, once per target per cycle, runs the three engines' shared step, builds the evidence for the active engine, calls the root-cause engine, and either updates the open incident or opens a new one. A new incident takes the status \texttt{DEGRADED} or \texttt{INCIDENT} according to whether any service is critical (Figure~\ref{fig:states}); it is resolved when the alarm clears. Severity is raised when more than a configured number of services are critical, and lowered for a service that nothing depends on and that depends on nothing, which has no blast radius.
+
+\subsection{Traffic generation}
+The traffic controller starts and stops load through the traffic generator's HTTP API. Each application has a workflow file (a set of weighted user journeys with think times) and a set of profiles (baseline, moderate, heavy, stress, ramp) that fix the number of virtual users and their pace. An application that has no file of its own gets a generic front-page workflow (Listing~\ref{lst:modulefor}); before that change the server refused every project outside five named ones with ``no workflow defined'', which made benchmark hosts such as \texttt{bench1} undrivable.
+
+\lstinputlisting[language=TS,caption={Fallback to a generic workflow (traffic-gen/server.js).},label={lst:modulefor}]{listings/moduleFor.js}
+
+\section{Algorithms}
+Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, \ref{alg:cascade} and \ref{alg:parallel} give the observation, learning and parallel-engine steps.
+
+\begin{algorithm}[H]
+\caption{One decision window of the diagnosis assistant}
+\label{alg:window}
+\begin{algorithmic}[1]
+\Require readings $x_s(t)$, container states, graph $G$ with learned directions
+\Ensure alarm, ranked causes, likely-next set, fault type, runbook
+\State \textbf{facts}: mark each service stopped, paused, restarting, detached or crash-looping
+\State \textbf{score}: forest levels $\lambda_s$ (own and symptom), rule scores $\rho_s$, anomalies $a_s$
+\State \textbf{alarm}: apply the hybrid rule; if no alarm, update the propagation counts and stop
+\State \textbf{rank}: services with a fact first, then by the walk share $\pi_s$ over $G$
+\State \textbf{explain}: report own versus symptom evidence and what the neighbours explain
+\State \textbf{predict}: $P(c)$ by Eq.~\eqref{eq:noisyor} from the top suspect; early-warning flags
+\State \textbf{diagnose}: classify the fault type of the top suspect; attach its runbook
+\State update $\hat p(c \leftarrow x)$ from services that newly turned abnormal
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Orienting the sockets of one container}
+\label{alg:orient}
+\begin{algorithmic}[1]
+\Require socket table of container $a$, listening ports of every container, IP-to-service map
+\Ensure directed edges with direction evidence
+\For{each socket row in state ESTABLISHED or TIME\_WAIT}
+  \State find peer $b$ from the remote address; if unknown, test the published-port rule
+  \If{the peer owns the remote port as a listening port and $a$ does not own the local port}
+    \State edge $a \to b$, evidence \emph{listen-port}
+  \ElsIf{$a$ owns the local port and the peer does not own the remote port}
+    \State edge $b \to a$, evidence \emph{listen-port}
+  \ElsIf{exactly one port lies in the ephemeral range}
+    \State the side with the ephemeral port is the caller, evidence \emph{ephemeral-port}
+  \Else
+    \State edge $a \to b$, evidence \emph{unresolved}
+  \EndIf
+  \State count the connection once by its key (caller ip:port $>$ callee ip:port)
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Learning propagation and predicting the next services}
+\label{alg:cascade}
+\begin{algorithmic}[1]
+\Require set of services newly abnormal $O$, set of abnormal services $A$, call graph
+\Ensure edge probabilities $\hat p$; risk $P(c)$ for healthy services
+\For{each open trial $(c, x)$}
+  \If{$c \in A$} record a success \ElsIf{the window of 12 steps ran out} record a failure \EndIf
+\EndFor
+\For{each $x \in O$ and each healthy caller $c$ of $x$} open the trial $(c,x)$ \EndFor
+\State $\hat p(c \leftarrow x) \gets (k + m\pi_0)/(n + m)$ for every edge
+\State for a suspected root $r$: $P(r) = 1$; sweep the callers upwards, $P(c) = 1 - \prod_{x \in C(c)} (1 - P(x)\hat p(c \leftarrow x))$
+\State drop services that are already abnormal; report the rest above the risk cut
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Computing the three engines in parallel on one cycle}
+\label{alg:parallel}
+\begin{algorithmic}[1]
+\Require nodes, edges, new readings since the last cycle
+\Ensure a verdict for Rules, ML and Hybrid; the incident for the active engine
+\State step the ML engine with the new readings (forests, facts, walk, forecast, cascade)
+\State score the same moment with the rule layer and divide by its line
+\State fuse: Hybrid maximum $= \max(\text{ML level}, \text{rules}/1.25)$, facts $\to 10$; ranking by the ML order, facts first
+\State for each engine record: alarm (over its line now \textbf{and} on the previous cycle), peak against its line, top five suspects
+\State append the three peaks to a rolling history of 90 cycles
+\State build the incident from the \emph{active} engine only
+\end{algorithmic}
+\end{algorithm}
+
+\section{Application Programming Interfaces}
+The server exposes 64 REST endpoints and one WebSocket. Table~\ref{tab:api} groups them.
+
+\begin{table}[H]
+\centering
+\caption{The REST API by area (the full list is in Appendix~\ref{app:api}).}
+\label{tab:api}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Area} & \textbf{Example endpoints} & \textbf{Purpose}\\
+\midrule
+Graph & \texttt{GET /api/graph}, \texttt{/api/nodes/:id}, \texttt{/api/nodes/:id/metrics} & Topology, node detail, metric history\\
+Targets & \texttt{GET /api/targets}, \texttt{/api/targets/:id/diagnostics}, \texttt{/discovery}, \texttt{/services} & Registered hosts, discovery summary\\
+Reliability & \texttt{GET /api/reliability/cascade}, \texttt{/whatif/:id}, \texttt{/blast-radius/:id} & Risk, what-if failure, blast radius\\
+Incidents & \texttt{GET /api/incidents}, \texttt{/:id/evidence}, \texttt{/:id/propagation}, \texttt{/:id/timeline} & Incident list and detail\\
+Engines & \texttt{GET /api/engine}, \texttt{/api/engine/info}, \texttt{POST /api/engine} & Active engine, per-engine verdicts, switch\\
+Traffic & \texttt{POST /api/traffic/start}, \texttt{/stop}, \texttt{GET /status}, \texttt{/entrypoints} & Start and stop load, entry points\\
+Experiments & \texttt{GET /api/experiments}, \texttt{POST /start} & Experiment history\\
+ML sidecar & \texttt{GET /api/ml/status}, \texttt{/features}, \texttt{POST /retrain} & Optional Python pipeline\\
+Configuration & \texttt{GET/POST /api/config/remote}, \texttt{POST /api/data/clear} & Hosts, keys, reset\\
+Ingest & \texttt{POST /api/ingest} & Push from the optional standalone collector\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The WebSocket carries \texttt{graph-update} (nodes, edges, targets, every 5 seconds), \texttt{incident.updated}, \texttt{trace-events} (the live connection feed) and the embedded terminal's data. The dashboard does no polling for graph state.
+
+\section{Configuration and Deployment}
+\begin{table}[H]
+\centering
+\caption{Environment variables.}
+\label{tab:envvars}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Meaning}\\
+\midrule
+\texttt{PORT} & 3001 & Server port\\
+\texttt{POLLING\_INTERVAL\_MS} & 5000 & Collection period\\
+\texttt{METRIC\_HISTORY\_SIZE} & 720 & Readings kept per service (one hour at 5 s)\\
+\texttt{INGEST\_TOKEN} & built-in token & Token for \texttt{POST /api/ingest}; change it when the server is reachable by others\\
+\texttt{MAPPER\_ENGINE} & saved choice, else Hybrid & Engine at start (overrides the saved choice)\\
+\texttt{MAPPER\_BASELINE\_MIN} & 30 & Minutes of baseline a project needs before its learned rule model is used (until then only container facts raise incidents)\\
+\texttt{MAPPER\_AUTO\_RESTART} & on & Set to \texttt{off} to stop the mapper restarting crashed containers\\
+\texttt{TRAFFIC\_GEN\_PORT} & 4400 & Traffic generator port\\
+\texttt{MAPPER\_PYTHON}, \texttt{PYTHON} & \texttt{python3} & Interpreter for the optional ML sidecar\\
+\texttt{COMPOSE\_PROJECT} & all & Restrict the standalone collector to one Compose project\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A host is added in the dashboard with its address, SSH user and key path. The configuration is saved to \texttt{server/data/remote\_config.json}; private keys are never copied into the repository, and \texttt{*.pem} is git-ignored as a backstop. \texttt{npm start} installs what is missing and starts the server and the dashboard; \texttt{npm run doctor} checks the machine; \texttt{npm run hosts} lists hosts and tests port 22; \texttt{npm run check-host} and \texttt{npm run mapper-edges} diagnose a host and what the mapper holds for it (Section~\ref{sec:tools}).
+
+\begin{table}[H]
+\centering
+\caption{Engine parameters (defaults).}
+\label{tab:params}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Meaning}\\
+\midrule
+Trees per forest / sample size & 100 / 64 & Isolation Forest size\\
+Training window & 120 readings & About ten minutes of normal behaviour\\
+Readings before judging & 30 & First fit\\
+Refit every & 10 readings & Sliding-window refit\\
+Alarm line & median + 3 robust spreads & Level 1\\
+Alarm level / persistence & 2 / 2 windows & Forest condition of the hybrid alarm\\
+Rules alone trusted at & 1.25 $\times$ line & Rule condition of the hybrid alarm\\
+Drift & 24 or 360 readings & Mild shift accepted in two minutes; large one quarantined for thirty\\
+Walk restart / iterations & 0.15 / 60 & Random walk\\
+Propagation trial window & 12 windows & One minute\\
+Propagation prior & mean 0.5, weight 2 & Uninformative\\
+Forecast window / horizon / $R^2$ & 24 / 24 / 0.6 & Two minutes fitted, two minutes ahead\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Experimental Setup and Test Cases}
+\begin{table}[H]
+\centering
+\caption{Experimental setup.}
+\label{tab:setup}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Item} & \textbf{Setting}\\
+\midrule
+Real systems & ShopFlow (13 services) and LedgerLine (12 services), 217 minutes each\\
+Traffic & Open-loop, daily wave, bursts, flash crowds\\
+Faults on real systems & 62 over seven classes, Poisson arrivals, role-weighted targets, heavy-tailed durations\\
+Synthetic tuning split & 16 campaigns, 170 faults, seed 1\\
+Synthetic test split & 16 disjoint campaigns, 178 faults, seed 2, scored once\\
+Collection period & 5 seconds\\
+Statistics & 95\% percentile bootstrap; paired bootstrap for engine contrasts\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Prototype and System Implementation}
+\label{sec:prototype}
+The figures below are screenshots of the running dashboard. They were taken on a simulated five-service-plus-datastore shop that the ground-truth simulator drives (10 services, 9 edges), not on the benchmark hosts, so that the same data could be shown with and without a fault. The scenario in the fault screenshots is the loss of the \texttt{orders-db} container.
+
+\subsection{Architecture view}
+The 2D view draws the dependency graph with a choice of arrangements (clusters, hierarchy, tiers, grid, circle, polygon, radial, spiral) and filters by service type. Nodes show CPU and memory against the container's own allowance; edges show the dependency and, when observed, its activity.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_architecture.jpg}
+\caption{Architecture view: the dependency graph of the simulated shop, with arrangement and filter controls.}
+\label{fig:ui-arch}
+\end{figure}
+
+\subsection{Incidents and cascade}
+When the alarm is raised the page shows the most likely root cause, the confidence, the severity and the number of affected services. Below it, the cascade panel shows the source, the services already affected (observed) and those next in line (predicted); the ranking lists each service with the strongest signal behind its score; the ``Why'' panel splits a score into its own-forest, symptom-forest and walk components and lists the evidence that raised it; and the next steps give concrete commands for the host.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_incident_active.png}
+\caption{An active incident after \texttt{orders-db} was killed: root cause, cascade, ranking, evidence breakdown and next steps.}
+\label{fig:ui-incident}
+\end{figure}
+
+\subsection{Detection engines}
+The Detection engines page (Figure~\ref{fig:ui-engines}) is the place to see that the engine switch does something. It explains the three engines, defines Hybrid, shows the three engines side by side on the same readings, and then lists the configuration of the rules and of the ML engine and the offline scores. When the system is quiet, all three columns read ``quiet''; during the fault in Figure~\ref{fig:ui-engines-alarm} all three alarm, and the table of every service shows each engine's number for each service.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.96\textwidth,height=0.88\textheight,keepaspectratio]{ui_engines_quiet.png}
+\caption{The Detection engines page while the system is healthy: the three engines, the Hybrid definition, the parallel view, and the configuration.}
+\label{fig:ui-engines}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.96\textwidth,height=0.88\textheight,keepaspectratio]{ui_engines_alarm.png}
+\caption{The same page during the \texttt{orders-db} fault: all three engines alarm; the chart shows each engine's peak against its own alarm line; the table lists every service for every engine.}
+\label{fig:ui-engines-alarm}
+\end{figure}
+
+\subsection{Cascade risk}
+The cascade-risk page shows what is failing now and on its own measurements, what is exposed, and what would happen if a chosen service failed (what-if), with the model's name and parameter beside every prediction rather than a bare number.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_cascade_risk_fault.png}
+\caption{Cascade risk during the fault: the origin and the services failing on their own measurements, expected failures and transmission.}
+\label{fig:ui-cascade}
+\end{figure}
+
+\subsection{Telemetry, traces, dependencies and analytics}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_telemetry.png}
+\caption{Telemetry: fleet totals, the live connection log and a sortable per-service table with a history chart.}
+\label{fig:ui-telemetry}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_traces.png}
+\caption{Traces: connection tracing with a ring, matrix and event-stream view, summary counters and the live feed of sampled TCP sockets (not requests).}
+\label{fig:ui-traces}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_dependencies.png}
+\caption{Dependencies: every connection with its declared and observed flags and its evidence sources (here \emph{network-tcp} and \emph{direction:listen-port}).}
+\label{fig:ui-deps}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_analytics.png}
+\caption{Analytics: system health index, counts of healthy, degraded and critical services, the most connected services and the top CPU and memory users.}
+\label{fig:ui-analytics}
+\end{figure}
+
+\subsection{The 3D spatial view}
+The 3D scene shows the same graph as a small city. Services are units on platforms; links are cables whose thickness shows the dependency weight and whose colour shows the heat of the link, with pulses that move at a rate driven by the link's request rate. Several arrangements are available (islands, flow, topology, tiers and clusters in the toolbar, more under ``More''); Figures~\ref{fig:3d-islands} to~\ref{fig:3d-tiers} show four. In Flow the platforms follow the architectural tiers from ingress to data; Topology puts the services on one master deck with a district per role; Tiers stacks the decks in terraces.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui3d_islands.jpg}
+\caption{Islands: a district with a raised platform per role.}
+\label{fig:3d-islands}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui3d_flow.jpg}
+\caption{Flow: platforms in the order of the request path, from ingress to data.}
+\label{fig:3d-flow}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui3d_topology.jpg}
+\caption{Topology: one master deck with a labelled zone per role.}
+\label{fig:3d-topology}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui3d_tiers.jpg}
+\caption{Tiers: decks stacked in terraces, one per architectural tier.}
+\label{fig:3d-tiers}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui3d_islands_fault.jpg}
+\caption{Islands during the fault: the failing unit is marked and its callers are lit.}
+\label{fig:3d-fault}
+\end{figure}
+
+\subsection{Research pages}
+Three pages that belong to the study rather than daily operation are hidden until the operator switches them on: the ML pipeline (what the hybrid engine sees per service), the model findings of the optional Python sidecar, and the experiment history.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ui_ml_pipeline.jpg}
+\caption{ML pipeline page: what the hybrid engine has learned for each service.}
+\label{fig:ui-ml}
+\end{figure}
+
+\section{Testing and Validation}
+The suite has 329 tests in 19 suites and runs in under a minute with \texttt{npm test}. Table~\ref{tab:tests} groups them by area. Three kinds of test deserve a note. \emph{Purity tests} check that algorithm modules do not touch the filesystem or the network, so they can be replayed. \emph{Regression tests} hold each bug that was found (for example the ledger-reader bug and the tier layout). \emph{Security tests} check that the command catalogue refuses unsafe identifiers.
+
+\begin{table}[H]
+\centering
+\caption{The test suites.}
+\label{tab:tests}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.3cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Suite(s)} & \textbf{What is held}\\
+\midrule
+\texttt{logic}, \texttt{riskEngine}, \texttt{rca} & Layouts (2D and 3D), edge heat scale, risk, cascade, what-if, root-cause scoring\\
+\texttt{ml-engine}, \texttt{ml}, \texttt{rca-research} & Isolation Forest, walk, propagation, hybrid fusion, learned directions, change points\\
+\texttt{pipeline}, \texttt{eval}, \texttt{purity} & End-to-end replay, scoring against a ledger, purity of algorithm modules\\
+\texttt{telemetry-platform.*} (eight files) & SSH connection, command catalogue, Docker parsers, CPU, units, service identity, storage, discovery, metric collector\\
+\texttt{sockets}, \texttt{requestStats}, \texttt{freshness} & Socket direction and recently closed sockets, request statistics, staleness\\
+\texttt{security}, \texttt{platform} & Command sanitising, portability across operating systems\\
+\texttt{edge-cases}, \texttt{sparse-traffic}, \texttt{target-model} & Missing data, idle services, per-target models\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Representative test cases and the assertions that hold them.}
+\label{tab:testcases}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Case} & \textbf{Assertion}\\
+\midrule
+3D tiers layout with 19 services & Services wrap into rows instead of one flat line; the row is narrower than 120 units; terraces do not overlap in depth\\
+Socket seen from both ends & The edge points from the end with the ephemeral port to the end with the service port\\
+Recently closed sockets & TIME\_WAIT and similar states count as traffic; listening sockets do not\\
+Host-side addresses & Private, loopback and link-local addresses are host-side; public addresses are not\\
+Command catalogue & An identifier with shell metacharacters is refused before any command is built\\
+Ledger with two campaigns & All faults from both campaigns are scored\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{The Two Custom Benchmark Hosts: ShopFlow and LedgerLine}
+\label{sec:benches}
+The two real systems of the evaluation are not borrowed demos. They were built for this study as \emph{test benches for root-cause-analysis tooling}, each in its own repository and each running on its own EC2 host. The code of both is correct and defensive: every failure comes from configuration, data volume, sizing, topology or a third party, and every failure ships with a machine-readable ground truth (the true root cause, what a monitor should and should not be able to see, and the fix). Each bench has the same four parts: the application, a monitoring stack with Grafana, an always-on traffic generator, and a Fault Lab.
+
+\begin{table}[H]
+\centering
+\caption{The two benchmark hosts.}
+\label{tab:benches}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+ & \textbf{ShopFlow} & \textbf{LedgerLine}\\
+\midrule
+Domain & Online retail checkout & Retail-banking transfers\\
+Services & Gateway, catalogue, cart, inventory, payments, orders, an order-event consumer, a third-party payment sandbox; two PostgreSQL, two Redis, NATS (13 services) & Edge, accounts, transfers, fraud screening, FX rates, a double-entry ledger, a statements worker, a third-party FX provider; two PostgreSQL, Redis, NATS (12 services)\\
+Public port & 8080 (storefront and API) & 8081 (gateway)\\
+Host & EC2 \texttt{c7i-flex.large}, Ubuntu 24.04; about 0.6\,GiB of containers & the same\\
+Scenarios with ground truth & 12 (one baseline control) & 7 (one baseline control)\\
+Monitoring & Prometheus, Grafana, Loki, Promtail; 25-panel dashboard & the same stack; 25-panel dashboard\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Monitoring: Prometheus, Grafana and Loki}
+Each bench carries a monitoring stack that is deliberately a \emph{separate Compose project}. The application project stays exactly what a mapper should discover, and monitoring can be started and stopped independently. The stack has Prometheus (24-hour retention), Grafana with a provisioned dashboard, Loki with Promtail shipping every container's logs, and a small exporter that reads per-container CPU, memory, network, restarts, out-of-memory kills and health from the Docker API (the same numbers as \code{docker stats}). A ``dashboard viewer'' container queries Grafana every few seconds, as a person watching the dashboard would, so those links are live and visible to a mapper. Everything listens on localhost; Grafana is reached through an SSH tunnel. Figures~\ref{fig:grafana-sf} and~\ref{fig:grafana-ll} show the provisioned dashboard of each bench: health at a glance (request rate, 5xx ratio, p95 latency, containers running, restarts, memory), request metrics from each service's own endpoint, container metrics from the Docker API, and application internals (database pool waits, unconsumed events, process memory, heap).
+
+Grafana serves two purposes in the study. It is the operator's ordinary view of a healthy and of a faulted bench, and it is a second, independent source against which the mapper's readings can be compared on the same time axis.
+
+\begin{figure}[p]
+\centering
+\includegraphics[height=0.88\textheight,keepaspectratio]{grafana_shopflow.jpg}
+\caption{The provisioned Grafana dashboard of the ShopFlow bench, taken from the running bench.}
+\label{fig:grafana-sf}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[height=0.88\textheight,keepaspectratio]{grafana_ledgerline.jpg}
+\caption{The provisioned Grafana dashboard of the LedgerLine bench, taken from the running bench.}
+\label{fig:grafana-ll}
+\end{figure}
+
+\subsection{Traffic}
+Each bench has an always-on, open-loop traffic generator. The default mode is \emph{organic}: visitor sessions with think times, popular products, returning users and a day-and-night wave (about twelve workers); a steady mode gives a flat load. A quiet mode stops the generator so that only a person's own clicks reach the gateway. ShopFlow also has a storefront that can be used like a customer, with a live request log and an ``autopilot'' that browses by itself.
+
+\subsection{The Fault Lab}
+The Fault Lab (\texttt{lab/faultlab} in each bench repository) is the fault injector of the evaluation. Its properties are those the methodology needs:
+\begin{itemize}
+\item \textbf{Blind.} The mapper is never told what is injected. Everything the injector does is written to a private ledger that is read only when scoring.
+\item \textbf{Physical.} Faults act on containers: \code{SIGKILL} with the restart policy bringing the service back (crash), repeated kills (crash-loop), \code{docker stop}, pause, resource limits (brownout, memory), network detach (partition) and repeated pause-and-release cycles (flap).
+\item \textbf{Organic and reproducible.} A campaign draws faults from a Poisson process with a profile, a duration, a rate, a maximum number at once and an optional seed; the same seed gives the same campaign.
+\item \textbf{Targeted.} The operator may restrict the fault types and the services that may be hit, or inject one fault by hand with a severity and a hold time, and heal everything at once.
+\end{itemize}
+The control page (Figures~\ref{fig:faultlab-sf} and~\ref{fig:faultlab-ll}) runs on the bench host, listens on localhost only and is reached through an SSH tunnel; it starts the same commands one would type. Its requests need a header the page itself sets, so another site open in the same browser cannot drive it. The same page starts and stops the traffic, sets the average request rate and chooses its shape. The screenshots were taken of the page with no campaign running and away from the bench host, so the service list reads ``absent''; on the host each service shows its container state.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.92\textwidth,height=0.85\textheight,keepaspectratio]{faultlab_shopflow.png}
+\caption{The Fault Lab control page of the ShopFlow bench: a random campaign (profile, duration, rate, seed, allowed fault types and services), one fault by hand, traffic control and the service list.}
+\label{fig:faultlab-sf}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.92\textwidth,height=0.85\textheight,keepaspectratio]{faultlab_ledgerline.png}
+\caption{The Fault Lab control page of the LedgerLine bench.}
+\label{fig:faultlab-ll}
+\end{figure}
+
+\subsection{Scenarios with ground truth}
+Besides random campaigns, each bench offers scripted scenarios. A scenario applies a defined cause, drives the load that triggers it, and writes a report beside the expected result stated in its \texttt{scenario.yaml}. Tables~\ref{tab:scen-sf} and~\ref{tab:scen-ll} list them. They cover cascades, retry amplification, silent degradation, undocumented dependencies and a circular dependency, which are the cases a diagnosis tool most easily gets wrong.
+
+\begin{table}[H]
+\centering
+\caption{ShopFlow scenarios and their true root causes.}
+\label{tab:scen-sf}
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.4cm}}
+\toprule
+\textbf{Scenario} & \textbf{What happens} & \textbf{Root cause}\\
+\midrule
+sf-00-baseline & Healthy control group & none\\
+sf-01-missing-index & Order history is fast in staging, melts the database in production & orders-db\\
+sf-02-cache-thrash & A cache sized for staging evicts itself in production & catalog-cache\\
+sf-03-unbounded-cache & Memory climbs for an hour, then the container is killed for lack of memory & cart\\
+sf-04-retry-storm & A third party throttles; our own retries make it ten times worse & psp-sandbox\\
+sf-05-secret-rotation & A rotated database password; one service still has the old one & orders\\
+sf-06-shadow-dependency & A dependency that exists only in the code & none\\
+sf-07-dead-dependency & A declared dependency nobody calls & none\\
+sf-08-noisy-neighbor & A reporting job on the shared database slows checkout & catalog-db\\
+sf-09-cpu-throttle & Slow but healthy: a container throttled at a quarter of a core & catalog\\
+sf-10-poison-message & One un-processable message stops every confirmation e-mail & notifier\\
+sf-11-wrong-hostname & A renamed service still referenced by its old name & none\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{LedgerLine scenarios and their true root causes.}
+\label{tab:scen-ll}
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.1cm}}
+\toprule
+\textbf{Scenario} & \textbf{What happens} & \textbf{Root cause}\\
+\midrule
+ll-00-baseline & Healthy control group & none\\
+ll-01-pool-starvation-cycle & Two healthy services wait on each other and nothing looks busy & accounts $\leftrightarrow$ fraud-screening\\
+ll-02-provider-outage & Third-party outage with a circuit breaker: the silence is the symptom & fx-provider\\
+ll-03-hot-row & Every transfer queues on one row & ledger-db\\
+ll-04-connection-budget & Pools that are each reasonable add up to more than the database allows & ledger-db\\
+ll-05-batch-oom & A month-end job that kills itself, restarts and tries again & statements-worker\\
+ll-06-shadow-dependency & fraud-screening quietly depends on fx-rates & none\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent Not every scenario has been run on EC2: the \texttt{verified} field of each \texttt{scenario.yaml} records whether it was reproduced in Docker, as plain processes, or only validated statically. The scenario files are the specification against which a running mapper is to be scored; the random campaigns of Chapter~\ref{ch:method} are what the reported numbers come from.
+
+\section{Host and Mapper Diagnostic Tools}
+\label{sec:tools}
+Two tools were added after operating the benchmark hosts showed that ``nothing appears in the dashboard'' has two very different causes: the host cannot answer, or the mapper has a problem.
+
+\textbf{\texttt{npm run check-host}} walks one instance step by step and stops at the first failure: whether port 22 answers; whether the key exists with permissions SSH accepts; whether login works; the host's memory, load and disk; whether docker answers within 25 seconds and which containers run; whether the application answers on its port; which peers each front-end container calls and whether they are other containers; and whether the mapper server is up. Each failure says which side to look at.
+
+\textbf{\texttt{npm run mapper-edges}} prints what the running mapper holds for a project or service: the target's status and last-seen time, the matching nodes and their status, and every edge in or out with its evidence and last-seen time. Together the two tools separate a host problem from a mapper problem in minutes.
+
+\section{The Evaluation Harness}
+\begin{table}[H]
+\centering
+\caption{The evaluation harness and the experiments built on it.}
+\label{tab:harness}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Command or folder} & \textbf{Purpose}\\
+\midrule
+\texttt{npm run eval} & Record a fault-injection campaign and score the live mapper (observe, score, report)\\
+\texttt{npm run ml:compare} & Compare detectors and root-cause methods on the recorded runs\\
+\texttt{npm run ml:hybrid} & Fusion variants of rules and ML\\
+\texttt{npm run ml:predict} & Early warning and cascade prediction\\
+\texttt{npm run ml:synth} & Synthetic generator (amplification factor, class filter)\\
+\texttt{npm run ml:bench} & Cost of one decision window\\
+\texttt{v2/} & Studies: learned directions, change-point onset, fault diagnosis\\
+\texttt{paper/exp} & Curves, amplification, cascade, router and scaling data for the figures\\
+\texttt{run/recorded-runs} & The two recorded runs\\
+\bottomrule
+\end{tabularx}
+\end{table}

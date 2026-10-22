@@ -1,0 +1,20 @@
+flowchart TB
+  IN["Same readings, same graph, every 5 s cycle"] --> RU
+  IN --> MLs
+  subgraph RU["Rules engine"]
+    r1["robust z-score per metric<br/>median and MAD, bad direction only"] --> r2["rule score / 3 = x line"]
+  end
+  subgraph MLs["ML engine"]
+    m1["two Isolation Forests per service<br/>own and symptom"] --> m2["level, facts, random walk"]
+    m2 --> m3["trend forecast, learned cascade"]
+  end
+  r2 --> HY
+  m2 --> HY
+  subgraph HY["Hybrid fusion"]
+    h1["alarm = ML alarm OR rules >= 1.25 x line OR fact"] --> h2["source = ML ranking, facts first"]
+  end
+  r2 --> OUT
+  m3 --> OUT
+  h2 --> OUT
+  OUT["Detection engines page:<br/>detected, computed and predicted,<br/>side by side"]
+  ACT["Active engine (top-bar switch)"] -.->|"decides the incident"| OUT

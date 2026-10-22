@@ -1,0 +1,9 @@
+stateDiagram-v2
+  [*] --> NORMAL
+  NORMAL --> DEGRADED: alarm, no service critical
+  NORMAL --> INCIDENT: alarm with a critical service or a fact
+  DEGRADED --> INCIDENT: a service turns critical
+  INCIDENT --> DEGRADED: criticals recover
+  DEGRADED --> RESOLVED: alarm clears
+  INCIDENT --> RESOLVED: alarm clears
+  RESOLVED --> [*]

@@ -1,0 +1,49 @@
+\begin{center}{\bfseries\Large ABBREVIATIONS AND NOTATIONS\par}\end{center}
+\vspace{4pt}
+\noindent\textbf{Abbreviations}
+\vspace{2pt}
+
+\begin{tabular}{@{}p{3.2cm}p{11cm}@{}}
+AIOps & Artificial Intelligence for IT Operations\\
+API & Application Programming Interface\\
+AUROC & Area Under the Receiver Operating Characteristic curve\\
+AP & Average Precision\\
+CI & Confidence Interval\\
+\cn & Caught and named (detected, and the true cause ranked first)\\
+cgroup & Linux control group (resource limits for a container)\\
+ECE & Expected Calibration Error\\
+EC2 & Amazon Elastic Compute Cloud\\
+FA/h & False-alarm episodes per fault-free hour\\
+GPU & Graphics Processing Unit\\
+HTTP & Hypertext Transfer Protocol\\
+JSON & JavaScript Object Notation\\
+MAD & Median Absolute Deviation\\
+ML & Machine Learning\\
+PEAS & Performance, Environment, Actuators, Sensors\\
+RCA & Root Cause Analysis\\
+REST & Representational State Transfer\\
+SSH & Secure Shell\\
+TCP & Transmission Control Protocol\\
+USN & University Seat Number\\
+WS & WebSocket\\
+\end{tabular}
+
+\vspace{10pt}
+\noindent\textbf{Notations}
+\vspace{2pt}
+
+\begin{tabular}{@{}p{3.2cm}p{11cm}@{}}
+$S$, $N$ & the set of services and its size\\
+$x_s(t)$ & the reading of service $s$ at time $t$ (eight metrics, missing values kept as $\varnothing$)\\
+$\Delta$ & the collection period, 5 seconds\\
+$w(e)$, $c(e)$, $d(e)$ & weight, evidence confidence and dependency share of edge $e$\\
+$\operatorname{level}(x)$ & forest level of a reading: 0 typical, 1 on the service's alarm line\\
+$\lambda_s$, $\rho_s$, $f_s$ & forest level, rule score and fact flag of service $s$\\
+$\tau_\lambda$, $\tau_\rho$ & alarm thresholds on the forest level (2) and the rule score (1.25)\\
+$o(s)$, $\sigma(s)$ & own level and symptom level of service $s$\\
+$\pi_s$ & random-walk share of service $s$\\
+$\alpha$ & restart probability of the walk (0.15)\\
+$\hat p(c \leftarrow x)$ & learned probability that trouble in $x$ reaches its caller $c$\\
+$P(c)$ & risk that service $c$ is reached from a suspected root\\
+$A$ & amplification factor of the synthetic generator\\
+\end{tabular}

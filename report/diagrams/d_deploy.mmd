@@ -1,0 +1,16 @@
+flowchart TB
+  subgraph MAC["Operator machine"]
+    direction LR
+    B["Browser :5173"] --> SV["Mapper server :3001"]
+    SV --- TGEN["traffic-gen :4400"]
+  end
+  subgraph EC1["EC2 host A: ShopFlow, Death Star"]
+    D1["Docker and microservices"]
+  end
+  subgraph EC2["EC2 host B: LedgerLine, OpenTelemetry demo"]
+    D2["Docker and microservices"]
+  end
+  SV -->|"SSH :22, key pair"| EC1
+  SV -->|"SSH :22, key pair"| EC2
+  TGEN -->|"HTTP :8080"| EC1
+  TGEN -->|"HTTP :8080"| EC2

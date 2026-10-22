@@ -1,0 +1,15 @@
+erDiagram
+  TARGET ||--o{ SERVICE_NODE : contains
+  SERVICE_NODE ||--o{ METRIC_SNAPSHOT : "has history"
+  SERVICE_NODE ||--o{ DEPENDENCY_EDGE : "calls (source)"
+  SERVICE_NODE ||--o{ DEPENDENCY_EDGE : "called by (target)"
+  TARGET ||--o{ INCIDENT : raises
+  INCIDENT ||--|{ CANDIDATE_CAUSE : ranks
+  INCIDENT ||--o{ ANOMALY_RECORD : "evidence"
+  INCIDENT ||--o{ PROPAGATION_STEP : "path"
+  TARGET { string targetId string host string status }
+  SERVICE_NODE { string id string type string status json metrics }
+  METRIC_SNAPSHOT { time timestamp float cpu float memory float errorRate float p95Latency float cpuThrottledPct }
+  DEPENDENCY_EDGE { string id bool declared bool observed string status float weight }
+  INCIDENT { string id string status string severity string confidence }
+  CANDIDATE_CAUSE { string serviceId float score float own float symptoms float explained }

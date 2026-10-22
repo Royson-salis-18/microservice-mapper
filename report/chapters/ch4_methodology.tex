@@ -1,0 +1,208 @@
+\clearpage
+\chapter[METHODOLOGY]{Methodology}
+\label{ch:method}
+
+\section{Objective of the Study}
+The study asks how far an instrumentation-free, unsupervised pipeline can go in answering four operational questions about a running microservice system: is something wrong, where did it start, who is next, and what kind of fault is it. It also asks, with equal weight, how reliable the answers are. On the synthetic track the settings were chosen on a tuning split kept apart from the data used for the reported numbers; on the real track they were not tuned on a held-out system, and the report says so where it matters.
+
+\section{Method and Approach}
+The approach is a pipeline of small, separately testable models rather than one large model. Each stage has a stated input, a stated output and a measured contribution (Section~\ref{sec:ablation}). The pipeline is built in this order:
+\begin{enumerate}
+\item an \textbf{evidence-weighted graph} from observed sockets and declared dependencies;
+\item \textbf{learned call directions} for pairs the heuristic cannot orient;
+\item a \textbf{hybrid detector} of per-service Isolation Forests and a robust rule layer, with container facts;
+\item a \textbf{ranker} built on a deviation decomposition and a personalised random walk;
+\item a \textbf{cascade model} with Beta--Binomial edge probabilities and noisy-OR risk, plus trend-based early warning and change-point alarms;
+\item a \textbf{fault-type classifier} and runbook.
+\end{enumerate}
+The evaluation then replays recorded runs through the engines and scores them against a ledger the engines never see.
+
+\section{Measurement and Evaluation Parameters}
+Table~\ref{tab:measures} defines the measures. They are event-level on purpose: point-wise scoring with a window adjustment rewards an engine that flags one point of a long fault, which is not how an operator experiences an alarm \cite{wu2021flawed,kim2022rigorous,tatbul2018precision}.
+
+\begin{table}[H]
+\centering
+\caption{Measures used in the evaluation.}
+\label{tab:measures}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Measure} & \textbf{Definition}\\
+\midrule
+Detected (Det.) & Share of faults for which an alarm during the fault (or within a 60\,s grace period) places a truly involved service in the top three\\
+Caught and named (\cn) & Share of all faults that are detected and for which the faulted service is first at the last alarming window before the fault heals\\
+\acc{k} & Share of detected faults whose true cause is in the top $k$\\
+False alarms per hour & Alarm episodes outside every fault window, per fault-free hour\\
+Alarm time & Fraction of fault-free time spent in alarm\\
+Detection delay & Seconds from fault onset to the first qualifying alarm\\
+AUROC, average precision & Service-level discrimination: positives are the faulted service during a fault; negatives are any service when no fault is active; container facts are excluded\\
+Brier score, ECE & Accuracy and calibration of who-is-next probabilities\\
+Direction accuracy & Share of observed true-call pairs oriented correctly, wrongly or left unresolved\\
+Cost & Milliseconds per decision window on one core\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Two operating contracts.} An operator can budget false-alarm \emph{episodes} per fault-free hour, but one unbroken alarm counts as a single episode, so an engine can meet an episode budget while alarming almost continuously. We therefore also report \emph{alarm time}. An earlier version of our own detector had a low episode rate and an alarm time of 86\% on the real systems; the refinements of Section~\ref{sec:forest} bring it to 5\%.
+
+\section{Tools, Equipment and Resources}
+\begin{table}[H]
+\centering
+\caption{Tools, equipment and resources.}
+\label{tab:tools}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Item} & \textbf{Detail}\\
+\midrule
+Operator machine & Apple Mac mini running the server and the dashboard; Node.js 22\\
+Target hosts & AWS EC2 \texttt{c7i-flex.large} instances (2 vCPUs, 4 GiB) in \texttt{ap-south-1}, Ubuntu, Docker, Docker Compose\\
+Server stack & TypeScript, Node.js, Express~5, \texttt{ws} (WebSocket), \texttt{ssh2}\\
+Dashboard stack & React~19, Vite~8, TypeScript, \texttt{@xyflow/react} (2D graph), Three.js with react-three-fiber (3D), Recharts\\
+Optional ML sidecar & Python~3 with scikit-learn (Isolation Forest, LOF, one-class SVM) and a z-score baseline\\
+Applications under test & ShopFlow (13 services), LedgerLine (12 services), Sock Shop, a DeathStarBench social network (27 containers), the OpenTelemetry demo\\
+Load and faults & \texttt{traffic-gen} (workflows and profiles), a blind fault injector (kill, pause, cgroup limits, network detach)\\
+Analysis and typesetting & Python with matplotlib for figures; \LaTeX\ and Mermaid for this report\\
+Test tooling & Node's built-in test runner; 329 tests in 19 suites\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Experimental and Implementation Procedure}
+\begin{enumerate}
+\item \textbf{Prepare the applications.} Start ShopFlow and LedgerLine with Docker Compose on the lab hosts.
+\item \textbf{Connect the mapper.} Add each host (address, user, key) in the dashboard; the server discovers containers and Compose dependencies and starts the 5-second cycle.
+\item \textbf{Drive traffic.} Run open-loop traffic with a daily wave, bursts and flash crowds for 217 minutes per system.
+\item \textbf{Inject faults blind.} The injector draws faults from a Poisson process whose rate follows the load, applies them physically to containers, and writes the ledger to a private file.
+\item \textbf{Record.} The collector's readings and container facts are recorded in a trace format that the engines can replay offline.
+\item \textbf{Replay and score.} Each engine runs on the recorded trace; scores are computed against the ledger after the run.
+\item \textbf{Extend synthetically.} A generator writes runs in the same format over 16 further topologies, tuned on one split and scored once on a disjoint split.
+\item \textbf{Report.} Intervals, paired tests, an ablation and an amplification study are generated by scripts in the repository.
+\end{enumerate}
+
+\section{The Models}
+
+\subsection{The evidence-weighted graph}
+\label{sec:graph}
+Each edge has a \emph{confidence} $c(e)$, the strongest evidence behind it: $1.0$ for a call seen in request logs or oriented by a listening port, $0.85$ when oriented only by the ephemeral-port range, $0.70$ when observed with no direction evidence, $0.50$ when the direction is unresolved, and $0.40$ when declared in the Compose file but never seen carrying traffic. The \emph{dependency share} $d(e)$ of an edge leaving a caller is its slow-baseline traffic normalised over the caller's edges. A slow baseline is used because a link goes quiet exactly when its callee dies; weighting on the instantaneous rate would make a dead dependency look less and less important. The weight is
+\[
+w(e) = \operatorname{clip}\bigl(c(e)\, d(e)\, \phi,\, 0,\, 1\bigr),
+\]
+with $\phi$ discounting fire-and-forget telemetry edges to a tenth. \emph{The offline benchmarks replay recordings that do not keep edge evidence, so they use unit weights; the effect of the evidence weighting is therefore not measured in this report.}
+
+\subsection{Learned call directions}
+\label{sec:dirs}
+The collector sees most pairs from both ends (in the recorded runs 15 of 32 pairs in one system and 18 of 36 in the other), so direction must be recovered before a walk can follow it. The shipped heuristic reads names (an entry point calls a service, a service calls a datastore) and fails when names carry no role. We instead learn the direction of each observed pair online from the services' own histories, with no labels and no names. Four \emph{dynamic} signals use what services do during trouble: upward symptoms, downward traffic drops, implication ($P(T_a \mid T_b) - P(T_b \mid T_a)$, with $T$ meaning ``in trouble''), and a Granger-style F-test on the symptom series. Two \emph{structural} signals use the observed graph: the depth of each service from the entry point, and whether a service reports request metrics of its own (a datastore does not). The learned direction is the sign of $\sum_m \omega_m s_m(a,b)$ with weights $\omega_m \in \{0.5, 1, 2\}$ chosen by grid search on the tuning split. A pair is left undecided if the magnitude is below $0.05$.
+
+\subsection{Per-service Isolation Forests}
+\label{sec:forest}
+A service is judged against its own recent past, never against a global threshold, because services differ by orders of magnitude in every metric. The eight features are split into two groups, each with its own forest of 100 trees trained on a sliding window of the last $W = 120$ readings judged normal: \emph{own} (CPU, memory, throttling), which a dependency cannot cause, and \emph{symptom} (traffic, errors, latency, network), which can be inherited. A reading is scored by the forest built \emph{before} it arrived. With $\E[h(x)]$ the mean path length and $c(\psi)$ the usual normaliser, the raw score $s(x) = 2^{-\E[h(x)]/c(\psi)}$ becomes a level
+\begin{equation}
+\operatorname{level}(x) = \frac{s(x) - \tilde s}{\ell - \tilde s}, \qquad \ell = \tilde s + \kappa \cdot 1.4826 \cdot \operatorname{MAD}(s_{\mathrm{train}}),
+\label{eq:level}
+\end{equation}
+where $\tilde s$ is the median training score and $\kappa = 3$. Level $1$ is the service's own alarm line. Only readings with level below one join the training window, so a fault never becomes the baseline. Four refinements were each found by testing and are ablated in Section~\ref{sec:ablation}:
+\begin{itemize}
+\item \textbf{training jitter} at each feature's floor, so that a feature that never moved can still register a later jump;
+\item a \textbf{range guard} counting floors beyond the training range, because a forest scores an out-of-range value no higher than its most extreme training point;
+\item \textbf{one-sided features}: less CPU, memory, throttling, error or latency than usual is never a fault of the service itself (it happens after every restart);
+\item \textbf{two-speed drift}: a small steady shift (level $<3$) is accepted as the new normal within two minutes, a large one is quarantined for thirty.
+\end{itemize}
+
+\subsection{Rules and container facts}
+A robust one-sided $z$-score per metric (median and MAD, bad direction only) gives a rule score $\rho_s$ normalised so that $1$ is its three-sigma line. A container that is exited, paused, restarting or network-detached is a \emph{fact}: evidence, not degree. Two facts that raw container state misses were added after inspecting the real runs. A \code{docker stop} exits with code zero, which looks like a finished job, so a service that had been running and then exits is \emph{stopped}. A crash loop looks healthy between kills, so two outages within three minutes mark it.
+
+\subsection{The hybrid alarm}
+Let $\lambda_s$ be a service's forest level and $f_s \in \{0,1\}$ its fact flag. The hybrid alarms at window $t$ if
+\begin{equation}
+\max_s f_s = 1 \quad\text{or}\quad \max_s \lambda_s \ge \tau_\lambda \quad\text{or}\quad \max_s \rho_s \ge \tau_\rho,
+\end{equation}
+with $\tau_\lambda = 2$ and $\tau_\rho = 1.25$: the rules alone are trusted only well past their own line. In the live system a fact raises the alarm at once and the other two conditions must hold for two consecutive windows; the offline evaluation requires two consecutive windows for all three, which is the stricter reading.
+
+\subsection{Deviation decomposition and the random walk}
+\label{sec:rca}
+With own level $o(s)$, symptom level $\sigma(s)$ and callees $C(s)$,
+\begin{align}
+x(s) &= \gamma \max_{c \in C(s)} a(c), \nonumber\\
+\operatorname{raw}(s) &= \max\bigl(o(s),\, \max(0, \sigma(s) - x(s))\bigr),
+\end{align}
+so a service whose symptoms are fully explained by a sick callee drops out, while one that is abnormal in its own resources does not. The ranker is a personalised-PageRank walk in the MonitorRank form \cite{kim2013monitorrank}. A walker on the directed graph steps to a callee $v$ with weight $w(u \to v)\, a(v)$, back to a caller with weight $\rho_{\mathrm b}\, a(u)$, and stays with weight $\max(0, a(u) - \max_c a(c), o(u))$, restarting on the anomalous set with probability $\alpha = 0.15$. The stationary share $\pi_s$ is the score and facts rank first. The stay term lets the source, whose trouble nothing downstream explains, collect the most mass.
+
+\subsection{The cascade model}
+\label{sec:cascade}
+Each call edge $c \to x$ carries an unknown probability $p(c \leftarrow x)$ that trouble in $x$ reaches its caller $c$. Whenever a service $x$ turns abnormal, every healthy caller $c$ is one trial; it succeeds if $c$ turns abnormal within one minute. With $k$ successes in $n$ trials and a Beta prior of mean $\pi_0$ and strength $m$ the posterior mean is
+\begin{equation}
+\hat p(c \leftarrow x) = \frac{k + m\,\pi_0}{n + m},
+\end{equation}
+so a rarely exercised edge starts at its prior and moves with observation. No labels are needed: the trials are the system's own history. All experiments use an uninformative prior ($\pi_0 = 0.5$, $m = 2$). Given a suspected root $r$, risk flows up the call graph by noisy-OR, the independent-cascade model \cite{kempe2003influence}:
+\begin{equation}
+P(r) = 1, \qquad P(c) = 1 - \prod_{x \in C(c)} \bigl(1 - P(x)\, \hat p(c \leftarrow x)\bigr).
+\label{eq:noisyor}
+\end{equation}
+Services above a risk cut are reported as likely next, and $\sum_c P(c)$ estimates the blast radius. Calibration is assessed with the Brier score $\mathrm{BS} = \frac1n \sum_i (p_i - y_i)^2$ \cite{brier1950verification}, the expected calibration error $\mathrm{ECE} = \sum_b \frac{n_b}{n} \lvert \bar p_b - \bar y_b \rvert$ over equal-width bins \cite{guo2017calibration}, and reliability diagrams.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.85\linewidth}{!}{\input{fig_prop.tex}}
+\caption{The cascade model on a four-service example. Edge labels are learned propagation probabilities $\hat p(c \leftarrow x)$; risk at the gateway combines its two routes by noisy-OR.}
+\label{fig:prop}
+\end{figure}
+
+\subsection{Early warning, change points and fault typing}
+For each rising-only feature a least-squares line is fitted over the last two minutes and projected two minutes ahead through the range guard; a service not yet at the alarm level whose trend will reach it is flagged. Separately, online Page--Hinkley change-point detection \cite{page1954cusum} on the raw metrics can raise the alarm before the forest line is crossed. At the alarm, 35 features of the top suspect's telemetry (container-state history, exit code, number of separate outages, memory slope, CPU and throttling change, latency and error ratios against a pre-fault baseline, network drop, number of anomalous callers) go to a random forest \cite{breiman2001rf} that names the fault type (crash, stop, pause, crash-loop, flap, memory, brownout, latency, partition). A short runbook of two to four concrete checks per type is attached. This layer changes neither detection nor ranking.
+
+\section{Error Sources and Mitigation}
+\begin{table}[H]
+\centering
+\caption{Error sources and how each is handled.}
+\label{tab:errors}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.7cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Source of error} & \textbf{Mitigation}\\
+\midrule
+A socket is seen from both ends & Orient by the side that holds the listening port; fall back to the ephemeral-port range; mark unresolved pairs with lower confidence\\
+Short-lived connections between samples & Count recently closed sockets (TIME\_WAIT) as well as established ones\\
+A stopped container exits with code 0 & Treat ``was running, now exited'' as stopped\\
+A crash loop looks healthy between kills & Two outages within three minutes mark a crash loop\\
+Services differ by orders of magnitude & Per-service baselines; robust median and MAD\\
+A fault becoming the baseline & Train only on readings below the alarm line; quarantine large shifts for thirty minutes\\
+Restarts lower memory and CPU & One-sided features: only increases count as the service's own fault\\
+A loaded host answers slowly & Command timeouts sized for a loaded host; the check tool reports a host that cannot answer\\
+Optimistic evaluation & Event-level scoring; held-out synthetic split scored once; bootstrap and paired tests; negative results reported\\
+Ledger parsing & A regression test after a bug that hid half of the real faults (Section~\ref{sec:bug})\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Data Processing and Analysis}
+Readings keep missing values as missing. Each recorded trace stores, per window, the readings, container facts and the engine inputs, so the engines can be replayed deterministically. Warm-up (the first five minutes of each run) is excluded from false-alarm and ROC counts. Intervals are 95\% percentile bootstrap intervals over faults \cite{efron1979bootstrap}; comparisons between engines are \emph{paired} bootstrap differences over the same faults, with two-sided $p$ values; seed-averaged results are means over seeds. Overlapping faults within a run are not independent, so intervals are, if anything, optimistic. With 62 real faults a difference below about 8 points cannot be resolved, and no claim is made below that.
+
+\section{Evaluation Design}
+
+\subsection{Systems and traffic}
+Two containerised applications were built for the study. \emph{ShopFlow} is a 13-service retail checkout system (HTTP fan-out, two Postgres instances, two Redis caches, a NATS consumer). \emph{LedgerLine} is a 12-service retail-banking transfer system (a saga orchestrator, a double-entry ledger, a third-party FX provider, a batch worker). Both run for 217 minutes under open-loop traffic with a daily wave, bursts and flash crowds. Each has its own EC2 host, Fault Lab and Grafana (Section~\ref{sec:benches}).
+
+\subsection{Blind fault injection}
+Faults arrive by a non-homogeneous Poisson process whose rate follows the load, each with a class, a role-weighted target, a heavy-tailed duration and a severity; with some probability a follower is spawned in the target's one-hop neighbourhood, so incidents overlap. Faults are physical (\code{SIGKILL}, pause, cgroup CPU and memory limits, network detach) and nothing is labelled inside the system under test. The injector writes a private ledger with, per fault, the true root cause and the services structurally able to be affected, read only after the run. The two systems contribute 62 faults over seven classes (Figure~\ref{fig:evalflow}).
+
+\figdiagram{d_eval_flow.pdf}{Evaluation method. The ledger is written by the injector and read only when scoring.}{fig:evalflow}
+
+\subsection{Synthetic benchmark}
+To enlarge the sample a generator writes runs in the identical recorded format: the two topologies with their measured per-service baselines plus random topologies, nine fault classes that propagate up and down the graph, overlapping faults and unlabelled noise (noisy neighbours, deploys, missing readings). Settings were chosen on a 16-campaign tuning split (170 faults, seed 1), and every reported synthetic number comes from a disjoint 16-campaign split (178 faults, seed 2) scored once. The generator also takes an \emph{amplification factor} $A$ that scales how strongly callers feel a fault (retry storms), and a class filter; it underlies the amplification study.
+
+\subsection{Questions the evaluation answers}
+\begin{enumerate}[label=Q\arabic*.]
+\item Does the hybrid name the true cause more often than the rule layer, and how does it compare with ranking by anomaly alone and with the ML engine?
+\item Which detector separates faulted from healthy services best, and is the Isolation Forest worth keeping?
+\item How much does each mechanism contribute (ablation), and does graph-aware ranking help when victims are louder than the cause (amplification)?
+\item Do learned propagation probabilities predict cascades better than fixed ones, and are they calibrated?
+\item Do learned directions stay correct when names carry no information, and do change-point alarms cut detection delay?
+\end{enumerate}
+
+\subsection{A measurement bug}
+\label{sec:bug}
+Each recorded run contains two fault campaigns that both number their faults from one. The ledger reader kept only the second, hiding 14 of 31 faults per system for every engine and counting their outages as false alarms. We fixed the reader, added a regression test, and every number in this report uses all 62 faults.

@@ -1,0 +1,30 @@
+flowchart TB
+  UI["Operator dashboard (React 19, Vite)<br/>2D graph, 3D scene, incidents, telemetry,<br/>traces, detection engines"]
+  subgraph SRV["Mapper server: Node.js, Express 5, port 3001"]
+    direction TB
+    API["REST and WebSocket API"]
+    GS["GraphStore and EdgeWeights<br/>nodes, edges, targets,<br/>evidence confidence x dependency share"]
+    ST["MetricStore (ring buffers)<br/>TraceStore (connection events)"]
+    ENG["Detection engines<br/>Rules | ML | Hybrid, in parallel"]
+    RCA["RCAEngine and IncidentManager<br/>ranking, cascade, fault type, runbook"]
+    RISK["RiskEngine and CascadeEngine<br/>risk, what-if, blast radius"]
+    API --> GS --> ST --> ENG --> RCA
+    GS --> RISK
+  end
+  subgraph HOST["Target host, nothing installed"]
+    direction LR
+    DK["Docker daemon<br/>ps, inspect, stats, logs"]
+    PROC["Socket tables<br/>/proc/PID/net/tcp"]
+    APP["Unmodified<br/>microservice stack"]
+    DK --- APP --- PROC
+  end
+  subgraph TOOLS["Test tools"]
+    direction LR
+    TG["traffic-gen"]
+    FI["Blind fault injector"]
+  end
+  UI <-->|"HTTP and WebSocket"| API
+  GS <-->|"SSH, every 5 s"| HOST
+  RCA --> API
+  RISK --> API
+  TOOLS -->|"load, kill, pause, limits"| APP

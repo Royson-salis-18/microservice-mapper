@@ -1,0 +1,54 @@
+\clearpage
+\chapter[CONCLUSION AND FUTURE SCOPE]{Conclusion and Future Scope}
+\label{ch:conclusion}
+
+\section{Summary of Work}
+The project built an instrumentation-free platform that watches containerised microservices from outside, recovers their call graph, and runs an unsupervised diagnosis pipeline on it. A collector agent reads Docker state, statistics and socket tables over SSH; an evidence-weighted graph orients each edge by its listening port; a hybrid detector of per-service Isolation Forests and a robust rule layer treats container facts as evidence; a ranker splits each deviation into what neighbours explain and what they do not and runs a random walk over the call graph; a cascade model with learned Beta--Binomial edge probabilities predicts who is next. A dashboard shows the result in 2D and 3D, and a Detection engines page runs Rules, ML and Hybrid in parallel and shows what each detected, computed and predicted. The system was evaluated on 62 faults injected blind into two real containerised systems and on 178 held-out synthetic faults, and operated on further benchmark applications on EC2.
+
+\section{Conclusions}
+\begin{enumerate}
+\item On 62 real faults the hybrid names the true cause first for 74\% against 65\% for the rule layer (paired $+9.7$ points, 95\% CI $[+1.6,+17.7]$, $p=0.032$); on the synthetic set the difference is not significant ($+2.2$ points).
+\item The container facts are the most valuable single component: removing the \code{docker stop} fact costs 19 points on the real systems and 16 on the synthetic set.
+\item Learned propagation discriminates better than fixed edge probabilities on 80 observed cascades (AUROC 0.847 against 0.784), with a lower Brier score and a lower expected calibration error. On the real systems the experiment is uninformative because almost no real fault cascaded.
+\item Learned directions stay correct when service names carry no information (28 of 31 real pairs against none for the name rule), but they do not improve ranking when names exist.
+\item Change-point alarms roughly halve the median detection delay on the real systems (10.5\,s to 4.9\,s), at the price of more alarm time (7\% to 16\%).
+\item The simple rule $z$-score is a strong detector on its own; the Isolation Forest earns its place through quietness and by complementing the rules.
+\item The pipeline costs about 6 to 7\,ms per five-second window on the systems tested, on one core, with no GPU.
+\item A host too small for its workload looks like a mapper fault; the diagnostic tools separate the two.
+\end{enumerate}
+
+\section{Contributions}
+\begin{itemize}
+\item An observation layer that recovers topology and direction from the host alone.
+\item A probabilistic cascading-failure model with learned propagation.
+\item A hybrid detector with an honest operating contract (alarm time as well as false-alarm episodes).
+\item A fact-aware, decomposition-based ranker and learned call directions.
+\item A Detection engines page showing three engines in parallel.
+\item A blind, reproducible evaluation that includes the negative results and a corrected measurement bug.
+\item A working platform with 329 automated tests, a traffic generator and host-diagnostic tools.
+\end{itemize}
+
+\section{Utility and Applications}
+The platform gives a small team a first-line diagnosis tool for Docker-based systems that nobody wants to instrument, a teaching and benchmarking harness for cascading failure, and a triage layer in front of heavier observability products (Chapter~\ref{ch:results}, Potential Applications).
+
+\section{Limitations}
+\begin{itemize}
+\item \textbf{Coarse signals.} Eight metrics every five seconds. A brownout on an almost idle service never raises an alarm; no engine here catches it.
+\item \textbf{Two real systems.} Architecture independence is argued from a cross-system check and synthetic topologies, not proven. Real cascades were too rare in the recordings to test learned propagation on real data.
+\item \textbf{Edge evidence not isolated offline.} The recordings do not keep edge evidence, so the effect of the evidence weighting is not measured.
+\item \textbf{No scaling measurement.} The cost was measured at 12 and 13 services only.
+\item \textbf{Tuned by the authors.} Real-system settings were not tuned on a held-out system, so those numbers are optimistic by an unmeasured margin.
+\item \textbf{Auto-restart.} The mapper restarts crashed containers by default (switch off with \texttt{MAPPER\_AUTO\_RESTART=off}); runs meant to measure detection should switch it off.
+\item \textbf{Default ingest token.} The push endpoint has a built-in token; it must be changed when the server is reachable by others.
+\item \textbf{Not tested on Kubernetes}, and the dashboard views were checked on a simulated target, not on every benchmark host.
+\end{itemize}
+
+\section{Scope for Future Work}
+\begin{itemize}
+\item A larger measured campaign on more real systems, and a public labelled data set for comparability.
+\item Real multi-service cascades, to test learned propagation where it matters; promotion of learned directions and change-point alarms into the live system behind its operator switch.
+\item Retention of edge evidence in the recordings, so that the evidence weighting can be isolated and measured.
+\item A language-model agent on top of the structured evidence (cause, evidence, runbook) to answer follow-up questions or draft a change, with the evidence as its only grounding, evaluated with a user study; any action it proposes would go through an approval gate.
+\item Support for Kubernetes through the same observation idea (node-level access to container sockets), and a scaling benchmark.
+\item Brownout detection on idle services, perhaps with active probing of the service.
+\end{itemize}
