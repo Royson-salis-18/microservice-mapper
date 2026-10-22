@@ -1,0 +1,1810 @@
+{
+  "options": {
+    "graceSec": 60,
+    "atRiskHorizonSec": 120
+  },
+  "faults": [
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f001",
+      "class": "brownout",
+      "target": "orders",
+      "concurrent": 4,
+      "a": 1792694275900,
+      "b": 1792694508167,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": false,
+      "delaySec": 40.182,
+      "rankSettled": null,
+      "rankInitial": null,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog",
+      "structural": {
+        "precision": 0.25,
+        "recall": 0.5,
+        "f1": 0.3333333333333333
+      },
+      "observed": {
+        "precision": 0.75,
+        "recall": 1,
+        "f1": 0.8571428571428571,
+        "impacted": 3
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 3
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.2,
+      "id": "f002",
+      "class": "pause",
+      "target": "payments",
+      "concurrent": 4,
+      "a": 1792694277693,
+      "b": 1792694467747,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": false,
+      "delaySec": 13.358,
+      "rankSettled": 2,
+      "rankInitial": 1,
+      "top1": false,
+      "top3": true,
+      "top1Initial": true,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog",
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "impacted": 2
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 2
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f003",
+      "class": "crash",
+      "target": "notifier",
+      "concurrent": 4,
+      "a": 1792694299953,
+      "b": 1792694325279,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 16.129,
+      "rankSettled": 2,
+      "rankInitial": 2,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog",
+      "structural": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.16666666666666666,
+      "id": "f004",
+      "class": "pause",
+      "target": "catalog",
+      "concurrent": 4,
+      "a": 1792694323687,
+      "b": 1792694365739,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.41,
+      "rankSettled": 1,
+      "rankInitial": 1,
+      "top1": true,
+      "top3": true,
+      "top1Initial": true,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f005",
+      "class": "stop",
+      "target": "psp-sandbox",
+      "concurrent": 1,
+      "a": 1792694513951,
+      "b": 1792694558195,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.4,
+      "rankSettled": 1,
+      "rankInitial": 1,
+      "top1": true,
+      "top3": true,
+      "top1Initial": true,
+      "top1AnyActive": true,
+      "predictedRoot": "psp-sandbox",
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.16666666666666666,
+      "id": "f006",
+      "class": "pause",
+      "target": "cart-store",
+      "concurrent": 6,
+      "a": 1792694564700,
+      "b": 1792694630742,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 1.716,
+      "rankSettled": 2,
+      "rankInitial": null,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "psp-sandbox",
+      "structural": {
+        "precision": 0.6666666666666666,
+        "recall": 0.5,
+        "f1": 0.5714285714285715
+      },
+      "observed": {
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "f1": 0.6666666666666666,
+        "impacted": 3
+      },
+      "preWarned": {
+        "warned": 2,
+        "of": 3
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.14285714285714285,
+      "id": "f007",
+      "class": "brownout",
+      "target": "orders-db",
+      "concurrent": 6,
+      "a": 1792694570739,
+      "b": 1792694664856,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 10.696,
+      "rankSettled": 6,
+      "rankInitial": null,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "cart",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "f1": 0.4
+      },
+      "observed": {
+        "precision": 1,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "impacted": 4
+      },
+      "preWarned": {
+        "warned": 2,
+        "of": 4
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f008",
+      "class": "crash",
+      "target": "payments",
+      "concurrent": 3,
+      "a": 1792694576942,
+      "b": 1792694602430,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 4.493,
+      "rankSettled": 2,
+      "rankInitial": 4,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "cart-store",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "f1": 0.4
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.14285714285714285,
+      "id": "f011",
+      "class": "stop",
+      "target": "psp-sandbox",
+      "concurrent": 5,
+      "a": 1792694619019,
+      "b": 1792694657266,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.471,
+      "rankSettled": 3,
+      "rankInitial": null,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "cart",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1": 0.3333333333333333
+      },
+      "observed": {
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "impacted": 2
+      },
+      "preWarned": {
+        "warned": 1,
+        "of": 2
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.16666666666666666,
+      "id": "f009",
+      "class": "crash",
+      "target": "orders",
+      "concurrent": 5,
+      "a": 1792694619127,
+      "b": 1792694644644,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 7.37,
+      "rankSettled": 2,
+      "rankInitial": 4,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "psp-sandbox",
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "f1": 0.4,
+        "impacted": 2
+      },
+      "preWarned": {
+        "warned": 1,
+        "of": 2
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": null,
+      "trueFamily": "down",
+      "familyMatch": null,
+      "chance": 0.16666666666666666,
+      "id": "f010",
+      "class": "crash",
+      "target": "cart",
+      "concurrent": 5,
+      "a": 1792694619202,
+      "b": 1792694644683,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 7.295,
+      "rankSettled": 5,
+      "rankInitial": 3,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "psp-sandbox",
+      "structural": {
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "f1": 0.3333333333333333
+      },
+      "observed": {
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "f1": 0.4,
+        "impacted": 2
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 2
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.3333333333333333,
+      "id": "f012",
+      "class": "pause",
+      "target": "cart",
+      "concurrent": 3,
+      "a": 1792694799682,
+      "b": 1792694820729,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": false,
+      "delaySec": 12.052,
+      "rankSettled": 1,
+      "rankInitial": 1,
+      "top1": true,
+      "top3": true,
+      "top1Initial": true,
+      "top1AnyActive": true,
+      "predictedRoot": "cart",
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "down",
+      "trueFamily": "down",
+      "familyMatch": true,
+      "chance": 0.14285714285714285,
+      "id": "f013",
+      "class": "crash",
+      "target": "catalog",
+      "concurrent": 3,
+      "a": 1792694813863,
+      "b": 1792694839425,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.878,
+      "rankSettled": 1,
+      "rankInitial": 2,
+      "top1": true,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog",
+      "structural": {
+        "precision": 1,
+        "recall": 0.25,
+        "f1": 0.4
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.3333333333333333,
+      "id": "f014",
+      "class": "brownout",
+      "target": "cart-store",
+      "concurrent": 5,
+      "a": 1792694819732,
+      "b": 1792694882831,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.016,
+      "rankSettled": null,
+      "rankInitial": null,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "orders",
+      "structural": {
+        "precision": 0.6666666666666666,
+        "recall": 0.5,
+        "f1": 0.5714285714285715
+      },
+      "observed": {
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "f1": 0.6666666666666666,
+        "impacted": 3
+      },
+      "preWarned": {
+        "warned": 1,
+        "of": 3
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.16666666666666666,
+      "id": "f015",
+      "class": "pause",
+      "target": "orders",
+      "concurrent": 4,
+      "a": 1792694847701,
+      "b": 1792694932753,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 4.085,
+      "rankSettled": 1,
+      "rankInitial": null,
+      "top1": true,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "orders",
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 1,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "impacted": 2
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 2
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "down",
+      "trueFamily": "down",
+      "familyMatch": true,
+      "chance": 0.16666666666666666,
+      "id": "f016",
+      "class": "crash",
+      "target": "catalog-cache",
+      "concurrent": 3,
+      "a": 1792694872899,
+      "b": 1792694898589,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 3.925,
+      "rankSettled": 1,
+      "rankInitial": null,
+      "top1": true,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-cache",
+      "structural": {
+        "precision": 1,
+        "recall": 0.4,
+        "f1": 0.5714285714285715
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.2,
+      "id": "f017",
+      "class": "pause",
+      "target": "orders-db",
+      "concurrent": 4,
+      "a": 1792694919708,
+      "b": 1792695075755,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.17,
+      "rankSettled": 2,
+      "rankInitial": null,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-db",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "f1": 0.4
+      },
+      "observed": {
+        "precision": 0.5,
+        "recall": 1,
+        "f1": 0.6666666666666666,
+        "impacted": 1
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 1
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f018",
+      "class": "brownout",
+      "target": "cart-store",
+      "concurrent": 4,
+      "a": 1792695008714,
+      "b": 1792695134814,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 3.272,
+      "rankSettled": null,
+      "rankInitial": 3,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-db",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1": 0.3333333333333333
+      },
+      "observed": {
+        "precision": 0.5,
+        "recall": 1,
+        "f1": 0.6666666666666666,
+        "impacted": 1
+      },
+      "preWarned": {
+        "warned": 0,
+        "of": 1
+      },
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "felt",
+      "inferredFamily": "frozen",
+      "trueFamily": "frozen",
+      "familyMatch": true,
+      "chance": 0.2,
+      "id": "f019",
+      "class": "pause",
+      "target": "catalog-db",
+      "concurrent": 5,
+      "a": 1792695031718,
+      "b": 1792695240688,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 0.292,
+      "rankSettled": 1,
+      "rankInitial": null,
+      "top1": true,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-db",
+      "structural": {
+        "precision": 1,
+        "recall": 0.16666666666666666,
+        "f1": 0.2857142857142857
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f020",
+      "class": "brownout",
+      "target": "api-gateway",
+      "concurrent": 4,
+      "a": 1792695084726,
+      "b": 1792695240797,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 2.356,
+      "rankSettled": 2,
+      "rankInitial": 2,
+      "top1": false,
+      "top3": true,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-db",
+      "structural": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    },
+    {
+      "effect": "unknown",
+      "inferredFamily": null,
+      "trueFamily": "slow",
+      "familyMatch": null,
+      "chance": 0.2,
+      "id": "f021",
+      "class": "brownout",
+      "target": "cart",
+      "concurrent": 3,
+      "a": 1792695146678,
+      "b": 1792695240744,
+      "detected": true,
+      "anyIncident": true,
+      "preexisting": true,
+      "delaySec": 0.483,
+      "rankSettled": null,
+      "rankInitial": null,
+      "top1": false,
+      "top3": false,
+      "top1Initial": false,
+      "top1AnyActive": true,
+      "predictedRoot": "catalog-db",
+      "structural": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "f1": 0.4
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "impacted": 0
+      },
+      "preWarned": null,
+      "isolated": false,
+      "userImpact": null
+    }
+  ],
+  "excluded": [],
+  "overall": {
+    "n": 21,
+    "detected": {
+      "p": 1,
+      "lo": 0.8453561767357979,
+      "hi": 0.9999999999999998,
+      "n": 21
+    },
+    "top1": {
+      "p": 0.3333333333333333,
+      "lo": 0.17194536432683688,
+      "hi": 0.546269243427897,
+      "n": 21
+    },
+    "top3": {
+      "p": 0.7142857142857143,
+      "lo": 0.5004322617716241,
+      "hi": 0.8618632425437179,
+      "n": 21
+    },
+    "top1Initial": {
+      "p": 0.19047619047619047,
+      "lo": 0.07667440615177303,
+      "hi": 0.40000986539273287,
+      "n": 21
+    },
+    "top1AnyActive": {
+      "p": 1,
+      "lo": 0.8453561767357979,
+      "hi": 0.9999999999999998,
+      "n": 21
+    },
+    "mrr": 0.5333333333333333,
+    "delaySec": {
+      "median": 3.272,
+      "p90": 13.358,
+      "mean": 6.764238095238095,
+      "values": [
+        40.182,
+        13.358,
+        16.129,
+        2.41,
+        2.4,
+        1.716,
+        10.696,
+        4.493,
+        2.471,
+        7.37,
+        7.295,
+        12.052,
+        2.878,
+        2.016,
+        4.085,
+        3.925,
+        2.17,
+        3.272,
+        0.292,
+        2.356,
+        0.483
+      ]
+    },
+    "structural": {
+      "precision": 0.40079365079365087,
+      "recall": 0.3325396825396825,
+      "f1": 0.2777777777777778
+    },
+    "observed": {
+      "precision": 0.36904761904761907,
+      "recall": 0.8253968253968255,
+      "f1": 0.3646258503401361,
+      "faultsWithImpact": 11
+    },
+    "isolated": {
+      "n": 1,
+      "detected": {
+        "p": 1,
+        "lo": 0.20654329147389294,
+        "hi": 1,
+        "n": 1
+      },
+      "top1": {
+        "p": 1,
+        "lo": 0.20654329147389294,
+        "hi": 1,
+        "n": 1
+      },
+      "top3": {
+        "p": 1,
+        "lo": 0.20654329147389294,
+        "hi": 1,
+        "n": 1
+      },
+      "top1Initial": {
+        "p": 1,
+        "lo": 0.20654329147389294,
+        "hi": 1,
+        "n": 1
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.20654329147389294,
+        "hi": 1,
+        "n": 1
+      },
+      "mrr": 1,
+      "delaySec": {
+        "median": 2.4,
+        "p90": 2.4,
+        "mean": 2.4,
+        "values": [
+          2.4
+        ]
+      },
+      "structural": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "observed": {
+        "precision": 0,
+        "recall": 1,
+        "f1": 0,
+        "faultsWithImpact": 0
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": null
+    },
+    "visible": 0,
+    "detectedWhenVisible": {
+      "p": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+    },
+    "detectedWhenInvisible": {
+      "p": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+    },
+    "preWarned": {
+      "p": 0.28,
+      "lo": 0.14283673837381572,
+      "hi": 0.47576971896558296,
+      "n": 25
+    },
+    "overlapping": {
+      "n": 20,
+      "detected": {
+        "p": 1,
+        "lo": 0.8388698745050667,
+        "hi": 0.9999999999999998,
+        "n": 20
+      },
+      "top1": {
+        "p": 0.3,
+        "lo": 0.14547527396899385,
+        "hi": 0.5189767762289793,
+        "n": 20
+      },
+      "top3": {
+        "p": 0.7,
+        "lo": 0.4810232237710205,
+        "hi": 0.8545247260310062,
+        "n": 20
+      },
+      "top1Initial": {
+        "p": 0.15,
+        "lo": 0.05236779195949582,
+        "hi": 0.36042329588695743,
+        "n": 20
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.8388698745050667,
+        "hi": 0.9999999999999998,
+        "n": 20
+      },
+      "mrr": 0.51,
+      "delaySec": {
+        "median": 3.5984999999999996,
+        "p90": 13.635100000000005,
+        "mean": 6.982449999999998,
+        "values": [
+          40.182,
+          13.358,
+          16.129,
+          2.41,
+          1.716,
+          10.696,
+          4.493,
+          2.471,
+          7.37,
+          7.295,
+          12.052,
+          2.878,
+          2.016,
+          4.085,
+          3.925,
+          2.17,
+          3.272,
+          0.292,
+          2.356,
+          0.483
+        ]
+      },
+      "structural": {
+        "precision": 0.4208333333333334,
+        "recall": 0.3491666666666667,
+        "f1": 0.2916666666666667
+      },
+      "observed": {
+        "precision": 0.3875,
+        "recall": 0.8166666666666667,
+        "f1": 0.3828571428571429,
+        "faultsWithImpact": 11
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": {
+        "p": 0.28,
+        "lo": 0.14283673837381572,
+        "hi": 0.47576971896558296,
+        "n": 25
+      }
+    }
+  },
+  "byClass": {
+    "brownout": {
+      "n": 6,
+      "detected": {
+        "p": 1,
+        "lo": 0.6096569663469354,
+        "hi": 1,
+        "n": 6
+      },
+      "top1": {
+        "p": 0,
+        "lo": 0,
+        "hi": 0.3903430336530645,
+        "n": 6
+      },
+      "top3": {
+        "p": 0.16666666666666666,
+        "lo": 0.030052585871730285,
+        "hi": 0.563509436563646,
+        "n": 6
+      },
+      "top1Initial": {
+        "p": 0,
+        "lo": 0,
+        "hi": 0.3903430336530645,
+        "n": 6
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.6096569663469354,
+        "hi": 1,
+        "n": 6
+      },
+      "mrr": 0.1111111111111111,
+      "delaySec": {
+        "median": 2.814,
+        "p90": 25.439,
+        "mean": 9.834166666666667,
+        "values": [
+          40.182,
+          10.696,
+          2.016,
+          3.272,
+          2.356,
+          0.483
+        ]
+      },
+      "structural": {
+        "precision": 0.40277777777777773,
+        "recall": 0.4861111111111111,
+        "f1": 0.33968253968253975
+      },
+      "observed": {
+        "precision": 0.4861111111111111,
+        "recall": 0.861111111111111,
+        "f1": 0.4761904761904761,
+        "faultsWithImpact": 4
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": {
+        "p": 0.2727272727272727,
+        "lo": 0.09745880573921469,
+        "hi": 0.5656502930102462,
+        "n": 11
+      }
+    },
+    "crash": {
+      "n": 6,
+      "detected": {
+        "p": 1,
+        "lo": 0.6096569663469354,
+        "hi": 1,
+        "n": 6
+      },
+      "top1": {
+        "p": 0.3333333333333333,
+        "lo": 0.09676933255921684,
+        "hi": 0.7000116786584712,
+        "n": 6
+      },
+      "top3": {
+        "p": 0.8333333333333334,
+        "lo": 0.4364905634363539,
+        "hi": 0.9699474141282696,
+        "n": 6
+      },
+      "top1Initial": {
+        "p": 0,
+        "lo": 0,
+        "hi": 0.3903430336530645,
+        "n": 6
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.6096569663469354,
+        "hi": 1,
+        "n": 6
+      },
+      "mrr": 0.6166666666666667,
+      "delaySec": {
+        "median": 5.894,
+        "p90": 11.749500000000001,
+        "mean": 7.015,
+        "values": [
+          16.129,
+          4.493,
+          7.37,
+          7.295,
+          2.878,
+          3.925
+        ]
+      },
+      "structural": {
+        "precision": 0.47222222222222215,
+        "recall": 0.38611111111111107,
+        "f1": 0.2841269841269842
+      },
+      "observed": {
+        "precision": 0.1111111111111111,
+        "recall": 0.8333333333333334,
+        "f1": 0.13333333333333333,
+        "faultsWithImpact": 2
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": {
+        "p": 0.25,
+        "lo": 0.045586062644636216,
+        "hi": 0.6993639475573634,
+        "n": 4
+      }
+    },
+    "pause": {
+      "n": 7,
+      "detected": {
+        "p": 1,
+        "lo": 0.6456611570247934,
+        "hi": 1,
+        "n": 7
+      },
+      "top1": {
+        "p": 0.5714285714285714,
+        "lo": 0.2504542304090258,
+        "hi": 0.8417830777373732,
+        "n": 7
+      },
+      "top3": {
+        "p": 1,
+        "lo": 0.6456611570247934,
+        "hi": 1,
+        "n": 7
+      },
+      "top1Initial": {
+        "p": 0.42857142857142855,
+        "lo": 0.1582169222626268,
+        "hi": 0.7495457695909742,
+        "n": 7
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.6456611570247934,
+        "hi": 1,
+        "n": 7
+      },
+      "mrr": 0.7857142857142857,
+      "delaySec": {
+        "median": 2.41,
+        "p90": 12.5744,
+        "mean": 5.154714285714286,
+        "values": [
+          13.358,
+          2.41,
+          1.716,
+          12.052,
+          4.085,
+          2.17,
+          0.292
+        ]
+      },
+      "structural": {
+        "precision": 0.38095238095238093,
+        "recall": 0.21428571428571427,
+        "f1": 0.2510204081632653
+      },
+      "observed": {
+        "precision": 0.4523809523809524,
+        "recall": 0.738095238095238,
+        "f1": 0.4285714285714285,
+        "faultsWithImpact": 4
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": {
+        "p": 0.25,
+        "lo": 0.07147768885802765,
+        "hi": 0.5907301208974108,
+        "n": 8
+      }
+    },
+    "stop": {
+      "n": 2,
+      "detected": {
+        "p": 1,
+        "lo": 0.3423719528896193,
+        "hi": 1,
+        "n": 2
+      },
+      "top1": {
+        "p": 0.5,
+        "lo": 0.09452865480086611,
+        "hi": 0.905471345199134,
+        "n": 2
+      },
+      "top3": {
+        "p": 1,
+        "lo": 0.3423719528896193,
+        "hi": 1,
+        "n": 2
+      },
+      "top1Initial": {
+        "p": 0.5,
+        "lo": 0.09452865480086611,
+        "hi": 0.905471345199134,
+        "n": 2
+      },
+      "top1AnyActive": {
+        "p": 1,
+        "lo": 0.3423719528896193,
+        "hi": 1,
+        "n": 2
+      },
+      "mrr": 0.6666666666666666,
+      "delaySec": {
+        "median": 2.4355,
+        "p90": 2.4639,
+        "mean": 2.4355,
+        "values": [
+          2.4,
+          2.471
+        ]
+      },
+      "structural": {
+        "precision": 0.25,
+        "recall": 0.125,
+        "f1": 0.16666666666666666
+      },
+      "observed": {
+        "precision": 0.5,
+        "recall": 1,
+        "f1": 0.5,
+        "faultsWithImpact": 1
+      },
+      "isolated": 0,
+      "visible": 0,
+      "detectedWhenVisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "detectedWhenInvisible": {
+        "p": null,
+        "lo": null,
+        "hi": null,
+        "n": 0
+      },
+      "preWarned": {
+        "p": 0.5,
+        "lo": 0.09452865480086611,
+        "hi": 0.905471345199134,
+        "n": 2
+      }
+    }
+  },
+  "falseAlarm": {
+    "episodes": 3,
+    "minutes": 1.9017666666666666,
+    "perHour": 9.218769072395505,
+    "spanHours": 0.32542305555555556,
+    "warmupMinutes": 0,
+    "warmupIncidents": 0
+  },
+  "calibration": {
+    "n": 244,
+    "brier": 0.26024590163934425,
+    "ece": 0.43442622950819665,
+    "auc": 0.4823008849557522,
+    "bins": [
+      {
+        "lo": 0,
+        "hi": 0.2,
+        "n": 0,
+        "meanRisk": null,
+        "rate": null
+      },
+      {
+        "lo": 0.2,
+        "hi": 0.4,
+        "n": 0,
+        "meanRisk": null,
+        "rate": null
+      },
+      {
+        "lo": 0.4,
+        "hi": 0.6,
+        "n": 236,
+        "meanRisk": 0.5,
+        "rate": 0.07627118644067797
+      },
+      {
+        "lo": 0.6,
+        "hi": 0.8,
+        "n": 8,
+        "meanRisk": 0.75,
+        "rate": 0
+      },
+      {
+        "lo": 0.8,
+        "hi": 1,
+        "n": 0,
+        "meanRisk": null,
+        "rate": null
+      }
+    ]
+  },
+  "confusion": {
+    "truth": [
+      "api-gateway",
+      "cart",
+      "cart-store",
+      "catalog",
+      "catalog-cache",
+      "catalog-db",
+      "notifier",
+      "orders",
+      "orders-db",
+      "payments",
+      "psp-sandbox"
+    ],
+    "predicted": [
+      "api-gateway",
+      "cart",
+      "cart-store",
+      "catalog",
+      "catalog-cache",
+      "catalog-db",
+      "notifier",
+      "orders",
+      "orders-db",
+      "payments",
+      "psp-sandbox",
+      "(missed)"
+    ],
+    "counts": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    ]
+  },
+  "noEffect": {
+    "n": 0,
+    "detected": 0,
+    "items": []
+  },
+  "kindConfusion": {
+    "truth": [
+      "down",
+      "frozen",
+      "slow",
+      "memory",
+      "isolated"
+    ],
+    "predicted": [
+      "down",
+      "frozen",
+      "slow",
+      "memory",
+      "isolated",
+      "(unclear)",
+      "(missed)"
+    ],
+    "counts": [
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "accuracy": {
+      "p": 1,
+      "lo": 0.7008472464490406,
+      "hi": 1,
+      "n": 9
+    },
+    "kappa": 1
+  },
+  "research": {
+    "delay": {
+      "n": 21,
+      "mean": 6.764238095238095,
+      "sd": 8.848840392417312,
+      "skew": 2.75804863086316,
+      "kurt": 7.828468433357635
+    },
+    "delayVsDuration": {
+      "rho": -0.287012987012987,
+      "p": 0.20736730308657703,
+      "n": 21
+    },
+    "bootstrap": {
+      "detected": {
+        "mean": 1,
+        "lo": 1,
+        "hi": 1,
+        "n": 21
+      },
+      "top1": {
+        "mean": 0.3333333333333333,
+        "lo": 0.14285714285714285,
+        "hi": 0.5238095238095238,
+        "n": 21
+      },
+      "top3": {
+        "mean": 0.7142857142857143,
+        "lo": 0.5238095238095238,
+        "hi": 0.9047619047619048,
+        "n": 21
+      }
+    },
+    "crossValidation": {
+      "top1": {
+        "folds": [
+          {
+            "n": 5,
+            "acc": 0.4
+          },
+          {
+            "n": 4,
+            "acc": 0.25
+          },
+          {
+            "n": 4,
+            "acc": 0.5
+          },
+          {
+            "n": 4,
+            "acc": 0
+          },
+          {
+            "n": 4,
+            "acc": 0.5
+          }
+        ],
+        "mean": 0.32999999999999996,
+        "sd": 0.21095023109728986
+      },
+      "detected": {
+        "folds": [
+          {
+            "n": 5,
+            "acc": 1
+          },
+          {
+            "n": 4,
+            "acc": 1
+          },
+          {
+            "n": 4,
+            "acc": 1
+          },
+          {
+            "n": 4,
+            "acc": 1
+          },
+          {
+            "n": 4,
+            "acc": 1
+          }
+        ],
+        "mean": 1,
+        "sd": 0
+      }
+    },
+    "chance": {
+      "meanCandidates": 5.127906976744185,
+      "top1Chance": 0.19501133786848074,
+      "top1": 0.3333333333333333,
+      "pValue": 0.09743988357501249
+    }
+  }
+}
