@@ -310,6 +310,11 @@ export class GraphStore {
           for (const n of this.nodesByTarget.get(targetId)?.values() ?? []) {
             if (n.status !== 'unknown') { n.status = 'unknown'; n.metadata = { ...n.metadata, statusReason: `no telemetry from the host for ${Math.round(diff / 60000)} min` }; }
           }
+          // Same for the links: a red or amber line frozen from the last scan says the call is failing right now, which nobody knows.
+          for (const e of this.edgesByTarget.get(targetId)?.values() ?? []) {
+            if (e.status === 'unknown' && !e.metrics && !e.activity) continue;
+            e.status = 'unknown'; e.metrics = null; delete e.activity;
+          }
         }
       } else {
         target.status = 'NO DATA';

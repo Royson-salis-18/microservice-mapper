@@ -87,6 +87,8 @@ export function edgeAppearance(edge: DependencyEdge | undefined, ctx: EdgeContex
   if (latency != null && latency >= LINK_THRESHOLDS.slowMs) return { heat: 'degraded', ...AMBER, label: 'slow', reason: `latency ${ms(latency)}` };
   if (observed && !measured && ctx.targetStatus === 'degraded') return { heat: 'degraded', ...AMBER, label: 'degraded', reason: 'calls a degraded service' };
 
+  // Nothing is known about the callee right now (host offline, job finished): not green, because green says "carrying traffic".
+  if (observed && !measured && ctx.targetStatus === 'unknown') return { heat: 'idle', color: '#4a4f57', glow: '#5d636c', intensity: 0.55, label: 'no live data', reason: 'the service at the other end has no current status' };
   if (!observed) return { heat: 'idle', color: '#4a4f57', glow: '#5d636c', intensity: 0.55, label: 'declared, not observed' };
 
   const perMin = edge?.activity?.samplesPerMin;

@@ -198,9 +198,11 @@ class VirtualUser {
     // across every discovered service (http://host:8080/, http://host:9000/, …)
     // instead of only the one baseUrl, which is what "stress every endpoint"
     // needs in order to produce telemetry for all services at once.
-    const url = /^https?:\/\//i.test(path)
-      ? path
-      : cfg.baseUrl.replace(/\/$/, '') + path;
+    // `port` sends this step to another published port of the same host (DeathStarBench's media-frontend is on :8081
+    // while the entry point is :8080), so a service that no user journey passes through still gets real requests.
+    let base = cfg.baseUrl.replace(/\/$/, '');
+    if (step.port) { try { const u = new URL(base); u.port = String(step.port); base = u.origin; } catch { /* keep base */ } }
+    const url = /^https?:\/\//i.test(path) ? path : base + path;
     const method = step.method || 'GET';
     const started = Date.now();
     this.engine.stats.recordRequestStart();

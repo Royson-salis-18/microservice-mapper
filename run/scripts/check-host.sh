@@ -71,7 +71,7 @@ else ok "http $CODE"; fi
 
 echo "8. who do the front-end containers talk to?  (the mapper can only draw an edge to another container)"
 FRONT="${FRONT:-front|nginx|proxy|gateway|web}"
-"${SSH[@]}" python3 - "$FRONT" <<'PY' 2>&1 | sed 's/^/       /'
+"${SSH[@]}" "python3 - '$FRONT'" <<'PY' 2>&1 | sed 's/^/       /'
 import re, socket, struct, subprocess, sys, collections
 def sh(c):
     return subprocess.run(c, shell=True, capture_output=True, text=True).stdout

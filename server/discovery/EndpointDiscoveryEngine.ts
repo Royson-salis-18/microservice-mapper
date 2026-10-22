@@ -252,24 +252,30 @@ class TargetAgent {
         };
         this.registry.registerService(discoveredService);
 
-        const isPublic = svc.ports.some(p => (p as any).hostPort !== undefined);
-        const port0 = svc.ports.length > 0 ? (svc.ports[0] as any).containerPort : 80;
-        const endpointId = EndpointRegistry.makeEndpointId(this.targetId, svc.name, 'HTTP', port0);
-        const discoveredEndpoint: DiscoveredEndpoint = {
-          endpointId,
-          targetId: this.targetId,
-          serviceId: svc.serviceId,
-          serviceName: svc.name,
-          host: isPublic ? this.ec2Ip : `${svc.name}.internal`,
-          port: port0,
-          protocol: 'HTTP',
-          type: isPublic ? 'PUBLIC' : 'INTERNAL',
-          source: 'docker',
-          discoveryMethod: 'compose-config',
-          reachable: isPublic,
-          lastChecked: nowIso,
-        };
-        this.registry.registerEndpoint(discoveredEndpoint);
+        // The address a client can use is the PUBLISHED host port, not the container's own. Taking the container port
+        // pointed media-frontend (published as 8081, listening on 8080 inside) at nginx-thrift's 8080, so probes and
+        // traffic meant for it went to a different service.
+        const published = new Map<number, number>();
+        for (const p of svc.ports as any[]) if (p.hostPort !== undefined && !published.has(p.hostPort)) published.set(p.hostPort, p.containerPort);
+        const isPublic = published.size > 0;
+        const exposed: number[] = isPublic ? [...published.keys()] : [svc.ports.length > 0 ? (svc.ports[0] as any).containerPort : 80];
+        for (const port of exposed) {
+          const discoveredEndpoint: DiscoveredEndpoint = {
+            endpointId: EndpointRegistry.makeEndpointId(this.targetId, svc.name, 'HTTP', port),
+            targetId: this.targetId,
+            serviceId: svc.serviceId,
+            serviceName: svc.name,
+            host: isPublic ? this.ec2Ip : `${svc.name}.internal`,
+            port,
+            protocol: 'HTTP',
+            type: isPublic ? 'PUBLIC' : 'INTERNAL',
+            source: 'docker',
+            discoveryMethod: 'compose-config',
+            reachable: isPublic,
+            lastChecked: nowIso,
+          };
+          this.registry.registerEndpoint(discoveredEndpoint);
+        }
       }
 
       // Format dependencies for GraphStore
