@@ -21,6 +21,7 @@ import { TerminalPanel } from './components/TerminalPanel';
 import { TracesView } from './components/TracesView';
 import { MLPipelineView } from './components/MLPipelineView';
 import { FindingsView } from './components/FindingsView';
+import { EnginesView } from './components/EnginesView';
 import { ProjectSections } from './components/ProjectSections';
 import { computeLayout2D, type Layout2DId } from './components/layouts2d';
 import type { ServiceNode, DependencyEdge } from './types';
@@ -316,6 +317,7 @@ export default function App() {
           isTrafficPanelOpen={isTrafficPanelOpen}
           onToggleTerminal={() => setIsTerminalVisible(!isTerminalVisible)}
           isTerminalOpen={isTerminalVisible}
+          onOpenEngines={() => setActiveTab('ENGINES')}
           onReloadGraph={reloadGraph}
           activeTab={activeTab}
           onEditProject={(projectId) => { 
@@ -388,6 +390,8 @@ export default function App() {
               />
             )}
           </ProjectSections>
+        ) : activeTab === 'ENGINES' ? (
+          <EnginesView selectedProject={selectedProjectId} />
         ) : activeTab === 'RELIABILITY' ? (
           <ReliabilityView selectedProject={selectedProjectId} nodes={filteredNodes} />
         ) : activeTab === 'EXPERIMENTS' ? (

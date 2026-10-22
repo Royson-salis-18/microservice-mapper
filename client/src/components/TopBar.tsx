@@ -20,17 +20,19 @@ interface TopBarProps {
   onEditProject?: (projectId: string) => void;
   onReloadGraph?: (targetId: string) => Promise<void>;
   activeTab?: string;
+  /** Open the Detection engines page, where each engine's settings and results are shown. */
+  onOpenEngines?: () => void;
 }
 
 const SECTION: Record<string, string> = {
   '3D Vision': 'Spatial view', Architecture: 'Architecture', Dependencies: 'Dependencies', Telemetry: 'Telemetry',
   TRACES: 'Traces', Analytics: 'Analytics', 'RCA / INCIDENTS': 'Incidents & cascade', RCA: 'Incidents & cascade', RELIABILITY: 'Cascade risk', FINDINGS: 'Findings',
-  'ML PIPELINE': 'ML pipeline', EXPERIMENTS: 'Experiments',
+  'ML PIPELINE': 'ML pipeline', EXPERIMENTS: 'Experiments', ENGINES: 'Detection engines',
 };
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
-export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph, activeTab }: TopBarProps) {
+export function TopBar({ status, targets, isConnected, lastUpdate, selectedProject, onProjectChange, searchQuery, onSearchChange, onToggleTrafficPanel, isTrafficPanelOpen, onToggleTerminal, isTerminalOpen, onEditProject, onReloadGraph, activeTab, onOpenEngines }: TopBarProps) {
   const [isReloading, setIsReloading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const model = useModelStatus(selectedProject);
@@ -147,6 +149,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
               {m === 'rules' ? 'Rules' : m === 'hybrid' ? 'Hybrid' : 'ML'}
             </button>
           ))}
+          {onOpenEngines && <button onClick={onOpenEngines} title="See what each engine does, its settings and its results" aria-label="Open the Detection engines page">?</button>}
         </div>
       )}
 

@@ -16,6 +16,9 @@ import type { RiskEngine } from '../graph/RiskEngine.js';
 import { thresholdLimits, DEFAULT_THRESHOLDS, THRESHOLD_DOCS } from '../algorithms/detection/thresholds.js';
 import { loadThresholds, saveThresholds } from '../rca/thresholdsStore.js';
 import { getEngineMode, setEngineMode } from '../rca/engineMode.js';
+import { ENGINE_DEFAULTS } from '../algorithms/ml/mlEngine.js';
+import { HYBRID_DEFAULTS } from '../algorithms/ml/hybrid.js';
+import { RULES_LINE } from '../algorithms/detection/scoring.js';
 import { tailCsvLines, readCsvHeader, fieldAt } from '../util/tailCsv.js';
 import { config } from '../config.js';
 
@@ -285,6 +288,22 @@ export function createRouter(graphStore: GraphStore, wsManager?: WebSocketManage
   // Which engine decides incidents: rules (statistical detector + ranking), ml (Isolation Forest + random walk) or hybrid (both).
   router.get('/engine', (_req, res) => {
     res.json({ mode: getEngineMode(), status: incidentManager?.engineStatus() ?? null });
+  });
+  // Everything the Detection engines page shows: each engine's settings, what it is doing now, and how it scored offline.
+  router.get('/engine/info', (_req, res) => {
+    let offline: unknown = null;
+    try { offline = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'algorithms', 'ml', 'eval-summary.json'), 'utf8')); } catch { /* not shipped: the page says so */ }
+    res.json({
+      mode: getEngineMode(),
+      status: incidentManager?.engineStatus() ?? null,
+      tally: incidentManager?.engineTally() ?? null,
+      config: {
+        rules: { line: RULES_LINE, thresholds: loadThresholds(), limits: thresholdLimits(), docs: THRESHOLD_DOCS },
+        ml: ENGINE_DEFAULTS,
+        hybrid: HYBRID_DEFAULTS,
+      },
+      offline,
+    });
   });
   router.post('/engine', (req, res) => {
     const mode = req.body?.mode;

@@ -20,6 +20,13 @@ const ML_LABELS: Record<string, string> = {
   fact: 'container fact (stopped, paused or restarting)',
 };
 
+/** What each engine would say about the same readings, kept while the ML engine is stepping (ML and Hybrid modes). */
+interface Shadow {
+  moments: number; rulesHot: number; mlHot: number; hybridHot: number;
+  now: { rulesTop: number; mlTop: number; hybridMax: number; rulesRanked: string[]; mlRanked: string[]; hybridRanked: string[] };
+}
+export interface EngineTally { incidents: number; since: string; last: { at: string; target: string; root: string | null; severity: string } | null }
+
 export class IncidentManager {
   private activeIncidents: Map<string, Incident> = new Map(); // targetId -> Incident
   private anomalyDetector: AnomalyDetector;
@@ -27,10 +34,16 @@ export class IncidentManager {
   private learned = new LearnedScorer();
   /** One model per architecture, trained on its own baseline at every start (call models.start() once the server is up). */
   public readonly models: TargetModels;
+  /** Incidents opened under each engine mode since the server started. */
+  private tally: Record<'rules' | 'ml' | 'hybrid', EngineTally> = {
+    rules: { incidents: 0, since: new Date().toISOString(), last: null },
+    ml: { incidents: 0, since: new Date().toISOString(), last: null },
+    hybrid: { incidents: 0, since: new Date().toISOString(), last: null },
+  };
   /** Per target: was the learned model above its threshold last cycle (alarms need two cycles in a row). */
   private learnedHot = new Map<string, boolean>();
   /** ML engine state per target: the learned baselines, the newest reading already fed in, last cycle's alarm. */
-  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; rulesTop?: number; warnings?: { id: string; feature: string; inSec: number | null }[]; cascade?: { id: string; risk: number }[]; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
+  private ml = new Map<string, { engine: MLEngine; seen: Map<string, string>; hot: boolean; ready: boolean; learned: number; services: number; readings: number; rulesTop?: number; shadow?: Shadow; warnings?: { id: string; feature: string; inSec: number | null }[]; cascade?: { id: string; risk: number }[]; detail: { id: string; level: number; own: number; symptom: number; anomaly: number; walk: number; hard: boolean; ready: boolean; fact?: string }[] }>();
 
   constructor(private graphStore: GraphStore) {
     this.anomalyDetector = new AnomalyDetector(graphStore.metricStore, loadThresholds);
@@ -93,14 +106,30 @@ export class IncidentManager {
     }
     const r = st.engine.step(nodes, edges.map((e) => ({ source: e.source, target: e.target, weight: e.weight?.value ?? 1 })), hostSilent ? new Map() : fresh);
     let hotNow = r.hot;
-    if (hybrid && !hostSilent) {
+    if (!hostSilent) {
       const history = (id: string) => this.graphStore.metricStore.getHistory(id, '15m');
       const rules = momentScores(nodes, history, edges.map((e) => [e.source, e.target] as [string, string]), makeScorer(null));
       const ids = [...r.services.keys()];
-      const fused = fuseMoment({ services: ids, rules: new Map(ids.map((id) => [id, (rules.get(id) ?? 0) / RULES_LINE])), level: new Map(ids.map((id) => [id, r.services.get(id)!.level / ENGINE_DEFAULTS.alarmLevel])),
+      const rulesLine = new Map(ids.map((id) => [id, (rules.get(id) ?? 0) / RULES_LINE]));
+      const fused = fuseMoment({ services: ids, rules: rulesLine, level: new Map(ids.map((id) => [id, r.services.get(id)!.level / ENGINE_DEFAULTS.alarmLevel])),
         hard: new Set(ids.filter((id) => r.services.get(id)!.hard)), walk: r.rank, mlRanked: r.ranked }, HYBRID_DEFAULTS);
-      hotNow = fused.max >= 1;
-      st.rulesTop = Math.max(0, ...ids.map((id) => (rules.get(id) ?? 0) / RULES_LINE));
+      if (hybrid) hotNow = fused.max >= 1;
+      const rulesTop = Math.max(0, ...rulesLine.values());
+      st.rulesTop = rulesTop;
+      const sh: Shadow = st.shadow ?? { moments: 0, rulesHot: 0, mlHot: 0, hybridHot: 0, now: { rulesTop: 0, mlTop: 0, hybridMax: 0, rulesRanked: [], mlRanked: [], hybridRanked: [] } };
+      sh.moments++;
+      if (rulesTop >= 1) sh.rulesHot++;
+      if (r.hot) sh.mlHot++;
+      if (fused.max >= 1) sh.hybridHot++;
+      sh.now = {
+        rulesTop: +rulesTop.toFixed(2),
+        mlTop: +Math.max(0, ...[...r.services.values()].map((v) => v.level / ENGINE_DEFAULTS.alarmLevel)).toFixed(2),
+        hybridMax: +Math.min(fused.max, 10).toFixed(2),
+        rulesRanked: [...rulesLine].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 3).map(([id]) => id),
+        mlRanked: r.ranked.slice(0, 3),
+        hybridRanked: fused.ranked.slice(0, 3),
+      };
+      st.shadow = sh;
     }
     const alarm = hotNow && st.hot;
     st.hot = hotNow; st.ready = r.ready; st.learned = r.learnedServices; st.services = r.services.size; st.readings += readings;
@@ -131,8 +160,11 @@ export class IncidentManager {
 
   /** What the ML engine has learned so far, per target (for the UI). */
   public engineStatus() {
-    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, detail: s.detail, rulesTop: s.rulesTop ?? null, warnings: s.warnings ?? [], cascade: s.cascade ?? [], needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
+    return { mode: getEngineMode(), targets: [...this.ml].map(([targetId, s]) => ({ targetId, ready: s.ready, learnedServices: s.learned, services: s.services, detail: s.detail, rulesTop: s.rulesTop ?? null, shadow: s.shadow ?? null, warnings: s.warnings ?? [], cascade: s.cascade ?? [], needReadings: ENGINE_DEFAULTS.baseline.minTrain })) };
   }
+
+  /** Incidents opened per engine mode since the server started (for the Detection engines page). */
+  public engineTally() { return this.tally; }
 
   /** Close every open incident (used when the engine is switched, so the new engine starts from a clean slate). */
   public resetIncidents(): void { this.activeIncidents.clear(); this.learnedHot.clear(); for (const s of this.ml.values()) s.hot = false; }
@@ -227,6 +259,9 @@ export class IncidentManager {
 
     newIncident.remediationGuide = newIncident.explanation.recommendedInvestigation;
     this.activeIncidents.set(targetId, newIncident);
+    const tally = this.tally[getEngineMode()];
+    tally.incidents++;
+    tally.last = { at: now, target: targetId, root: newIncident.rootCauseServiceId, severity: String(severity) };
     return newIncident;
   }
 

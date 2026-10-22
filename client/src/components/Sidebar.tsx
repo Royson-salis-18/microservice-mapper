@@ -9,6 +9,7 @@ import {
   FlaskConical,
   Waypoints,
   Brain,
+  Gauge,
   Microscope,
   ShieldAlert,
   Plus,
@@ -35,6 +36,7 @@ const GROUPS: { title: string; items: NavItem[]; advanced?: boolean }[] = [
     title: 'Now',
     items: [
       { id: 'RCA / INCIDENTS', icon: AlertTriangle, label: 'Incidents & cascade' },
+      { id: 'ENGINES', icon: Gauge, label: 'Detection engines' },
       { id: 'RELIABILITY', icon: ShieldAlert, label: 'Cascade risk' },
       { id: '3D Vision', icon: Box, label: 'Spatial view' },
       { id: 'Architecture', icon: Network, label: 'Architecture' },

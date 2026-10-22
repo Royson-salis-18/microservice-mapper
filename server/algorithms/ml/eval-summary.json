@@ -1,0 +1,61 @@
+{
+ "note": "Offline evaluation on recorded runs with injected faults. detected = share of faults with an alarm naming a touched service; caughtAndNamed = detected and the true root ranked first; falseAlarmsPerHour = alarms with no fault active.",
+ "sets": {
+  "real": {
+   "label": "Recorded runs (ShopFlow + LedgerLine)",
+   "faults": 62,
+   "hours": 3.614,
+   "engines": {
+    "rules": {
+     "detected": 0.903,
+     "top1OfDetected": 0.714,
+     "caughtAndNamed": 0.645,
+     "falseAlarmsPerHour": 9.226,
+     "alarmShare": 0.086
+    },
+    "ml": {
+     "detected": 0.871,
+     "top1OfDetected": 0.833,
+     "caughtAndNamed": 0.726,
+     "falseAlarmsPerHour": 2.306,
+     "alarmShare": 0.051
+    },
+    "hybrid": {
+     "detected": 0.903,
+     "top1OfDetected": 0.821,
+     "caughtAndNamed": 0.742,
+     "falseAlarmsPerHour": 6.151,
+     "alarmShare": 0.067
+    }
+   }
+  },
+  "test": {
+   "label": "Held-out synthetic stress set",
+   "faults": 178,
+   "hours": 15.978,
+   "engines": {
+    "rules": {
+     "detected": 0.888,
+     "top1OfDetected": 0.785,
+     "caughtAndNamed": 0.697,
+     "falseAlarmsPerHour": 2.521,
+     "alarmShare": 0.015
+    },
+    "ml": {
+     "detected": 0.893,
+     "top1OfDetected": 0.78,
+     "caughtAndNamed": 0.697,
+     "falseAlarmsPerHour": 0,
+     "alarmShare": 0.054
+    },
+    "hybrid": {
+     "detected": 0.916,
+     "top1OfDetected": 0.785,
+     "caughtAndNamed": 0.719,
+     "falseAlarmsPerHour": 0.788,
+     "alarmShare": 0.058
+    }
+   }
+  }
+ }
+}
