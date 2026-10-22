@@ -20,10 +20,24 @@ const ML_LABELS: Record<string, string> = {
   fact: 'container fact (stopped, paused or restarting)',
 };
 
-/** What each engine would say about the same readings, kept while the ML engine is stepping (ML and Hybrid modes). */
+/** One engine's verdict on the moment, kept for every engine whatever the active one is (the Detection engines page). */
+export interface EngineVerdict {
+  /** Over its line on this cycle and the one before (the same persistence the live engine uses). */
+  alarm: boolean;
+  /** Strongest service against the engine's own alarm line: 1 = exactly at the line. */
+  peak: number;
+  /** Most likely sources, best first. `score` is the engine's own number for that service. */
+  suspects: { id: string; score: number; fact?: string }[];
+}
+export interface ServiceRow { id: string; rules: number; level: number; own: number; symptom: number; walk: number; blend: number; hard: boolean; fact?: string }
 interface Shadow {
   moments: number; rulesHot: number; mlHot: number; hybridHot: number;
+  prev: { rules: boolean; ml: boolean; hybrid: boolean };
   now: { rulesTop: number; mlTop: number; hybridMax: number; rulesRanked: string[]; mlRanked: string[]; hybridRanked: string[] };
+  at: string;
+  engines: { rules: EngineVerdict; ml: EngineVerdict; hybrid: EngineVerdict };
+  services: ServiceRow[];
+  history: { t: number; rules: number; ml: number; hybrid: number }[];
 }
 export interface EngineTally { incidents: number; since: string; last: { at: string; target: string; root: string | null; severity: string } | null }
 
@@ -68,6 +82,9 @@ export class IncidentManager {
     const learning = model.state === 'learning' ? { haveSec: model.baselineSec, needSec: model.needSec } : undefined;
     const mode = getEngineMode();
     if (mode !== 'rules') return this.finish(targetId, targetNodes, targetEdges, anomalies, this.mlAnalysis(targetId, targetNodes, targetEdges, anomalies, hostSilent, open, mode === 'hybrid'), t);
+    // The rule engine decides here, but the ML engine and the fused rule still step on the same readings, so the
+    // Detection engines page can show all three side by side and a later switch does not start from nothing.
+    this.observe(targetId, targetNodes, targetEdges, hostSilent, false);
     this.graphStore.clearEngineScores?.();
     const scored = hostSilent || learning ? null : this.learned.score(targetNodes, targetEdges, (id) => this.graphStore.metricStore.getHistory(id, '15m'), model.threshold);
     let learned: any;
@@ -94,7 +111,9 @@ export class IncidentManager {
   /** The ML engine: per-service Isolation Forest (learned on a sliding window of normal readings) and a random walk on the
    *  call graph. Its verdict goes through the same incident machinery as the rules (explanation, cascade, at-risk).
    *  Hybrid: the rule engine scores the same moment too, and either engine can raise the alarm (server/algorithms/ml/hybrid.ts). */
-  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined, hybrid = false) {
+  /** Steps the ML engine one cycle and scores the same moment with the rules and the fused rule, whatever mode is active, so
+   *  all three are always computed in parallel and can be shown side by side. Returns what the active mode needs. */
+  private observe(targetId: string, nodes: any[], edges: any[], hostSilent: boolean, hybrid: boolean) {
     let st = this.ml.get(targetId);
     if (!st) { st = { engine: new MLEngine(ENGINE_DEFAULTS), seen: new Map(), hot: false, ready: false, learned: 0, services: 0, readings: 0, detail: [] }; this.ml.set(targetId, st); }
     const fresh = new Map<string, MetricSnapshot[]>();
@@ -116,19 +135,34 @@ export class IncidentManager {
       if (hybrid) hotNow = fused.max >= 1;
       const rulesTop = Math.max(0, ...rulesLine.values());
       st.rulesTop = rulesTop;
-      const sh: Shadow = st.shadow ?? { moments: 0, rulesHot: 0, mlHot: 0, hybridHot: 0, now: { rulesTop: 0, mlTop: 0, hybridMax: 0, rulesRanked: [], mlRanked: [], hybridRanked: [] } };
+      const mlTop = Math.max(0, ...[...r.services.values()].map((v) => v.level / ENGINE_DEFAULTS.alarmLevel));
+      const prev = st.shadow?.prev ?? { rules: false, ml: false, hybrid: false };
+      const sh: Shadow = st.shadow ?? { moments: 0, rulesHot: 0, mlHot: 0, hybridHot: 0, prev, now: { rulesTop: 0, mlTop: 0, hybridMax: 0, rulesRanked: [], mlRanked: [], hybridRanked: [] }, at: '',
+        engines: { rules: { alarm: false, peak: 0, suspects: [] }, ml: { alarm: false, peak: 0, suspects: [] }, hybrid: { alarm: false, peak: 0, suspects: [] } }, services: [], history: [] };
+      const rulesHotNow = rulesTop >= 1, mlHotNow = r.hot, hybridHotNow = fused.max >= 1;
       sh.moments++;
-      if (rulesTop >= 1) sh.rulesHot++;
-      if (r.hot) sh.mlHot++;
-      if (fused.max >= 1) sh.hybridHot++;
+      if (rulesHotNow) sh.rulesHot++;
+      if (mlHotNow) sh.mlHot++;
+      if (hybridHotNow) sh.hybridHot++;
+      const round = (x: number) => +x.toFixed(2);
+      const fact = (id: string) => r.services.get(id)?.fact;
       sh.now = {
-        rulesTop: +rulesTop.toFixed(2),
-        mlTop: +Math.max(0, ...[...r.services.values()].map((v) => v.level / ENGINE_DEFAULTS.alarmLevel)).toFixed(2),
-        hybridMax: +Math.min(fused.max, 10).toFixed(2),
+        rulesTop: round(rulesTop), mlTop: round(mlTop), hybridMax: round(Math.min(fused.max, 10)),
         rulesRanked: [...rulesLine].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 3).map(([id]) => id),
         mlRanked: r.ranked.slice(0, 3),
         hybridRanked: fused.ranked.slice(0, 3),
       };
+      sh.engines = {
+        rules: { alarm: rulesHotNow && prev.rules, peak: round(rulesTop), suspects: [...rulesLine].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 5).map(([id, v]) => ({ id, score: round(v), fact: fact(id) })) },
+        ml: { alarm: mlHotNow && prev.ml, peak: round(mlTop), suspects: r.ranked.slice(0, 5).map((id) => ({ id, score: +(r.rank.get(id) ?? 0).toFixed(3), fact: fact(id) })) },
+        hybrid: { alarm: hybridHotNow && prev.hybrid, peak: round(Math.min(fused.max, 10)), suspects: fused.ranked.slice(0, 5).map((id) => ({ id, score: round(fused.blend.get(id) ?? 0), fact: fact(id) })) },
+      };
+      sh.prev = { rules: rulesHotNow, ml: mlHotNow, hybrid: hybridHotNow };
+      sh.at = new Date().toISOString();
+      sh.services = ids.map((id) => { const v = r.services.get(id)!; return { id, rules: round(rulesLine.get(id) ?? 0), level: round(v.level), own: round(v.ownLevel), symptom: round(v.symptomLevel), walk: +(r.rank.get(id) ?? 0).toFixed(3), blend: round(fused.blend.get(id) ?? 0), hard: v.hard, fact: v.fact }; })
+        .sort((x, y) => Number(y.hard) - Number(x.hard) || y.blend - x.blend || y.rules - x.rules);
+      sh.history.push({ t: Date.now(), rules: round(Math.min(rulesTop, 6)), ml: round(Math.min(mlTop, 6)), hybrid: round(Math.min(fused.max, 6)) });
+      if (sh.history.length > 90) sh.history.shift();
       st.shadow = sh;
     }
     const alarm = hotNow && st.hot;
@@ -138,6 +172,11 @@ export class IncidentManager {
     st.detail = [...r.services].map(([id, v]) => ({ id, level: +v.level.toFixed(2), own: +v.ownLevel.toFixed(2), symptom: +v.symptomLevel.toFixed(2), anomaly: +v.anomaly.toFixed(2), walk: +(r.rank.get(id) ?? 0).toFixed(3), hard: v.hard, ready: v.ready, fact: v.fact }))
       .sort((a, b) => b.walk - a.walk || b.level - a.level);
     this.graphStore.setEngineScores?.(new Map([...r.services].map(([id, v]) => [id, { score: v.anomaly, persistent: v.level >= 1 }])));
+    return { st, r, alarm };
+  }
+
+  private mlAnalysis(targetId: string, nodes: any[], edges: any[], ruleAnomalies: AnomalyRecord[], hostSilent: boolean, open: Incident | undefined, hybrid = false) {
+    const { st, r, alarm } = this.observe(targetId, nodes, edges, hostSilent, hybrid);
 
     // evidence for the incident: container facts (from the detector) plus the forest's verdicts
     const now = new Date().toISOString();

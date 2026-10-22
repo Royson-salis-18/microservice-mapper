@@ -8,11 +8,18 @@ import { useEngineMode, type EngineMode } from '../hooks/useEngineMode';
  * this page is where you can see that it does, and why.
  */
 
+interface Verdict { alarm: boolean; peak: number; suspects: { id: string; score: number; fact?: string }[] }
+interface ServiceRow { id: string; rules: number; level: number; own: number; symptom: number; walk: number; blend: number; hard: boolean; fact?: string }
 interface Shadow {
-  moments: number; rulesHot: number; mlHot: number; hybridHot: number;
-  now: { rulesTop: number; mlTop: number; hybridMax: number; rulesRanked: string[]; mlRanked: string[]; hybridRanked: string[] };
+  moments: number; rulesHot: number; mlHot: number; hybridHot: number; at: string;
+  engines: { rules: Verdict; ml: Verdict; hybrid: Verdict };
+  services: ServiceRow[];
+  history: { t: number; rules: number; ml: number; hybrid: number }[];
 }
-interface Target { targetId: string; ready: boolean; learnedServices: number; services: number; needReadings: number; shadow: Shadow | null; warnings?: { id: string; feature: string; inSec: number | null }[] }
+interface Target {
+  targetId: string; ready: boolean; learnedServices: number; services: number; needReadings: number; shadow: Shadow | null;
+  warnings?: { id: string; feature: string; inSec: number | null }[]; cascade?: { id: string; risk: number }[];
+}
 interface Tally { incidents: number; since: string; last: { at: string; target: string; root: string | null; severity: string } | null }
 interface EngineScore { detected: number; top1OfDetected: number; caughtAndNamed: number; falseAlarmsPerHour: number; alarmShare: number }
 interface Info {
@@ -88,6 +95,123 @@ function Bar({ value, max = 1, color = 'var(--color-accent-blue)' }: { value: nu
   );
 }
 
+const COLORS = { rules: '#e8a33d', ml: '#8ab4ff', hybrid: '#3ecf8e' } as const;
+
+function EngineColumn({ id, name, active, v: raw, warnings, next, hot, moments }: { id: EngineMode; name: string; active: boolean; v: Verdict; warnings?: Target['warnings']; next?: Target['cascade']; hot: number; moments: number }) {
+  const col = COLORS[id];
+  const forecasts = id !== 'rules';
+  // a service at zero is not a suspect: listing it would rank noise
+  const v: Verdict = { ...raw, suspects: raw.suspects.filter((x) => x.score >= 0.005) };
+  return (
+    <div style={{ padding: 14, borderRadius: 10, border: `1px solid ${active ? col : 'var(--color-border)'}`, background: 'rgba(255,255,255,.015)', display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <i className="mm-dot" style={{ background: col }} /><b style={{ fontSize: 14 }}>{name}</b>
+        {active && <span style={{ fontSize: 11, ...muted }}>active</span>}
+        <span className="mm-chip" style={{ marginLeft: 'auto', color: v.alarm ? 'var(--color-critical)' : 'var(--color-text-muted)', borderColor: v.alarm ? 'rgba(239,95,103,.4)' : undefined }}>{v.alarm ? 'ALARM' : 'quiet'}</span>
+      </div>
+
+      <div>
+        <div className="mm-eyebrow">Detected</div>
+        <div style={{ fontSize: 13, marginTop: 4 }}>
+          {v.alarm
+            ? <>Something is wrong. Most likely source: <b>{v.suspects[0] ? clean(v.suspects[0].id) : 'unclear'}</b>{v.suspects[0]?.fact ? <span style={{ color: 'var(--color-critical)' }}> ({v.suspects[0].fact})</span> : null}</>
+            : <span style={muted}>Nothing over the line on two cycles in a row.</span>}
+        </div>
+        <div style={{ fontSize: 11.5, marginTop: 4, ...muted }}>Peak {v.peak.toFixed(2)}× its line · over the line on {hot} of {moments} cycles ({moments ? pct(hot / moments) : '0%'})</div>
+      </div>
+
+      <div>
+        <div className="mm-eyebrow">Computed: ranked suspects</div>
+        {!v.suspects.length ? <div style={{ fontSize: 12.5, marginTop: 4, ...muted }}>Every service is at zero.</div> : (
+          <div style={{ marginTop: 6, display: 'grid', gap: 5 }}>
+            {v.suspects.map((x, i) => (
+              <div key={x.id} style={{ display: 'grid', gridTemplateColumns: '18px minmax(60px,1fr) minmax(50px,90px) 44px', gap: 8, alignItems: 'center', fontSize: 12.5 }}>
+                <span style={muted}>{i + 1}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i === 0 ? 600 : 400 }}>{clean(x.id)}</span>
+                <Bar value={x.score} max={id === 'ml' ? 1 : Math.max(2, v.suspects[0].score)} color={col} />
+                <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{id === 'ml' ? pct(x.score) : `${x.score.toFixed(2)}×`}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: 11, marginTop: 6, ...muted }}>{id === 'ml' ? 'Share of the random-walk blame over the call graph.' : id === 'rules' ? 'Rule score against the rule line.' : 'Ranked by the ML blame (container facts first); the number is the fused rules + ML score.'}</div>
+      </div>
+
+      <div>
+        <div className="mm-eyebrow">Predicted</div>
+        {!forecasts ? <div style={{ fontSize: 12.5, marginTop: 4, ...muted }}>Nothing. Rules compare the present with the past and do not forecast.</div> : (
+          <div style={{ fontSize: 12.5, marginTop: 4, display: 'grid', gap: 4 }}>
+            {warnings?.length ? warnings.map((w) => <div key={w.id + w.feature}>Early warning: <b>{clean(w.id)}</b> {w.feature} heading over its line{w.inSec !== null ? ` in about ${w.inSec} s` : ''}</div>) : <div style={muted}>No metric is trending over its line.</div>}
+            {next?.length ? <div>Likely next to be hit: {next.map((c) => `${clean(c.id)} ${pct(c.risk)}`).join(', ')}</div> : <div style={muted}>No service has a cascade risk above 50%.</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ParallelChart({ history }: { history: Shadow['history'] }) {
+  if (history.length < 2) return <div style={{ fontSize: 12, ...muted }}>The chart appears after a few cycles.</div>;
+  const W = 760, H = 150, top = 6;
+  const max = Math.min(6, Math.max(2, ...history.flatMap((p) => [p.rules, p.ml, p.hybrid])));
+  const x = (i: number) => (i / (history.length - 1)) * W;
+  const y = (v: number) => H - (Math.min(v, max) / max) * (H - top);
+  const line = (k: 'rules' | 'ml' | 'hybrid') => history.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(' ');
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H + 4}`} width="100%" height="150" role="img" aria-label="Peak of each engine against its own alarm line over the last cycles">
+        <line x1="0" x2={W} y1={y(1)} y2={y(1)} stroke="var(--color-border-hover)" strokeDasharray="4 4" />
+        <text x="4" y={y(1) - 4} fontSize="10" fill="var(--color-text-dim)">alarm line (1.0)</text>
+        {(['rules', 'ml', 'hybrid'] as const).map((k) => <path key={k} d={line(k)} fill="none" stroke={COLORS[k]} strokeWidth="1.8" />)}
+      </svg>
+      <div style={{ display: 'flex', gap: 16, fontSize: 12, ...muted }}>
+        {(['rules', 'ml', 'hybrid'] as const).map((k) => <span key={k}><i className="mm-dot" style={{ background: COLORS[k], marginRight: 6 }} />{k === 'ml' ? 'ML' : k[0].toUpperCase() + k.slice(1)}</span>)}
+        <span style={{ marginLeft: 'auto' }}>last {history.length} cycles, scale 0 to {max.toFixed(0)}×</span>
+      </div>
+    </div>
+  );
+}
+
+function ParallelTarget({ t, mode }: { t: Target; mode: EngineMode | null }) {
+  const s = t.shadow;
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ fontSize: 12, marginBottom: 8, ...muted }}>
+        <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{t.targetId}</b> · ML has learned {t.learnedServices} of {t.services} services
+        {t.ready ? '' : ` · each needs about ${t.needReadings} readings first, until then only container facts count for ML`}
+        {s?.at ? ` · updated ${new Date(s.at).toLocaleTimeString()}` : ''}
+      </div>
+      {!s?.engines ? <div style={{ fontSize: 12.5, ...muted }}>Waiting for the first reading.</div> : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            <EngineColumn id="rules" name="Rules" active={mode === 'rules'} v={s.engines.rules} hot={s.rulesHot} moments={s.moments} />
+            <EngineColumn id="ml" name="ML" active={mode === 'ml'} v={s.engines.ml} warnings={t.warnings} next={t.cascade} hot={s.mlHot} moments={s.moments} />
+            <EngineColumn id="hybrid" name="Hybrid" active={mode === 'hybrid'} v={s.engines.hybrid} warnings={t.warnings} next={t.cascade} hot={s.hybridHot} moments={s.moments} />
+          </div>
+          <div style={{ marginTop: 16 }}><ParallelChart history={s.history} /></div>
+          <div style={{ marginTop: 16, overflowX: 'auto' }}>
+            <div className="mm-eyebrow" style={{ marginBottom: 6 }}>Every service, every engine</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><th style={th}>Service</th><th style={th}>Rules (× line)</th><th style={th}>ML level (own / symptom)</th><th style={th}>ML blame</th><th style={th}>Hybrid score</th></tr></thead>
+              <tbody>
+                {s.services.map((r) => (
+                  <tr key={r.id}>
+                    <td style={{ ...td, fontWeight: r.hard ? 600 : 400, color: r.hard ? 'var(--color-critical)' : undefined }}>{clean(r.id)}{r.fact ? <span style={{ fontWeight: 400 }}> · {r.fact}</span> : null}</td>
+                    <td style={{ ...td, color: r.rules >= 1 ? COLORS.rules : undefined }}>{r.rules.toFixed(2)}</td>
+                    <td style={{ ...td, color: r.level >= 1 ? COLORS.ml : undefined }}>{r.level.toFixed(2)} <span style={muted}>({r.own.toFixed(1)} / {r.symptom.toFixed(1)})</span></td>
+                    <td style={td}>{pct(r.walk)}</td>
+                    <td style={{ ...td, color: r.blend >= 1 ? COLORS.hybrid : undefined }}>{r.blend.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function EnginesView({ selectedProject }: { selectedProject?: string }) {
   const { info, failed, reload } = useInfo();
   const engine = useEngineMode();
@@ -148,46 +272,10 @@ export function EnginesView({ selectedProject }: { selectedProject?: string }) {
         </div>
       </Panel>
 
-      <Panel title="The three engines on the same readings, right now" subtitle="Live, from this server"
-        about="While the ML or Hybrid engine is active, the server also scores each moment with the rule engine and the fused rule, so you can see what each would have said. Peak is the strongest service against its own alarm line: 1.0 means exactly at the line. Over the line is the share of cycles since the server started in which that engine alone was above it.">
-        {mode === 'rules' && <EmptyNote>The rule engine is active, so only it is running. Switch to ML or Hybrid to see the three side by side.</EmptyNote>}
-        {mode !== 'rules' && !targets.length && <EmptyNote>No readings yet. Once a project is sending telemetry this fills in.</EmptyNote>}
-        {mode !== 'rules' && targets.map((t) => {
-          const s = t.shadow;
-          return (
-            <div key={t.targetId} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, marginBottom: 6, ...muted }}>
-                <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{t.targetId}</b> · ML has learned {t.learnedServices} of {t.services} services
-                {t.ready ? '' : ` · each needs about ${t.needReadings} readings first, until then only container facts count`}
-              </div>
-              {!s ? <div style={{ fontSize: 12.5, ...muted }}>Waiting for the first reading.</div> : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr><th style={th}>Engine</th><th style={th}>Peak vs its line</th><th style={th}>Would alarm now</th><th style={th}>Names as source</th><th style={th}>Over the line, all cycles</th></tr></thead>
-                  <tbody>
-                    {([['Rules', s.now.rulesTop, 1, s.now.rulesRanked, s.rulesHot], ['ML', s.now.mlTop, 1, s.now.mlRanked, s.mlHot], ['Hybrid', s.now.hybridMax, 1, s.now.hybridRanked, s.hybridHot]] as const).map(([name, peak, line, ranked, hot]) => (
-                      <tr key={name}>
-                        <td style={{ ...td, fontWeight: 550 }}>{name}{mode === name.toLowerCase() ? <span style={{ ...muted, fontWeight: 400 }}> · active</span> : ''}</td>
-                        <td style={td}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '44px minmax(80px,1fr)', gap: 8, alignItems: 'center' }}>
-                            <span>{peak.toFixed(2)}×</span><Bar value={peak} max={Math.max(2, peak)} color={peak >= line ? 'var(--color-degraded)' : 'var(--color-accent-blue)'} />
-                          </div>
-                        </td>
-                        <td style={{ ...td, color: peak >= line ? 'var(--color-degraded)' : 'var(--color-text-muted)' }}>{peak >= line ? 'yes' : 'no'}</td>
-                        <td style={td}>{ranked.length && peak >= line ? ranked.map(clean).join(', ') : <span style={muted}>nobody (nothing over the line)</span>}</td>
-                        <td style={td}>{hot} of {s.moments} <span style={muted}>({s.moments ? pct(hot / s.moments) : '0%'})</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {!!t.warnings?.length && (
-                <div style={{ fontSize: 12.5, margin: '8px 0 0', padding: '8px 10px', borderRadius: 8, background: 'var(--color-degraded-glow)' }}>
-                  <b style={{ fontWeight: 550 }}>Early warning</b> (ML trend forecast): {t.warnings.map((w) => `${clean(w.id)} ${w.feature} heading over its line${w.inSec !== null ? ` in about ${w.inSec} s` : ''}`).join('; ')}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <Panel title="All three engines, in parallel" subtitle="Computed together on every cycle, whichever one is active"
+        about="Every cycle the server steps the ML engine and scores the same readings with the rules and with the fused rule. Peak is the strongest service against that engine's own alarm line: 1.0 is exactly the line. An engine alarms when it is over its line on two cycles in a row. The columns show what each detected, what it computed (its ranked suspects) and what it predicts.">
+        {!targets.length && <EmptyNote>No readings yet. Once a project is sending telemetry this fills in.</EmptyNote>}
+        {targets.map((t) => <ParallelTarget key={t.targetId} t={t} mode={mode} />)}
       </Panel>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16, alignItems: 'start' }}>
