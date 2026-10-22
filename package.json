@@ -19,6 +19,7 @@
     "local": "node run/scripts/local.mjs",
     "demo": "node run/scripts/demo.mjs",
     "hosts": "node run/scripts/hosts.mjs",
+    "check-host": "bash run/scripts/check-host.sh",
     "ml": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/run.ts",
     "ml:report": "node server/node_modules/tsx/dist/cli.mjs graphs/model-lab.ts",
     "ml:compare": "node server/node_modules/tsx/dist/cli.mjs run/cli/ml/compare.ts",
