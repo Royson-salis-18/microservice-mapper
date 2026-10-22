@@ -11,11 +11,10 @@ import { Callouts, SelectedCard, type CalloutItem } from './Callouts3D';
 import { Backdrop, Bloom } from './Effects';
 import { glowTexture, tiledFloor } from './textures';
 import { cpuShown } from '../shared/serviceVisuals';
-import { computeSite, islandRoleOf, type Rect, type Site } from './site';
+import { computeSite, type Rect, type Site, type SiteMode } from './site';
 import { Islands, type IslandAlert, type IslandCardInfo } from './Islands';
 import { LAYOUTS, ZONED_LAYOUTS, LABELLED_LAYOUTS, HALL_PADDING, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
 import { AmbientParticles, type EnvPreset } from './AmbientParticles';
-import { FlowPlatforms } from './FlowPlatforms';
 
 interface Scene3DProps {
   nodes: Node[];
@@ -261,16 +260,14 @@ function CameraRig({ target, nodes, fitTrigger, request, site }: {
       if (resized && lastPlan.current && !userMoved.current) plan(state, lastPlan.current.points, lastPlan.current.pad);
     }
     const all = Object.values(target);
-    // Flow, Topology and Tiers draw decks wider than the nodes on them
-    const deckPad = ['flow', 'tiers', 'topology'].includes(fitTrigger.split(':')[0]) ? 11 : 4;
     const whole = site?.building ? [...all, ...cornersOf(site.building, 3)] : all;
     if (all.length > 0 && lastTrigger.current !== fitTrigger) {
       lastTrigger.current = fitTrigger;
-      plan(state, whole, site ? 1 : deckPad);
+      plan(state, whole, site ? 1 : 4);
     }
     if (all.length > 0 && lastNonce.current !== request.nonce) {
       lastNonce.current = request.nonce;
-      if (request.kind === 'all') plan(state, whole, site ? 1 : deckPad);
+      if (request.kind === 'all') plan(state, whole, site ? 1 : 4);
       else if (request.kind === 'zone') {
         const ids = nodes.filter((n) => n.project === request.id).map((n) => n.id);
         const room = site?.rooms.find((r) => r.project === request.id);
@@ -658,6 +655,9 @@ function ProjectLabels({ nodes, live }: { nodes: LayoutNode[]; live: PositionMap
   );
 }
 
+/** Arrangements drawn as islands, and what their platforms stand for. */
+const SITE_MODES: Partial<Record<LayoutId, SiteMode>> = { halls: 'islands', flow: 'flow', topology: 'topology', tiers: 'tiers' };
+
 function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try {
     const v = localStorage.getItem(key) as T | null;
@@ -765,7 +765,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   );
   // The islands arrangement returns its platforms, districts and tracks as
   // well, for the scene to draw; every other arrangement is just positions.
-  const site = useMemo(() => (layout === 'halls' ? computeSite(layoutNodes, links) : null), [layout, layoutNodes, links]);
+  const siteMode = SITE_MODES[layout];
+  const site = useMemo(() => (siteMode ? computeSite(layoutNodes, links, siteMode) : null), [siteMode, layoutNodes, links]);
   const targetPositions = useMemo(
     () => site?.positions ?? computeLayout(layout, layoutNodes, edges, links),
     [site, layout, layoutNodes, edges, links]
@@ -874,7 +875,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
     const counts = new Map<string, IslandCardInfo>();
     if (!site) return { islandAlerts: alertsOut, islandCards: null };
     for (const n of layoutNodes) {
-      const key = `${n.project}:${islandRoleOf(n)}`;
+      const key = site.memberOf[n.id];
+      if (!key) continue;
       const d = byId.get(n.id);
       const status = d?.status;
       const c = counts.get(key) ?? { healthy: 0, degraded: 0, critical: 0, flagged: 0, atRisk: 0 };
@@ -1032,8 +1034,6 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
           {/* Atmospheric floating data dust */}
           <AmbientParticles preset={envPreset} />
-          {/* Architectural platforms for Flow, Topology, and Tiers */}
-          {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
           {/* The dark city skyline: only for the Islands hall campus where buildings sit on a central site, kept minimal and in the far background */}
           {Boolean(site) && envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={70} />}
 
@@ -1108,7 +1108,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           {/* Its own boundary: troika's Text suspends while it fetches a
               font, and if that request hangs a shared boundary takes the
               whole scene down with it. */}
-          {LABELLED_LAYOUTS.has(layout) && showCards && !['flow', 'tiers', 'topology'].includes(layout) && (
+          {LABELLED_LAYOUTS.has(layout) && showCards && (
             <Suspense fallback={null}>
               <ProjectLabels nodes={layoutNodes} live={live} />
             </Suspense>

@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
-import { ISLAND_STYLE, type Island, type Pad, type Road, type Room, type Site, type Track } from './site';
+import type { Island, Pad, Road, Room, Site, Track } from './site';
 import { glowTexture, grilleTexture, screenTexture, tiledFloor } from './textures';
 import type { ZoneSummary } from './SceneHud';
 
@@ -87,7 +87,7 @@ function TopPlate({ isl }: { isl: Island }) {
 
 /** Props that say what an island is for. */
 function Props({ isl }: { isl: Island }) {
-  const color = ISLAND_STYLE[isl.role].color;
+  const color = isl.color;
   const blink = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (!blink.current) return;
@@ -188,8 +188,7 @@ function Props({ isl }: { isl: Island }) {
 }
 
 function IslandPlatform({ isl, alert }: { isl: Island; alert: IslandAlert }) {
-  const style = ISLAND_STYLE[isl.role];
-  const accent = alert ? ALERT[alert] : style.color;
+  const accent = alert ? ALERT[alert] : isl.color;
   const w = isl.x1 - isl.x0, d = isl.z1 - isl.z0;
   const cx = (isl.x0 + isl.x1) / 2, cz = (isl.z0 + isl.z1) / 2;
   const base = useMemo(() => ring(isl, 0.05, 0.16, 0.1), [isl]);
@@ -233,13 +232,13 @@ function IslandPlatform({ isl, alert }: { isl: Island; alert: IslandAlert }) {
           rotation={[-Math.PI / 2, 0, 0]}
           position={[isl.x0 + 0.8, isl.top + 0.04, isl.z1 - 0.6]}
           fontSize={0.85}
-          color={style.color}
+          color={isl.color}
           fillOpacity={0.9}
           anchorX="left"
           anchorY="bottom"
           letterSpacing={0.12}
         >
-          {style.label}
+          {isl.label}
         </Text>
       </Suspense>
     </group>
@@ -247,16 +246,37 @@ function IslandPlatform({ isl, alert }: { isl: Island; alert: IslandAlert }) {
 }
 
 /** A walkway on the ground between two sections that call each other, with
- *  a lit post at each end. */
+ *  a lit post at each end. When every call goes one way, chevrons on it point
+ *  from caller to callee and drift that way, so the direction reads at a glance. */
 function TrackLine({ track }: { track: Track }) {
   const [[ax, az], [bx, bz]] = track.points;
   const len = Math.hypot(bx - ax, bz - az);
   const width = 0.5 + Math.min(track.links, 8) * 0.08;
   const angle = Math.atan2(bz - az, bx - ax);
+  const chevrons = useRef<THREE.Group>(null);
+  const SPACING = 3;
+  useFrame(({ clock }) => {
+    if (!chevrons.current) return;
+    chevrons.current.position.x = ((clock.elapsedTime * 1.2) % SPACING) - len / 2;
+  });
   if (len < 0.5) return null;
+  const count = Math.max(0, Math.floor((len - 1) / SPACING));
   return (
     <group>
       <group position={[(ax + bx) / 2, 0, (az + bz) / 2]} rotation={[0, -angle, 0]}>
+        {track.directed && count > 0 && (
+          <group ref={chevrons}>
+            {Array.from({ length: count }, (_, i) => (
+              <group key={i} position={[i * SPACING + 0.6, 0.13, 0]}>
+                {[1, -1].map((side) => (
+                  <mesh key={side} position={[-0.25, 0, side * 0.32]} rotation={[0, side * 0.75, 0]} scale={[0.95, 0.02, 0.14]} geometry={UNIT_BOX} raycast={() => null}>
+                    <meshBasicMaterial color="#c9dcff" toneMapped={false} transparent opacity={0.85} />
+                  </mesh>
+                ))}
+              </group>
+            ))}
+          </group>
+        )}
         <mesh position={[0, 0.05, 0]} scale={[len, 0.1, width + 1.2]} geometry={UNIT_BOX} receiveShadow raycast={() => null}>
           <meshStandardMaterial color="#212123" roughness={0.5} metalness={0.5} />
         </mesh>
@@ -498,7 +518,7 @@ export interface IslandCardInfo {
 
 /** A floating card over an island's back corner, as in a facility dashboard. */
 function IslandCard({ isl, info, onHide }: { isl: Island; info: IslandCardInfo; onHide?: () => void }) {
-  const style = ISLAND_STYLE[isl.role];
+  const style = { label: isl.label, color: isl.color };
   // Everything the services on this island are showing, so the card never
   // says "all healthy" over a unit drawn as flagged or at risk.
   const parts = [
@@ -544,6 +564,7 @@ function IslandCard({ isl, info, onHide }: { isl: Island; info: IslandCardInfo; 
               {status.map((st) => <em key={st.text} style={{ color: st.color }}>{st.text}</em>)}
             </div>
           )}
+          {isl.note && <div className="island-card-note">{isl.note}</div>}
         </div>
       </Html>
     </group>
@@ -554,7 +575,7 @@ export function Islands({ site, focusZone, summaries, alerts, cards, onToggleCar
   site: Site;
   focusZone: string | null;
   summaries: Map<string, ZoneSummary>;
-  /** Worst state on each island, keyed `project:role`. */
+  /** Worst state on each island, keyed by the island's key. */
   alerts: Map<string, IslandAlert>;
   /** Per-island counts for the floating cards; absent to hide the cards. */
   cards: Map<string, IslandCardInfo> | null;
@@ -569,15 +590,11 @@ export function Islands({ site, focusZone, summaries, alerts, cards, onToggleCar
       <Pads pads={site.pads} />
       <LightPosts tracks={site.tracks} />
       {site.building && <Motes bounds={site.building} />}
-      {site.tracks.map((t) => <TrackLine key={`${t.project}:${t.from}:${t.to}`} track={t} />)}
-      {site.islands.map((isl) => {
-        const key = `${isl.project}:${isl.role}`;
-        return <IslandPlatform key={key} isl={isl} alert={alerts.get(key) ?? null} />;
-      })}
+      {site.tracks.map((t) => <TrackLine key={`${t.from}>${t.to}`} track={t} />)}
+      {site.islands.map((isl) => <IslandPlatform key={isl.key} isl={isl} alert={alerts.get(isl.key) ?? null} />)}
       {cards && site.islands.map((isl) => {
-        const key = `${isl.project}:${isl.role}`;
-        const info = cards.get(key);
-        return info ? <IslandCard key={`card:${key}`} isl={isl} info={info} onHide={onToggleCards} /> : null;
+        const info = cards.get(isl.key);
+        return info ? <IslandCard key={`card:${isl.key}`} isl={isl} info={info} onHide={onToggleCards} /> : null;
       })}
     </group>
   );
