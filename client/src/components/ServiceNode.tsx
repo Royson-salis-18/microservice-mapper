@@ -110,7 +110,7 @@ export function CustomServiceNode({ data, selected }: ServiceNodeProps) {
       {data.analytics?.anomalyPersistent && (
         <span
           className="mm-chip"
-          title={`Isolation Forest: anomaly score ${((data.analytics?.anomalyScore ?? 0) * 100).toFixed(0)}%, sustained over multiple windows`}
+          title={`ML engine: anomaly score ${((data.analytics?.anomalyScore ?? 0) * 100).toFixed(0)}%, sustained over multiple windows`}
           style={{
             position: 'absolute',
             top: '-11px',

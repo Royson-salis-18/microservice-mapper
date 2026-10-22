@@ -38,7 +38,7 @@ export interface EngineParams {
   warnAt: number;           // early warning when a service's trend reaches this level within the forecast horizon
   stoppedIsDown: boolean;   // exit code 0 after a minute of running counts as down (docker stop), not as a finished job
 }
-export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, levels: 'forest', load: LOAD_DEFAULTS, pca: PCA_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
+export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, levels: 'load', load: LOAD_DEFAULTS, pca: PCA_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
 
 export interface EngineNode { id: string; name: string; type?: string; status?: string; metadata?: Record<string, any> }
 export interface EngineEdge { source: string; target: string; weight?: number }

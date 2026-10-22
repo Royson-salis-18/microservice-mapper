@@ -24,7 +24,7 @@ export function MLLivePanel({ selectedProject }: { selectedProject?: string | nu
     <section className="mm-card" style={{ padding: 20, marginBottom: 16, marginTop: 16 }}>
       <h3 style={h3}>{mode === 'hybrid' ? 'What the hybrid engine sees' : 'What the ML engine sees'}</h3>
       <div style={sub}>
-        Every service has two Isolation Forests trained on its own recent normal readings. Level 0 is typical, 1 is that service's alarm line.
+        Every service is compared with what the current load predicts for it, using its own recent normal readings. Level 0 is typical, 1 is that service's alarm line.
         Own = CPU, memory, throttling (a dependency cannot cause these). Symptom = traffic, errors, latency (can be inherited).
         Blame = share of the random walk over the call graph. A container that is down, stopped or crash-looping is a fact and goes first.
       </div>

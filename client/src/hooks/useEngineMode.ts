@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-/** Which engine decides incidents on the server: the rule-based detector, the learned one (Isolation Forest + random walk), or both (hybrid). */
+/** Which engine decides incidents on the server: the rule-based detector, the learned one (load-aware baseline + random walk), or both (hybrid). */
 export type EngineMode = 'rules' | 'hybrid' | 'ml';
 
 export function useEngineMode() {

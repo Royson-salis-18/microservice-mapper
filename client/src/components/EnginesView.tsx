@@ -9,9 +9,10 @@ import { AgreementStrip, BlameChart, ChartCard, PeaksChart, ServiceBars, Service
  * this page is where you can see that it does, and why.
  */
 
-interface Verdict { alarm: boolean; peak: number; suspects: { id: string; score: number; fact?: string }[] }
+interface Verdict { alarm: boolean; peak: number; suspects: { id: string; score: number; fact?: string; why?: string }[] }
 interface ServiceRow { id: string; rules: number; level: number; own: number; symptom: number; walk: number; blend: number; hard: boolean; fact?: string }
 interface Shadow {
+  workload?: { change: number; services: number; shifted: boolean } | null;
   moments: number; rulesHot: number; mlHot: number; hybridHot: number; at: string;
   engines: { rules: Verdict; ml: Verdict; hybrid: Verdict };
   services: ServiceRow[];
@@ -30,7 +31,7 @@ interface Info {
   tally: Record<EngineMode, Tally> | null;
   config: {
     rules: { line: number; thresholds: Record<string, number>; docs: Record<string, string> };
-    ml: Record<string, any> & { baseline: Record<string, any>; walk: Record<string, number> };
+    ml: Record<string, any> & { baseline: Record<string, any>; load: Record<string, any> & { prior: number[] }; walk: Record<string, number> };
     hybrid: { detection: string; ranking: string; rulesAlone: number; mlWeight: number };
   };
   offline: { note: string; sets: Record<string, { label: string; faults: number; hours: number; engines: Record<EngineMode, EngineScore> }> } | null;
@@ -51,11 +52,11 @@ const ENGINES: { id: EngineMode; name: string; tag: string; decides: string; nam
     weak: 'The most false alarms, and it often blames a victim instead of the source.',
   },
   {
-    id: 'ml', name: 'ML', tag: 'Isolation Forest + random walk',
-    decides: 'Every service gets two Isolation Forests trained on its own recent normal readings: one for its own resources, one for its symptoms. A service alarms when either stays above its learned line for two cycles in a row.',
-    names: 'A random walk over the call graph shares the blame, so a service that only suffers because of its dependency scores low.',
+    id: 'ml', name: 'ML', tag: 'Load-aware baseline + random walk',
+    decides: 'The work all services share (the load) is estimated and explained away. Each service is then compared with its own recent normal readings, adjusted for that load. A service alarms when a signal stays well above what the load predicts for two cycles in a row.',
+    names: 'A random walk over the call graph shares the blame, so a service that only suffers because of its dependency scores low. A change of workload alone raises no alarm.',
     good: 'Fewest false alarms and the best at naming the true source.',
-    weak: 'Needs about 30 readings per service before it judges anything, and only alarms on container facts until then.',
+    weak: 'Needs about 30 readings per service before it judges anything, and only alarms on container facts until then. A fault that happens during a big load change can be masked.',
   },
   {
     id: 'hybrid', name: 'Hybrid', tag: 'Both, ML names the source',
@@ -67,18 +68,19 @@ const ENGINES: { id: EngineMode; name: string; tag: string; decides: string; nam
 ];
 
 const ML_DOCS: [string, string, (c: Info['config']['ml']) => string][] = [
-  ['Forests per service', 'One for own resources (CPU, memory, throttling), one for symptoms (traffic, errors, latency, network).', () => '2 × isolation forest'],
-  ['Trees per forest', 'More trees give a steadier score.', (c) => String(c.baseline.trees)],
-  ['Training window', 'Recent normal readings each forest learns from (one reading about every 5 s).', (c) => `${c.baseline.window} readings`],
-  ['Readings before judging', 'A service is not judged until it has this many readings.', (c) => `${c.baseline.minTrain} readings`],
-  ['Retrain every', 'How often each forest is refitted on the sliding window.', (c) => `${c.baseline.retrainEvery} readings`],
-  ['Alarm line', 'Share of the service\'s own normal readings that fall below this score. Level 1 means exactly at the line.', (c) => `${pct(c.baseline.quantile)} quantile`],
+  ['Model', 'Each service is judged against its own recent normal readings, after the load every service shares is taken out. No labels, nothing installed on the host.', () => 'load-aware residual'],
+  ['Workload', 'The median shift of the signals that carry traffic (network, requests, CPU) over all busy services. A fault in a few services cannot move a median.', () => 'median of busy services'],
+  ['Load response', 'Each signal is tried as ignoring the load and as following it with the slope the project shows; it is unusual only if neither explains it.', (c) => `slope prior ${c.load.prior[2]}, learned (ridge ${c.load.ridge})`],
+  ['Training window', 'Recent normal readings each service learns from (one reading about every 5 s).', (c) => `${c.load.window} readings`],
+  ['Slow reference', 'The median of this many recent readings is what a shift is measured from, so a short quiet spell does not move it.', (c) => `${c.load.slow} readings`],
+  ['Readings before judging', 'A service is not judged until it has this many readings.', (c) => `${c.load.minTrain} readings`],
+  ['Alarm line', 'Robust spreads from the load-adjusted median that count as level 1. The spread is at least the distance to the 90th percentile, so bursty signals are not scored as if they were Gaussian.', (c) => `${c.load.zLine} spreads`],
   ['Alarm level', 'Level at which a service counts as alarming (1 is the line).', (c) => String(c.alarmLevel)],
   ['Persistence', 'Cycles in a row a service must stay above the line.', (c) => String(c.servicePersist)],
-  ['Direction', 'Only increases in CPU, memory, errors and latency count as trouble; traffic counts both ways.', (c) => (c.baseline.oneSided ? 'one-sided' : 'two-sided')],
-  ['Drift', 'Baseline slowly follows a new normal after this many readings above the line.', (c) => `${c.baseline.driftAfter} readings`],
+  ['Direction', 'Only increases in CPU, memory, errors, latency and throttling count as trouble; traffic counts both ways.', (c) => (c.load.oneSided ? 'one-sided' : 'two-sided')],
+  ['Drift', 'The baseline follows a new normal after this many readings above the line (a mild shift after 24).', (c) => `${c.load.driftAfter} readings`],
   ['Random walk restart', 'Share of probability that restarts at the anomalous services; higher stays local.', (c) => String(c.walk.alpha)],
-  ['Early warning', 'A trend forecast flags a metric heading over its line, when the fit is at least this good.', (c) => `R² ≥ ${c.baseline.forecastR2}`],
+  ['Early warning', 'A trend forecast flags a signal heading over its line, when the fit is at least this good.', (c) => `R² ≥ ${c.load.forecastR2}`],
 ];
 
 function useInfo(everyMs = 4000) {
@@ -116,7 +118,7 @@ function EngineColumn({ id, name, active, v: raw, warnings, next, hot, moments }
         <div className="mm-eyebrow">Detected</div>
         <div style={{ fontSize: 13, marginTop: 4 }}>
           {v.alarm
-            ? <>Something is wrong. Most likely source: <b>{v.suspects[0] ? clean(v.suspects[0].id) : 'unclear'}</b>{v.suspects[0]?.fact ? <span style={{ color: 'var(--color-critical)' }}> ({v.suspects[0].fact})</span> : null}</>
+            ? <>Something is wrong. Most likely source: <b>{v.suspects[0] ? clean(v.suspects[0].id) : 'unclear'}</b>{v.suspects[0]?.fact ? <span style={{ color: 'var(--color-critical)' }}> ({v.suspects[0].fact})</span> : null}{v.suspects[0]?.why ? <span style={muted}> · {v.suspects[0].why}</span> : null}</>
             : <span style={muted}>Nothing over the line on two cycles in a row.</span>}
         </div>
         <div style={{ fontSize: 11.5, marginTop: 4, ...muted }}>Peak {v.peak.toFixed(2)}× its line · over the line on {hot} of {moments} cycles ({moments ? pct(hot / moments) : '0%'})</div>
@@ -161,6 +163,12 @@ function ParallelTarget({ t, mode }: { t: Target; mode: EngineMode | null }) {
         <b style={{ color: 'var(--color-text-main)', fontWeight: 550 }}>{t.targetId}</b> · ML has learned {t.learnedServices} of {t.services} services
         {t.ready ? '' : ` · each needs about ${t.needReadings} readings first, until then only container facts count for ML`}
         {s?.at ? ` · updated ${new Date(s.at).toLocaleTimeString()}` : ''}
+        {s?.workload && (
+          <span className="mm-chip" style={{ marginLeft: 8, color: s.workload.shifted ? 'var(--color-accent-blue)' : undefined }}
+            title="The change of load all busy services share, measured against their own recent median. ML explains it away instead of judging it.">
+            {s.workload.shifted ? `workload moved: traffic ×${s.workload.change.toFixed(2)}, explained, not a fault` : 'workload steady'}
+          </span>
+        )}
       </div>
       {!s?.engines ? <div style={{ fontSize: 12.5, ...muted }}>Waiting for the first reading.</div> : (
         <>

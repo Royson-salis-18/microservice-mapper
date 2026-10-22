@@ -5,6 +5,7 @@
 //   real      the 62 recorded faults of runC (ShopFlow + LedgerLine), the evaluation of the paper
 //   live      the 168 faults of the live Fault Lab runs (auto-restart on/off, seed 11, both benches)
 //   synthetic 16 simulated topologies with 12 campaigns of injected faults (npm run ml:synth)
+//   steps     steady load held at 2, 8, 2, 0, 20, 2 concurrent visitors, no faults (run/scripts/workload-steps-experiment.sh)
 //   workload  recordings with NO fault at all: traffic runs, stops, runs, stops longer, runs. Every alarm is a false alarm.
 //
 //   npm run ml:levels                     the headline table
@@ -44,6 +45,7 @@ const SETS: Record<string, Loaded[]> = {
   live: sub(path.join(REC, 'autorestart')).filter((d) => !/stop-test/.test(d)).flatMap((d) => load(d, true)),
   workload: sub(path.join(REC, 'workload')).flatMap((d) => load(d, false)),
   synthetic: sub(path.resolve(REC, '..', 'synthetic-runs')).flatMap((d) => load(d, true)),
+  steps: sub(path.join(REC, 'steps')).flatMap((d) => load(d, false)),
 };
 
 type P = Partial<Omit<EngineParams, 'baseline' | 'walk' | 'load' | 'pca'>> & { pca?: Partial<EngineParams['pca']>; baseline?: Partial<EngineParams['baseline']>; walk?: Partial<EngineParams['walk']>; load?: Partial<EngineParams['load']> };
@@ -56,6 +58,8 @@ function top(set: string, i: number, p: P) {
 function evalSet(set: string, p: P, threshold = 1): EventResult[] {
   return SETS[set].map((l, i) => evaluatePrepared({ runs: [l.run], top: [top(set, i, p)] }, null, threshold));
 }
+const byClass = (rs: EventResult[]) => { const o = rs.flatMap((r) => r.faults); return Object.fromEntries([...new Set(o.map((f) => f.class))].sort().map((c) => { const x = o.filter((f) => f.class === c); return [c, { n: x.length, detected: x.filter((f) => f.detected).length, named: x.filter((f) => f.detected && f.top1).length, delay: median(x.filter((f) => f.detected).map((f) => f.delaySec!)) }]; })); };
+const median = (xs: number[]) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); return s[s.length >> 1]; };
 const pool = (rs: EventResult[]) => summarise({ faults: rs.flatMap((r) => r.faults), falseAlarms: rs.reduce((s, r) => s + r.falseAlarms, 0), fpHours: rs.reduce((s, r) => s + r.fpHours, 0), alarmMs: rs.reduce((s, r) => s + r.alarmMs, 0) });
 const pc = (x: number) => `${Math.round(x * 100)}%`.padStart(4);
 
@@ -73,11 +77,13 @@ export const VARIANTS: Record<string, P> = {
 
 const EMPTY = summarise({ faults: [], falseAlarms: 0, fpHours: 0, alarmMs: 0 });
 function row(name: string, p: P) {
-  const ev = (set: string) => (onlySets && !onlySets.includes(set) ? EMPTY : pool(evalSet(set, p)));
-  const r = ev('real'), l = ev('live'), w = ev('workload'), sy = ev('synthetic');
-  const line = `${name.padEnd(34)} real ${pc(r.detected)} found ${pc(r.top1OfDetected)} first ${r.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h | live ${pc(l.detected)} found ${pc(l.top1OfDetected)} first ${l.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h | workload ${w.falseAlarmsPerHour.toFixed(1).padStart(6)} FA/h, ${pc(w.alarmShare ?? 0)} of time in alarm | synthetic ${pc(sy.detected)} found ${pc(sy.top1OfDetected)} first ${sy.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h`;
+  const raw = new Map<string, EventResult[]>();
+  const ev = (set: string) => { if (onlySets && !onlySets.includes(set)) return EMPTY; const rs = evalSet(set, p); raw.set(set, rs); return pool(rs); };
+  const r = ev('real'), l = ev('live'), w = ev('workload'), sy = ev('synthetic'), st = ev('steps');
+  const classes = Object.fromEntries([...raw].map(([k, v]) => [k, byClass(v)]));
+  const line = `${name.padEnd(34)} real ${pc(r.detected)} found ${pc(r.top1OfDetected)} first ${r.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h | live ${pc(l.detected)} found ${pc(l.top1OfDetected)} first ${l.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h | workload ${w.falseAlarmsPerHour.toFixed(1).padStart(6)} FA/h, ${pc(w.alarmShare ?? 0)} of time in alarm | steps ${st.falseAlarmsPerHour.toFixed(1).padStart(6)} FA/h, ${pc(st.alarmShare ?? 0)} in alarm | synthetic ${pc(sy.detected)} found ${pc(sy.top1OfDetected)} first ${sy.falseAlarmsPerHour.toFixed(1).padStart(5)} FA/h`;
   console.log(line);
-  return { name, real: r, live: l, workload: w, synthetic: sy };
+  return { name, real: r, live: l, workload: w, steps: st, synthetic: sy, classes };
 }
 
 console.log(Object.entries(SETS).map(([k, v]) => `${k}: ${v.length} runs${k !== 'workload' ? `, ${v.reduce((s, x) => s + x.run.faults.length, 0)} faults` : `, ${v.reduce((s, x) => s + x.run.moments.length, 0)} moments`}`).join('   '));

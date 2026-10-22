@@ -294,8 +294,8 @@ export function RCAView({ nodes, edges: _edges, selectedProject, embedded = fals
                       <div style={sub}>{engine.mode === 'hybrid' ? 'Decided by the hybrid engine: the rule engine and the ML engine both watch every service and either can raise the alarm; the ML engine names the source. ' : 'Decided by the ML engine. '}Each service has two Isolation Forests trained on its own recent normal readings; a level of 1 is that service's own alarm line. The share is how much of the random walk over the call graph ends on this service.{row.fact ? ` It is also ${row.fact}: a fact, so it is ranked first.` : ''}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, marginTop: 14, background: 'var(--color-border)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
                         {([
-                          ['Own forest', row.own.toFixed(1), 'CPU, memory, throttling. A dependency cannot cause these'],
-                          ['Symptom forest', row.symptom.toFixed(1), 'Traffic, errors, latency. Can be inherited'],
+                          ['Own signals', row.own.toFixed(1), 'CPU, memory, throttling, judged against what the load predicts. A dependency cannot cause these'],
+                          ['Symptoms', row.symptom.toFixed(1), 'Traffic, errors, latency, judged against what the load predicts. Can be inherited'],
                           ['Walk share', `${Math.round(row.walk * 100)}%`, 'Where the random walk spends its time'],
                         ] as const).map(([label, v, hint]) => (
                           <div key={label} style={{ background: 'var(--color-bg-panel)', padding: '12px 14px' }}>

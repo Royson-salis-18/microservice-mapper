@@ -27,9 +27,9 @@ export interface EngineVerdict {
   /** Strongest service against the engine's own alarm line: 1 = exactly at the line. */
   peak: number;
   /** Most likely sources, best first. `score` is the engine's own number for that service. */
-  suspects: { id: string; score: number; fact?: string }[];
+  suspects: { id: string; score: number; fact?: string; why?: string }[];
 }
-export interface ServiceRow { id: string; rules: number; level: number; own: number; symptom: number; walk: number; blend: number; hard: boolean; fact?: string }
+export interface ServiceRow { id: string; why?: string; rules: number; level: number; own: number; symptom: number; walk: number; blend: number; hard: boolean; fact?: string }
 interface Shadow {
   moments: number; rulesHot: number; mlHot: number; hybridHot: number;
   prev: { rules: boolean; ml: boolean; hybrid: boolean };
@@ -40,6 +40,8 @@ interface Shadow {
   history: { t: number; rules: number; ml: number; hybrid: number }[];
   /** Per service, the same 90 cycles as `history`: what each engine made of it, so one service can be followed over time. */
   trail: Record<string, { t: number; rules: number; own: number; symptom: number; walk: number; blend: number }[]>;
+  /** What the whole project did to its load this cycle (load-aware ML model): the shared shift that is explained away, not judged. */
+  workload: { change: number; services: number; shifted: boolean } | null;
 }
 export interface EngineTally { incidents: number; since: string; last: { at: string; target: string; root: string | null; severity: string } | null }
 
@@ -140,8 +142,9 @@ export class IncidentManager {
       const mlTop = Math.max(0, ...[...r.services.values()].map((v) => v.level / ENGINE_DEFAULTS.alarmLevel));
       const prev = st.shadow?.prev ?? { rules: false, ml: false, hybrid: false };
       const sh: Shadow = st.shadow ?? { moments: 0, rulesHot: 0, mlHot: 0, hybridHot: 0, prev, now: { rulesTop: 0, mlTop: 0, hybridMax: 0, rulesRanked: [], mlRanked: [], hybridRanked: [] }, at: '',
-        engines: { rules: { alarm: false, peak: 0, suspects: [] }, ml: { alarm: false, peak: 0, suspects: [] }, hybrid: { alarm: false, peak: 0, suspects: [] } }, services: [], history: [], trail: {} };
+        engines: { rules: { alarm: false, peak: 0, suspects: [] }, ml: { alarm: false, peak: 0, suspects: [] }, hybrid: { alarm: false, peak: 0, suspects: [] } }, services: [], history: [], trail: {}, workload: null };
       sh.trail ??= {};
+      sh.workload = r.workload ? { change: +Math.exp(r.workload.load).toFixed(3), services: r.workload.loadServices, shifted: r.workload.shifted } : null;
       const rulesHotNow = rulesTop >= 1, mlHotNow = r.hot, hybridHotNow = fused.max >= 1;
       sh.moments++;
       if (rulesHotNow) sh.rulesHot++;
@@ -149,6 +152,7 @@ export class IncidentManager {
       if (hybridHotNow) sh.hybridHot++;
       const round = (x: number) => +x.toFixed(2);
       const fact = (id: string) => r.services.get(id)?.fact;
+      const why = (id: string) => { const t = r.services.get(id)?.top; return t && t.z >= 2 ? `${t.feature} ${t.z.toFixed(1)} spreads from what the load predicts` : undefined; };
       sh.now = {
         rulesTop: round(rulesTop), mlTop: round(mlTop), hybridMax: round(Math.min(fused.max, 10)),
         rulesRanked: [...rulesLine].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 3).map(([id]) => id),
@@ -157,12 +161,12 @@ export class IncidentManager {
       };
       sh.engines = {
         rules: { alarm: rulesHotNow && prev.rules, peak: round(rulesTop), suspects: [...rulesLine].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 5).map(([id, v]) => ({ id, score: round(v), fact: fact(id) })) },
-        ml: { alarm: mlHotNow && prev.ml, peak: round(mlTop), suspects: r.ranked.slice(0, 5).map((id) => ({ id, score: +(r.rank.get(id) ?? 0).toFixed(3), fact: fact(id) })) },
-        hybrid: { alarm: hybridHotNow && prev.hybrid, peak: round(Math.min(fused.max, 10)), suspects: fused.ranked.slice(0, 5).map((id) => ({ id, score: round(fused.blend.get(id) ?? 0), fact: fact(id) })) },
+        ml: { alarm: mlHotNow && prev.ml, peak: round(mlTop), suspects: r.ranked.slice(0, 5).map((id) => ({ id, score: +(r.rank.get(id) ?? 0).toFixed(3), fact: fact(id), why: why(id) })) },
+        hybrid: { alarm: hybridHotNow && prev.hybrid, peak: round(Math.min(fused.max, 10)), suspects: fused.ranked.slice(0, 5).map((id) => ({ id, score: round(fused.blend.get(id) ?? 0), fact: fact(id), why: why(id) })) },
       };
       sh.prev = { rules: rulesHotNow, ml: mlHotNow, hybrid: hybridHotNow };
       sh.at = new Date().toISOString();
-      sh.services = ids.map((id) => { const v = r.services.get(id)!; return { id, rules: round(rulesLine.get(id) ?? 0), level: round(v.level), own: round(v.ownLevel), symptom: round(v.symptomLevel), walk: +(r.rank.get(id) ?? 0).toFixed(3), blend: round(fused.blend.get(id) ?? 0), hard: v.hard, fact: v.fact }; })
+      sh.services = ids.map((id) => { const v = r.services.get(id)!; return { id, rules: round(rulesLine.get(id) ?? 0), level: round(v.level), own: round(v.ownLevel), symptom: round(v.symptomLevel), walk: +(r.rank.get(id) ?? 0).toFixed(3), blend: round(fused.blend.get(id) ?? 0), hard: v.hard, fact: v.fact, why: why(id) }; })
         .sort((x, y) => Number(y.hard) - Number(x.hard) || y.blend - x.blend || y.rules - x.rules);
       sh.history.push({ t: Date.now(), rules: round(Math.min(rulesTop, 6)), ml: round(Math.min(mlTop, 6)), hybrid: round(Math.min(fused.max, 6)) });
       if (sh.history.length > 90) sh.history.shift();

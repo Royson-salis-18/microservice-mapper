@@ -143,7 +143,7 @@ export function TopBar({ status, targets, isConnected, lastUpdate, selectedProje
       </div>
 
       {engine.mode && (
-        <div className="mm-engine" role="group" aria-label="Detection engine" title="Which engine decides incidents. Rules: statistical detector. ML: Isolation Forest on each service's learned baseline + random walk on the call graph. Hybrid (default): either engine can raise the alarm, the ML engine names the source.">
+        <div className="mm-engine" role="group" aria-label="Detection engine" title="Which engine decides incidents. Rules: statistical detector. ML: each service against what the current load predicts for it, with a random walk on the call graph to find the source. Hybrid (default): either engine can raise the alarm, the ML engine names the source.">
           {(['rules', 'hybrid', 'ml'] as const).map((m) => (
             <button key={m} className={engine.mode === m ? 'on' : ''} disabled={engine.busy} onClick={() => engine.change(m)} aria-pressed={engine.mode === m}>
               {m === 'rules' ? 'Rules' : m === 'hybrid' ? 'Hybrid' : 'ML'}
