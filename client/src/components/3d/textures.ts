@@ -62,23 +62,37 @@ export function doorTexture(): THREE.CanvasTexture {
 }
 
 /**
- * The backdrop behind everything: near-black at the edges, deep navy with a
- * blue bloom behind the site. Drawn into the scene rather than left to CSS,
- * because the bloom pass renders into an opaque target.
+ * The backdrop behind everything: near-black at the edges, deep atmospheric glow behind the site.
  */
-export function backdropTexture(): THREE.CanvasTexture {
-  return make('backdrop', [1024, 1024], (ctx, w, h) => {
-    ctx.fillStyle = '#05060b';
+export function backdropTexture(preset: 'cyber' | 'studio' | 'holo' = 'cyber'): THREE.CanvasTexture {
+  return make(`backdrop_${preset}`, [1024, 1024], (ctx, w, h) => {
+    const bg = preset === 'holo' ? '#070210' : preset === 'studio' ? '#0c0d10' : '#05070e';
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
-    const g = ctx.createRadialGradient(w * 0.6, h * 0.4, 0, w * 0.6, h * 0.4, w * 0.75);
-    g.addColorStop(0, '#303032');
-    g.addColorStop(0.35, '#1c1c1e');
-    g.addColorStop(0.7, '#0e0e10');
-    g.addColorStop(1, '#05060b');
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, w * 0.7);
+    if (preset === 'holo') {
+      g.addColorStop(0, '#1c082e');
+      g.addColorStop(0.35, '#12041e');
+      g.addColorStop(0.68, '#0b0213');
+      g.addColorStop(1, '#070210');
+    } else if (preset === 'studio') {
+      g.addColorStop(0, '#1c1e27');
+      g.addColorStop(0.35, '#14161d');
+      g.addColorStop(0.68, '#0f1015');
+      g.addColorStop(1, '#0c0d10');
+    } else {
+      // cyber: deep sleek navy atmospheric dusk behind the architecture
+      g.addColorStop(0, '#0f1b2d');
+      g.addColorStop(0.32, '#0a121e');
+      g.addColorStop(0.68, '#070c14');
+      g.addColorStop(1, '#05070e');
+    }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   });
 }
+
+
 
 /**
  * Raised-floor tiles: a dark panel grid with a faint seam and a little

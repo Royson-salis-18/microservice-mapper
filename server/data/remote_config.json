@@ -1,31 +1,31 @@
 {
-  "sock-shop": {
-    "ec2PublicIp": "15.207.109.141",
-    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
-    "sshUsername": "ubuntu",
-    "displayName": "sock-shop",
-    "updatedAt": "2026-10-08T10:08:58.918Z"
-  },
   "death-star": {
-    "ec2PublicIp": "13.233.8.32",
-    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "sshUsername": "ubuntu",
+    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "displayName": "death-star",
-    "updatedAt": "2026-10-08T10:09:47.340Z"
+    "ec2PublicIp": "13.232.161.204",
+    "updatedAt": "2026-10-14T01:21:12.592Z"
   },
   "open-telemetry": {
-    "ec2PublicIp": "13.201.89.80",
-    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "sshUsername": "ubuntu",
+    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "displayName": "open-telemetry",
+    "ec2PublicIp": "13.233.155.34",
     "trafficBaseUrl": "http://43.204.211.231:8080",
-    "updatedAt": "2026-10-08T10:10:24.663Z"
+    "updatedAt": "2026-10-14T02:15:09.961Z"
   },
   "bench1": {
-    "ec2PublicIp": "13.203.200.52",
+    "sshUsername": "ubuntu",
+    "sshKeyPath": "~/Downloads/sock-shop-key.pem",
+    "displayName": "bench1",
+    "ec2PublicIp": "3.111.58.16",
+    "updatedAt": "2026-10-17T19:37:48.449Z"
+  },
+  "bench-2": {
+    "ec2PublicIp": "35.154.39.116",
     "sshKeyPath": "~/Downloads/sock-shop-key.pem",
     "sshUsername": "ubuntu",
-    "displayName": "bench1",
-    "updatedAt": "2026-10-08T01:27:07.798Z"
+    "displayName": "bench-2",
+    "updatedAt": "2026-10-14T04:53:53.535Z"
   }
 }

@@ -14,6 +14,8 @@ import { cpuShown } from '../shared/serviceVisuals';
 import { computeSite, islandRoleOf, type Rect, type Site } from './site';
 import { Islands, type IslandAlert, type IslandCardInfo } from './Islands';
 import { LAYOUTS, ZONED_LAYOUTS, LABELLED_LAYOUTS, HALL_PADDING, computeLayout, type LayoutId, type LayoutNode, type Positions } from './layouts';
+import { AmbientParticles, type EnvPreset } from './AmbientParticles';
+import { FlowPlatforms } from './FlowPlatforms';
 
 interface Scene3DProps {
   nodes: Node[];
@@ -34,7 +36,6 @@ const MAX_CALLOUTS = 8;
 const AZIMUTH = Math.PI / 4;
 const FOV = 30;
 
-const FOG_COLOR = '#0c0c0e';
 
 /**
  * Eases every node toward the position its layout wants, writing into a
@@ -419,12 +420,13 @@ const NEON_T = 0.11;
  * Back walls are taller than the ones facing the camera, like a cutaway
  * plan, so the front row is never hidden.
  */
-function Zone({ project, ids, live, focused, summary }: {
+function Zone({ project, ids, live, focused, summary, showLabel = true }: {
   project: string;
   ids: string[];
   live: PositionMap;
   focused: boolean;
   summary?: ZoneSummary;
+  showLabel?: boolean;
 }) {
   const slab = useRef<THREE.Mesh>(null);
   const walls = useRef<(THREE.Mesh | null)[]>([]);
@@ -485,16 +487,18 @@ function Zone({ project, ids, live, focused, summary }: {
           <meshBasicMaterial color={neonColor} toneMapped={false} />
         </mesh>
       ))}
-      <group ref={label}>
-        <Suspense fallback={null}>
-          <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#cfd3da' : '#8ab4ff'} anchorX="left" anchorY="top" letterSpacing={0.06}>
-            {project}
-          </Text>
-          <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5d636c" anchorX="left" anchorY="top">
-            {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
-          </Text>
-        </Suspense>
-      </group>
+      {showLabel && (
+        <group ref={label}>
+          <Suspense fallback={null}>
+            <Text rotation={[-Math.PI / 2, 0, 0]} fontSize={2.3} color={focused ? '#cfd3da' : '#8ab4ff'} anchorX="left" anchorY="top" letterSpacing={0.06}>
+              {project}
+            </Text>
+            <Text rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 2.9]} fontSize={1.05} color="#5d636c" anchorX="left" anchorY="top">
+              {`${ids.length} services${summary?.alerts ? ` · ${summary.alerts} need attention` : ''}`}
+            </Text>
+          </Suspense>
+        </group>
+      )}
     </group>
   );
 }
@@ -523,7 +527,7 @@ function SelectionLight({ live, selectedId }: { live: PositionMap; selectedId: s
  * units, walls and islands throwing shade on the floor is most of what makes
  * the room read as a real space.
  */
-function KeyLight({ site }: { site: Site | null }) {
+function KeyLight({ site, preset = 'cyber' }: { site: Site | null; preset?: EnvPreset }) {
   const ref = useRef<THREE.DirectionalLight>(null);
   const fit = useMemo(() => {
     if (!site?.building) return null;
@@ -544,12 +548,14 @@ function KeyLight({ site }: { site: Site | null }) {
     cam.updateProjectionMatrix();
     light.shadow.needsUpdate = true;
   }, [fit]);
+  const color = preset === 'holo' ? '#e0e7ff' : preset === 'studio' ? '#ffffff' : '#f8fafc';
+  const intensity = preset === 'studio' ? (site ? 2.2 : 1.6) : (site ? 2.8 : 2.0);
   return (
     <directionalLight
       ref={ref}
       position={[-60, 110, 50]}
-      intensity={site ? 2.6 : 1.5}
-      color="#e6e8ec"
+      intensity={intensity}
+      color={color}
       castShadow={Boolean(fit)}
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
@@ -559,23 +565,28 @@ function KeyLight({ site }: { site: Site | null }) {
 }
 
 /**
- * The ground. For the islands it is paved in large faint panels, so the open
- * space between districts has a surface rather than being a flat colour;
- * elsewhere a plain dark plane under the grid.
+ * The ground. Paved in authentic datacenter panels across the entire site,
+ * providing the rich raised-floor texture used in islands and clusters.
  */
-function Ground({ y, tiled }: { y: number; tiled: boolean }) {
+function Ground({ y, tiled = true, preset = 'cyber' }: { y: number; tiled?: boolean; preset?: EnvPreset }) {
   const map = useMemo(() => (tiled ? tiledFloor(4000 / 14, 4000 / 14) : null), [tiled]);
   useEffect(() => () => map?.dispose(), [map]);
+  // Sleek dark panel tones so architectural lights, neon, and floor slabs stand out with high contrast
+  const groundColor = preset === 'holo' ? '#0d041a'
+    : preset === 'studio' ? '#14161d'
+    : '#090d15';
+  const roughness = preset === 'studio' ? 0.92 : 0.85;
+  const metalness = preset === 'studio' ? 0.08 : 0.22;
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]} raycast={() => null} receiveShadow>
       <planeGeometry args={[4000, 4000]} />
-      <meshStandardMaterial map={map} color={tiled ? '#8d939c' : '#151517'} roughness={0.9} metalness={0.15} />
+      <meshStandardMaterial map={map} color={groundColor} roughness={roughness} metalness={metalness} />
     </mesh>
   );
 }
 
-/** A broad, faint blue light spill on the ground under the whole site. */
-function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread: number }) {
+/** A broad, faint blue/accent light spill on the ground under the whole site. */
+function SiteGlow({ target, y, spread, color = '#8ab4ff', preset = 'cyber' }: { target: Positions; y: number; spread: number; color?: string; preset?: EnvPreset }) {
   const bounds = useMemo(() => {
     const pts = Object.values(target);
     if (pts.length === 0) return null;
@@ -584,13 +595,16 @@ function SiteGlow({ target, y, spread }: { target: Positions; y: number; spread:
       minX = Math.min(minX, x); maxX = Math.max(maxX, x);
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     }
-    return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w: maxX - minX + spread, d: maxZ - minZ + spread };
+    const w = Math.max(maxX - minX + spread, 140);
+    const d = Math.max(maxZ - minZ + spread, 140);
+    return { cx: (minX + maxX) / 2, cz: (minZ + maxZ) / 2, w, d };
   }, [target, spread]);
-  if (!bounds) return null;
+  if (!bounds || preset === 'studio') return null;
+  const glowColor = preset === 'holo' ? '#a855f7' : color;
   return (
     <mesh position={[bounds.cx, y, bounds.cz]} rotation={[-Math.PI / 2, 0, 0]} scale={[bounds.w, bounds.d, 1]} raycast={() => null}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={glowTexture()} color="#8ab4ff" transparent opacity={0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      <meshBasicMaterial map={glowTexture()} color={glowColor} transparent opacity={preset === 'holo' ? 0.16 : 0.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </mesh>
   );
 }
@@ -657,8 +671,10 @@ function shortId(id: string | null | undefined): string {
 
 export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick }: Scene3DProps) {
   const [layout, setLayout] = useState<LayoutId>(() => readStored('mm.scene3d.layout', LAYOUTS.map((l) => l.id), 'halls'));
+  const [envPreset, setEnvPreset] = useState<EnvPreset>(() => readStored('mm.scene3d.env', ['cyber', 'studio', 'holo'] as const, 'cyber'));
   const [routing, setRouting] = useState<LinkRouting>(() => readStored('mm.scene3d.routing', ['conduit', 'arc'] as const, 'conduit'));
   const [showLabels, setShowLabels] = useState(true);
+  const [showCards, setShowCards] = useState<boolean>(() => readStored('mm.scene3d.cards', ['on', 'off'] as const, 'on') === 'on');
   // Bloom is opt-in: at full strength it washed the scene out, and it costs
   // a few full-screen passes per frame. Off unless switched on in the HUD.
   const [glow, setGlow] = useState<boolean>(() => readStored('mm.scene3d.bloom', ['on', 'off'] as const, 'off') === 'on');
@@ -682,10 +698,12 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   useEffect(() => {
     try {
       localStorage.setItem('mm.scene3d.layout', layout);
+      localStorage.setItem('mm.scene3d.env', envPreset);
       localStorage.setItem('mm.scene3d.routing', routing);
       localStorage.setItem('mm.scene3d.bloom', glow ? 'on' : 'off');
+      localStorage.setItem('mm.scene3d.cards', showCards ? 'on' : 'off');
     } catch { /* private mode */ }
-  }, [layout, routing, glow]);
+  }, [layout, envPreset, routing, glow, showCards]);
 
   // R3F sizes its canvas from a measured container. When this view mounts
   // while the layout is still settling (a tab switch, a panel opening, the
@@ -747,8 +765,8 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
   // well, for the scene to draw; every other arrangement is just positions.
   const site = useMemo(() => (layout === 'halls' ? computeSite(layoutNodes, links) : null), [layout, layoutNodes, links]);
   const targetPositions = useMemo(
-    () => site?.positions ?? computeLayout(layout, layoutNodes),
-    [site, layout, layoutNodes]
+    () => site?.positions ?? computeLayout(layout, layoutNodes, edges, links),
+    [site, layout, layoutNodes, edges, links]
   );
 
   // A new arrangement starts from the whole view (the rig refits on the
@@ -870,11 +888,11 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
       else if (status === 'degraded' && prev !== 'critical') alertsOut.set(key, 'degraded');
       else if (!alertsOut.has(key)) alertsOut.set(key, null);
     }
+    if (!showCards) return { islandAlerts: alertsOut, islandCards: null };
     let cards: Map<string, IslandCardInfo> | null = counts;
     if (focusZone) cards = new Map([...counts].filter(([k]) => k.startsWith(`${focusZone}:`)));
-    else if (site.islands.length > 12) cards = null;
     return { islandAlerts: alertsOut, islandCards: cards };
-  }, [site, layoutNodes, byId, focusZone]);
+  }, [site, showCards, layoutNodes, byId, focusZone]);
 
   const zoneMembers = useMemo(() => {
     const m = new Map<string, string[]>();
@@ -939,9 +957,15 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         }}
       >
         <Suspense fallback={null}>
-          <Backdrop />
-          <fog attach="fog" args={[FOG_COLOR, 400, 1400]} />
-          {glow && <Bloom />}
+          <Backdrop preset={envPreset} />
+          <fog attach="fog" args={[envPreset === 'studio' ? '#0c0d10' : envPreset === 'holo' ? '#070210' : '#05070e', 380, 1350]} />
+          {glow && (
+            <Bloom
+              strength={envPreset === 'holo' ? 0.72 : envPreset === 'cyber' ? 0.58 : 0.32}
+              radius={envPreset === 'holo' ? 0.26 : envPreset === 'cyber' ? 0.22 : 0.14}
+              threshold={envPreset === 'holo' ? 0.76 : envPreset === 'cyber' ? 0.80 : 0.88}
+            />
+          )}
 
           <PerspectiveCamera makeDefault position={[120, 110, 120]} fov={FOV} near={0.5} far={4000} />
           <OrbitControls
@@ -960,35 +984,56 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             }}
           />
 
-          {/* Cool, low light: tops and the faces toward the camera catch a
-              soft blue, sides fall away into navy. */}
-          <ambientLight intensity={site ? 0.12 : 0.35} color="#cfd3da" />
-          <hemisphereLight args={[site ? '#3a3e45' : '#8ab4ff', '#05060b', site ? 0.3 : 0.55]} />
-          <KeyLight site={site} />
-          <directionalLight position={[80, 40, -40]} intensity={0.9} color="#8ab4ff" />
-          <directionalLight position={[40, 25, 90]} intensity={0.35} color="#8ab4ff" />
+          {/* Theme-adaptive ambient and directional lighting:
+              Background stays pleasantly dark while architecture and neon lamps pop */}
+          <ambientLight
+            intensity={envPreset === 'studio' ? 0.42 : 0.26}
+            color={envPreset === 'studio' ? '#f1f5f9' : envPreset === 'holo' ? '#d8b4fe' : '#b9e6fe'}
+          />
+          <hemisphereLight
+            args={[
+              envPreset === 'holo' ? '#a855f7' : envPreset === 'studio' ? '#94a3b8' : '#38bdf8',
+              envPreset === 'holo' ? '#070210' : envPreset === 'studio' ? '#08090d' : '#030509',
+              envPreset === 'studio' ? 0.5 : 0.4,
+            ]}
+          />
+          <KeyLight site={site} preset={envPreset} />
+          {/* Main Key Light */}
+          <directionalLight
+            position={[80, 48, -40]}
+            intensity={envPreset === 'studio' ? 0.75 : envPreset === 'holo' ? 1.05 : 0.95}
+            color={envPreset === 'holo' ? '#e879f9' : envPreset === 'studio' ? '#f8fafc' : '#7dd3fc'}
+          />
+          {/* Subtle Backlight Rim */}
+          <directionalLight
+            position={[-70, 32, 75]}
+            intensity={envPreset === 'studio' ? 0.25 : 0.45}
+            color={envPreset === 'holo' ? '#22d3ee' : envPreset === 'studio' ? '#94a3b8' : '#f43f5e'}
+          />
 
-          {/* In the building arrangement the floor is a slab lifted above the
-              ground grid; otherwise the grid is the floor. */}
-          <Ground y={groundY - 0.02} tiled={Boolean(site)} />
+          {/* Floor is tiled for the building campus arrangement, otherwise clean grid */}
+          <Ground y={groundY - 0.02} tiled={Boolean(site)} preset={envPreset} />
           <Grid
             position={[0, groundY, 0]}
             args={[10, 10]}
             cellSize={5}
-            cellThickness={0.5}
-            cellColor={site ? '#2a2a2c' : '#242426'}
+            cellThickness={envPreset === 'studio' ? 0.45 : 0.55}
+            cellColor={envPreset === 'studio' ? '#222530' : envPreset === 'holo' ? '#2e1254' : '#112233'}
             sectionSize={30}
-            sectionThickness={0.9}
-            sectionColor={site ? '#474749' : '#373739'}
+            sectionThickness={envPreset === 'studio' ? 0.75 : envPreset === 'holo' ? 0.95 : 0.85}
+            sectionColor={envPreset === 'studio' ? '#475569' : envPreset === 'holo' ? '#9333ea' : '#0284c7'}
             fadeDistance={520}
             fadeStrength={2}
             infiniteGrid
           />
 
-          <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} />
-          {/* The dark city around the site: close in for the flat
-              arrangements, pushed back to a skyline for the islands. */}
-          <CityBlocks target={targetPositions} clearance={site ? 70 : 26} />
+          <SiteGlow target={targetPositions} y={groundY + 0.03} spread={site ? 120 : 90} preset={envPreset} />
+          {/* Atmospheric floating data dust */}
+          <AmbientParticles preset={envPreset} />
+          {/* Architectural platforms for Flow, Topology, and Tiers */}
+          {(layout === 'flow' || layout === 'tiers' || layout === 'topology') && <FlowPlatforms layout={layout} nodes={layoutNodes} positions={targetPositions} />}
+          {/* The dark city skyline: only for the Islands hall campus where buildings sit on a central site, kept minimal and in the far background */}
+          {Boolean(site) && envPreset !== 'studio' && <CityBlocks target={targetPositions} clearance={70} />}
 
           <SelectionLight live={live} selectedId={selectedNodeId} />
 
@@ -1001,7 +1046,16 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
             site={site}
           />
 
-          {site && <Islands site={site} focusZone={focusZone} summaries={zoneById} alerts={islandAlerts} cards={islandCards} />}
+          {site && (
+            <Islands
+              site={site}
+              focusZone={focusZone}
+              summaries={zoneById}
+              alerts={islandAlerts}
+              cards={islandCards}
+              onToggleCards={() => setShowCards(false)}
+            />
+          )}
 
           {zoned && !site && zoneMembers.map(([project, ids]) => (
             <Zone
@@ -1011,6 +1065,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
               live={live}
               focused={focusZone === project}
               summary={zoneById.get(project)}
+              showLabel={showCards}
             />
           ))}
 
@@ -1051,7 +1106,7 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
           {/* Its own boundary: troika's Text suspends while it fetches a
               font, and if that request hangs a shared boundary takes the
               whole scene down with it. */}
-          {LABELLED_LAYOUTS.has(layout) && (
+          {LABELLED_LAYOUTS.has(layout) && showCards && (
             <Suspense fallback={null}>
               <ProjectLabels nodes={layoutNodes} live={live} />
             </Suspense>
@@ -1068,8 +1123,12 @@ export function Scene3D({ nodes, edges, selectedNodeId, onNodeClick, onPaneClick
         onRouting={setRouting}
         showLabels={showLabels}
         onShowLabels={setShowLabels}
+        showCards={showCards}
+        onShowCards={setShowCards}
         glow={glow}
         onGlow={setGlow}
+        envPreset={envPreset}
+        onEnvPreset={setEnvPreset}
         zones={zones}
         focusZone={focusZone}
         onFocusZone={onFocusZone}

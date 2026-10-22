@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Node, Edge } from '@xyflow/react';
-import { Activity, AlertTriangle, BellRing, Bell, Brain, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, AlertTriangle, BellRing, Bell, Brain, IdCard, Link2, Radar, Server, ServerCrash, Sparkles, Spline, Tags, Waypoints, ChevronDown, ChevronUp } from 'lucide-react';
 import type { DependencyEdge, ServiceNode } from '../../types';
 import { LAYOUTS, type LayoutId } from './layouts';
 import type { LinkRouting } from './Edge3D';
 import { AT_RISK, STATUS_LIGHT, TYPE_STYLE } from './Node3D';
 import type { CalloutItem, CalloutKind } from './Callouts3D';
+import type { EnvPreset } from './AmbientParticles';
 
 export interface ZoneSummary {
   id: string;
@@ -25,8 +26,12 @@ interface SceneHudProps {
   onRouting: (routing: LinkRouting) => void;
   showLabels: boolean;
   onShowLabels: (show: boolean) => void;
+  showCards?: boolean;
+  onShowCards?: (show: boolean) => void;
   glow: boolean;
   onGlow: (on: boolean) => void;
+  envPreset?: EnvPreset;
+  onEnvPreset?: (preset: EnvPreset) => void;
   zones: ZoneSummary[];
   focusZone: string | null;
   onFocusZone: (zone: string | null) => void;
@@ -49,7 +54,7 @@ const projectOf = (id: string) => (id.includes(':') ? id.slice(0, id.indexOf(':'
 
 /** Arrangements that answer a question about the system; the rest (circle,
  *  polygon, sphere, helix) are alternative shapes, kept one click further. */
-const PRIMARY_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 'clusters', 'grid', 'radial', 'tiers']);
+const PRIMARY_LAYOUTS: ReadonlySet<LayoutId> = new Set<LayoutId>(['halls', 'flow', 'topology', 'clusters', 'tiers']);
 
 function formatRate(perMin: number): string {
   if (perMin >= 10_000) return `${(perMin / 1000).toFixed(0)}k`;
@@ -93,7 +98,9 @@ function useConsistency(): ConsistencyReport | null {
 }
 
 export function SceneHud({
-  nodes, edges, layout, onLayout, routing, onRouting, showLabels, onShowLabels, glow, onGlow,
+  nodes, edges, layout, onLayout, routing, onRouting, showLabels, onShowLabels,
+  showCards = true, onShowCards, glow, onGlow,
+  envPreset = 'cyber', onEnvPreset,
   zones, focusZone, onFocusZone, alerts, onAlertSelect, onNextAlert,
 }: SceneHudProps) {
   const alertCount = alerts.length;
@@ -169,7 +176,7 @@ export function SceneHud({
 
   return (
     <>
-      <div className={`scene-panel scene-overview${overviewOpen ? '' : ' min'}`}>
+      <div className={`scene-panel scene-overview${overviewOpen ? '' : ' min'}${stats.critical > 0 ? ' incident' : ''}`}>
         <div className="scene-overview-head">
           <div style={{ minWidth: 0 }}>
             <div className="scene-overview-title">Live overview</div>
@@ -208,11 +215,14 @@ export function SceneHud({
         <div className="scene-stat-grid">
           {cards.map((c) => {
             const Icon = c.icon;
+            const isBad = c.label === 'Down' && stats.critical > 0;
+            const isWarn = c.label === 'Degraded' && stats.degraded > 0;
+            const statClass = isBad ? 'scene-stat bad' : isWarn ? 'scene-stat warn' : 'scene-stat';
             return (
-              <div key={c.label} className="scene-stat">
+              <div key={c.label} className={statClass}>
                 <div className="scene-stat-head">{c.label}</div>
                 <div className="scene-stat-body">
-                  <span className="scene-stat-icon" style={{ background: c.color, boxShadow: 'none' }}>
+                  <span className="scene-stat-icon" style={{ background: c.color }}>
                     <Icon size={15} strokeWidth={2.3} />
                   </span>
                   <div style={{ minWidth: 0 }}>
@@ -282,6 +292,19 @@ export function SceneHud({
           >
             <Tags size={12} style={{ verticalAlign: '-2px' }} />
           </button>
+          {onShowCards && (
+            <button
+              type="button"
+              className={`scene-pill ${showCards ? 'active' : ''}`}
+              title={showCards ? 'Section title cards: Visible (click to hide)' : 'Section title cards: Hidden (click to show)'}
+              aria-pressed={showCards}
+              onClick={() => onShowCards(!showCards)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+            >
+              <IdCard size={12} style={{ verticalAlign: '-1px' }} />
+              <span>Cards</span>
+            </button>
+          )}
           <button
             type="button"
             className={`scene-pill ${glow ? 'active' : ''}`}
@@ -292,6 +315,23 @@ export function SceneHud({
             <Sparkles size={12} style={{ verticalAlign: '-2px' }} />
           </button>
         </div>
+
+        {onEnvPreset && (
+          <div className="scene-pill-group" aria-label="Environment Theme">
+            <select
+              className="scene-pill scene-pill-select active"
+              value={envPreset}
+              onChange={(e) => onEnvPreset(e.target.value as EnvPreset)}
+              title="3D Environment Theme: Cyberpunk, Clean Studio, or Hologram"
+              aria-label="3D Environment Theme"
+              style={{ fontWeight: 600, paddingRight: 22 }}
+            >
+              <option value="cyber">Theme: Cyberpunk</option>
+              <option value="studio">Theme: Studio</option>
+              <option value="holo">Theme: Hologram</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="scene-alarm-wrap" ref={alarmRef}>
