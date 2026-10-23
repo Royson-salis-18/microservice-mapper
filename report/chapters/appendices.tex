@@ -14,7 +14,7 @@
 \caption{Rule-layer thresholds (defaults, adjustable on the Incidents page).}
 \small
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{1.5cm}>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.4cm}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}X}
 \toprule
 \textbf{Name} & \textbf{Default} & \textbf{Meaning}\\
 \midrule
@@ -25,8 +25,8 @@
 \texttt{minDeltaPercent} & 5 & Smallest change worth a flag\\
 \texttt{absoluteHighPercent} & 70 & Absolute CPU or memory share counted as high\\
 \texttt{absoluteCriticalPercent} & 85 & Absolute share counted as critical\\
-\texttt{flatlineStdDev}, \texttt{flatlineDeltaPercent} & 0.001, 30 & A series that goes flat after moving\\
-\texttt{criticalServicesForCritical} & 2 & Critical services before the incident is CRITICAL\\
+\texttt{flatlineStdDev}, \texttt{flatline\-DeltaPercent} & 0.001, 30 & A series that goes flat after moving\\
+{\ttfamily criticalServices\-ForCritical} & 2 & Critical services before the incident is CRITICAL\\
 \texttt{silenceSamples} & 3 & Missed readings before a service counts as silent\\
 \texttt{monitoringGapShare} & 0.8 & Share of silent services that means the monitoring itself is down\\
 \texttt{explainAwayGamma} & 1.0 & Weight of what a sick callee explains ($\gamma$)\\
@@ -53,87 +53,6 @@ Declared in Compose, never seen carrying traffic & 0.40\\
 \end{table}
 
 \clearpage
-\chapter{The REST Interface}
-\label{app:api}
-\begin{longtable}{ll}
-\caption{All REST endpoints registered by the server (\texttt{server/api/routes.ts}).}\\
-\toprule
-\textbf{Method} & \textbf{Path}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Method} & \textbf{Path}\\
-\midrule
-\endhead
-\bottomrule
-\endlastfoot
-\texttt{GET} & \texttt{/api/graph}\\
-\texttt{GET} & \texttt{/api/nodes/:id}\\
-\texttt{GET} & \texttt{/api/nodes/:id/metrics}\\
-\texttt{GET} & \texttt{/api/traffic}\\
-\texttt{GET} & \texttt{/api/analytics}\\
-\texttt{GET} & \texttt{/api/reliability/blast-radius/:nodeId}\\
-\texttt{GET} & \texttt{/api/reliability/cascade}\\
-\texttt{GET} & \texttt{/api/reliability/whatif/:nodeId}\\
-\texttt{GET} & \texttt{/api/diagnostics}\\
-\texttt{GET} & \texttt{/api/diagnostics/consistency}\\
-\texttt{GET} & \texttt{/api/targets}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/diagnostics}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/discovery}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/services}\\
-\texttt{GET} & \texttt{/api/nodes/:id/logs}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/endpoints}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/routes}\\
-\texttt{POST} & \texttt{/api/discovery/refresh}\\
-\texttt{GET} & \texttt{/api/incidents}\\
-\texttt{GET} & \texttt{/api/engine}\\
-\texttt{GET} & \texttt{/api/engine/info}\\
-\texttt{POST} & \texttt{/api/engine}\\
-\texttt{GET} & \texttt{/api/incidents/thresholds}\\
-\texttt{POST} & \texttt{/api/incidents/thresholds}\\
-\texttt{GET} & \texttt{/api/incidents/:id}\\
-\texttt{GET} & \texttt{/api/incidents/:id/timeline}\\
-\texttt{GET} & \texttt{/api/incidents/:id/evidence}\\
-\texttt{GET} & \texttt{/api/incidents/:id/propagation}\\
-\texttt{GET} & \texttt{/api/services/:id/anomalies}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/resolved-url}\\
-\texttt{GET} & \texttt{/api/targets/:targetId/reachability}\\
-\texttt{POST} & \texttt{/api/ingest}\\
-\texttt{GET} & \texttt{/api/status}\\
-\texttt{GET} & \texttt{/api/traffic/health}\\
-\texttt{GET} & \texttt{/api/traffic/entrypoints}\\
-\texttt{POST} & \texttt{/api/traffic/entrypoint}\\
-\texttt{POST} & \texttt{/api/traffic/entrypoint/probe}\\
-\texttt{POST} & \texttt{/api/traffic/surface/probe}\\
-\texttt{GET} & \texttt{/api/traffic/status}\\
-\texttt{POST} & \texttt{/api/traffic/start}\\
-\texttt{POST} & \texttt{/api/traffic/stop}\\
-\texttt{GET} & \texttt{/api/experiments}\\
-\texttt{POST} & \texttt{/api/experiments/start}\\
-\texttt{POST} & \texttt{/api/experiments/update\_stats}\\
-\texttt{GET} & \texttt{/api/ml/status}\\
-\texttt{GET} & \texttt{/api/ml/config}\\
-\texttt{POST} & \texttt{/api/ml/config}\\
-\texttt{GET} & \texttt{/api/ml/processes}\\
-\texttt{POST} & \texttt{/api/ml/processes/:name/start}\\
-\texttt{POST} & \texttt{/api/ml/processes/:name/stop}\\
-\texttt{GET} & \texttt{/api/ml/models}\\
-\texttt{GET} & \texttt{/api/ml/features}\\
-\texttt{GET} & \texttt{/api/ml/normalization}\\
-\texttt{GET} & \texttt{/api/ml/retrain}\\
-\texttt{POST} & \texttt{/api/ml/retrain}\\
-\texttt{GET} & \texttt{/api/ml/source/:name}\\
-\texttt{GET} & \texttt{/api/ml/suggestions}\\
-\texttt{GET} & \texttt{/api/ml/projects}\\
-\texttt{GET} & \texttt{/api/ml/score-history}\\
-\texttt{GET} & \texttt{/api/config/remote}\\
-\texttt{POST} & \texttt{/api/config/remote}\\
-\texttt{GET} & \texttt{/api/models}\\
-\texttt{DELETE} & \texttt{/api/config/remote/:targetId}\\
-\texttt{POST} & \texttt{/api/data/clear}\\
-\end{longtable}
-
-\clearpage
 \chapter{Fault Classes}
 \label{app:faults}
 \begin{table}[!htbp]
@@ -154,27 +73,6 @@ pause & Container paused & 4 & 15\\
 flap & Repeated pause and release cycles & 2 & 12\\
 latency & Slow responses & -- & 25\\
 partition & Network detached from the service & -- & 15\\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\clearpage
-\chapter{Simulator Scenarios}
-\label{app:sim}
-The ground-truth simulator drives the mapper with a ten-service shop and a known root cause, and was used for the screenshots and for quick checks.
-\begin{table}[!htbp]
-\centering
-\caption{Simulator scenarios.}
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.8cm}}
-\toprule
-\textbf{Scenario} & \textbf{Description} & \textbf{Root cause}\\
-\midrule
-baseline & Everything healthy & none\\
-db-crash & \texttt{orders-db} is killed; \texttt{orders} then the front end degrade as calls to it fail & \texttt{orders-db}\\
-slow-payment & \texttt{payment} saturates; \texttt{orders} degrades waiting on it & \texttt{payment}\\
-crash-loop & \texttt{carts-db} crash-loops; \texttt{carts} degrades & \texttt{carts-db}\\
 \bottomrule
 \end{tabularx}
 \end{table}

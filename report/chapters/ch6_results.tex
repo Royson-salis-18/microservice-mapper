@@ -116,14 +116,14 @@ The table reads in three parts. On injected faults the rule engine catches about
 Put simply, the new engine differs from the old one in five ways. It estimates how much the whole project's workload moved before it judges any service, and explains that move away. It still sees a fault during a load change, because the load is a median that one or two services cannot drag, and each signal must be explained by either ``ignore the load'' or ``follow it'' to count as normal. It gives bursty signals a fair spread. It does not learn from readings it alarmed on. And each alarm says which signal moved and by how much. It keeps the rules the mapper was built on: no labels, no agent on the hosts, only the telemetry the mapper already reads.
 
 \subsection{Detection and root cause}
-Table~\ref{tab:main} compares the engines in one harness, now with the corrected ML engine inside. On the real systems the hybrid and the ML engine name the true cause first for 71\% of all faults, against 63\% for the rule layer and 68\% for ranking by anomaly alone. The paired differences are in Figure~\ref{fig:forest} and Table~\ref{tab:paired}. They are smaller than in the first version of this report and no longer reach significance: hybrid over rules is $+8.1$ points on the real systems (95\% CI $[-1.6, +17.7]$, $p = 0.117$) and $+5.6$ on the synthetic set ($[-0.6, +11.8]$, $p = 0.093$); hybrid over the severity ranking is $+3.2$ and $+1.1$ points, and hybrid over the ML engine $0.0$ and $+0.6$. With 62 real faults a difference below about ten points cannot be resolved. What the corrected engine changes is the false-alarm column: the ML engine alarms 2.3 times per fault-free hour on the real systems and 0.2 on the synthetic set, the quietest row, and Section~\ref{sec:workloadres} shows that it stays quiet when only the load moves. The hybrid raises more episodes (6.2 and 0.9) because the rule layer may also trigger it.
+Table~\ref{tab:main} compares the engines in one harness, now with the corrected ML engine inside. On the real systems the hybrid and the ML engine name the true cause first for 71\% of all faults, against 63\% for the rule layer and 68\% for ranking by anomaly alone. The paired differences are in Figure~\ref{fig:forest}. They are smaller than in the first version of this report and no longer reach significance: hybrid over rules is $+8.1$ points on the real systems (95\% CI $[-1.6, +17.7]$, $p = 0.117$) and $+5.6$ on the synthetic set ($[-0.6, +11.8]$, $p = 0.093$); hybrid over the severity ranking is $+3.2$ and $+1.1$ points, and hybrid over the ML engine $0.0$ and $+0.6$. With 62 real faults a difference below about ten points cannot be resolved. What the corrected engine changes is the false-alarm column: the ML engine alarms 2.3 times per fault-free hour on the real systems and 0.2 on the synthetic set, the quietest row, and Section~\ref{sec:workloadres} shows that it stays quiet when only the load moves. The hybrid raises more episodes (6.2 and 0.9) because the rule layer may also trigger it.
 
 \begin{table}[!htbp]
 \centering
 \caption[Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults)]{Detection and root cause in one harness (point estimates with 95\% bootstrap intervals over faults). Det.: faults detected (\%). \acc{1}, \acc{3}: true cause first or in the top three among detected (\%). \cn: caught and named first over all faults (\%). FA/h: false-alarm episodes per fault-free hour. Alarm: share of fault-free time in alarm (\%).}
 \label{tab:main}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccccc}
 \toprule
 Engine & Det. [95\% CI] & \acc{1} & \acc{3} & \cn{} [95\% CI] & FA/h & Alarm \\
@@ -149,7 +149,7 @@ Hybrid + learned dir. & 93 [89, 97] & 81 & 93 & 75 [69, 81] & 0.9 & 5 \\
 
 The operating curves (Figure~\ref{fig:op}) show why the comparison is delicate: the engines trade detection for false alarms along nearly overlapping curves, and the hybrid and the ML engine sit on or near the upper envelope in both sets, above the rules at almost every false-alarm budget, so their advantage is about operating point rather than a single threshold. Figure~\ref{fig:class} breaks \cn{} down by fault class. The gain over the rules is concentrated in \emph{stop} faults (16 of 16 against 9 of 16 on the real systems), which is the effect of the \code{docker stop} fact, and, on the synthetic set, in \emph{flap} faults (12 of 12 against 2 of 12).
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_op.pdf}
 \caption[Operating curves. Sweeping the alarm threshold of each engine traces detection rate]{Operating curves. Sweeping the alarm threshold of each engine traces detection rate (top) and caught-and-named rate (bottom) against false-alarm episodes per fault-free hour (symmetric-log axis); stars mark the default threshold. The hybrid sits on the upper envelope in both the real systems (a, c) and the synthetic held-out set (b, d).}
@@ -163,32 +163,7 @@ The operating curves (Figure~\ref{fig:op}) show why the comparison is delicate: 
 \label{fig:forest}
 \end{figure}
 
-\begin{table}[!htbp]
-\centering
-\caption{Paired bootstrap tests behind Figure~\ref{fig:forest} (difference in caught-and-named rate).}
-\label{tab:paired}
-\small
-\begin{tabular}{llccc}
-\toprule
-Set & Contrast & $\Delta$ (pp) & 95\% CI & $p$ \\
-\midrule
-Real & Hybrid vs rules & +8.1 & [$-$1.6, +17.7] & 0.117 \\
-Real & Hybrid vs severity ranking & +3.2 & [+0.0, +8.1] & 0.256 \\
-Real & ML vs rules & +8.1 & [$-$1.6, +17.7] & 0.117 \\
-Real & Hybrid vs ML & +0.0 & [+0.0, +0.0] & 1.000 \\
-Real & Change-point alarm vs hybrid & +1.6 & [+0.0, +4.8] & 0.724 \\
-Real & Learned directions vs name rule & $-$3.2 & [$-$8.1, +0.0] & 0.250 \\
-Synth. & Hybrid vs rules & +5.6 & [$-$0.6, +11.8] & 0.093 \\
-Synth. & Hybrid vs severity ranking & +1.1 & [$-$3.4, +5.6] & 0.725 \\
-Synth. & ML vs rules & +5.1 & [$-$1.7, +11.8] & 0.164 \\
-Synth. & Hybrid vs ML & +0.6 & [$-$1.7, +2.8] & 0.836 \\
-Synth. & Change-point alarm vs hybrid & +0.0 & [+0.0, +0.0] & 1.000 \\
-Synth. & Learned directions vs name rule & +0.0 & [$-$1.7, +1.7] & 1.000 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_class.pdf}
 \caption[Caught-and-named rate by fault class]{Caught-and-named rate by fault class (percent; $n$ faults per class), for four rankers on the real systems (a) and the synthetic held-out set (b). Brownouts are the open problem on the real systems.}
@@ -196,7 +171,7 @@ Synth. & Learned directions vs name rule & +0.0 & [$-$1.7, +1.7] & 1.000 \\
 \end{figure}
 
 \subsection{Which detector}
-Figure~\ref{fig:roc} and Table~\ref{tab:roc} score each model of normal as a service-level classifier, now including the control chart, the subspace residual and the adopted load-aware model. As before, the plain rule $z$-score is as good as or better than every learned detector at separating a faulted service from a healthy one by AUROC (0.695 against 0.629 for the old forest and 0.665 for the load-aware model on the real systems; 0.873 against 0.862 and 0.842 on the synthetic set). On average precision, which weighs the rare faulted services, the load-aware model is above every forest-family detector on both sets (0.313 against at most 0.290 on the real systems; 0.665 against at most 0.608 on the synthetic set) and level with the rules on the synthetic set (0.666). Separation on the real systems is weak for every detector (AUROC 0.62 to 0.70), because many real faults hit services that are nearly idle.
+Table~\ref{tab:roc} scores each model of normal as a service-level classifier, now including the control chart, the subspace residual and the adopted load-aware model. As before, the plain rule $z$-score is as good as or better than every learned detector at separating a faulted service from a healthy one by AUROC (0.695 against 0.629 for the old forest and 0.665 for the load-aware model on the real systems; 0.873 against 0.862 and 0.842 on the synthetic set). On average precision, which weighs the rare faulted services, the load-aware model is above every forest-family detector on both sets (0.313 against at most 0.290 on the real systems; 0.665 against at most 0.608 on the synthetic set) and level with the rules on the synthetic set (0.666). Separation on the real systems is weak for every detector (AUROC 0.62 to 0.70), because many real faults hit services that are nearly idle.
 
 Discrimination is therefore not what chose the model; behaviour under a change of workload was (Section~\ref{sec:whichmodel}). The adopted model is quiet (alarm time of 6\% against 9\% for the rules on the real systems, Table~\ref{tab:main}); it separates own from symptom evidence; and its alarms complement those of the rules, so their union detects more faults than either on the synthetic set (93\% against 89\%).
 
@@ -223,28 +198,14 @@ Load-aware residual (new) & 0.665$\pm$0.000 & 0.313$\pm$0.000 & 0.842$\pm$0.000 
 \end{tabular}
 \end{table}
 
-\begin{figure}[p]
-\centering
-\includegraphics[width=\textwidth]{fig_roc.pdf}
-\caption[Service-level detection by detector: ROC]{Service-level detection by detector: ROC (top) and precision--recall (bottom) for the real systems (left) and the synthetic held-out set (right); legends give AUROC and average precision (means over three seeds for the randomised detectors). Positives are the faulted service during a fault; negatives are any service when no fault is active; container facts are excluded.}
-\label{fig:roc}
-\end{figure}
-
 \subsection{Detection delay and root-cause depth}
-Figure~\ref{fig:delay} shows detection delay as a cumulative distribution. On the real systems the hybrid's median delay is 11.3\,s against 14.9\,s for the rules, and the change-point alarm lifts the detected fraction from 90\% to 95\% and moves the median to 4.8\,s; on the synthetic set, whose faults are abrupt, the curves almost coincide (8.2\,s against 9.5\,s for the rules). The change-point alarm has a price visible in Table~\ref{tab:main}: alarm time rises from 8\% to 16\% on the real systems. Figure~\ref{fig:atk} shows the true cause in the top $k$: the ML-based rankers reach it first more often than the rules on the real systems (79\% against 70\% of the detected faults), and the curves converge by $k = 2$ to $3$ near the 90\% detection ceiling, so the remaining misses are mostly faults the engine does not see (brownouts on near-idle services) rather than faults it ranks badly.
+Figure~\ref{fig:delay} shows detection delay as a cumulative distribution. On the real systems the hybrid's median delay is 11.3\,s against 14.9\,s for the rules, and the change-point alarm lifts the detected fraction from 90\% to 95\% and moves the median to 4.8\,s; on the synthetic set, whose faults are abrupt, the curves almost coincide (8.2\,s against 9.5\,s for the rules). The change-point alarm has a price visible in Table~\ref{tab:main}: alarm time rises from 8\% to 16\% on the real systems. In the top $k$ (the \acc{1} and \acc{3} columns of Table~\ref{tab:main}) the ML-based rankers reach the true cause first more often than the rules on the real systems (79\% against 70\% of the detected faults), and the rankers converge by $k = 3$ near the 90\% detection ceiling, so the remaining misses are mostly faults the engine does not see (brownouts on near-idle services) rather than faults it ranks badly.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_delay.pdf}
 \caption[Detection delay after fault onset as a cumulative distribution]{Detection delay after fault onset as a cumulative distribution (symmetric-log axis); legends give the median over detected faults. The curves plateau at each engine's detection rate.}
 \label{fig:delay}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_atk.pdf}
-\caption[Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals]{Share of faults caught with the true cause in the top $k$, with 95\% bootstrap intervals (offset for legibility), for the real systems (a) and the synthetic held-out set (b).}
-\label{fig:atk}
 \end{figure}
 
 \subsection{Ablation}
@@ -284,7 +245,7 @@ Figure~\ref{fig:dirs} reports direction accuracy on observed pairs that are true
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_dirs.pdf}
-\caption{Call directions. (a) Share of observed true-call pairs oriented correctly, wrongly, or left unresolved by the name rule and by the learned rule, with service names shown or hidden. (b) Correct share of each individual signal on the synthetic set with names hidden.}
+\caption[Call directions: name rule against learned rule]{Call directions. (a) Share of observed true-call pairs oriented correctly, wrongly, or left unresolved by the name rule and by the learned rule, with service names shown or hidden. (b) Correct share of each individual signal on the synthetic set with names hidden.}
 \label{fig:dirs}
 \end{figure}
 
@@ -294,7 +255,7 @@ The trend forecast (now a straight line through the recent deviations from what 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_early.pdf}
-\caption{Early warning. (a) Share of faults warned before the alarm, by fault class. (b) Lead time of the warnings over the alarm as a cumulative distribution.}
+\caption[Early warning by fault class and lead time]{Early warning. (a) Share of faults warned before the alarm, by fault class. (b) Lead time of the warnings over the alarm as a cumulative distribution.}
 \label{fig:early}
 \end{figure}
 
@@ -319,9 +280,9 @@ The pipeline is unsupervised, needs no GPU and runs on one core. Figure~\ref{fig
 \subsection{Case studies}
 Figure~\ref{fig:case} shows three real incidents, chosen by class before looking at the outcome. In (a) a memory leak overlaps several outages: the engine names the stopped containers first, as it should, and only a model of concurrent faults could do better. In (b) a crash loop is named correctly about 30\,s after its first kill and stays named between kills. In (c) a brownout on an almost idle service never raises an alarm, which is the open problem of Figure~\ref{fig:class}.
 
-\begin{figure}[p]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{fig_case.pdf}
+\includegraphics[width=0.86\textwidth]{fig_case.pdf}
 \caption[Three real incidents]{Three real incidents. Heat maps show the ML level of the most relevant services; the blue box is the fault, grey dashed boxes are other faults running at the same time, black squares mark container facts, the green line is the first alarm in the window (an alarm already ongoing from an earlier fault starts at the left edge), and the strip below each map shows whether the engine's top-ranked service was the true cause.}
 \label{fig:case}
 \end{figure}
@@ -331,7 +292,7 @@ Figure~\ref{fig:case} shows three real incidents, chosen by class before looking
 To show what the Detection engines page adds, the simulator was run with a slow \texttt{payment} service (CPU saturated at 97\% from second 30 of the fault run; \texttt{orders} follows at 86\% twelve seconds later), the ground-truth root cause being \texttt{payment}. The three engines were read every four seconds through the page's API after a 260-second quiet period (Table~\ref{tab:live}).
 \begin{table}[!htbp]
 \centering
-\caption{One simulated fault (slow \texttt{payment}): each engine's first suspect and its peak against its own alarm line, at three moments after the onset. The simulator reports every two seconds, so 24 readings are 48 s here (two minutes on a real host).}
+\caption[One simulated fault: each engine's first suspect over time]{One simulated fault (slow \texttt{payment}): each engine's first suspect and its peak against its own alarm line, at three moments after the onset. The simulator reports every two seconds, so 24 readings are 48 s here (two minutes on a real host).}
 \label{tab:live}
 \footnotesize
 \renewcommand{\arraystretch}{1.2}
@@ -410,7 +371,9 @@ Stop & 2 & on / off & 50 / 100 \hspace{4pt} 50 / 100 & 50 / 100 \hspace{4pt} 0 /
 \item it skips containers that exited with code 0, and a container stopped with \texttt{docker stop} exits with code 0.
 \end{itemize}
 
+\begin{sloppypar}
 \textbf{A direct test with long outages.} To give auto-restart a chance to act, \texttt{cart} and \texttt{payments} were each stopped for 5 minutes by the Fault Lab (\texttt{run/scripts/autorestart-stop-test.sh}), with the state of each container sampled every 2 seconds. Table~\ref{tab:stoptest} shows no difference: the mapper left the containers down in both modes.
+\end{sloppypar}
 
 \begin{table}[!htbp]
 \centering
@@ -473,12 +436,3 @@ Trace-based rankers \cite{yu2021microrank} & not run & Need tracing in every ser
 
 \section{Significance and Implications}
 Three practical points follow. An instrumentation-free tool can recover a usable call graph and a useful ranking, and for small teams that is the difference between having a diagnosis tool and not. Container facts are worth more than any statistical refinement: a stopped container is something one knows, and folding it into an anomaly score throws information away. And the right operating contract for an alarm is the one the operator experiences, which is why alarm time is reported beside false-alarm episodes.
-
-\section{Potential Applications}
-\begin{itemize}
-\item On-call support for small teams running Docker Compose stacks on a few hosts.
-\item Teaching and labs on cascading failure, with a blind fault injector and a recorded-run format students can replay.
-\item A first-line triage layer in front of heavier observability systems, giving a ranked suspect and a runbook.
-\item Capacity and resilience reviews using the what-if and blast-radius views.
-\item A benchmark harness for new detectors and rankers, with ground truth the detector never sees.
-\end{itemize}

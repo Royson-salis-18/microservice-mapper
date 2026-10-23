@@ -32,7 +32,7 @@ The solution has seven steps, each described in Chapter~\ref{ch:method}:
 \item \textbf{Diagnose and explain.} Classify the fault type, attach a short runbook and show the evidence behind every number.
 \end{enumerate}
 
-\figdiagram{d_architecture.pdf}{System architecture. The server reaches the target host over SSH and reads Docker and the container socket tables; nothing is installed on the host. The three detection engines share the same readings and graph; the dashboard receives updates over a WebSocket.}{fig:arch}
+\figdiagram[System architecture]{d_architecture.pdf}{System architecture. The server reaches the target host over SSH and reads Docker and the container socket tables; nothing is installed on the host. The three detection engines share the same readings and graph; the dashboard receives updates over a WebSocket.}{fig:arch}
 
 \figdiagram{d_poll_cycle.pdf}{One 5-second cycle: observation, graph update, the three engines in parallel, ranking and the push to the dashboard.}{fig:poll}
 
@@ -101,26 +101,7 @@ The architecture has five layers (Figure~\ref{fig:arch}).
 
 \textbf{Test tools.} A traffic generator with per-application workflows and profiles, and a fault injector that works on containers (kill, pause, resource limits, network detach) and writes its ledger to a file the detector never reads.
 
-Table~\ref{tab:ports} lists the network endpoints.
-
-\begin{table}[!htbp]
-\centering
-\caption{Network endpoints used by the system.}
-\label{tab:ports}
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{llll}
-\toprule
-\textbf{Port} & \textbf{Component} & \textbf{Protocol} & \textbf{Direction}\\
-\midrule
-3001 & Mapper server & HTTP and WebSocket & Dashboard to server\\
-5173 & Dashboard (Vite) & HTTP & Browser to dashboard\\
-4400 & Traffic generator & HTTP and WebSocket & Server to traffic generator\\
-22 & Target host & SSH & Server to host\\
-8080 (typical) & Target application front end & HTTP & Traffic generator to host\\
-\bottomrule
-\end{tabular}
-\end{table}
+The server listens on port 3001 (HTTP and WebSocket) and the dashboard on 5173; the traffic generator listens on 4400; the server reaches each host over SSH on port 22, and the traffic generator reaches the application's front end (typically port 8080).
 
 \section{Agent Design}
 
@@ -146,37 +127,24 @@ Sensors & Docker state and statistics, socket tables, logs, interface counters &
 \end{table}
 
 \subsection{Decision logic of the diagnosis assistant}
-The assistant runs one decision window per cycle. Its alarm rule is shown in Figure~\ref{fig:detect}; its ranking is shown in Figure~\ref{fig:rca}. An incident moves through the states in Figure~\ref{fig:states}.
+The assistant runs one decision window per cycle. Its alarm rule is shown in Figure~\ref{fig:detect} and its ranking in Figure~\ref{fig:rca}. An incident is opened as \texttt{DEGRADED} or \texttt{INCIDENT} (the latter when a service is critical), updated while the alarm holds, and resolved when it clears.
 
-\figdiagram{d_detection_flow.pdf}{The hybrid alarm rule. A container fact raises the alarm at once; the model and rule conditions must hold for two windows in a row.}{fig:detect}
-\figdiagram{d_rca_flow.pdf}{Root-cause ranking: split each deviation into own and explained parts, run the random walk, put facts first.}{fig:rca}
-\figdiagram{d_incident_states.pdf}{Incident lifecycle as implemented in the incident manager.}{fig:states}
+\begin{figure}[!htbp]
+\centering
+\begin{minipage}[b]{0.47\textwidth}\centering
+\includegraphics[width=\linewidth,height=0.52\textheight,keepaspectratio]{d_detection_flow.pdf}
+\caption[The hybrid alarm rule]{The hybrid alarm rule. A container fact raises the alarm at once; the model and rule conditions must hold for two windows in a row.}\label{fig:detect}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.47\textwidth}\centering
+\includegraphics[width=\linewidth,height=0.52\textheight,keepaspectratio]{d_rca_flow.pdf}
+\caption{Root-cause ranking: split each deviation into own and explained parts, run the random walk, put facts first.}\label{fig:rca}
+\end{minipage}
+\end{figure}
 
 \subsection{Three engines on the same readings}
 The dashboard has a switch with three positions: Rules, Hybrid and ML. Only the active engine decides the incident, but all three are computed on every cycle from the same readings and graph (Figure~\ref{fig:parallel}). This makes two things possible: switching engines does not start the learned detector from nothing, and the Detection engines page can show what each engine detected, computed and predicted at the same moment.
 
-\figdiagram{d_engines_parallel.pdf}{The three engines in parallel. The rules score, the ML engine and the fused Hybrid rule are computed on the same inputs; the switch only chooses which one decides the incident.}{fig:parallel}
-
-\subsection{Messages and data exchanged}
-\begin{table}[!htbp]
-\centering
-\caption{The main messages exchanged between components.}
-\label{tab:messages}
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Message} & \textbf{From $\rightarrow$ to} & \textbf{Content}\\
-\midrule
-Reading & Collector $\rightarrow$ MetricStore & Eight metrics per service with missing values kept as missing\\
-Connection event & Collector $\rightarrow$ TraceStore & Caller, callee, port, state, connection key\\
-Graph update & Server $\rightarrow$ dashboard & Nodes, edges, weights, targets (WebSocket)\\
-Incident update & IncidentManager $\rightarrow$ dashboard & Root cause, ranking, evidence, cascade, runbook\\
-Engine info & Server $\rightarrow$ dashboard & Mode, per-engine verdicts, configuration, offline scores\\
-Ingest payload & Standalone collector $\rightarrow$ server & Nodes, edges, metrics, connection events\\
-\bottomrule
-\end{tabularx}
-\end{table}
+\figdiagram[The three engines in parallel]{d_engines_parallel.pdf}{The three engines in parallel. The rules score, the ML engine and the fused Hybrid rule are computed on the same inputs; the switch only chooses which one decides the incident.}{fig:parallel}
 
 \section{Functional Components}
 Table~\ref{tab:components} lists the main components with their responsibility and location in the repository.
@@ -228,14 +196,10 @@ Nothing is installed on the target & The tool watches over one SSH connection wi
 Observed beats declared & A \texttt{depends\_on} line is a claim; an open socket is a fact. Both are kept and never treated as equal: each edge carries a confidence from its evidence & Edge confidence (Table~\ref{tab:conf})\\
 Unmeasured is missing, never zero & Zero means ``measured, and it was zero''. A made-up zero looks like a real one on screen, and ``idle'' and ``not measured'' lead to opposite decisions & Metrics, edge activity, health factors; the 2D cards show a dash\\
 Every number can be checked by hand & Every score is arithmetic over named inputs, and its parts are published beside it & Evidence breakdown on the incident page\\
-Call things what they are & A field's name and label say what was measured: ``relative activity index'', not ``requests per minute'', when it counts socket sightings & Telemetry and dependency pages\\
-One definition, used everywhere & Two places that need the same idea share one definition: service identifiers are \texttt{project:name} everywhere; one function decides how a link looks in 2D, 3D and the inspector & Link thresholds, edge appearance\\
 An arrow means ``calls'' & An edge $A \to B$ means $A$ calls $B$, so a failure at $B$ hits $A$: failure moves against the arrow. Getting it backwards flips everything downstream & Orientation by listening port\\
 Compare like with like & Degree, traffic share and criticality are computed inside one project; traffic shares are split between functional and telemetry calls; every model is trained on one service's own history & Per-service baselines\\
 Rules and models stay separate & Incidents come from the detection engines; findings from the optional learned models are kept apart, so models are never graded against their own output & Findings page\\
 Be light on the target & Each loop waits for itself (the next sweep starts 5\,s after the previous one finished); one read per container per sweep; full rediscovery every 180\,s; going deeper needs per-target consent & Collector and discovery\\
-The system checks itself & Every relationship between published numbers that was seen broken in live output became a consistency rule & Consistency checks and tests\\
-Calm by default & Orange and red appear only when something is slow, erroring or down, never just because a link is busy & Visual language\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -252,11 +216,7 @@ Calm by default & Orange and red appear only when something is slow, erroring or
 \midrule
 SSH, Docker CLI and \texttt{/proc} & An agent per host, eBPF, a service mesh & Needs nothing installed; works on any Docker host that can be reached over SSH\\
 Direction from the listening port & Trusting the scanned container as the source & Every connection is seen from both ends; the scan's own view produced a reversed duplicate of every link\\
-Distinct connection keys per sweep & Counting socket rows & A long-lived connection is seen in every sweep; rows overcount it by the number of sweeps\\
 Byte counters from \texttt{/proc/<pid>/net/dev} & \texttt{docker stats} network figures & Docker rounds to three significant figures, so a 9.87\,MB counter moves in 10\,kB steps\\
-In-memory graph with a JSON snapshot & A database & Tens of nodes per target; recomputing every 5\,s is cheaper than querying\\
-WebSocket push, coalesced to at most one frame per 3\,s & Client polling & One fan-out per change; bursts from several targets merge into one frame\\
-Python ML as a separate process talking through files & ML inside Node & scikit-learn lives in Python; the server reads one JSON file, cached on its modification time\\
 Additive ranking factors & A trained classifier & There are no labelled incidents to train on, and additive factors can be explained\\
 Noisy-OR cascade & Plain reachability & Reachability treated any chain as total failure\\
 Islands layout for the 3D scene & A grid, a ``server room'', a building & Sections read at a glance; a district per project; the room and building versions were tried and rejected\\

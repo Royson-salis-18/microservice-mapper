@@ -47,28 +47,7 @@ Cost & Milliseconds per decision window on one core\\
 \paragraph{Two operating contracts.} An operator can budget false-alarm \emph{episodes} per fault-free hour, but one unbroken alarm counts as a single episode, so an engine can meet an episode budget while alarming almost continuously. We therefore also report \emph{alarm time}. An earlier version of our own detector had a low episode rate and an alarm time of 86\% on the real systems; the refinements of Section~\ref{sec:forest} bring it to 5\%.
 
 \section{Tools, Equipment and Resources}
-\begin{table}[!htbp]
-\centering
-\caption{Tools, equipment and resources.}
-\label{tab:tools}
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Item} & \textbf{Detail}\\
-\midrule
-Operator machine & Apple Mac mini running the server and the dashboard; Node.js 22\\
-Target hosts & AWS EC2 \texttt{c7i-flex.large} instances (2 vCPUs, 4 GiB) in \texttt{ap-south-1}, Ubuntu, Docker, Docker Compose\\
-Server stack & TypeScript, Node.js, Express~5, \texttt{ws} (WebSocket), \texttt{ssh2}\\
-Dashboard stack & React~19, Vite~8, TypeScript, \texttt{@xyflow/react} (2D graph), Three.js with react-three-fiber (3D), Recharts\\
-Optional ML sidecar & Python~3 with scikit-learn (Isolation Forest, LOF, one-class SVM) and a z-score baseline\\
-Applications under test & ShopFlow (13 services), LedgerLine (12 services), Sock Shop, a DeathStarBench social network (27 containers), the OpenTelemetry demo\\
-Load and faults & \texttt{traffic-gen} (workflows and profiles), a blind fault injector (kill, pause, cgroup limits, network detach)\\
-Analysis and typesetting & Python with matplotlib for figures; \LaTeX\ and Mermaid for this report\\
-Test tooling & Node's built-in test runner; 339 tests in 19 suites\\
-\bottomrule
-\end{tabularx}
-\end{table}
+The server and the dashboard ran on an Apple Mac mini with Node.js 22. The target hosts were AWS EC2 \texttt{c7i-flex.large} instances (2 vCPUs, 4\,GiB) in \texttt{ap-south-1} running Ubuntu, Docker and Docker Compose; the live recordings of Section~\ref{sec:livedesign} ran both benches in Docker on one Linux machine. The applications under test were ShopFlow (13 services) and LedgerLine (12 services), with Sock Shop, a DeathStarBench social network and the OpenTelemetry demo used during development. Load came from \texttt{traffic-gen} and the benches' own generators, faults from the blind Fault Lab; figures were drawn with matplotlib and this report typeset with \LaTeX\ and Mermaid. The software stack is listed in Table~\ref{tab:env}.
 
 \section{Experimental and Implementation Procedure}
 \begin{enumerate}
@@ -261,6 +240,7 @@ Fusion and sorting & $O(N \log N)$ & Ranking of suspects\\
 \end{table}
 
 \section{Evaluation Design}
+\label{sec:evaldesign}
 
 \subsection{Systems and traffic}
 Two containerised applications were built for the study. \emph{ShopFlow} is a 13-service retail checkout system (HTTP fan-out, two Postgres instances, two Redis caches, a NATS consumer). \emph{LedgerLine} is a 12-service retail-banking transfer system (a saga orchestrator, a double-entry ledger, a third-party FX provider, a batch worker). Both run for 217 minutes under open-loop traffic with a daily wave, bursts and flash crowds. Each has its own EC2 host, Fault Lab and Grafana (Section~\ref{sec:benches}).

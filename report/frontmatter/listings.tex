@@ -1,10 +1,4 @@
-\begingroup
-\makeatletter
-\renewcommand{\listalgorithmname}{LIST OF ALGORITHMS}
-\renewcommand{\lstlistlistingname}{LIST OF LISTINGS}
-{\small\listofalgorithms}
-\vspace{14pt}
-\let\clearpage\relax\let\newpage\relax\let\cleardoublepage\relax
-{\small\lstlistoflistings}
-\makeatother
-\endgroup
+{\renewcommand{\markboth}[2]{}%
+\borderedlist{loa}{LIST OF ALGORITHMS}{Algorithm}
+\vspace{10pt}
+\borderedlist{lol}{LIST OF LISTINGS}{Listing}}
