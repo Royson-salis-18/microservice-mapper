@@ -1,0 +1,5751 @@
+{
+  "generatedAt": "2026-10-23T02:19:16.748Z",
+  "sets": {
+    "real": [
+      {
+        "name": "runC/ledgerline",
+        "faults": 31,
+        "moments": 1300
+      },
+      {
+        "name": "runC/shopflow",
+        "faults": 31,
+        "moments": 1300
+      }
+    ],
+    "live": [
+      {
+        "name": "ledgerline-off/ledgerline",
+        "faults": 21,
+        "moments": 235
+      },
+      {
+        "name": "ledgerline-on/ledgerline",
+        "faults": 21,
+        "moments": 235
+      },
+      {
+        "name": "shopflow-off/shopflow",
+        "faults": 21,
+        "moments": 235
+      },
+      {
+        "name": "shopflow-on/shopflow",
+        "faults": 21,
+        "moments": 235
+      }
+    ],
+    "workload": [
+      {
+        "name": "ledgerline/ledgerline",
+        "faults": 0,
+        "moments": 371
+      },
+      {
+        "name": "shopflow/shopflow",
+        "faults": 0,
+        "moments": 371
+      }
+    ],
+    "synthetic": [
+      {
+        "name": "c01/synth-shopflow",
+        "faults": 11,
+        "moments": 720
+      },
+      {
+        "name": "c02/synth-ledgerline",
+        "faults": 10,
+        "moments": 720
+      },
+      {
+        "name": "c03/synth-random1",
+        "faults": 11,
+        "moments": 720
+      },
+      {
+        "name": "c04/synth-random2",
+        "faults": 11,
+        "moments": 720
+      },
+      {
+        "name": "c05/synth-random3",
+        "faults": 10,
+        "moments": 720
+      },
+      {
+        "name": "c06/synth-random4",
+        "faults": 12,
+        "moments": 720
+      },
+      {
+        "name": "c07/synth-shopflow",
+        "faults": 9,
+        "moments": 720
+      },
+      {
+        "name": "c08/synth-ledgerline",
+        "faults": 9,
+        "moments": 720
+      },
+      {
+        "name": "c09/synth-random1",
+        "faults": 12,
+        "moments": 720
+      },
+      {
+        "name": "c10/synth-random2",
+        "faults": 8,
+        "moments": 720
+      },
+      {
+        "name": "c11/synth-random3",
+        "faults": 12,
+        "moments": 720
+      },
+      {
+        "name": "c12/synth-random4",
+        "faults": 10,
+        "moments": 720
+      }
+    ],
+    "steps": [
+      {
+        "name": "ledgerline/ledgerline",
+        "faults": 0,
+        "moments": 431
+      },
+      {
+        "name": "shopflow/shopflow",
+        "faults": 0,
+        "moments": 431
+      }
+    ]
+  },
+  "variants": [
+    {
+      "name": "rules (z-score)",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.6964285714285714,
+        "top1N": 39,
+        "caughtAndNamed": 0.6290322580645161,
+        "falseAlarmsPerHour": 9.225795580715781,
+        "falseAlarms": 12,
+        "alarmShare": 0.08556498280948112,
+        "medianDelaySec": 15.058
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9642857142857143,
+        "detectedN": 81,
+        "top1OfDetected": 0.4691358024691358,
+        "top1N": 38,
+        "caughtAndNamed": 0.4523809523809524,
+        "falseAlarmsPerHour": 16.34246544249495,
+        "falseAlarms": 2,
+        "alarmShare": 0.11363007013641419,
+        "medianDelaySec": 7.347
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 9.246844514309492,
+        "falseAlarms": 8,
+        "alarmShare": 0.11576021904747226,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 7.749541283663079,
+        "falseAlarms": 8,
+        "alarmShare": 0.34908185426072735,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.832,
+        "detectedN": 104,
+        "top1OfDetected": 0.9038461538461539,
+        "top1N": 94,
+        "caughtAndNamed": 0.752,
+        "falseAlarmsPerHour": 2.583494341705769,
+        "falseAlarms": 13,
+        "alarmShare": 0.010764559757107372,
+        "medianDelaySec": 11.967177978515625
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 24.831
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 12.88
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 4,
+            "delay": 18.012
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 9,
+            "delay": 17.295
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 22,
+            "named": 0,
+            "delay": 15.151
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 17,
+            "delay": 6.185
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 18,
+            "delay": 11.786
+          },
+          "stop": {
+            "n": 8,
+            "detected": 7,
+            "named": 3,
+            "delay": 2.476
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 24,
+            "delay": 21.105247802734375
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 7.71325439453125
+          },
+          "flap": {
+            "n": 9,
+            "detected": 1,
+            "named": 1,
+            "delay": 46.260759765625
+          },
+          "latency": {
+            "n": 21,
+            "detected": 12,
+            "named": 5,
+            "delay": 33.86856591796875
+          },
+          "memory": {
+            "n": 20,
+            "detected": 17,
+            "named": 16,
+            "delay": 60.24277392578125
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 6,
+            "named": 6,
+            "delay": 12.829871337890625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "forest (old default)",
+      "real": {
+        "faults": 62,
+        "detected": 0.8709677419354839,
+        "detectedN": 54,
+        "top1OfDetected": 0.7962962962962963,
+        "top1N": 43,
+        "caughtAndNamed": 0.6935483870967742,
+        "falseAlarmsPerHour": 4.6128977903578905,
+        "falseAlarms": 6,
+        "alarmShare": 0.04599827913285209,
+        "medianDelaySec": 12.063
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.46987951807228917,
+        "top1N": 39,
+        "caughtAndNamed": 0.4642857142857143,
+        "falseAlarmsPerHour": 40.856163606237374,
+        "falseAlarms": 5,
+        "alarmShare": 0.09092085253194726,
+        "medianDelaySec": 7.382
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 27.740533542928475,
+        "falseAlarms": 24,
+        "alarmShare": 0.23474527511930998,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 21.311238530073467,
+        "falseAlarms": 22,
+        "alarmShare": 0.5188995974274752,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.872,
+        "detectedN": 109,
+        "top1OfDetected": 0.8715596330275229,
+        "top1N": 95,
+        "caughtAndNamed": 0.76,
+        "falseAlarmsPerHour": 0.19873033397736684,
+        "falseAlarms": 1,
+        "alarmShare": 0.0002760143527463428,
+        "medianDelaySec": 17.49134716796875
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 6,
+            "named": 0,
+            "delay": 4.725
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 12.063
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 7.222
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.382
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 13.92
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 15.151
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 12,
+            "delay": 7.295
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 20,
+            "delay": 9.093
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 7,
+            "delay": 2.647
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 24,
+            "named": 20,
+            "delay": 34.4439638671875
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 7.320732421875
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 9,
+            "named": 3,
+            "delay": 55.11890356445313
+          },
+          "memory": {
+            "n": 20,
+            "detected": 17,
+            "named": 15,
+            "delay": 70.39635864257812
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "forest ensemble (4 detectors)",
+      "real": {
+        "faults": 62,
+        "detected": 1,
+        "detectedN": 62,
+        "top1OfDetected": 0.7096774193548387,
+        "top1N": 44,
+        "caughtAndNamed": 0.7096774193548387,
+        "falseAlarmsPerHour": 19.989223758217523,
+        "falseAlarms": 26,
+        "alarmShare": 0.6342303070374667,
+        "medianDelaySec": 3.906
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.4457831325301205,
+        "top1N": 37,
+        "caughtAndNamed": 0.44047619047619047,
+        "falseAlarmsPerHour": 81.71232721247475,
+        "falseAlarms": 10,
+        "alarmShare": 0.19318609982522641,
+        "medianDelaySec": 5.785
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 49.70178926441351,
+        "falseAlarms": 43,
+        "alarmShare": 0.47267782195714597,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 13.561697246410388,
+        "falseAlarms": 14,
+        "alarmShare": 0.8760264442333053,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.976,
+        "detectedN": 122,
+        "top1OfDetected": 0.7950819672131147,
+        "top1N": 97,
+        "caughtAndNamed": 0.776,
+        "falseAlarmsPerHour": 2.583494341705769,
+        "falseAlarms": 13,
+        "alarmShare": 0.36792713221087503,
+        "medianDelaySec": 7.206835205078125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 14,
+            "named": 2,
+            "delay": 9.753
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 2.911
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 4.747
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 2.248
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 0.362
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.404
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 8.404
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 10,
+            "delay": 6.116
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 19,
+            "delay": 4.314
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 8,
+            "delay": 2.493
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 18,
+            "delay": 7.71289599609375
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 12,
+            "delay": 2.6980166015625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 17.949976318359376
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 7.446531494140625
+          },
+          "latency": {
+            "n": 21,
+            "detected": 18,
+            "named": 9,
+            "delay": 23.86856591796875
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 16,
+            "delay": 17.941423583984374
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 5.7824287109375
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 8.911595458984374
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "knn",
+      "real": {
+        "faults": 62,
+        "detected": 1,
+        "detectedN": 62,
+        "top1OfDetected": 0.6935483870967742,
+        "top1N": 43,
+        "caughtAndNamed": 0.6935483870967742,
+        "falseAlarmsPerHour": 13.83869337107367,
+        "falseAlarms": 18,
+        "alarmShare": 0.7967871166890157,
+        "medianDelaySec": 4.109
+      },
+      "live": {
+        "faults": 84,
+        "detected": 1,
+        "detectedN": 84,
+        "top1OfDetected": 0.44047619047619047,
+        "top1N": 37,
+        "caughtAndNamed": 0.44047619047619047,
+        "falseAlarmsPerHour": 57.19862904873233,
+        "falseAlarms": 7,
+        "alarmShare": 0.2386385818371655,
+        "medianDelaySec": 4.622
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 25.428822414351103,
+        "falseAlarms": 22,
+        "alarmShare": 0.7347443119063397,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 4.8434633022894245,
+        "falseAlarms": 5,
+        "alarmShare": 0.9649674990158351,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 1,
+        "detectedN": 125,
+        "top1OfDetected": 0.72,
+        "top1N": 90,
+        "caughtAndNamed": 0.72,
+        "falseAlarmsPerHour": 5.166988683411538,
+        "falseAlarms": 26,
+        "alarmShare": 0.5376759591498759,
+        "medianDelaySec": 4.251629150390625
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 14,
+            "named": 4,
+            "delay": 4.733
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 13,
+            "delay": 3.293
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 4.747
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 2,
+            "delay": 2.993
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 4.829
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.404
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 24,
+            "named": 0,
+            "delay": 10.755
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 11,
+            "delay": 6.116
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 18,
+            "delay": 6.779
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 8,
+            "delay": 2.592
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 15,
+            "delay": 4.4439638671875
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 12,
+            "delay": 2.42668701171875
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 4.251629150390625
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 2.586878173828125
+          },
+          "latency": {
+            "n": 21,
+            "detected": 21,
+            "named": 8,
+            "delay": 15.527747314453125
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 13,
+            "delay": 6.88045556640625
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 3.879837890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 6.85192041015625
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 3.26317041015625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "mahalanobis",
+      "real": {
+        "faults": 62,
+        "detected": 0.9838709677419355,
+        "detectedN": 61,
+        "top1OfDetected": 0.7213114754098361,
+        "top1N": 44,
+        "caughtAndNamed": 0.7096774193548387,
+        "falseAlarmsPerHour": 23.83330525018243,
+        "falseAlarms": 31,
+        "alarmShare": 0.5326288840439225,
+        "medianDelaySec": 4.404
+      },
+      "live": {
+        "faults": 84,
+        "detected": 1,
+        "detectedN": 84,
+        "top1OfDetected": 0.4523809523809524,
+        "top1N": 38,
+        "caughtAndNamed": 0.4523809523809524,
+        "falseAlarmsPerHour": 65.3698617699798,
+        "falseAlarms": 8,
+        "alarmShare": 0.17045645413895635,
+        "medianDelaySec": 6.116
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 52.01350039299089,
+        "falseAlarms": 45,
+        "alarmShare": 0.3762236015431956,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 16.467775227784042,
+        "falseAlarms": 17,
+        "alarmShare": 0.7574485065853611,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.992,
+        "detectedN": 124,
+        "top1OfDetected": 0.8467741935483871,
+        "top1N": 105,
+        "caughtAndNamed": 0.84,
+        "falseAlarmsPerHour": 2.583494341705769,
+        "falseAlarms": 13,
+        "alarmShare": 0.2453767595914988,
+        "medianDelaySec": 7.829871337890625
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 13,
+            "named": 2,
+            "delay": 9.115
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 14,
+            "delay": 3.293
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 10.051
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 2.993
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 0.362
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 4.707
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 24,
+            "named": 0,
+            "delay": 8.404
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 12,
+            "delay": 6.185
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 19,
+            "delay": 7.347
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 7,
+            "delay": 2.493
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 20,
+            "delay": 14.4439638671875
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 12,
+            "delay": 5.74094677734375
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 17.949976318359376
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 17.49134716796875
+          },
+          "latency": {
+            "n": 21,
+            "detected": 20,
+            "named": 12,
+            "delay": 25.670383544921876
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 18,
+            "delay": 22.38480029296875
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 11,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 8.911595458984374
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "hbos",
+      "real": {
+        "faults": 62,
+        "detected": 1,
+        "detectedN": 62,
+        "top1OfDetected": 0.6935483870967742,
+        "top1N": 43,
+        "caughtAndNamed": 0.6935483870967742,
+        "falseAlarmsPerHour": 34.59673342768418,
+        "falseAlarms": 45,
+        "alarmShare": 0.43317608904430366,
+        "medianDelaySec": 4.261
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.4457831325301205,
+        "top1N": 37,
+        "caughtAndNamed": 0.44047619047619047,
+        "falseAlarmsPerHour": 57.19862904873233,
+        "falseAlarms": 7,
+        "alarmShare": 0.2272782985677645,
+        "medianDelaySec": 7.478
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 21.961255721485042,
+        "falseAlarms": 19,
+        "alarmShare": 0.7508212995926251,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 18.40516054869981,
+        "falseAlarms": 19,
+        "alarmShare": 0.8234299308272717,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.952,
+        "detectedN": 119,
+        "top1OfDetected": 0.8067226890756303,
+        "top1N": 96,
+        "caughtAndNamed": 0.768,
+        "falseAlarmsPerHour": 1.391112337841568,
+        "falseAlarms": 7,
+        "alarmShare": 0.10654154016008832,
+        "medianDelaySec": 9.6826396484375
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 14,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 3.906
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 10.051
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 2.248
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 4.829
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.707
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 24,
+            "named": 0,
+            "delay": 15.151
+          },
+          "crash": {
+            "n": 24,
+            "detected": 23,
+            "named": 11,
+            "delay": 7.295
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 18,
+            "delay": 9.093
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 8,
+            "delay": 7.478
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 19,
+            "delay": 24.925256591796874
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 6.880531982421875
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 16,
+            "named": 4,
+            "delay": 44.83500756835937
+          },
+          "memory": {
+            "n": 20,
+            "detected": 19,
+            "named": 16,
+            "delay": 47.332078369140625
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.517448486328125
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 8.911595458984374
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "control chart, MAD spread",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.8035714285714286,
+        "top1N": 45,
+        "caughtAndNamed": 0.7258064516129032,
+        "falseAlarmsPerHour": 9.994611879108762,
+        "falseAlarms": 13,
+        "alarmShare": 0.1411877741977989,
+        "medianDelaySec": 10.542
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.4457831325301205,
+        "top1N": 37,
+        "caughtAndNamed": 0.44047619047619047,
+        "falseAlarmsPerHour": 24.513698163742426,
+        "falseAlarms": 3,
+        "alarmShare": 0.06817985791134212,
+        "medianDelaySec": 6.779
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 17.337833464330295,
+        "falseAlarms": 15,
+        "alarmShare": 0.12540519158948119,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 12.593004585952503,
+        "falseAlarms": 13,
+        "alarmShare": 0.3059672275128089,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.904,
+        "detectedN": 113,
+        "top1OfDetected": 0.8761061946902655,
+        "top1N": 99,
+        "caughtAndNamed": 0.792,
+        "falseAlarmsPerHour": 0.5961910019321005,
+        "falseAlarms": 3,
+        "alarmShare": 0.004692243996687828,
+        "medianDelaySec": 17.492477783203125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 2,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 12.063
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 12.264
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 10.078
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 13.87
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 7.529
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 13,
+            "delay": 7.382
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 18,
+            "delay": 5.297
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 6,
+            "delay": 2.647
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 22,
+            "delay": 27.71738330078125
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 9,
+            "named": 2,
+            "delay": 55.11890356445313
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 18,
+            "delay": 60.15001123046875
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "control chart, tail spread",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.7857142857142857,
+        "top1N": 44,
+        "caughtAndNamed": 0.7096774193548387,
+        "falseAlarmsPerHour": 2.3064488951789452,
+        "falseAlarms": 3,
+        "alarmShare": 0.05990061340862607,
+        "medianDelaySec": 13.87
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.46987951807228917,
+        "top1N": 39,
+        "caughtAndNamed": 0.4642857142857143,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": 0,
+        "medianDelaySec": 7.462
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 1.1558555642886865,
+        "falseAlarms": 1,
+        "alarmShare": 0.0016069603053513544,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 1.9373853209157696,
+        "falseAlarms": 2,
+        "alarmShare": 0.0026932346773674916,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.88,
+        "detectedN": 110,
+        "top1OfDetected": 0.8909090909090909,
+        "top1N": 98,
+        "caughtAndNamed": 0.784,
+        "falseAlarmsPerHour": 0.19873033397736684,
+        "falseAlarms": 1,
+        "alarmShare": 0.001656086116478057,
+        "medianDelaySec": 17.492477783203125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.544
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 16.932
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 13.92
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 7.529
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 13,
+            "delay": 7.947
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 20,
+            "delay": 7.347
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 6,
+            "delay": 12.66
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 24,
+            "named": 22,
+            "delay": 29.367921142578126
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 8,
+            "named": 1,
+            "delay": 55.11890356445313
+          },
+          "memory": {
+            "n": 20,
+            "detected": 19,
+            "named": 18,
+            "delay": 58.00646484375
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "subspace residual, 1 component",
+      "real": {
+        "faults": 62,
+        "detected": 0.8870967741935484,
+        "detectedN": 55,
+        "top1OfDetected": 0.7636363636363637,
+        "top1N": 42,
+        "caughtAndNamed": 0.6774193548387096,
+        "falseAlarmsPerHour": 3.075265193571927,
+        "falseAlarms": 4,
+        "alarmShare": 0.028877380847889055,
+        "medianDelaySec": 13.87
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9761904761904762,
+        "detectedN": 82,
+        "top1OfDetected": 0.5121951219512195,
+        "top1N": 42,
+        "caughtAndNamed": 0.5,
+        "falseAlarmsPerHour": 8.171232721247476,
+        "falseAlarms": 1,
+        "alarmShare": 0.011367092630002044,
+        "medianDelaySec": 5.788
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 6.935133385732119,
+        "falseAlarms": 6,
+        "alarmShare": 0.012857929939741395,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 7.749541283663079,
+        "falseAlarms": 8,
+        "alarmShare": 0.025603623341080184,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.92,
+        "detectedN": 115,
+        "top1OfDetected": 0.8434782608695652,
+        "top1N": 97,
+        "caughtAndNamed": 0.776,
+        "falseAlarmsPerHour": 0.39746066795473367,
+        "falseAlarms": 2,
+        "alarmShare": 0.0328457079768148,
+        "medianDelaySec": 12.492477783203125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 14,
+            "delay": 12.063
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 5,
+            "named": 3,
+            "delay": 12.264
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 13.92
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 7.529
+          },
+          "crash": {
+            "n": 24,
+            "detected": 23,
+            "named": 14,
+            "delay": 4.169
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 20,
+            "delay": 7.347
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 8,
+            "delay": 12.488
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 22,
+            "delay": 16.68453173828125
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 14,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 17.49134716796875
+          },
+          "latency": {
+            "n": 21,
+            "detected": 11,
+            "named": 2,
+            "delay": 35.670383544921876
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 17,
+            "delay": 37.58747021484375
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 8.911595458984374
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "subspace residual, 2 components",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.75,
+        "top1N": 42,
+        "caughtAndNamed": 0.6774193548387096,
+        "falseAlarmsPerHour": 3.8440814919649084,
+        "falseAlarms": 5,
+        "alarmShare": 0.034224925323378015,
+        "medianDelaySec": 13.92
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.5060240963855421,
+        "top1N": 42,
+        "caughtAndNamed": 0.5,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": 0,
+        "medianDelaySec": 7.241
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 6.935133385732119,
+        "falseAlarms": 6,
+        "alarmShare": 0.012857608868751317,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 10.655619265036734,
+        "falseAlarms": 11,
+        "alarmShare": 0.041779445364254,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.92,
+        "detectedN": 115,
+        "top1OfDetected": 0.8347826086956521,
+        "top1N": 96,
+        "caughtAndNamed": 0.768,
+        "falseAlarmsPerHour": 0.19873033397736684,
+        "falseAlarms": 1,
+        "alarmShare": 0.04250621032293679,
+        "medianDelaySec": 9.6826396484375
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 13,
+            "delay": 13.554
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 4,
+            "delay": 16.932
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 13.92
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 24,
+            "named": 0,
+            "delay": 10.755
+          },
+          "crash": {
+            "n": 24,
+            "detected": 23,
+            "named": 14,
+            "delay": 4.671
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 20,
+            "delay": 7.347
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 8,
+            "delay": 12.488
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 22,
+            "delay": 16.46013037109375
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 14,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 17.49134716796875
+          },
+          "latency": {
+            "n": 21,
+            "detected": 11,
+            "named": 3,
+            "delay": 35.670383544921876
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 15,
+            "delay": 33.00646484375
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 8.911595458984374
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "load factor, MAD spread",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.7857142857142857,
+        "top1N": 44,
+        "caughtAndNamed": 0.7096774193548387,
+        "falseAlarmsPerHour": 3.8440814919649084,
+        "falseAlarms": 5,
+        "alarmShare": 0.12193789544653597,
+        "medianDelaySec": 10.542
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.43373493975903615,
+        "top1N": 36,
+        "caughtAndNamed": 0.42857142857142855,
+        "falseAlarmsPerHour": 16.34246544249495,
+        "falseAlarms": 2,
+        "alarmShare": 0.04545702158567311,
+        "medianDelaySec": 7.295
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 15.026122335752923,
+        "falseAlarms": 13,
+        "alarmShare": 0.09968419457415713,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 7.749541283663079,
+        "falseAlarms": 8,
+        "alarmShare": 0.057971950427691266,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.904,
+        "detectedN": 113,
+        "top1OfDetected": 0.8761061946902655,
+        "top1N": 99,
+        "caughtAndNamed": 0.792,
+        "falseAlarmsPerHour": 0.5961910019321005,
+        "falseAlarms": 3,
+        "alarmShare": 0.004692243996687828,
+        "medianDelaySec": 17.492477783203125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.544
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 12.264
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 13.87
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 8.404
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 13,
+            "delay": 7.382
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 17,
+            "delay": 6.779
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 6,
+            "delay": 7.499
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 25,
+            "named": 22,
+            "delay": 27.71738330078125
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 9,
+            "named": 2,
+            "delay": 55.11890356445313
+          },
+          "memory": {
+            "n": 20,
+            "detected": 20,
+            "named": 18,
+            "delay": 60.15001123046875
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    },
+    {
+      "name": "load factor, tail spread",
+      "real": {
+        "faults": 62,
+        "detected": 0.9032258064516129,
+        "detectedN": 56,
+        "top1OfDetected": 0.7857142857142857,
+        "top1N": 44,
+        "caughtAndNamed": 0.7096774193548387,
+        "falseAlarmsPerHour": 2.3064488951789452,
+        "falseAlarms": 3,
+        "alarmShare": 0.05990061340862607,
+        "medianDelaySec": 12.063
+      },
+      "live": {
+        "faults": 84,
+        "detected": 0.9880952380952381,
+        "detectedN": 83,
+        "top1OfDetected": 0.4819277108433735,
+        "top1N": 40,
+        "caughtAndNamed": 0.47619047619047616,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": 0,
+        "medianDelaySec": 7.382
+      },
+      "workload": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 0,
+        "falseAlarms": 0,
+        "alarmShare": 0,
+        "medianDelaySec": null
+      },
+      "steps": {
+        "faults": 0,
+        "detected": 0,
+        "detectedN": 0,
+        "top1OfDetected": 0,
+        "top1N": 0,
+        "caughtAndNamed": 0,
+        "falseAlarmsPerHour": 0.9686926604578848,
+        "falseAlarms": 1,
+        "alarmShare": 0.00134648279803646,
+        "medianDelaySec": null
+      },
+      "synthetic": {
+        "faults": 125,
+        "detected": 0.88,
+        "detectedN": 110,
+        "top1OfDetected": 0.8909090909090909,
+        "top1N": 98,
+        "caughtAndNamed": 0.784,
+        "falseAlarmsPerHour": 0.19873033397736684,
+        "falseAlarms": 1,
+        "alarmShare": 0.001656086116478057,
+        "medianDelaySec": 17.492477783203125
+      },
+      "classes": {
+        "real": {
+          "brownout": {
+            "n": 14,
+            "detected": 8,
+            "named": 1,
+            "delay": 4.984
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 4.544
+          },
+          "crash-loop": {
+            "n": 4,
+            "detected": 4,
+            "named": 3,
+            "delay": 16.709
+          },
+          "flap": {
+            "n": 2,
+            "detected": 2,
+            "named": 2,
+            "delay": 10.542
+          },
+          "memory": {
+            "n": 6,
+            "detected": 6,
+            "named": 3,
+            "delay": 16.932
+          },
+          "pause": {
+            "n": 4,
+            "detected": 4,
+            "named": 4,
+            "delay": 15.384
+          },
+          "stop": {
+            "n": 16,
+            "detected": 16,
+            "named": 16,
+            "delay": 13.87
+          }
+        },
+        "live": {
+          "brownout": {
+            "n": 24,
+            "detected": 23,
+            "named": 0,
+            "delay": 8.404
+          },
+          "crash": {
+            "n": 24,
+            "detected": 24,
+            "named": 14,
+            "delay": 7.382
+          },
+          "pause": {
+            "n": 28,
+            "detected": 28,
+            "named": 20,
+            "delay": 7.462
+          },
+          "stop": {
+            "n": 8,
+            "detected": 8,
+            "named": 6,
+            "delay": 12.488
+          }
+        },
+        "workload": {},
+        "synthetic": {
+          "brownout": {
+            "n": 25,
+            "detected": 24,
+            "named": 22,
+            "delay": 29.367921142578126
+          },
+          "crash": {
+            "n": 16,
+            "detected": 16,
+            "named": 15,
+            "delay": 7.058633056640625
+          },
+          "crash-loop": {
+            "n": 6,
+            "detected": 6,
+            "named": 6,
+            "delay": 19.251629150390624
+          },
+          "flap": {
+            "n": 9,
+            "detected": 9,
+            "named": 9,
+            "delay": 18.74984130859375
+          },
+          "latency": {
+            "n": 21,
+            "detected": 8,
+            "named": 1,
+            "delay": 55.11890356445313
+          },
+          "memory": {
+            "n": 20,
+            "detected": 19,
+            "named": 18,
+            "delay": 58.00646484375
+          },
+          "partition": {
+            "n": 11,
+            "detected": 11,
+            "named": 10,
+            "delay": 6.761777587890625
+          },
+          "pause": {
+            "n": 10,
+            "detected": 10,
+            "named": 10,
+            "delay": 9.4562109375
+          },
+          "stop": {
+            "n": 7,
+            "detected": 7,
+            "named": 7,
+            "delay": 6.55361181640625
+          }
+        },
+        "steps": {}
+      }
+    }
+  ],
+  "sweeps": {
+    "mildDriftAfter": [
+      {
+        "value": 24,
+        "name": "mildDriftAfter 24",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 48,
+        "name": "mildDriftAfter 48",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 3.075265193571927,
+          "falseAlarms": 4,
+          "alarmShare": 0.12835729797803447,
+          "medianDelaySec": 10.542
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.888,
+          "detectedN": 111,
+          "top1OfDetected": 0.8828828828828829,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.008280430582390284,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 18,
+              "delay": 60.15001123046875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 72,
+        "name": "mildDriftAfter 72",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 3.075265193571927,
+          "falseAlarms": 4,
+          "alarmShare": 0.12835729797803447,
+          "medianDelaySec": 10.517
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.896,
+          "detectedN": 112,
+          "top1OfDetected": 0.875,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.041678167264697766,
+          "medianDelaySec": 9.77967236328125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.247
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 9,
+              "named": 1,
+              "delay": 53.68347119140625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 120,
+        "name": "mildDriftAfter 120",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 3.075265193571927,
+          "falseAlarms": 4,
+          "alarmShare": 0.12835729797803447,
+          "medianDelaySec": 10.517
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.896,
+          "detectedN": 112,
+          "top1OfDetected": 0.8660714285714286,
+          "top1N": 97,
+          "caughtAndNamed": 0.776,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.041678167264697766,
+          "medianDelaySec": 9.77967236328125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.247
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 9,
+              "named": 1,
+              "delay": 53.68347119140625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 17,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 240,
+        "name": "mildDriftAfter 240",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 3.075265193571927,
+          "falseAlarms": 4,
+          "alarmShare": 0.12835729797803447,
+          "medianDelaySec": 10.517
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.896,
+          "detectedN": 112,
+          "top1OfDetected": 0.8660714285714286,
+          "top1N": 97,
+          "caughtAndNamed": 0.776,
+          "falseAlarmsPerHour": 0.39746066795473367,
+          "falseAlarms": 2,
+          "alarmShare": 0.04195418161744411,
+          "medianDelaySec": 9.77967236328125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.247
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 9,
+              "named": 1,
+              "delay": 53.68347119140625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 17,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      }
+    ],
+    "zLine": [
+      {
+        "value": 2,
+        "name": "zLine 2",
+        "real": {
+          "faults": 62,
+          "detected": 0.9354838709677419,
+          "detectedN": 58,
+          "top1OfDetected": 0.7586206896551724,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 8.456979282322798,
+          "falseAlarms": 11,
+          "alarmShare": 0.27167960520428835,
+          "medianDelaySec": 4.984
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9761904761904762,
+          "detectedN": 82,
+          "top1OfDetected": 0.45121951219512196,
+          "top1N": 37,
+          "caughtAndNamed": 0.44047619047619047,
+          "falseAlarmsPerHour": 8.171232721247476,
+          "falseAlarms": 1,
+          "alarmShare": 0.011367092630002044,
+          "medianDelaySec": 8.404
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 15.026122335752923,
+          "falseAlarms": 13,
+          "alarmShare": 0.11254276665587867,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 16.467775227784042,
+          "falseAlarms": 17,
+          "alarmShare": 0.10647277744905013,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 1,
+          "detectedN": 125,
+          "top1OfDetected": 0.792,
+          "top1N": 99,
+          "caughtAndNamed": 0.792,
+          "falseAlarmsPerHour": 0.9936516698868342,
+          "falseAlarms": 5,
+          "alarmShare": 0.21225503726193762,
+          "medianDelaySec": 8.571340087890626
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 10,
+              "named": 2,
+              "delay": 4.792
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 14,
+              "delay": 3.908
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 22,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.947
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 17,
+              "delay": 11.844
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 25,
+              "named": 18,
+              "delay": 18.379888671875
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 13,
+              "delay": 5.74094677734375
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 8.571340087890626
+            },
+            "latency": {
+              "n": 21,
+              "detected": 21,
+              "named": 11,
+              "delay": 20.500497314453124
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 15,
+              "delay": 27.703026123046875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 8.911595458984374
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 3,
+        "name": "zLine 3",
+        "real": {
+          "faults": 62,
+          "detected": 0.9193548387096774,
+          "detectedN": 57,
+          "top1OfDetected": 0.7719298245614035,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 3.8440814919649084,
+          "falseAlarms": 5,
+          "alarmShare": 0.1754212419244924,
+          "medianDelaySec": 10.101
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4578313253012048,
+          "top1N": 38,
+          "caughtAndNamed": 0.4523809523809524,
+          "falseAlarmsPerHour": 8.171232721247476,
+          "falseAlarms": 1,
+          "alarmShare": 0.011367092630002044,
+          "medianDelaySec": 7.347
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 5.779277821443432,
+          "falseAlarms": 5,
+          "alarmShare": 0.020898189673329532,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 2.9060779813736546,
+          "falseAlarms": 3,
+          "alarmShare": 0.004040255637993095,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.944,
+          "detectedN": 118,
+          "top1OfDetected": 0.8813559322033898,
+          "top1N": 104,
+          "caughtAndNamed": 0.832,
+          "falseAlarmsPerHour": 1.391112337841568,
+          "falseAlarms": 7,
+          "alarmShare": 0.06044714325144907,
+          "medianDelaySec": 9.77967236328125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 9,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.247
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.295
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 18,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 25,
+              "named": 22,
+              "delay": 23.764444091796875
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 13,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 14,
+              "named": 9,
+              "delay": 40.4806728515625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 18,
+              "delay": 38.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 8.911595458984374
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 4,
+        "name": "zLine 4",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 5,
+        "name": "zLine 5",
+        "real": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.7777777777777778,
+          "top1N": 42,
+          "caughtAndNamed": 0.6774193548387096,
+          "falseAlarmsPerHour": 0.7688162983929817,
+          "falseAlarms": 1,
+          "alarmShare": 0.019254577073086452,
+          "medianDelaySec": 10.542
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4939759036144578,
+          "top1N": 41,
+          "caughtAndNamed": 0.4880952380952381,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.856,
+          "detectedN": 107,
+          "top1OfDetected": 0.8785046728971962,
+          "top1N": 94,
+          "caughtAndNamed": 0.752,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.0005520287054926856,
+          "medianDelaySec": 17.026998291015627
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 7,
+              "named": 0,
+              "delay": 4.725
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 5,
+              "named": 2,
+              "delay": 2.248
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 15,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 23,
+              "named": 20,
+              "delay": 33.379888671875
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 7,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 18,
+              "named": 16,
+              "delay": 75.15001123046875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 6,
+        "name": "zLine 6",
+        "real": {
+          "faults": 62,
+          "detected": 0.8709677419354839,
+          "detectedN": 54,
+          "top1OfDetected": 0.7592592592592593,
+          "top1N": 41,
+          "caughtAndNamed": 0.6612903225806451,
+          "falseAlarmsPerHour": 0.7688162983929817,
+          "falseAlarms": 1,
+          "alarmShare": 0.017115772842973755,
+          "medianDelaySec": 10.542
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4939759036144578,
+          "top1N": 41,
+          "caughtAndNamed": 0.4880952380952381,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.832,
+          "detectedN": 104,
+          "top1OfDetected": 0.875,
+          "top1N": 91,
+          "caughtAndNamed": 0.728,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 13.500809814453126
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 7,
+              "named": 0,
+              "delay": 4.725
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 14,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 5,
+              "named": 2,
+              "delay": 2.248
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 15,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 21,
+              "named": 18,
+              "delay": 35.07485717773437
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.320732421875
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 7,
+              "named": 0,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 17,
+              "named": 16,
+              "delay": 90.15001123046875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 8,
+        "name": "zLine 8",
+        "real": {
+          "faults": 62,
+          "detected": 0.8548387096774194,
+          "detectedN": 53,
+          "top1OfDetected": 0.7924528301886793,
+          "top1N": 42,
+          "caughtAndNamed": 0.6774193548387096,
+          "falseAlarmsPerHour": 0.7688162983929817,
+          "falseAlarms": 1,
+          "alarmShare": 0.010698933032469889,
+          "medianDelaySec": 13.87
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4939759036144578,
+          "top1N": 41,
+          "caughtAndNamed": 0.4880952380952381,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.752,
+          "detectedN": 94,
+          "top1OfDetected": 0.8829787234042553,
+          "top1N": 83,
+          "caughtAndNamed": 0.664,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 9.508571044921876
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 6,
+              "named": 0,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 14,
+              "delay": 12.924
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 5,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 15,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 16,
+              "named": 13,
+              "delay": 39.4439638671875
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.320732421875
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 4,
+              "named": 0,
+              "delay": 53.68347119140625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 15,
+              "named": 13,
+              "delay": 127.33207836914063
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      }
+    ],
+    "window": [
+      {
+        "value": 60,
+        "name": "window 60",
+        "real": {
+          "faults": 62,
+          "detected": 0.8870967741935484,
+          "detectedN": 55,
+          "top1OfDetected": 0.8,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 1.5376325967859634,
+          "falseAlarms": 2,
+          "alarmShare": 0.027810648233868793,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 1,
+          "detectedN": 84,
+          "top1OfDetected": 0.47619047619047616,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 8.171232721247476,
+          "falseAlarms": 1,
+          "alarmShare": 0.011367092630002044,
+          "medianDelaySec": 7.947
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 10.402700078598178,
+          "falseAlarms": 9,
+          "alarmShare": 0.08682048535659428,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 7.749541283663079,
+          "falseAlarms": 8,
+          "alarmShare": 0.06473127254733073,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.888,
+          "detectedN": 111,
+          "top1OfDetected": 0.8738738738738738,
+          "top1N": 97,
+          "caughtAndNamed": 0.776,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0.04112613855920508,
+          "medianDelaySec": 9.6826396484375
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 7,
+              "named": 1,
+              "delay": 4.725
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 21.436
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 24,
+              "named": 0,
+              "delay": 12.368
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 11.844
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 21,
+              "delay": 27.71738330078125
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 10,
+              "named": 3,
+              "delay": 50.4806728515625
+            },
+            "memory": {
+              "n": 20,
+              "detected": 18,
+              "named": 16,
+              "delay": 50.82996435546875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 120,
+        "name": "window 120",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 240,
+        "name": "window 240",
+        "real": {
+          "faults": 62,
+          "detected": 0.8870967741935484,
+          "detectedN": 55,
+          "top1OfDetected": 0.8,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 1.5376325967859634,
+          "falseAlarms": 2,
+          "alarmShare": 0.04706842870819855,
+          "medianDelaySec": 10.542
+        },
+        "live": {
+          "faults": 84,
+          "detected": 1,
+          "detectedN": 84,
+          "top1OfDetected": 0.47619047619047616,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 1.9373853209157696,
+          "falseAlarms": 2,
+          "alarmShare": 0.002693503758662063,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.896,
+          "detectedN": 112,
+          "top1OfDetected": 0.8928571428571429,
+          "top1N": 100,
+          "caughtAndNamed": 0.8,
+          "falseAlarmsPerHour": 0.39746066795473367,
+          "falseAlarms": 2,
+          "alarmShare": 0.005796301407673199,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 7,
+              "named": 1,
+              "delay": 4.725
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 24,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.295
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 9,
+              "named": 2,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 20,
+              "named": 19,
+              "delay": 62.703026123046875
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      }
+    ],
+    "slow": [
+      {
+        "value": 120,
+        "name": "slow 120",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 1.1558555642886865,
+          "falseAlarms": 1,
+          "alarmShare": 0.0016069603053513544,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 7.529
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 360,
+        "name": "slow 360",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      },
+      {
+        "value": 720,
+        "name": "slow 720",
+        "real": {
+          "faults": 62,
+          "detected": 0.9032258064516129,
+          "detectedN": 56,
+          "top1OfDetected": 0.7857142857142857,
+          "top1N": 44,
+          "caughtAndNamed": 0.7096774193548387,
+          "falseAlarmsPerHour": 2.3064488951789452,
+          "falseAlarms": 3,
+          "alarmShare": 0.05990061340862607,
+          "medianDelaySec": 12.063
+        },
+        "live": {
+          "faults": 84,
+          "detected": 0.9880952380952381,
+          "detectedN": 83,
+          "top1OfDetected": 0.4819277108433735,
+          "top1N": 40,
+          "caughtAndNamed": 0.47619047619047616,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": 7.382
+        },
+        "workload": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0,
+          "falseAlarms": 0,
+          "alarmShare": 0,
+          "medianDelaySec": null
+        },
+        "steps": {
+          "faults": 0,
+          "detected": 0,
+          "detectedN": 0,
+          "top1OfDetected": 0,
+          "top1N": 0,
+          "caughtAndNamed": 0,
+          "falseAlarmsPerHour": 0.9686926604578848,
+          "falseAlarms": 1,
+          "alarmShare": 0.00134648279803646,
+          "medianDelaySec": null
+        },
+        "synthetic": {
+          "faults": 125,
+          "detected": 0.88,
+          "detectedN": 110,
+          "top1OfDetected": 0.8909090909090909,
+          "top1N": 98,
+          "caughtAndNamed": 0.784,
+          "falseAlarmsPerHour": 0.19873033397736684,
+          "falseAlarms": 1,
+          "alarmShare": 0.001656086116478057,
+          "medianDelaySec": 17.492477783203125
+        },
+        "classes": {
+          "real": {
+            "brownout": {
+              "n": 14,
+              "detected": 8,
+              "named": 1,
+              "delay": 4.984
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 4.544
+            },
+            "crash-loop": {
+              "n": 4,
+              "detected": 4,
+              "named": 3,
+              "delay": 16.709
+            },
+            "flap": {
+              "n": 2,
+              "detected": 2,
+              "named": 2,
+              "delay": 10.542
+            },
+            "memory": {
+              "n": 6,
+              "detected": 6,
+              "named": 3,
+              "delay": 16.932
+            },
+            "pause": {
+              "n": 4,
+              "detected": 4,
+              "named": 4,
+              "delay": 15.384
+            },
+            "stop": {
+              "n": 16,
+              "detected": 16,
+              "named": 16,
+              "delay": 13.87
+            }
+          },
+          "live": {
+            "brownout": {
+              "n": 24,
+              "detected": 23,
+              "named": 0,
+              "delay": 8.404
+            },
+            "crash": {
+              "n": 24,
+              "detected": 24,
+              "named": 14,
+              "delay": 7.382
+            },
+            "pause": {
+              "n": 28,
+              "detected": 28,
+              "named": 20,
+              "delay": 7.462
+            },
+            "stop": {
+              "n": 8,
+              "detected": 8,
+              "named": 6,
+              "delay": 12.488
+            }
+          },
+          "workload": {},
+          "synthetic": {
+            "brownout": {
+              "n": 25,
+              "detected": 24,
+              "named": 22,
+              "delay": 29.367921142578126
+            },
+            "crash": {
+              "n": 16,
+              "detected": 16,
+              "named": 15,
+              "delay": 7.058633056640625
+            },
+            "crash-loop": {
+              "n": 6,
+              "detected": 6,
+              "named": 6,
+              "delay": 19.251629150390624
+            },
+            "flap": {
+              "n": 9,
+              "detected": 9,
+              "named": 9,
+              "delay": 18.74984130859375
+            },
+            "latency": {
+              "n": 21,
+              "detected": 8,
+              "named": 1,
+              "delay": 55.11890356445313
+            },
+            "memory": {
+              "n": 20,
+              "detected": 19,
+              "named": 18,
+              "delay": 58.00646484375
+            },
+            "partition": {
+              "n": 11,
+              "detected": 11,
+              "named": 10,
+              "delay": 6.761777587890625
+            },
+            "pause": {
+              "n": 10,
+              "detected": 10,
+              "named": 10,
+              "delay": 9.4562109375
+            },
+            "stop": {
+              "n": 7,
+              "detected": 7,
+              "named": 7,
+              "delay": 6.55361181640625
+            }
+          },
+          "steps": {}
+        }
+      }
+    ]
+  }
+}
