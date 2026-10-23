@@ -55,13 +55,14 @@ const composePost = {
   ],
 };
 
-// media-frontend (nginx + Lua, published on :8081) is not on any path through nginx-thrift: it opens a connection to
-// media-mongodb only when someone asks it for a file. A user who never posts a picture never touches it, so without
-// this the mapper sees no traffic to or from it. An unknown file answers 404 after the lookup, which is still the
-// real call (media-frontend -> media-mongodb) and counts as completed.
+// media-frontend (nginx + Lua) opens a connection to media-mongodb only when someone asks it for a file. A user who never
+// posts a picture never touches it, so without this the mapper sees no traffic to or from it. Its own port (8081) is closed
+// to the outside, so the host's nginx-thrift forwards /get-media and /upload-media to it (location blocks added to
+// nginx-web-server/conf/nginx.conf on the host): the request travels nginx-thrift -> media-frontend -> media-mongodb on the
+// one open port. An unknown file answers after the lookup, which is still the real call and counts as completed.
 const viewMedia = {
   id: 'viewMedia', name: 'Fetch a media file', steps: [
-    { id: 'get_media', method: 'GET', port: 8081, path: '/get-media?filename=traffic-gen.png', thinkTimeMs: [2000, 6000] },
+    { id: 'get_media', method: 'GET', path: '/get-media?filename=traffic-gen.png', thinkTimeMs: [2000, 6000] },
   ],
 };
 

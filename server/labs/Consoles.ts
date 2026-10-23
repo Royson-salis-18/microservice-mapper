@@ -48,7 +48,7 @@ function catalog(targetId: string, appPort: number): ConsoleDef[] {
   if (targetId === 'death-star') {
     return [
       { ...app, label: 'Social network UI', note: 'nginx-thrift' },
-      { kind: 'direct', id: 'media', label: 'Media frontend', port: 8081, path: '/', note: 'port 8081 must be open in the security group' },
+      { kind: 'direct', id: 'media', label: 'Media frontend', port: appPort, path: '/get-media?filename=probe.png', note: 'through nginx-thrift (its own port 8081 is closed)' },
     ];
   }
   return [app];
