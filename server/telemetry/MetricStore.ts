@@ -118,7 +118,7 @@ export class MetricStore {
     return this.events.slice(-limit).reverse();
   }
 
-  getAggregatedEdgeMetrics(source: string, target: string, timeWindowMs: number = 5 * 60 * 1000) {
+  getAggregatedEdgeMetrics(source: string, target: string, timeWindowMs: number = 2 * 60 * 1000) {
     const cutoff = Date.now() - timeWindowMs;
     const relevant = this.events.filter(e => 
       e.source === source && 
@@ -133,7 +133,9 @@ export class MetricStore {
     const latencies: number[] = [];
     
     for (const e of relevant) {
-      if (e.statusCode !== null && e.statusCode !== undefined && e.statusCode >= 400) errorCount++;
+      // 5xx only. A 409 (insufficient funds) or 402 (card declined) is the service working as designed; counting 4xx made a healthy
+      // LedgerLine link read 22% failing and ShopFlow's checkout permanently amber before anything had been injected.
+      if (e.statusCode !== null && e.statusCode !== undefined && e.statusCode >= 500) errorCount++;
       const latency = e.latencyMs ?? e.latency;
       if (latency !== null && latency !== undefined) latencies.push(latency);
       if (e.bytesSent !== null && e.bytesSent !== undefined) totalBytesSent += e.bytesSent;

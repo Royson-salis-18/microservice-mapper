@@ -19,6 +19,7 @@
     "local": "node run/scripts/local.mjs",
     "demo": "node run/scripts/demo.mjs",
     "hosts": "node run/scripts/hosts.mjs",
+    "preflight": "node run/scripts/preflight.mjs",
     "labs": "node run/scripts/labs.mjs",
     "check-host": "bash run/scripts/check-host.sh",
     "mapper-edges": "node run/scripts/mapper-edges.mjs",

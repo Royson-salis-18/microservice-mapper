@@ -460,7 +460,8 @@ class TargetAgent {
       }
       if (this.prometheusUnavailableReason) return empty;
 
-      const snapshot = await this.prometheus.collect(300);
+      // 90 s, not 300: a window of five minutes kept a link red for five minutes after the fault had ended.
+      const snapshot = await this.prometheus.collect(90);
       for (const warn of snapshot.warnings) {
         if (this.seenWarnings.has(warn)) continue;
         this.seenWarnings.add(warn);
