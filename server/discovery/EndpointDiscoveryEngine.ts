@@ -58,6 +58,7 @@ class TargetAgent {
   private connectionTimer: NodeJS.Timeout | null = null;
   private recoveryTimer: NodeJS.Timeout | null = null;
   private rediscoveryTimer: NodeJS.Timeout | null = null;
+  private lastEagerRediscovery = 0;
   private recovering = false;
   private dead = false;
   private discoveredServices: any[] = [];
@@ -536,6 +537,12 @@ class TargetAgent {
         // Wrapped so that a failing optional source can never cost us the
         // Tier 0 metrics we already have in hand - the agentless path is the
         // one that has to keep working.
+        // A container with no matching service was recreated (restart, fault injection, compose up) since the last discovery pass. Look
+        // again now, at most every 15 s, instead of waiting up to three minutes: until then its calls cannot be scanned either.
+        if (metricsRes.warnings.some((w: string) => w.includes('has no matching discovered service')) && Date.now() - this.lastEagerRediscovery > 15_000) {
+          this.lastEagerRediscovery = Date.now();
+          try { await this.refreshDiscovery(currentConn); } catch (e: any) { this.log(`[Agent:${this.targetId}] Eager re-discovery failed: ${e.message}`); }
+        }
         const requestMetrics = await this.collectRequestMetrics(currentConn);
         const missing = await this.classifyMissingServices(currentConn, metricsRes.samples);
 

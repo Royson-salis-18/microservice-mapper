@@ -125,7 +125,13 @@ export class MetricCollector {
     const samples: ContainerMetricSample[] = [];
 
     for (const entry of entries) {
-      const service = services.find(s => s.containerId && (s.containerId.startsWith(entry.containerId) || entry.containerId.startsWith(s.containerId)));
+      // By container id first; failing that by compose name (<project>-<service>-<n>). A container recreated by a restart, a fault
+      // injector or `compose up` gets a new id, and until the next discovery pass it was filed as an unknown-<hash> service: a
+      // second node for the same service, with its history and learned baseline starting from nothing each time.
+      const service = services.find(s => s.containerId && (s.containerId.startsWith(entry.containerId) || entry.containerId.startsWith(s.containerId)))
+        ?? services
+          .filter(s => s.name && new RegExp(`(^|[-_])${s.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[-_]\\d+$`).test(entry.name))
+          .sort((a, b) => b.name.length - a.name.length)[0];
       const serviceId = service?.serviceId ?? `${this.targetId}:unknown-${entry.containerId.slice(0, 12)}`;
       if (!service) {
         warnings.push(

@@ -62,7 +62,7 @@ export function statusFromSample(s: SampleSignals): ContainerHealth {
     return { status: "critical", state, reason: `container is ${state}` };
   }
   if (state === "paused") {
-    return { status: "degraded", state: "paused", reason: "container is paused and serving nothing" };
+    return { status: "critical", state: "paused", reason: "container is paused and serving nothing" };
   }
 
   // restartDelta is the change since the previous poll; uptime catches a
@@ -132,7 +132,7 @@ export function statusFromPsRow(row: DockerPsEntry | undefined): ContainerHealth
     return { status: "critical", state: label, reason: `container ${label}${hint}`, exitCode: code };
   }
   if (state === "paused") {
-    return { status: "degraded", state: "paused", reason: "container is paused and serving nothing" };
+    return { status: "critical", state: "paused", reason: "container is paused and serving nothing" };
   }
   if (state === "removing") {
     return { status: "critical", state: "removing", reason: "container is being removed" };
