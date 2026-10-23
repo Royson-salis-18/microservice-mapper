@@ -1,0 +1,27 @@
+AIOps – Artificial Intelligence for IT Operations
+API – Application Programming Interface
+AUROC – Area Under the Receiver Operating Characteristic curve
+CI – Confidence Interval
+C+N – Caught and named (detected, and the true cause ranked first)
+ECE – Expected Calibration Error
+FA/h – False-alarm episodes per fault-free hour
+GPU – Graphics Processing Unit
+MAD – Median Absolute Deviation
+ML – Machine Learning
+RCA – Root Cause Analysis
+REST – Representational State Transfer
+SSH – Secure Shell
+TCP – Transmission Control Protocol
+WS – WebSocket
+#Notations
+S, N – the set of services and its size
+xₛ(t) – the reading of service s at time t (eight metrics)
+Δ – the collection period, 5 seconds
+w(e), c(e) – weight and evidence confidence of edge e
+level – 0 typical, 1 on the service's alarm line
+L(t) – load factor (the median shift of the traffic-carrying signals)
+λₛ, ρₛ – model level and rule score of service s
+πₛ – random-walk share of service s
+α – restart probability of the walk (0.15)
+p̂(c ← x) – learned probability that trouble in x reaches its caller c
+P(c) – risk that service c is reached from a suspected root
