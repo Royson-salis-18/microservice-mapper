@@ -77,10 +77,10 @@ Every score can be audited & \checkmark & \checkmark & -- & $\sim$ & \checkmark\
 \section{Research and Design Gap}
 Four gaps motivate the design.
 \begin{enumerate}
-\item \textbf{Observation without instrumentation.} The graph that random-walk and causal methods assume is usually given; recovering it, with direction, from the host alone is rarely addressed.
-\item \textbf{Facts are not degrees.} A stopped container is not ``very anomalous''; it is a fact. Methods that fold container state into one score lose the most reliable signal there is, and our ablation shows how much that costs.
-\item \textbf{Propagation is assumed, not learned.} Cascade prediction normally uses fixed edge probabilities. Learning them from the system's own incidents, with a prior that makes rarely used edges behave sensibly, is cheap and measurable.
-\item \textbf{Evaluation is optimistic.} Point-adjusted scoring, tuned thresholds and a single data set flatter results; we use event-level scoring, a held-out split and paired tests, and report what failed.
+\item Observation without instrumentation. The graph that random-walk and causal methods assume is usually given; recovering it, with direction, from the host alone is rarely addressed.
+\item Facts are not degrees. A stopped container is not ``very anomalous''; it is a fact. Methods that fold container state into one score lose the most reliable signal there is, and our ablation shows how much that costs.
+\item Propagation is assumed, not learned. Cascade prediction normally uses fixed edge probabilities. Learning them from the system's own incidents, with a prior that makes rarely used edges behave sensibly, is cheap and measurable.
+\item Evaluation is optimistic. Point-adjusted scoring, tuned thresholds and a single data set flatter results; we use event-level scoring, a held-out split and paired tests, and report what failed.
 \end{enumerate}
 
 \section{Summary}

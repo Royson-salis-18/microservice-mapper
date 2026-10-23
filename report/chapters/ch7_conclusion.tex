@@ -3,7 +3,7 @@
 \label{ch:conclusion}
 
 \section{Summary of Work}
-We built a platform that watches containerised microservices from outside, recovers their call graph and diagnoses incidents without labels. A collector reads Docker state, statistics and socket tables over SSH. The graph orients each edge by its listening port. A load-aware residual model and a robust rule layer share the alarm, and container facts count as evidence. A ranker splits each deviation into what neighbours explain and what they do not, then runs a random walk over the call graph. A cascade model with learned Beta--Binomial edge probabilities predicts who falls next. The dashboard draws the result in 2D and 3D, and the Detection engines page runs Rules, ML and Hybrid side by side. We tested it on 62 faults injected blind into two real systems and 178 held-out synthetic faults, and operated it on further benchmark applications on EC2.
+We built a platform that watches containerised microservices from outside, recovers their call graph and diagnoses incidents without labels. A collector reads Docker state, statistics and socket tables over SSH. The graph orients each edge by its listening port. A load-aware residual model and a robust rule layer share the alarm, and container facts count as evidence. Each deviation is split into what neighbours explain and what they do not, and a random walk over the call graph orders the suspects. Learned Beta--Binomial edge probabilities in a cascade model predict who falls next. The dashboard draws the result in 2D and 3D, and the Detection engines page runs Rules, ML and Hybrid side by side. We tested it on 62 faults injected blind into two real systems and 178 held-out synthetic faults, and operated it on further benchmark applications on EC2.
 
 \section{Conclusions}
 \begin{enumerate}
@@ -33,14 +33,14 @@ The platform can serve as on-call support for small teams running Docker Compose
 
 \section{Limitations}
 \begin{itemize}
-\item \textbf{Coarse signals.} Eight metrics every five seconds. A brownout on an almost idle service never raises an alarm; no engine here catches it.
-\item \textbf{Two real systems.} Architecture independence is argued from a cross-system check and synthetic topologies, not proven. Real cascades were too rare in the recordings to test learned propagation on real data.
-\item \textbf{Edge evidence not isolated offline.} The recordings do not keep edge evidence, so the effect of the evidence weighting is not measured.
-\item \textbf{Synthetic scaling only.} The cost was measured on random graphs of 10 to 320 services with synthetic readings, on a shared virtual machine; no real system of that size was observed.
-\item \textbf{Workload recordings are generated.} The load changes of the workload recordings come from two traffic generators on two benches, not from real users; a fault that begins during a large change of load can be masked by the load-aware model.
-\item \textbf{Tuned by the authors.} Real-system settings were not tuned on a held-out system, so those numbers are optimistic by an unmeasured margin.
-\item \textbf{Auto-restart.} The mapper restarts crashed containers by default (switch off with \texttt{MAPPER\_AUTO\_RESTART=off}); live runs with it on and off (Section~\ref{sec:live}) showed no difference on the two benches, but it should still be switched off when measuring detection.
-\item \textbf{Not tested on Kubernetes}, and the push endpoint's built-in token must be changed when the server is reachable by others.
+\item Coarse signals. Eight metrics every five seconds. A brownout on an almost idle service never raises an alarm; no engine here catches it.
+\item Two real systems. Architecture independence is argued from a cross-system check and synthetic topologies, not proven. Real cascades were too rare in the recordings to test learned propagation on real data.
+\item Edge evidence not isolated offline. The recordings do not keep edge evidence, so the effect of the evidence weighting is not measured.
+\item Synthetic scaling only. The cost was measured on random graphs of 10 to 320 services with synthetic readings, on a shared virtual machine; no real system of that size was observed.
+\item Workload recordings are generated. The load changes of the workload recordings come from two traffic generators on two benches, not from real users; a fault that begins during a large change of load can be masked by the load-aware model.
+\item Tuned by the authors. Real-system settings were not tuned on a held-out system, so those numbers are optimistic by an unmeasured margin.
+\item Auto-restart. The mapper restarts crashed containers by default (switch off with \texttt{MAPPER\_AUTO\_RESTART=off}); live runs with it on and off (Section~\ref{sec:live}) showed no difference on the two benches, but it should still be switched off when measuring detection.
+\item Not tested on Kubernetes, and the push endpoint's built-in token must be changed when the server is reachable by others.
 \end{itemize}
 
 \section{Scope for Future Work}

@@ -23,13 +23,13 @@ The proposed system is an \emph{agent-assisted} pipeline in a concrete sense. A 
 
 The solution has seven steps, each described in Chapter~\ref{ch:method}:
 \begin{enumerate}
-\item \textbf{Observe.} Read container state, statistics and socket tables over SSH. Install nothing on the host.
-\item \textbf{Build the graph.} Merge declared dependencies (from the Compose file) with observed ones, orient each socket by its listening port, and give each edge a confidence and a dependency share.
-\item \textbf{Learn directions.} Where the port heuristic cannot say who calls whom, vote over dynamic and structural signals.
-\item \textbf{Detect.} Judge each service against what the current load predicts for it, using its own recent past, with a robust rule layer beside the model. Treat container facts as evidence.
-\item \textbf{Rank.} Split each service's deviation into what its callees explain and what they do not; run a personalised random walk over the call graph; put facts first.
-\item \textbf{Predict.} Spread risk over the graph by noisy-OR with edge probabilities learned from the system's own incidents; warn early about gradual faults.
-\item \textbf{Diagnose and explain.} Classify the fault type, attach a short runbook and show the evidence behind every number.
+\item Observe. Read container state, statistics and socket tables over SSH. Install nothing on the host.
+\item Build the graph. Merge declared dependencies (from the Compose file) with observed ones, orient each socket by its listening port, and give each edge a confidence and a dependency share.
+\item Learn directions. Where the port heuristic cannot say who calls whom, vote over dynamic and structural signals.
+\item Detect. Judge each service against what the current load predicts for it, using its own recent past, with a robust rule layer beside the model. Treat container facts as evidence.
+\item Rank. Split each service's deviation into what its callees explain and what they do not; run a personalised random walk over the call graph; put facts first.
+\item Predict. Spread risk over the graph by noisy-OR with edge probabilities learned from the system's own incidents; warn early about gradual faults.
+\item Diagnose and explain. Classify the fault type, attach a short runbook and show the evidence behind every number.
 \end{enumerate}
 
 \figdiagram[System architecture]{d_architecture.pdf}{System architecture. The server reaches the target host over SSH and reads Docker and the container socket tables; nothing is installed on the host. The three detection engines share the same readings and graph; the dashboard receives updates over a WebSocket.}{fig:arch}

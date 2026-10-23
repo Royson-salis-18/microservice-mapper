@@ -214,10 +214,10 @@ Four pages support the investigation (Figure~\ref{fig:ui-pages}). Telemetry show
 \subsection{The 3D spatial view}
 The 3D scene draws the same graph as a small city, and each arrangement answers a different question a developer asks while debugging. Services are units on platforms. Links are cables: thickness shows the dependency weight, colour shows the heat of the link, and pulses move at a rate driven by the link's request rate. A floating card over each platform gives its role, how many services it holds and their state, plus a line on what a fault there would mean (callers reached, services depending on it, calls in and out of the layer). The \emph{Cards} button hides the cards, and the figures use that setting because the cards cover units and cables. We took them on the two live benches, each running on its own Docker daemon and registered as its own project, so each scene holds only that project's services.
 \begin{itemize}
-\item \textbf{Islands} groups services by role (edge, services, messaging, data), each on its own raised platform. With every project shown (Figure~\ref{fig:3d-all}a), each project is a district of its own.
-\item \textbf{Flow} lays the platforms out in the order a request travels: the entry points, then the services one hop away, two hops away and so on. Each card says how many callers a fault at that hop can reach, so the platform to look at first is the one whose card says the most.
-\item \textbf{Topology} sorts services by how much depends on them: the most depended-on, the depended-on, and those nothing depends on. It is the blast-radius view.
-\item \textbf{Tiers} stacks the architectural layers as terraces from edge (L4) down to data (L1), with the calls in and out of each layer on its card, so a call that skips a layer or goes up the stack stands out.
+\item Islands groups services by role (edge, services, messaging, data), each on its own raised platform. With every project shown (Figure~\ref{fig:3d-all}a), each project is a district of its own.
+\item Flow lays the platforms out in the order a request travels: the entry points, then the services one hop away, two hops away and so on. Each card says how many callers a fault at that hop can reach, so the platform to look at first is the one whose card says the most.
+\item Topology sorts services by how much depends on them: the most depended-on, the depended-on, and those nothing depends on. It is the blast-radius view.
+\item Tiers stacks the architectural layers as terraces from edge (L4) down to data (L1), with the calls in and out of each layer on its card, so a call that skips a layer or goes up the stack stands out.
 \end{itemize}
 Figures~\ref{fig:3d-shopflow} and~\ref{fig:3d-ledgerline} show the four arrangements for each bench. During a fault the failing unit gets a red box with a callout naming it and its score, its platform takes a tint, and the bell in the corner counts what needs attention (Figure~\ref{fig:3d-all}b).
 
@@ -264,13 +264,13 @@ Three pages belong to the study, not to daily operation, and stay hidden until t
 \label{sec:security}
 The tool holds SSH access to hosts, so it was built to expose as little as it can.
 \begin{itemize}
-\item \textbf{Keys stay on the operator's machine.} The configuration stores only the path of the key file. Private keys are never copied into the repository, and \texttt{*.pem} files are git-ignored as a backstop.
-\item \textbf{A fixed command catalogue.} Every command the server can run on a host is built by a function in one file, and every argument that reaches a shell is checked against the shapes Docker itself produces (container identifiers, timestamps, tail lengths, paths). A test checks that an identifier with shell metacharacters is refused before a command is built.
-\item \textbf{Bounded output and time.} Each command has a timeout and a maximum output size, so a misbehaving host cannot make the server wait or buffer without limit.
-\item \textbf{Local control surfaces.} The Fault Lab panel listens on localhost only and its requests need a header the page itself sets. Grafana and Prometheus listen on localhost and are reached through an SSH tunnel.
-\item \textbf{Ingest token.} The push endpoint is protected by a token. The built-in default is for local use and must be changed when the server can be reached by others.
-\item \textbf{One write on the host.} The only change the mapper makes on a host is restarting a container that exited with a non-zero code, a few attempts at most per container, never for load generators, and switched off with \texttt{MAPPER\_AUTO\_RESTART=off}.
-\item \textbf{Load limits.} The traffic generator clamps the number of virtual users to a fixed ceiling and starts only from the traffic controller.
+\item Keys stay on the operator's machine. The configuration stores only the path of the key file. Private keys are never copied into the repository, and \texttt{*.pem} files are git-ignored as a backstop.
+\item A fixed command catalogue. Every command the server can run on a host is built by a function in one file, and every argument that reaches a shell is checked against the shapes Docker itself produces (container identifiers, timestamps, tail lengths, paths). A test checks that an identifier with shell metacharacters is refused before a command is built.
+\item Bounded output and time. Each command has a timeout and a maximum output size, so a misbehaving host cannot make the server wait or buffer without limit.
+\item Local control surfaces. The Fault Lab panel listens on localhost only and its requests need a header the page itself sets. Grafana and Prometheus listen on localhost and are reached through an SSH tunnel.
+\item Ingest token. The push endpoint is protected by a token. The built-in default is for local use and must be changed when the server can be reached by others.
+\item One write on the host. The only change the mapper makes on a host is restarting a container that exited with a non-zero code, a few attempts at most per container, never for load generators, and switched off with \texttt{MAPPER\_AUTO\_RESTART=off}.
+\item Load limits. The traffic generator clamps the number of virtual users to a fixed ceiling and starts only from the traffic controller.
 \end{itemize}
 
 \section{Testing and Validation}
@@ -327,7 +327,7 @@ Each bench carries a monitoring stack as a \emph{separate Compose project}, whic
 
 Each bench also runs an always-on, open-loop traffic generator. The default mode is \emph{organic}: visitor sessions with think times, popular products, returning users and a day-and-night wave. A steady mode gives a flat load, and a quiet mode stops it.
 
-The Fault Lab (\texttt{lab/faultlab} in each bench repository, Figure~\ref{fig:faultlab-sf}) is the evaluation's fault injector, and it has three properties. It is \textbf{blind}: the mapper never learns what is injected, and a private ledger, read only when scoring, records everything. It is \textbf{physical}: faults act on containers (kill, repeated kills, stop, pause, resource limits, network detach, pause-and-release cycles). It is \textbf{organic and reproducible}: a campaign draws faults from a Poisson process with a profile, rate and seed, and one seed always gives the same campaign. The control page runs on the bench host, listens on localhost only and needs a header that only the page itself sets, so another site open in the same browser cannot drive it.
+The Fault Lab (\texttt{lab/faultlab} in each bench repository, Figure~\ref{fig:faultlab-sf}) is the evaluation's fault injector. The mapper never learns what is injected, and a private ledger, read only when scoring, records everything. Faults act on real containers (kill, repeated kills, stop, pause, resource limits, network detach, pause-and-release cycles). A campaign draws faults from a Poisson process with a profile, rate and seed, and one seed always gives the same campaign. The control page runs on the bench host, listens on localhost only and needs a header that only the page itself sets, so another site open in the same browser cannot drive it.
 
 \begin{figure}[!htbp]
 \centering

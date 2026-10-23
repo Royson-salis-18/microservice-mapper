@@ -17,10 +17,10 @@ This project watches the containers \emph{from outside}, over SSH and the Docker
 The project addresses four linked problems that a team running containerised microservices meets in practice:
 
 \begin{itemize}
-\item \textbf{Invisible dependencies.} The real call graph of a running system is rarely documented, and it drifts. Compose files list what was \emph{declared}, not what is actually talking. Without instrumentation, nobody can say which service calls which, or in which direction.
-\item \textbf{Alert storms.} When one service fails, its callers fail too. Ranking alarms by severity points at the loudest service, which is often a victim and not the cause.
-\item \textbf{No view of what comes next.} Operators learn that a service is affected only after it alarms. A model of how failure spreads on this particular system could warn earlier.
-\item \textbf{Black-box diagnosis.} Methods that need training data and return an opaque score are hard to trust at three in the morning. An engineer needs to see the evidence and how it was combined.
+\item Invisible dependencies. The real call graph of a running system is rarely documented, and it drifts. Compose files list what was \emph{declared}, not what is actually talking. Without instrumentation, nobody can say which service calls which, or in which direction.
+\item Alert storms. When one service fails, its callers fail too. Ranking alarms by severity points at the loudest service, which is often a victim and not the cause.
+\item No view of what comes next. Operators learn that a service is affected only after it alarms. A model of how failure spreads on this particular system could warn earlier.
+\item Black-box diagnosis. Methods that need training data and return an opaque score are hard to trust at three in the morning. An engineer needs to see the evidence and how it was combined.
 \end{itemize}
 
 The problem is therefore to \emph{observe a containerised system without touching it, recover its call graph, detect trouble per service against that service's own normal, rank the likely origin of an incident, predict how it will spread, and show every step in a form an engineer can verify}, with no labelled data and no specialised hardware.
@@ -46,8 +46,8 @@ Three observations shaped the work. The host already shows most of what an opera
 The system targets Docker-based microservice stacks on Linux hosts that can be reached over SSH. It reads container state, statistics and socket tables; it does not read application payloads and it does not require code changes. It was developed and measured on the following applications:
 
 \begin{itemize}
-\item \textbf{ShopFlow}, a 13-service retail checkout system and \textbf{LedgerLine}, a 12-service retail-banking transfer system. Both were built for this study as test benches, each on its own EC2 host with its own Fault Lab and a Prometheus--Grafana--Loki monitoring stack (Section~\ref{sec:benches}); both were run under open-loop traffic for 217 minutes with 62 faults injected;
-\item \textbf{Sock Shop}, the open microservices demo, used for development;
+\item ShopFlow, a 13-service retail checkout system and \textbf{LedgerLine}, a 12-service retail-banking transfer system. Both were built for this study as test benches, each on its own EC2 host with its own Fault Lab and a Prometheus--Grafana--Loki monitoring stack (Section~\ref{sec:benches}); both were run under open-loop traffic for 217 minutes with 62 faults injected;
+\item Sock Shop, the open microservices demo, used for development;
 \item a social-network application from the DeathStarBench suite \cite{gan2019deathstar} (27 containers) and the OpenTelemetry demo, used to check that discovery works on third-party systems;
 \item a synthetic generator that writes runs in the same recorded format over 16 random topologies, used to enlarge the evaluation.
 \end{itemize}
