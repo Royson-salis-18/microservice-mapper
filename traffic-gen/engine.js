@@ -181,7 +181,8 @@ class VirtualUser {
           break;
         }
         const think = step.thinkTimeMs || cfg.defaultThinkTimeMs || [500, 1500];
-        await sleep(jitter(think[0], think[1]));
+        const scale = cfg.thinkScale > 0 ? cfg.thinkScale : 1;
+        await sleep(jitter(think[0] * scale, think[1] * scale));
       }
 
       this.engine.stats.recordWorkflowEnd(workflowId, abandoned);

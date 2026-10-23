@@ -332,6 +332,12 @@ app.post('/api/start', (req, res) => {
     targetUrl = targetUrl || baseUrl;
 
     const profileCfg = mod.profiles[profile] || mod.profiles.BASELINE;
+    // How fast a virtual user acts. Steps carry their own think times (a user reading a page for 1-6 s), which used to ignore the
+    // profile completely: HEAVY and STRESS with 150 users still sent about 7 requests a second, because each user waited seconds
+    // between requests and the ramp added one user per second. The profile now scales the waiting, and the ramp always finishes
+    // in about ten seconds whatever the number of users.
+    const THINK_SCALE = { BASELINE: 1, MODERATE: 0.6, RAMP: 0.6, HEAVY: 0.3, STRESS: 0.12 };
+    const thinkScale = THINK_SCALE[profile] ?? 1;
     // An explicit `users` from the caller wins over the profile default, so
     // the operator can dial a run up or down without editing a workflow file.
     const effectiveUsers = Math.max(1, Math.min(Number(users) || profileCfg.users, ABSOLUTE_MAX_USERS));
@@ -350,7 +356,8 @@ app.post('/api/start', (req, res) => {
       workflows,
       workflowWeights: isDynamic ? [{ key: 'discovered', weight: 100 }] : effectiveWorkflowWeights,
       users: effectiveUsers,
-      spawnRatePerSec: profileCfg.spawnRatePerSec,
+      spawnRatePerSec: Math.max(profileCfg.spawnRatePerSec || 1, Math.ceil(effectiveUsers / 10)),
+      thinkScale,
       defaultThinkTimeMs: profileCfg.defaultThinkTimeMs,
       durationSec: durationSec || null,
       // Ceiling, not a target. This used to be Math.min(x, 20), which made
