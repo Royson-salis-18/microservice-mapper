@@ -19,14 +19,14 @@ At time $t$ the pipeline must decide four things, using only readings up to $t$:
 The pipeline must do this without labelled failures, without changing any application, and fast enough that a decision window finishes well inside the 5\,s collection period.
 
 \section{Proposed Solution}
-The proposed system is an \emph{agent-assisted} pipeline in a concrete sense. A \textbf{collector agent} observes the containers from outside the application. A \textbf{diagnosis assistant} turns those observations into a cause, a forecast of what fails next, a fault type, a runbook and an explanation the operator can check. Between the two sits the evidence-weighted dependency graph. Figure~\ref{fig:arch} shows the whole system and Figure~\ref{fig:poll} one 5-second cycle.
+The proposed system is an \emph{agent-assisted} pipeline in a concrete sense. A \textbf{collector agent} observes the containers from outside the application. A \textbf{diagnosis assistant} turns those observations into a cause, a forecast of what fails next, a fault type, a runbook and an explanation the operator can check. The evidence-weighted dependency graph sits between them. Figure~\ref{fig:arch} shows the whole system and Figure~\ref{fig:poll} one 5-second cycle.
 
 The solution has seven steps, each described in Chapter~\ref{ch:method}:
 \begin{enumerate}
-\item \textbf{Observe.} Read container state, statistics and socket tables over SSH; install nothing on the host.
-\item \textbf{Build the graph.} Merge declared dependencies (from the Compose file) with observed ones; orient each observed socket by the listening port; give each edge a confidence and a dependency share.
-\item \textbf{Learn directions.} Where the heuristic cannot tell who calls whom, vote over dynamic and structural signals.
-\item \textbf{Detect.} Judge every service against what the current load predicts for it, from its own recent past, with a robust rule layer beside it; treat container facts as evidence.
+\item \textbf{Observe.} Read container state, statistics and socket tables over SSH. Install nothing on the host.
+\item \textbf{Build the graph.} Merge declared dependencies (from the Compose file) with observed ones, orient each socket by its listening port, and give each edge a confidence and a dependency share.
+\item \textbf{Learn directions.} Where the port heuristic cannot say who calls whom, vote over dynamic and structural signals.
+\item \textbf{Detect.} Judge each service against what the current load predicts for it, using its own recent past, with a robust rule layer beside the model. Treat container facts as evidence.
 \item \textbf{Rank.} Split each service's deviation into what its callees explain and what they do not; run a personalised random walk over the call graph; put facts first.
 \item \textbf{Predict.} Spread risk over the graph by noisy-OR with edge probabilities learned from the system's own incidents; warn early about gradual faults.
 \item \textbf{Diagnose and explain.} Classify the fault type, attach a short runbook and show the evidence behind every number.
@@ -91,17 +91,17 @@ Portable & Runs on macOS, Linux and Windows with Node.js; a Python sidecar is op
 \section{System Architecture}
 The architecture has five layers (Figure~\ref{fig:arch}).
 
-\textbf{Dashboard.} A React~19 application built with Vite. It holds no polling logic: the server pushes graph and incident updates over a WebSocket, and REST calls fetch history and configuration. The views are described in Section~\ref{sec:prototype}.
+\textbf{Dashboard.} A React~19 application built with Vite. It never polls: the server pushes graph and incident updates over a WebSocket, and REST calls fetch history and configuration. Section~\ref{sec:prototype} describes the views.
 
-\textbf{Server.} A Node.js process (Express~5, TypeScript) that owns all state and is the only component that writes to disk. The \texttt{GraphStore} keeps nodes, edges and targets; the \texttt{MetricStore} keeps a ring buffer of readings per service; the \texttt{TraceStore} keeps connection events; the \texttt{IncidentManager} drives the engines and turns their verdicts into incidents.
+\textbf{Server.} A Node.js process (Express~5, TypeScript) that owns all state and is the only component that writes to disk. The \texttt{GraphStore} holds nodes, edges and targets, the \texttt{MetricStore} a ring buffer of readings per service, and the \texttt{TraceStore} the connection events. The \texttt{IncidentManager} drives the engines and turns their verdicts into incidents.
 
-\textbf{Connection and collection.} A connection manager keeps one SSH session per target and runs commands from a fixed catalogue (\code{docker ps}, \code{inspect}, \code{stats}, \code{logs}, and reads of \code{/proc/<pid>/net/tcp}). Reading the socket table from the host through the container's process id works for every image, including images with no shell. An optional standalone collector can run on a host and push to the same ingest endpoint.
+\textbf{Connection and collection.} A connection manager keeps one SSH session per target and runs commands from a fixed catalogue (\code{docker ps}, \code{inspect}, \code{stats}, \code{logs}, and reads of \code{/proc/<pid>/net/tcp}). Reading the socket table through the container's process id works for every image, even one with no shell. An optional standalone collector can run on a host and push to the same ingest endpoint.
 
 \textbf{Target workloads.} Unmodified Docker Compose applications.
 
 \textbf{Test tools.} A traffic generator with per-application workflows and profiles, and a fault injector that works on containers (kill, pause, resource limits, network detach) and writes its ledger to a file the detector never reads.
 
-The server listens on port 3001 (HTTP and WebSocket) and the dashboard on 5173; the traffic generator listens on 4400; the server reaches each host over SSH on port 22, and the traffic generator reaches the application's front end (typically port 8080).
+The server listens on port 3001 (HTTP and WebSocket), the dashboard on 5173 and the traffic generator on 4400. The server reaches each host over SSH on port 22, and the traffic generator reaches the application's front end, typically on port 8080.
 
 \section{Agent Design}
 
@@ -127,7 +127,7 @@ Sensors & Docker state and statistics, socket tables, logs, interface counters &
 \end{table}
 
 \subsection{Decision logic of the diagnosis assistant}
-The assistant runs one decision window per cycle. Its alarm rule is shown in Figure~\ref{fig:detect} and its ranking in Figure~\ref{fig:rca}. An incident is opened as \texttt{DEGRADED} or \texttt{INCIDENT} (the latter when a service is critical), updated while the alarm holds, and resolved when it clears.
+The assistant runs one decision window per cycle (alarm rule in Figure~\ref{fig:detect}, ranking in Figure~\ref{fig:rca}). An incident opens as \texttt{DEGRADED}, or as \texttt{INCIDENT} when a service is critical. It updates while the alarm holds and resolves when the alarm clears.
 
 \begin{figure}[!htbp]
 \centering
@@ -142,7 +142,7 @@ The assistant runs one decision window per cycle. Its alarm rule is shown in Fig
 \end{figure}
 
 \subsection{Three engines on the same readings}
-The dashboard has a switch with three positions: Rules, Hybrid and ML. Only the active engine decides the incident, but all three are computed on every cycle from the same readings and graph (Figure~\ref{fig:parallel}). This makes two things possible: switching engines does not start the learned detector from nothing, and the Detection engines page can show what each engine detected, computed and predicted at the same moment.
+The dashboard offers three positions: Rules, Hybrid and ML. Only the active engine decides the incident, but every cycle computes all three from the same readings and graph (Figure~\ref{fig:parallel}). That has two payoffs. Switching engines never restarts the learned detector from nothing, and the Detection engines page can show what each engine detected, computed and predicted at the same moment.
 
 \figdiagram[The three engines in parallel]{d_engines_parallel.pdf}{The three engines in parallel. The rules score, the ML engine and the fused Hybrid rule are computed on the same inputs; the switch only chooses which one decides the incident.}{fig:parallel}
 
@@ -180,7 +180,7 @@ Dashboard & Views, 3D scene, engine switch & {\ttfamily\scriptsize client/src}\\
 
 \section{Design Principles and Decisions}
 \label{sec:principles}
-Most of the code follows from a short list of rules. When a piece of code looks stranger than it needs to be (a field left empty where zero would be simpler, a score split into named parts, a loop that waits for itself), one of these rules is usually the reason.
+A short list of rules explains most of the code. When something looks stranger than it needs to (a field left empty where zero would be simpler, a score split into named parts, a loop that waits for itself), one of these rules is usually the reason.
 
 \begin{table}[!htbp]
 \centering
@@ -192,14 +192,14 @@ Most of the code follows from a short list of rules. When a piece of code looks 
 \toprule
 \textbf{Principle} & \textbf{What it means and why} & \textbf{Where it shows}\\
 \midrule
-Nothing is installed on the target & The tool watches over one SSH connection with a fixed set of Docker and \texttt{/proc} reads. It can be pointed at a system one does not own and the measured system is not changed. The cost: no per-request data by default & Command catalogue; \texttt{RemoteCommand.ts}\\
-Observed beats declared & A \texttt{depends\_on} line is a claim; an open socket is a fact. Both are kept and never treated as equal: each edge carries a confidence from its evidence & Edge confidence (Table~\ref{tab:conf})\\
-Unmeasured is missing, never zero & Zero means ``measured, and it was zero''. A made-up zero looks like a real one on screen, and ``idle'' and ``not measured'' lead to opposite decisions & Metrics, edge activity, health factors; the 2D cards show a dash\\
-Every number can be checked by hand & Every score is arithmetic over named inputs, and its parts are published beside it & Evidence breakdown on the incident page\\
-An arrow means ``calls'' & An edge $A \to B$ means $A$ calls $B$, so a failure at $B$ hits $A$: failure moves against the arrow. Getting it backwards flips everything downstream & Orientation by listening port\\
-Compare like with like & Degree, traffic share and criticality are computed inside one project; traffic shares are split between functional and telemetry calls; every model is trained on one service's own history & Per-service baselines\\
-Rules and models stay separate & Incidents come from the detection engines; findings from the optional learned models are kept apart, so models are never graded against their own output & Findings page\\
-Be light on the target & Each loop waits for itself (the next sweep starts 5\,s after the previous one finished); one read per container per sweep; full rediscovery every 180\,s; going deeper needs per-target consent & Collector and discovery\\
+Nothing is installed on the target & The tool watches over one SSH connection with a fixed set of Docker and \texttt{/proc} reads, so it can monitor a system its operator does not own without changing it. The cost: no per-request data by default & Command catalogue; \texttt{RemoteCommand.ts}\\
+Observed beats declared & A \texttt{depends\_on} line is a claim; an open socket is a fact. The graph keeps both and never weighs them equally: each edge carries a confidence from its evidence & Edge confidence (Table~\ref{tab:conf})\\
+Unmeasured is missing, never zero & Zero means ``measured, and it was zero''. A made-up zero looks real on screen, and ``idle'' and ``not measured'' call for opposite decisions & Metrics, edge activity, health factors; the 2D cards show a dash\\
+Every number can be checked by hand & Every score is arithmetic over named inputs, and the parts sit beside it & Evidence breakdown on the incident page\\
+An arrow means ``calls'' & An edge $A \to B$ means $A$ calls $B$, so a failure at $B$ hits $A$ and moves against the arrow. Reversing it flips everything downstream & Orientation by listening port\\
+Compare like with like & Degree, traffic share and criticality are computed inside one project, traffic shares split functional from telemetry calls, and every model trains on one service's own history & Per-service baselines\\
+Rules and models stay separate & Incidents come from the detection engines. Findings from the optional learned models stay apart, so no model is graded on its own output & Findings page\\
+Be light on the target & Each loop waits for itself (the next sweep starts 5\,s after the last one ended), reads each container once per sweep and rediscovers everything every 180\,s; going deeper needs per-target consent & Collector and discovery\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -215,11 +215,11 @@ Be light on the target & Each loop waits for itself (the next sweep starts 5\,s 
 \textbf{Decision} & \textbf{Alternatives} & \textbf{Why this one}\\
 \midrule
 SSH, Docker CLI and \texttt{/proc} & An agent per host, eBPF, a service mesh & Needs nothing installed; works on any Docker host that can be reached over SSH\\
-Direction from the listening port & Trusting the scanned container as the source & Every connection is seen from both ends; the scan's own view produced a reversed duplicate of every link\\
+Direction from the listening port & Trusting the scanned container as the source & Both ends see every connection; the scan's own view produced a reversed duplicate of every link\\
 Byte counters from \texttt{/proc/<pid>/net/dev} & \texttt{docker stats} network figures & Docker rounds to three significant figures, so a 9.87\,MB counter moves in 10\,kB steps\\
 Additive ranking factors & A trained classifier & There are no labelled incidents to train on, and additive factors can be explained\\
 Noisy-OR cascade & Plain reachability & Reachability treated any chain as total failure\\
-Islands layout for the 3D scene & A grid, a ``server room'', a building & Sections read at a glance; a district per project; the room and building versions were tried and rejected\\
+Islands layout for the 3D scene & A grid, a ``server room'', a building & Sections read at a glance and each project gets its own district; we tried and rejected the room and building versions\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -231,8 +231,8 @@ Islands layout for the 3D scene & A grid, a ``server room'', a building & Sectio
 
 \textbf{Constraints that shape the design.}
 \begin{itemize}
-\item \emph{Coarse signals.} Observation from outside gives eight metrics per service every 5\,s. A brownout on an almost idle service moves none of them enough to alarm; Chapter~\ref{ch:results} reports this as an open problem.
-\item \emph{Each socket is seen from both ends.} Direction has to be recovered, or every dependency would appear as a cycle.
-\item \emph{Loaded hosts answer slowly.} Command timeouts are sized for a host under heavy load. A host that cannot answer \code{docker ps} at all shows nothing, and Section~\ref{sec:hostfindings} gives a measured example.
-\item \emph{One write.} The collection path only reads. The one write the mapper makes on a host is restarting a container that exited with a non-zero code, limited to a few attempts per container and switched off with \texttt{MAPPER\_AUTO\_RESTART=off}. Load generators are never restarted by it.
+\item \emph{Coarse signals.} Observing from outside yields eight metrics per service every 5\,s. A brownout on an almost idle service moves none of them enough to alarm, and Chapter~\ref{ch:results} reports it as an open problem.
+\item \emph{Two views of each socket.} Both ends see every connection, so direction must be recovered; otherwise every dependency looks like a cycle.
+\item \emph{Slow answers from loaded hosts.} Command timeouts allow for a host under heavy load. A host that cannot answer \code{docker ps} at all shows nothing; Section~\ref{sec:hostfindings} gives a measured example.
+\item \emph{One write.} The collection path only reads. The single write the mapper makes on a host restarts a container that exited with a non-zero code, with a few attempts per container at most, and \texttt{MAPPER\_AUTO\_RESTART=off} disables it. It never restarts load generators.
 \end{itemize}
