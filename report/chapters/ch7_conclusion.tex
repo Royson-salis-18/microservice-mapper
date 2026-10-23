@@ -10,7 +10,7 @@ We built a platform that watches containerised microservices from outside, recov
 \item The first ML engine, a per-service Isolation Forest, mistook a change of workload for a fault. It sat in alarm for 23 to 52\% of fault-free recordings in which only the load moved, and every other workload-blind detector did the same or worse. A load-aware residual model estimates the work all services share and judges only what remains. It stays in alarm for 0\% of those recordings and matches the forest on injected faults (71\% against 69\% caught and named on the real ones).
 \item On 62 real faults the hybrid names the true cause first for 71\% against 63\% for the rule layer (paired $+8.1$ points, 95\% CI $[-1.6,+17.7]$, $p=0.117$); on the synthetic set the difference is $+5.6$ points, also not significant.
 \item Container facts matter most. Removing the \code{docker stop} fact costs 18 points on the real systems and 15 on the synthetic set.
-\item Learned propagation is better calibrated than fixed edge probabilities on 69 observed cascades (expected calibration error 0.033 against 0.051; AUROC 0.841 against 0.827), with a lower Brier score. On the real systems the experiment is uninformative because almost no real fault cascaded.
+\item Learned propagation is better calibrated than fixed edge probabilities on 69 observed cascades (expected calibration error 0.033 against 0.051; AUROC 0.841 against 0.827), with a lower Brier score. On the real systems, the experiment is uninformative because almost no real fault cascaded.
 \item Learned directions stay correct when service names carry no information (27 of 31 real pairs against none for the name rule), but they do not improve ranking when names exist.
 \item Change-point alarms cut the median detection delay on the real systems from 11.3\,s to 4.8\,s, at the price of more alarm time (8\% to 16\%).
 \item The simple rule $z$-score is a strong detector on its own; the load-aware model earns its place through quietness and by surviving changes of workload.
@@ -23,8 +23,8 @@ We built a platform that watches containerised microservices from outside, recov
 \item A probabilistic cascading-failure model with learned propagation.
 \item A load-aware model of normal, found by comparing nine unsupervised models on fault-free workload recordings as well as on injected faults, and a hybrid detector with an honest operating contract (alarm time as well as false-alarm episodes).
 \item A fact-aware, decomposition-based ranker and learned call directions.
-\item A Detection engines page showing three engines in parallel.
-\item A blind, reproducible evaluation that includes the negative results and two corrected measurement bugs.
+\item A detection engines page showing three engines in parallel.
+\item A blind, reproducible evaluation that includes the negative results and a corrected measurement bug.
 \item A working platform with 339 automated tests, a traffic generator and host-diagnostic tools.
 \end{itemize}
 
@@ -33,22 +33,22 @@ Small teams running Docker Compose stacks that nobody wants to instrument can us
 
 \section{Limitations}
 \begin{itemize}
-\item Coarse signals. Eight metrics every five seconds. A brownout on an almost idle service never raises an alarm; no engine here catches it.
+\item Coarse signals. Eight metrics every five seconds. A brownout on an almost idle system. service never raises an alarm; no engine here catches it.
 \item Two real systems. Architecture independence is argued from a cross-system check and synthetic topologies, not proven. Real cascades were too rare in the recordings to test learned propagation on real data.
-\item Edge evidence not isolated offline. The recordings do not keep edge evidence, so the effect of the evidence weighting is not measured.
-\item Synthetic scaling only. The cost was measured on random graphs of 10 to 320 services with synthetic readings, on a shared virtual machine; no real system of that size was observed.
+\item Edge evidence is not isolated offline. The recordings do not retain edge evidence, so the effect of the evidence weighting is not measured.
+\item No scaling measurement. The cost was measured on random graphs of 10 to 320 services with synthetic readings, on a shared virtual machine; no real system of that size was observed.
 \item Workload recordings are generated. The load changes of the workload recordings come from two traffic generators on two benches, not from real users; a fault that begins during a large change of load can be masked by the load-aware model.
 \item Tuned by the authors. Real-system settings were not tuned on a held-out system, so those numbers are optimistic by an unmeasured margin.
 \item Auto-restart. The mapper restarts crashed containers by default (switch off with \texttt{MAPPER\_AUTO\_RESTART=off}); live runs with it on and off (Section~\ref{sec:live}) showed no difference on the two benches, but it should still be switched off when measuring detection.
-\item Not tested on Kubernetes, and the push endpoint's built-in token must be changed when the server is reachable by others.
+\item The push endpoint has a built-in token, which must be changed when the server is reachable by others.
 \end{itemize}
 
 \section{Scope for Future Work}
 \begin{itemize}
 \item A larger campaign on more real systems with real multi-service cascades, a public labelled data set, and edge evidence kept in the recordings so that its weighting can be measured.
-\item Promotion of learned directions and change-point alarms into the live system behind its operator switch.
-\item A language-model agent on top of the structured evidence (cause, evidence, runbook) to answer follow-up questions or draft a change, with the evidence as its only grounding, evaluated with a user study; any action it proposes would go through an approval gate.
-\item Support for Kubernetes through the same observation idea (node-level access to container sockets), and a scaling measurement on a real large system.
+\item Real multi-service cascades to test learned propagation where it matters; promotion of learned directions and change-point alarms into the live system behind its operator switch.
+\item A language-model agent on top of the structured evidence (cause, evidence, runbook) to answer follow-up questions or draft a change, with the evidence as its only grounding, evaluated through a user study; any action it proposes would go through an approval gate.
+\item Support for Kubernetes through the same observation idea (node-level access to container sockets), and a scaling benchmark.
 \item Workload recordings from a production-like day (a daily wave, a release, a flash crowd) and a model of a fault that begins during a load change.
 \item Brownout detection on idle services, perhaps with active probing of the service.
 \end{itemize}

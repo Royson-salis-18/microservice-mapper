@@ -3,10 +3,10 @@
 \label{ch:method}
 
 \section{Objective of the Study}
-The study asks how far an instrumentation-free, unsupervised pipeline can answer four operational questions about a running microservice system: is something wrong, where did it start, who falls next, and what kind of fault is it. It weighs the reliability of the answers equally. On the synthetic track a tuning split, kept apart from the reported data, chose the settings. On the real track no held-out system exists, and the report says so where it matters.
+The study asks how far an instrumentation-free, unsupervised pipeline can go in answering four operational questions about a running microservice system: is something wrong, where did it start, who is next, and what kind of fault is it. It also asks, with equal weight, how reliable the answers are. On the synthetic track, the settings were chosen on a tuning split kept apart from the data used for the reported numbers; on the real track, they were not tuned on a held-out system, and the report states this where it matters.
 
 \section{Method and Approach}
-The approach is a pipeline of small, separately testable models, not one large model. Each stage has a stated input, a stated output and a measured contribution (Section~\ref{sec:ablation}). The stages come in this order:
+The approach is a pipeline of small, separately testable models rather than one large model. Each stage has a stated input, a stated output, and a measured contribution (Section~\ref{sec:ablation}).
 \begin{enumerate}
 \item an \textbf{evidence-weighted graph} from observed sockets and declared dependencies;
 \item learned call directions for pairs the heuristic cannot orient;
@@ -15,10 +15,10 @@ The approach is a pipeline of small, separately testable models, not one large m
 \item a \textbf{cascade model} with Beta--Binomial edge probabilities and noisy-OR risk, plus trend-based early warning and change-point alarms;
 \item a \textbf{fault-type classifier} and runbook.
 \end{enumerate}
-The evaluation then replays recorded runs through the engines and scores them against a ledger the engines never see.
+The evaluation then replays recorded runs through the engines and scores them against a ledger that the engines never see.
 
 \section{Measurement and Evaluation Parameters}
-Table~\ref{tab:measures} defines the measures. They are event-level on purpose. Point-wise scoring with a window adjustment rewards an engine that flags one point of a long fault, and no operator experiences an alarm that way \cite{wu2021flawed,kim2022rigorous,tatbul2018precision}.
+Table~\ref{tab:measures} defines the measures. They are event-level on purpose: point-wise scoring with a window adjustment rewards an engine that flags one point of a long fault, which is not how an operator experiences an alarm \cite{wu2021flawed,kim2022rigorous,tatbul2018precision}.
 
 \begin{table}[!htbp]
 \centering
@@ -44,7 +44,7 @@ Cost & Milliseconds per decision window on one core\\
 \end{tabularx}
 \end{table}
 
-\paragraph{Two operating contracts.} An operator can budget false-alarm \emph{episodes} per fault-free hour. But one unbroken alarm counts as a single episode, so an engine can meet an episode budget while alarming almost continuously. We therefore also report \emph{alarm time}. An earlier version of our own detector had a low episode rate and 86\% alarm time on the real systems; the refinements of Section~\ref{sec:forest} cut it to 5\%.
+\paragraph{Two operating contracts.} An operator can budget false-alarm \emph{episodes} per fault-free hour. But one unbroken alarm counts as a single episode, so an engine can meet an episode budget while alarming almost continuously. We therefore also report alarm time. An earlier version of our own detector had a low episode rate and 86\% alarm time on the real systems; the refinements of Section~\ref{sec:forest} cut it to 5\%.
 
 \section{Tools, Equipment and Resources}
 The server and the dashboard ran on an Apple Mac mini with Node.js 22. The target hosts were AWS EC2 \texttt{c7i-flex.large} instances (2 vCPUs, 4\,GiB) in \texttt{ap-south-1} running Ubuntu, Docker and Docker Compose. For the live recordings of Section~\ref{sec:livedesign} both benches ran in Docker on one Linux machine. ShopFlow (13 services) and LedgerLine (12 services) were the applications under test; Sock Shop, a DeathStarBench social network and the OpenTelemetry demo served during development. \texttt{traffic-gen} and the benches' own generators supplied load, and the blind Fault Lab supplied faults. Matplotlib drew the figures, and \LaTeX\ and Mermaid typeset this report. Table~\ref{tab:env} lists the software stack.
@@ -53,12 +53,12 @@ The server and the dashboard ran on an Apple Mac mini with Node.js 22. The targe
 \begin{enumerate}
 \item Prepare the applications. Start ShopFlow and LedgerLine with Docker Compose on the lab hosts.
 \item Connect the mapper. Add each host (address, user, key) in the dashboard; the server discovers containers and Compose dependencies and starts the 5-second cycle.
-\item Drive traffic. Run open-loop traffic with a daily wave, bursts and flash crowds for 217 minutes per system.
+\item Drive traffic. Run open-loop traffic with a daily wave, bursts, and flash crowds for 217 minutes per system.
 \item Inject faults blind. The injector draws faults from a Poisson process whose rate follows the load, applies them physically to containers, and writes the ledger to a private file.
 \item Record. The collector's readings and container facts are recorded in a trace format that the engines can replay offline.
-\item Replay and score. Each engine runs on the recorded trace; scores are computed against the ledger after the run.
-\item Extend synthetically. A generator writes runs in the same format over 16 further topologies, tuned on one split and scored once on a disjoint split.
-\item Report. Intervals, paired tests, an ablation and an amplification study are generated by scripts in the repository.
+\item Replay and score. Each engine runs on the recorded trace, and scores are computed against the ledger after the run.
+\item Extend synthetically. A generator writes runs in the same format over 16 further topologies, tuning on one split and scoring once on a disjoint split.
+\item Report. Intervals, paired tests, an ablation study, and an amplification study are generated by scripts in the repository.
 \end{enumerate}
 
 \section{The Models}
@@ -92,7 +92,7 @@ Declared in the Compose file, never seen carrying traffic & 0.40\\
 
 \subsection{Learned call directions}
 \label{sec:dirs}
-The collector sees most pairs from both ends (15 of 32 pairs in one recorded system, 18 of 36 in the other), so direction must be recovered before a walk can follow it. The shipped heuristic reads names (an entry point calls a service, a service calls a datastore) and fails when names carry no role. We learn the direction of each observed pair online from the services' own histories instead, with no labels and no names. Four \emph{dynamic} signals use what services do during trouble: upward symptoms, downward traffic drops, implication ($P(T_a \mid T_b) - P(T_b \mid T_a)$, with $T$ meaning ``in trouble''), and a Granger-style F-test on the symptom series. Two \emph{structural} signals use the observed graph: each service's depth from the entry point, and whether it reports request metrics of its own (a datastore does not). The learned direction is the sign of $\sum_m \omega_m s_m(a,b)$ with weights $\omega_m \in \{0.5, 1, 2\}$ chosen by grid search on the tuning split. A pair stays undecided if the magnitude falls below $0.05$.
+The collector sees most pairs from both ends (in the recorded runs 15 of 32 pairs in one system and 18 of 36 in the other), so direction must be recovered before a walk can follow it. The shipped heuristic reads names (an entry point calls a service, a service calls a datastore) and fails when names carry no role. We instead learn the direction of each observed pair online from the services' own histories, with no labels and no names. Four \emph{dynamic} signals use what services do during trouble: upward symptoms, downward traffic drops, implication ($P(T_a \mid T_b) - P(T_b \mid T_a)$, with $T$ meaning ``in trouble''), and a Granger-style F-test on the symptom series. Two structural signals use the observed graph: the depth of each service from the entry point, and whether a service reports request metrics of its own (a datastore does not). The learned direction is the sign of $\sum_m \omega_m s_m(a,b)$ with weights $\omega_m \in \{0.5, 1, 2\}$ chosen by grid search on the tuning split. A pair stays undecided if the magnitude falls below $0.05$.
 
 \subsection{A load-aware model of normal}
 \label{sec:forest}
@@ -143,14 +143,14 @@ The first engine kept two Isolation Forests per service, trained on a sliding wi
 Every candidate runs inside the same engine (container facts, persistence, random walk, forecast) so that only the model of normal changes.
 
 \subsection{Rules and container facts}
-A robust one-sided $z$-score per metric (median and MAD, bad direction only) gives a rule score $\rho_s$ normalised so that $1$ is its three-sigma line. A container that is exited, paused, restarting or network-detached is a \emph{fact}: evidence, not degree. We added two facts that raw container state misses after inspecting the real runs. A \code{docker stop} exits with code zero, which looks like a finished job, so a service that ran and then exits counts as \emph{stopped}. A crash loop looks healthy between kills, so two outages within three minutes mark it.
+A robust one-sided $z$-score per metric (median and MAD, bad direction only) gives a rule score $\rho_s$ normalised so that $1$ is its three-sigma line. A container that is exited, paused, restarting, or network-detached is a fact: evidence, not degree. Two facts that raw container state misses were added after inspecting the real runs. A \code{docker stop} exits with code zero, which looks like a finished job, so a service that ran and then exits counts as \emph{stopped}. A crash loop looks healthy between kills, so two outages within three minutes mark it.
 
 \subsection{The hybrid alarm}
 Let $\lambda_s$ be a service's model level and $f_s \in \{0,1\}$ its fact flag. The hybrid alarms at window $t$ if
 \begin{equation}
 \max_s f_s = 1 \quad\text{or}\quad \max_s \lambda_s \ge \tau_\lambda \quad\text{or}\quad \max_s \rho_s \ge \tau_\rho,
 \end{equation}
-with $\tau_\lambda = 2$ and $\tau_\rho = 1.25$: the rules alone earn trust only well past their own line. In the live system a fact raises the alarm at once and the other two conditions must hold for two consecutive windows. The offline evaluation demands two consecutive windows for all three, the stricter reading.
+with $\tau_\lambda = 2$ and $\tau_\rho = 1.25$: the rules alone earn trust only well past their own line. In the live system, a fact raises an alarm immediately, and the other two conditions must hold for two consecutive windows. The offline evaluation demands two consecutive windows for all three, the stricter reading.
 
 \subsection{Deviation decomposition and the random walk}
 \label{sec:rca}
@@ -167,7 +167,7 @@ Each call edge $c \to x$ carries an unknown probability $p(c \leftarrow x)$ that
 \begin{equation}
 \hat p(c \leftarrow x) = \frac{k + m\,\pi_0}{n + m},
 \end{equation}
-so a rarely exercised edge starts at its prior and moves with evidence. The trials come from the system's own history, so no labels are needed. All experiments use an uninformative prior ($\pi_0 = 0.5$, $m = 2$). Given a suspected root $r$, risk flows up the call graph by noisy-OR, the independent-cascade model \cite{kempe2003influence}:
+so a rarely exercised edge starts at its prior and moves with evidence. No labels are needed; the trials are the system's own history. All experiments use an uninformative prior ($\pi_0 = 0.5$, $m = 2$). Given a suspected root $r$, risk flows up the call graph by noisy-OR, the independent-cascade model \cite{kempe2003influence}:
 \begin{equation}
 P(r) = 1, \qquad P(c) = 1 - \prod_{x \in C(c)} \bigl(1 - P(x)\, \hat p(c \leftarrow x)\bigr).
 \label{eq:noisyor}
@@ -182,7 +182,7 @@ Services above a risk cut are reported as likely next, and $\sum_c P(c)$ estimat
 \end{figure}
 
 \subsection{Early warning, change points and fault typing}
-For each rising-only feature, a least-squares line fitted to the load-aware residual $z$ over the last two minutes and projected two minutes ahead (only lines with $R^2 \ge 0.6$ count) flags a service that has not reached the alarm level but will. Online Page--Hinkley change-point detection \cite{page1954cusum} on the raw metrics can also raise the alarm before the model's line is crossed. At the alarm, 35 features of the top suspect's telemetry (container-state history, exit code, number of separate outages, memory slope, CPU and throttling change, latency and error ratios against a pre-fault baseline, network drop, number of anomalous callers) go to a random forest \cite{breiman2001rf} that names the fault type (crash, stop, pause, crash-loop, flap, memory, brownout, latency, partition). A short runbook of two to four concrete checks per type follows. This layer changes neither detection nor ranking.
+For each rising-only feature, a least-squares line fitted to the load-aware residual $z$ over the last two minutes and projected two minutes ahead (only lines with $R^2 \ge 0.6$ count) flags a service that has not reached the alarm level but will. Online Page--Hinkley change-point detection \cite{page1954cusum} on the raw metrics can also raise the alarm before the model's line is crossed. At the alarm, 35 features of the top suspect's telemetry (container-state history, exit code, number of separate outages, memory slope, CPU and throttling change, latency and error ratios against a pre-fault baseline, network drop, number of anomalous callers) are input into a random forest \cite{breiman2001rf} that names the fault type (crash, stop, pause, crash-loop, flap, memory, brownout, latency, partition). A short runbook of two to four concrete checks per type is attached. This layer changes neither detection nor ranking.
 
 \section{Error Sources and Mitigation}
 \begin{table}[!htbp]
@@ -210,7 +210,7 @@ Ledger parsing & A regression test after a bug that hid half of the real faults 
 \end{table}
 
 \section{Data Processing and Analysis}
-Readings keep missing values as missing. Each recorded trace stores, per window, the readings, container facts and engine inputs, so the engines replay deterministically. Warm-up (the first five minutes of each run) is excluded from false-alarm and ROC counts. Intervals are 95\% percentile bootstrap intervals over faults \cite{efron1979bootstrap}. Comparisons between engines are \emph{paired} bootstrap differences over the same faults with two-sided $p$ values, and seed-averaged results are means over seeds. Overlapping faults within a run are not independent, so the intervals err on the optimistic side. With 62 real faults, no difference below about 8 points is resolvable, and we claim none below that.
+Readings keep missing values as missing. Each recorded trace stores, per window, the readings, container facts and the engine inputs, so the engines can be replayed deterministically. Warm-up (the first five minutes of each run) is excluded from false-alarm and ROC counts. Intervals are 95\% percentile bootstrap intervals over faults \cite{efron1979bootstrap}. Comparisons between engines are \emph{paired} bootstrap differences over the same faults with two-sided $p$ values, and seed-averaged results are means over seeds. Overlapping faults within a run are not independent, so intervals are, if anything, optimistic. With 62 real faults, no difference below about 8 points is resolvable, and we claim none below that.
 
 
 \section{Computational Cost and Complexity}
@@ -243,15 +243,15 @@ Fusion and sorting & $O(N \log N)$ & Ranking of suspects\\
 \label{sec:evaldesign}
 
 \subsection{Systems and traffic}
-We built two containerised applications for the study. \emph{ShopFlow} is a 13-service retail checkout system (HTTP fan-out, two Postgres instances, two Redis caches, a NATS consumer). \emph{LedgerLine} is a 12-service retail-banking transfer system (a saga orchestrator, a double-entry ledger, a third-party FX provider, a batch worker). Each runs for 217 minutes under open-loop traffic with a daily wave, bursts and flash crowds, and each has its own EC2 host, Fault Lab and Grafana (Section~\ref{sec:benches}).
+Two containerised applications were built for the study. ShopFlow is a 13-service retail checkout system (HTTP fan-out, two PostgreSQL instances, two Redis caches, a NATS consumer). LedgerLine is a 12-service retail-banking transfer system (a saga orchestrator, a double-entry ledger, a third-party FX provider, a batch worker). Both ran for 217 minutes. Under open-loop traffic with a daily wave, bursts, and flash crowds, each scenario has its own EC2 host, Fault Lab, and Grafana (Section~\ref{sec:benches}).
 
 \subsection{Blind fault injection}
-Faults arrive by a non-homogeneous Poisson process whose rate follows the load. Each has a class, a role-weighted target, a heavy-tailed duration and a severity, and with some probability a follower spawns in the target's one-hop neighbourhood, so incidents overlap. Faults are physical (\code{SIGKILL}, pause, cgroup CPU and memory limits, network detach), and nothing inside the system under test carries a label. The injector writes a private ledger with the true root cause and the structurally affectable services of every fault, and nobody reads it until after the run. The two systems contribute 62 faults over seven classes (Figure~\ref{fig:evalflow}).
+Faults arrive by a non-homogeneous Poisson process whose rate follows the load, each with a class, a role-weighted target, a heavy-tailed duration and a severity; with some probability, a follower is spawned in the target's one-hop neighbourhood, so incidents overlap. Faults are physical (\texttt{SIGKILL}, pause, cgroup CPU and memory limits, network detach) and nothing is labelled inside the system under test. The injector writes a private ledger with, per fault, the true root cause and the services structurally able to be affected; this ledger is read only after the run. The two systems contribute 62 faults over seven classes (Figure~\ref{fig:evalflow}).
 
 \figdiagram{d_eval_flow.pdf}{Evaluation method. The ledger is written by the injector and read only when scoring.}{fig:evalflow}
 
 \subsection{Synthetic benchmark}
-To enlarge the sample, a generator writes runs in the identical recorded format. It combines the two topologies with their measured per-service baselines, random topologies, nine fault classes that propagate up and down the graph, overlapping faults and unlabelled noise (noisy neighbours, deploys, missing readings). A 16-campaign tuning split (170 faults, seed 1) chose the settings, and every reported synthetic number comes from a disjoint 16-campaign split (178 faults, seed 2), scored once. The generator also takes an \emph{amplification factor} $A$ that scales how strongly callers feel a fault (retry storms) and a class filter; the amplification study rests on it.
+To enlarge the sample, a generator writes runs in the identical recorded format. It combines the two topologies with their measured per-service baselines, random topologies, nine fault classes that propagate up and down the graph, overlapping faults and unlabelled noise (noisy neighbours, deploys, missing readings). Settings were chosen on a 16-campaign tuning split (170 faults, seed 1), and every reported synthetic number comes from a disjoint 16-campaign split (178 faults, seed 2) scored once. The generator also takes an \emph{amplification factor} $A$ that scales how strongly callers feel a fault (retry storms) and a class filter; the amplification study rests on it.
 
 \subsection{Live runs and fault-free workload recordings}
 \label{sec:livedesign}
@@ -263,12 +263,12 @@ We added two kinds of recording to test the corrected engine. \emph{Live campaig
 \item Which model of normal separates faulted from healthy services best, and which one does not mistake a change of workload for a fault?
 \item How much does each mechanism contribute (ablation), and does graph-aware ranking help when victims are louder than the cause (amplification)?
 \item Do learned propagation probabilities predict cascades better than fixed ones, and are they calibrated?
-\item Do learned directions stay correct when names carry no information, and do change-point alarms cut detection delay?
+\item Do learned directions remain correct when names carry no information, and do change-point alarms reduce detection delay?
 \end{enumerate}
 
 \subsection{Two measurement bugs}
 \label{sec:bug}
-Each recorded run holds two fault campaigns that both number their faults from one. The ledger reader kept only the second, hiding 14 of 31 faults per system from every engine and counting their outages as false alarms. We fixed the reader and added a regression test, and every number in this report uses all 62 faults.
+Each recorded run contains two fault campaigns that both number their faults from one. The ledger reader kept only the second, hiding 14 of 31 faults per system for every engine and counted their outages as false alarms. We fixed the reader, added a regression test, and now every number in this report uses all 62 faults.
 
 \label{sec:bug2}
 The second bug hid the very failure this chapter corrects. The replay that feeds recorded runs to the engine skipped a service's reading whenever it matched the previous one. An idle service reports the same zeros again and again, so the replay deleted exactly the idle stretches, and the old forest looked well behaved when traffic stopped. The live server skips nothing, because the collector reports every cycle. The replay now feeds every recorded moment as one reading, and we recomputed every number of the first version of this report that depended on it.
