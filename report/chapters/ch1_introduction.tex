@@ -23,7 +23,7 @@ The project addresses four linked problems that a team running containerised mic
 \item Black-box diagnosis. Methods that need training data and return an opaque score are hard to trust at three in the morning. An engineer needs to see the evidence and how it was combined.
 \end{itemize}
 
-The problem is therefore to \emph{observe a containerised system without touching it, recover its call graph, detect trouble per service against that service's own normal, rank the likely origin of an incident, predict how it will spread, and show every step in a form an engineer can verify}, with no labelled data and no specialised hardware.
+The problem is therefore to \emph{observe a containerised system without touching it, recover its call graph, detect trouble per service against that service's own normal, rank the likely origin of an incident, predict how it will spread, and show every step in a form an engineer can verify}. It has to be solved with no labelled data and no specialised hardware.
 
 \section{Motivation and Need for the Project}
 Small teams and student projects run the systems that heavyweight AIOps products serve badly: a few Docker hosts on a cloud account, no budget for per-host licences, applications nobody wants to re-instrument. These systems still fail in cascades. We watched it on our own benchmarks: killing one datastore container raised alarms on its callers within seconds.
