@@ -1,0 +1,203 @@
+\chapter{Questions an evaluator may ask, with answers}
+\label{ch:qa}
+
+Each answer has a \textbf{short version} (what to say first) and, when useful, a \textbf{longer version} (if they push). Say the short version, stop, and wait. Do not volunteer the long one unless asked.
+
+\section{The project in general}
+
+\q{What problem does your project solve?}\\
+\textbf{Short:} When one service in a microservice system fails, the failure spreads and the engineer gets dozens of alarms without knowing which service started it. Our tool finds the likely root cause and predicts which services fall next, without changing the application.\\
+\textbf{Longer:} It watches the Docker containers from outside over SSH, builds the call graph from socket tables, judges every service against its own normal, ranks causes with a random walk and spreads risk with a learned noisy-OR cascade model.
+
+\q{What is new here? Others have done root-cause analysis.}\\
+\textbf{Short:} Three things together. It works with no instrumentation and no labels, on one CPU core. The cascade model learns edge probabilities online. And our evaluation is blind, event-level and reports negative results.\\
+\textbf{Longer:} Many published methods need traces, labelled failures or GPUs. The random-walk family needs only a graph and an anomaly score, and we build on that. Our contributions: recovering the graph and call direction from the host alone, a load-aware model of normal that does not confuse a workload change with a fault, facts-first ranking, learned propagation, and an honest evaluation that includes two measurement bugs we found.
+
+\q{Why did you not use deep learning?}\\
+\textbf{Short:} Deep models need labelled failures and GPUs, and the engineer cannot audit their output. Our users have neither labels nor GPUs, and need to see why.\\
+\textbf{Longer:} Also, the simple models beat or matched the complex ones in our own comparison of nine models of normal. The key problem (workload changes) was not about model capacity; it was about what the model assumes.
+
+\q{Is this AI?}\\
+\textbf{Short:} It is unsupervised machine learning and probabilistic modelling, not a neural network and not a language model.\\
+\textbf{Longer:} The learned parts: the model of normal per service, the edge propagation probabilities (Beta--Binomial), the learned call directions, the fault-type classifier (a random forest).
+
+\q{What does ``agent-assisted'' mean?}\\
+\textbf{Short:} A collector agent that observes and a diagnosis assistant that turns the observations into a cause, a forecast, a fault type and a runbook. Neither is a language model.
+
+\q{Does it work on real systems?}\\
+\textbf{Short:} On two real, containerised systems we built, running in Docker on cloud hosts, with 62 blind-injected faults over 217 minutes each, plus 84 live faults.\\
+\textbf{Longer:} Not in production. We argue generality from a cross-system check and 16 synthetic topologies. We say plainly that it is evidence, not proof.
+
+\section{Observation and the graph}
+
+\q{How do you get the dependencies without instrumenting the application?}\\
+\textbf{Short:} From each container's socket table, read over SSH through the host's \code{/proc}. A connection shows who is talking to whom.
+
+\q{How do you know which service is the caller?}\\
+\textbf{Short:} The end that holds the listening port is being called. The end with a random temporary port is the caller.\\
+\textbf{Longer:} If the listening port is unknown we use the ephemeral-port range as a fallback with lower confidence (0.85). If neither settles it, the edge is marked unresolved (confidence 0.50). We never guess silently.
+
+\q{Why does direction matter so much?}\\
+\textbf{Short:} Failure travels against the arrow. If the arrows are wrong, every downstream question (root cause, cascade, blast radius) gives the opposite answer.
+
+\q{What if the service names are meaningless?}\\
+\textbf{Short:} Learned directions use how services behave during trouble. On 31 real pairs they are right for 27; the name rule is undecided for all of them when names are hidden.
+
+\q{What are ``container facts''?}\\
+\textbf{Short:} Container state treated as certainty, not as a degree of anomaly: stopped, paused, restarting, network-detached, crash-looping. When one exists, that service ranks first.\\
+\textbf{Longer:} We added two facts that raw state misses: \code{docker stop} exits with code zero (looks like a finished job), and a crash loop looks healthy between kills. Removing the stop-fact costs 18 points on the real systems.
+
+\q{Is anything installed on the monitored hosts?}\\
+\textbf{Short:} No. One SSH connection and a fixed list of read-only Docker and \code{/proc} commands.
+
+\q{Is it safe to give it SSH access?}\\
+\textbf{Short:} The commands come from a fixed catalogue, every argument is sanitised, output and time are bounded, and keys stay on the operator's machine, never in the repository.\\
+\textbf{Longer:} A test checks that an identifier with shell metacharacters is refused before a command is built. The one write the mapper makes is restarting a crashed container (non-zero exit), a few times at most, and it can be switched off.
+
+\q{What are the eight metrics?}\\
+\textbf{Short:} CPU, memory, CPU throttling, network in and out, request rate, error share and p95 latency, every five seconds.
+
+\q{What happens when a metric is missing?}\\
+\textbf{Short:} It stays missing and is never replaced by zero, because ``idle'' and ``not measured'' lead to opposite decisions.
+
+\section{Detection and the ML correction}
+
+\q{What was wrong with your first ML engine?}\\
+\textbf{Short:} It flagged every service as anomalous when the traffic stopped, because it could not tell ``everyone got quieter'' from ``one service is sick''.\\
+\textbf{Longer:} The Isolation Forests learn the shape of each service's recent readings. A workload change moves all services outside that shape together. On fault-free recordings it was in alarm 23\% to 52\% of the time.
+
+\q{How did you find it?}\\
+\textbf{Short:} An operator stopped the traffic generator and switched to ML, and every service showed 100\%. We then recorded fault-free runs with only the load changing and measured it.\\
+\textbf{Longer:} Our own benchmarks had hidden it: the replay tool skipped repeated readings, which deleted the idle stretches.
+
+\q{How does the new model avoid that?}\\
+\textbf{Short:} It first estimates how much the whole project's workload moved (a median over busy services), expects each service to follow that, and judges only the leftover. A fault in one service cannot move a median.
+
+\q{Why a median and not an average?}\\
+\textbf{Short:} One broken service can drag an average but barely moves a median. The median follows the shared change and ignores the fault.
+
+\q{What if a fault happens during a traffic change?}\\
+\textbf{Short:} It is still seen, because each signal is tested against two hypotheses (ignores load / follows load) and counts as unusual only if neither explains it. A CPU spike on one service during a surge is still a spike compared with what the surge predicts.\\
+\textbf{Longer:} But a fault that starts during a \emph{very large} load change can be masked. The Hybrid also lets the rules and container facts raise the alarm, which covers some of that.
+
+\q{Is the new model more accurate than the old one?}\\
+\textbf{Short:} At catching injected faults, about the same (71\% against 69\% caught and named on the real faults, inside the noise). The improvement is robustness: 0\% against 23--52\% time in alarm when only the load moves.
+
+\q{Why did you choose the load factor over the control chart or the subspace model?}\\
+\textbf{Short:} The control chart with the tail spread is almost as good (0\% and 0\% time in alarm) but still raised 1.2 and 1.9 false episodes per hour; with the load factor 0.0 and 1.0. The subspace model discriminates as well but raised 7.7--10.7 false episodes per hour on the steady load steps, adapts more slowly and costs more as services grow.
+
+\q{What is the tail-aware spread?}\\
+\textbf{Short:} The spread is at least the distance to the 90th percentile in the direction that matters, so a bursty signal's ordinary bursts count as normal width. Without it, alarm time on the workload recordings rises from 0\% to 10\% and 6\%.
+
+\q{Why do you only accept readings below the alarm line into the training window?}\\
+\textbf{Short:} So a long fault never becomes the baseline.
+
+\q{What is the downside of that gate?}\\
+\textbf{Short:} A mild fault that lasts more than two minutes is eventually absorbed. The rules and container facts keep alarming. We measured longer drift times and they doubled alarm time with no accuracy gain.
+
+\q{Did you tune on the test data?}\\
+\textbf{Short:} For the load model, partly: the alarm line, window and slow reference were swept over all recordings together; we chose the flat region, not the maximum. The synthetic numbers come from a split scored once. The real-system numbers have no held-out system, so they are optimistic by an unmeasured margin.
+
+\q{Why is Hybrid the default if ML has fewer false alarms?}\\
+\textbf{Short:} The Hybrid lets the rules and container facts also raise the alarm, so it covers what ML absorbs or cannot see, at the cost of more false alarms (6.2 per hour against 2.3 on the real systems).
+
+\q{What does a false alarm mean in your evaluation?}\\
+\textbf{Short:} An alarm episode outside every fault window, with one unbroken alarm counting as one episode. We also report alarm time, because an engine could meet an episode budget while alarming almost all the time.
+
+\section{Ranking, cascade and prediction}
+
+\q{How do you decide the root cause?}\\
+\textbf{Short:} Two steps. First, split each service's trouble into what it caused itself (CPU, memory) and what it inherited (symptoms), subtracting what its sick callees explain. Second, a random walk over the call graph, which collects the most time at the true source. Facts rank first.
+
+\q{Why is the loudest service often the wrong answer?}\\
+\textbf{Short:} Victims accumulate symptoms from everything below them (retries amplify the load), so they can be louder than the origin.
+
+\q{Is the random walk better than ranking by severity?}\\
+\textbf{Short:} Not significantly on our benchmarks. Under an amplification study the walk holds at 75--76\% while severity falls from 76\% to 71\%, a gain growing to $+3.8$ points ($[-0.9,+9.4]$), but our sample is too small to confirm it.
+
+\q{How does the cascade model work?}\\
+\textbf{Short:} Each call edge has a probability that trouble crosses it. We learn it online: every time a service goes bad, each healthy caller is a trial, and it succeeds if it goes bad within a minute. A Beta--Binomial update gives the probability. Risk then spreads up the graph by noisy-OR.
+
+\q{What is noisy-OR?}\\
+\textbf{Short:} The chance a service is hit is one minus the product of the chances each route fails to deliver trouble. It combines independent routes.
+
+\q{Is the learned cascade model better than a fixed probability?}\\
+\textbf{Short:} Better calibrated: ECE 0.033 against 0.051 on 69 synthetic cascades; ranking only slightly better (AUROC 0.841 against 0.827). On real systems there were too few cascades to test.
+
+\q{Do you predict failures before they happen?}\\
+\textbf{Short:} We predict who falls next \emph{given} a failure. Early warning for gradual faults exists but is weak: it warned before the alarm for 13 of 178 synthetic faults and none of the 62 real ones, which were abrupt.
+
+\q{What does the change-point alarm do?}\\
+\textbf{Short:} It cuts the median detection delay on the real systems from 11.3 to 4.8 seconds, but doubles the time in alarm (8\% to 16\%), so it is a trade-off and not the default.
+
+\q{How do you name the fault type?}\\
+\textbf{Short:} A random forest on 35 features of the top suspect's telemetry names crash, stop, pause, crash-loop, flap, memory, brownout, latency or partition, and a runbook of two to four checks is attached. It never changes detection or ranking.
+
+\section{Evaluation and statistics}
+
+\q{How did you make the test fair?}\\
+\textbf{Short:} The injector is blind and writes a private ledger read only at scoring; faults are physical; the synthetic tuning and test sets are separate; and we report intervals and negative results.
+
+\q{What is ``caught and named''?}\\
+\textbf{Short:} A fault that was detected \emph{and} had the true root cause ranked first.
+
+\q{Why is 71\% against 63\% not significant?}\\
+\textbf{Short:} With 62 faults the paired 95\% interval for the difference is $[-1.6,+17.7]$ points, so it includes zero ($p=0.117$).
+
+\q{What is a bootstrap interval?}\\
+\textbf{Short:} We resample the faults with replacement many times, recompute the rate each time and take the middle 95\% of the results.
+
+\q{How many faults did you use in total?}\\
+\textbf{Short:} 62 on the real benches (217 minutes each), 84 live, 178 synthetic held-out over 16 topologies (170 more for tuning), and four fault-free workload recordings.
+
+\q{Why are the synthetic results not enough?}\\
+\textbf{Short:} They come from our own generator. They enlarge the sample, but the simulator is cleaner than a real system (for example, restarts do not lower memory in it).
+
+\q{What were the measurement bugs?}\\
+\textbf{Short:} (1) The ledger reader kept only one of two campaigns, hiding 14 of 31 faults per system and counting their outages as false alarms. (2) The replay tool skipped repeated readings, which deleted the idle periods and hid the forest's failure. Both made engines look better than they were; both are fixed and tested.
+
+\q{Did you compare with published methods?}\\
+\textbf{Short:} Not head to head. They need traces, labels or GPUs we do not have. We compared the baselines they build on: rules, severity ranking, the walk, and a range of detectors.
+
+\q{What does auto-restart do to your results?}\\
+\textbf{Short:} Nothing measurable on our benches: Docker's \code{restart: always} revives containers faster than the mapper looks (every 180 seconds), and the mapper skips exit-code-0 stops. Stopped containers stayed down for about 300 seconds in both modes.
+
+\section{Engineering questions}
+
+\q{How big is the project?}\\
+\textbf{Short:} About 36\,000 lines of TypeScript, 339 automated tests in 19 suites, 64 REST endpoints and one WebSocket.
+
+\q{How fast is it?}\\
+\textbf{Short:} About 0.37 ms per service per decision window on one core; 4 ms for 10 services, 119 ms for 320; far below the 5-second collection period.
+
+\q{What if the host is slow?}\\
+\textbf{Short:} Timeouts are sized for a loaded host: on a swap-thrashing 2\,GB machine \code{docker ps} took 45 seconds. We built \code{check-host} and \code{mapper-edges} to tell a host problem from a mapper problem.
+
+\q{Why TypeScript?}\\
+\textbf{Short:} One language for the server, the dashboard and the algorithms, with types that catch mistakes in the data structures. The algorithm modules are pure (no filesystem or network), which a test enforces, so they replay deterministically.
+
+\q{How do you test it?}\\
+\textbf{Short:} Purity tests (algorithm modules never touch the filesystem or network), regression tests for every bug we found, and security tests for the command catalogue.
+
+\q{Does it scale?}\\
+\textbf{Short:} The cost is linear in the number of services in our timing (10 to 320, synthetic readings). We have not observed a real system of that size.
+
+\q{Why a 3D view?}\\
+\textbf{Short:} It answers questions a flat graph does not: Islands (what kinds of service), Flow (request order), Topology (what hurts most if it breaks), Tiers (are layers respected).
+
+\section{The hard questions}
+
+\q{Your model is not more accurate. So what did you actually achieve?}\\
+\textbf{Short:} We found and fixed a failure that matters in practice. The first engine called every workload change a fault; the corrected one does not, and it matches the old one at catching real faults. Robustness, not benchmark score, was the real defect.
+
+\q{Isn't Rules just as good?}\\
+\textbf{Short:} At ranking single readings, yes: the rule score has the best AUROC. At what an operator sees, no: it raised 9.2 false alarms per hour against 2.3 for ML, named the right service for 63\% against 71\%, and was in alarm 35\% of the time on the stepped-load recording where ML was in alarm 0\%. We say the first part in the report.
+
+\q{Isn't your evaluation circular? You built the systems and the injector.}\\
+\textbf{Short:} The mapper never sees the injector's ledger, the faults are physical, and the synthetic test split was scored once. But yes, we built both sides, and that is a limitation we state; external systems (Sock Shop, DeathStarBench, the OpenTelemetry demo) were used only for discovery checks, not for scoring.
+
+\q{What would you do with more time?}\\
+\textbf{Short:} More real systems with real cascades; retain edge evidence in recordings; promote learned directions and change-point alarms behind the operator switch; a language-model agent that answers follow-up questions using only the structured evidence, with an approval gate for any action; Kubernetes; workload recordings from a production-like day; brownout detection on idle services.
+
+\q{What is the single most important lesson?}\\
+\textbf{Short:} Test your detector when nothing is wrong. A tool that only looks good on injected faults can fail the first time the traffic changes.

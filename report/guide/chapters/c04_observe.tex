@@ -1,0 +1,67 @@
+\chapter{Seeing a system without touching it}
+\label{ch:observe}
+
+\section{What ``from outside'' really means}
+\begin{simplebox}
+Imagine you want to know how busy a building is without going inside or asking anyone to wear a tracker. You can stand across the road and count people entering and leaving, see which windows are lit, and see which delivery vans stop at which door. You cannot read their private letters, but you learn a lot.
+
+That is what the mapper does with a computer. It logs into the machine over SSH (like a remote terminal), and runs ordinary commands that Docker already offers: \emph{which containers exist}, \emph{how much CPU and memory each is using}, \emph{who is connected to whom}. Nothing is installed in the application. If you removed the mapper tomorrow, the application would not know it had ever been watched.
+\end{simplebox}
+
+\begin{techbox}
+The connection manager keeps one SSH session per target (the \code{ssh2} library, no \code{ssh} binary needed) and runs commands from a fixed catalogue: \code{docker ps --no-trunc --format '{{json .}}'}, \code{docker inspect}, \code{docker stats --no-stream}, \code{docker logs}, and reads of \code{/proc/<pid>/net/tcp} and \code{/proc/<pid>/net/dev}. Every argument that reaches a shell passes a sanitiser (container identifiers must match the shapes Docker produces; timestamps and tail lengths are validated), and a test checks that an identifier with shell metacharacters is refused before any command is built. Each command has a timeout and a maximum output size.
+\end{techbox}
+
+\begin{saybox}
+``The key sentence is: \emph{one SSH connection, a fixed list of read-only Docker and /proc commands, nothing installed.} That is why you can point it at a system you do not own.''
+\end{saybox}
+
+\section{The eight numbers per service}
+\begin{simplebox}
+For every service, every five seconds, we record eight numbers: how busy the processor is, how much memory it uses, how much it is being slowed down by its CPU limit (``throttling''), how much data comes in and goes out of its network, how many requests it handles, what share of them fail, and how slow the slowest ones are. That is the entire view we have. It is coarse, and we say so.
+\end{simplebox}
+
+\begin{techbox}
+$x_s(t)=(\text{CPU},\ \text{memory},\ \text{throttle},\ \text{net in},\ \text{net out},\ \text{request rate},\ \text{error share},\ \text{p95 latency})$. CPU and memory are measured against the container's \emph{own} allowance, not the host's. Network counters come from the interface byte counters in \code{/proc/<pid>/net/dev}, which are exact, where \code{docker stats} prints values rounded to three significant figures (a 9.87\,MB counter moves in 10\,kB steps). Request rate, error share and latency exist only when a service reports them. A missing value stays missing.
+\end{techbox}
+
+\section{Who calls whom: the listening-port trick}
+\begin{simplebox}
+Every connection between two services is seen from \emph{both ends}. Service A shows a connection to B, and service B shows a connection from A. If you just record ``A talks to B'' on both sides, you get a fake arrow in each direction on every link, and the map becomes a tangle in which every service seems to depend on every other one.
+
+The trick we use: on a connection, one side is the \emph{server} and holds a fixed ``listening port'' (like a shop's door number), and the other side is the \emph{client} and uses a random temporary port. The one with the fixed door number is the one being called. So the arrow points from the client to the owner of the listening port.
+\end{simplebox}
+
+\begin{techbox}
+For each socket row in state ESTABLISHED or TIME\_WAIT: find the peer from the remote address (or apply the published-port rule when the call goes through the host's address). If the peer owns the remote port as a listening port and the scanned container does not own the local port, the edge is $a\to b$ with evidence \emph{listen-port}. If the scanned container owns the local port and the peer does not own the remote port, the edge is $b\to a$. If exactly one port is in the ephemeral range, the side with the ephemeral port is the caller (evidence \emph{ephemeral-port}). Otherwise the edge is marked \emph{unresolved} rather than guessed. Each connection is counted once by its key (caller ip:port $>$ callee ip:port), so a burst of short calls does not look like many links. Reading the socket table through the container's process id works for every image, including images with no shell.
+\end{techbox}
+
+\begin{examplebox}[A small worked example]
+Suppose the \code{orders} container has an open connection from \code{10.0.0.5:51234} to \code{10.0.0.9:5432}. Which one is the database? Port 5432 is a well-known fixed port that the database container is listening on. Port 51234 is in the temporary range and no container is listening on it. So \code{orders} is the caller and the database is the callee, and the edge is $\texttt{orders}\to\texttt{orders-db}$ with evidence ``listen-port'' and confidence $1.0$.
+\end{examplebox}
+
+\begin{warnbox}
+Before we fixed this, a bug recorded both directions for every link. Blast radius and criticality saturated: ``what is downstream of X?'' returned almost the whole graph. If an evaluator asks why we spend effort on direction, this is the answer: a wrong arrow flips every result that follows it.
+\end{warnbox}
+
+\section{Container facts: the things that are not ``a bit anomalous''}
+\begin{simplebox}
+If a container has stopped, that is not ``slightly unusual''. It is a fact, like a light being off. A normal statistics tool treats it as a very large anomaly score, which throws away the one thing you are sure about. We treat container state as evidence of its own kind. A container that is stopped, paused, restarting, or cut off from its network is a \emph{fact}, and when one exists, that service is ranked first.
+\end{simplebox}
+
+\begin{techbox}
+\code{containerFact} maps the runtime state to \emph{down} (exited with a non-zero code, dead, vanished or not found), \emph{paused}, \emph{restarting}, \emph{detached} (network detached while running) or \emph{benign} (a load generator, or a container that exited with code 0). We added two facts that raw state misses after inspecting the real runs. First, \code{docker stop} exits with code zero, which looks like a finished job, so a service that had been running and then exits is marked \emph{stopped}. Second, a crash loop looks healthy between kills, so two outages within three minutes mark it. The ablation shows these facts matter most: removing the \code{docker stop} fact costs 18 points of caught-and-named on the real systems and 15 on the synthetic set.
+\end{techbox}
+
+\begin{saybox}
+``Container state is a fact, not a degree. That single decision is worth more than any statistical refinement we tried. Remove the stop-fact and we lose 18 points on the real systems.''
+\end{saybox}
+
+\section{The one write the mapper makes}
+\begin{simplebox}
+Almost everything the mapper does is looking. The one thing it can \emph{do} is restart a container that crashed (exited with an error), a few times at most. It never touches containers that were stopped on purpose, and never restarts load generators. You can turn it off with one setting. We tested whether it changes our results by running the same faults with it on and off: it made no measurable difference on our two benches.
+\end{simplebox}
+
+\begin{techbox}
+Setting: \code{MAPPER\_AUTO\_RESTART=off}. The rule skips exit code 0, so a deliberate \code{docker stop} is never undone. Live campaigns (21 faults each, auto-restart on and off, both benches) showed no effect beyond run-to-run variation, and a direct test (stopping \code{cart} and \code{payments} for 5 minutes each) showed the stopped containers stayed down for $\approx 300$\,s in both modes. Recommendation: switch it off when measuring detection, so the mapper cannot heal the faults the injector applies.
+\end{techbox}

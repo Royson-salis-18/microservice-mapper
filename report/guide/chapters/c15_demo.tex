@@ -1,0 +1,86 @@
+\chapter{The demo script}
+\label{ch:demo}
+
+A demo can go wrong in many small ways. This part gives two safe options: a \textbf{simulator demo} that needs only a laptop, and a \textbf{live-bench demo} that needs Docker and the benches. Practise the simulator one until it is boring; keep the live bench as the stretch goal.
+
+\section{Before you start}
+\begin{enumerate}
+\item Node.js 20.19 or 22.12 and later. \code{npm run doctor} checks the machine.
+\item In the repository, \code{npm start} installs what is missing and starts the server (port 3001) and the dashboard (port 5173). Open \code{http://localhost:5173}.
+\item Keep a second terminal open for the simulator commands below.
+\item Use a clean data folder for a demo so that old data does not confuse the story (the mapper keeps its data in \code{server/data}; never commit that folder).
+\end{enumerate}
+
+\begin{warnbox}
+Never put \code{.pem} keys or the contents of \code{server/data} into git. The repository ignores them, but a stray \code{git add -A} in the wrong folder can still include data you do not want public.
+\end{warnbox}
+
+\section{Option A: the simulator demo (about ten minutes)}
+\begin{simplebox}
+The simulator pretends to be a small shop with ten services and scripted failures, so \emph{you know the true answer in advance}. That is useful in a demo: you can say ``watch, I will break the payment service'' and then show the tool finding it.
+\end{simplebox}
+
+\begin{techbox}
+The simulator (\code{run/scripts/simulate-target.ts}) pushes telemetry to the mapper's real \code{/api/ingest} endpoint, the same path the SSH collector uses, so graph building, edge weights, detection, ranking, cascade prediction, the API and the UI all run for real. The target id is \code{sim-shop}. Scenarios: \code{baseline} (healthy), \code{db-crash} (\code{orders-db} exits with 137, then \code{orders} and the front end degrade), \code{slow-payment} (\code{payment} saturates, \code{orders} degrades after it), \code{crash-loop} (\code{carts-db} crash-loops, \code{carts} degrades). The ingest token defaults to \code{mapper-secret-token} unless \code{INGEST\_TOKEN} is set.
+\end{techbox}
+
+\subsection{The script, step by step}
+\begin{enumerate}
+\item \textbf{Start healthy.} In the second terminal run the baseline scenario for a few minutes:
+\begin{verbatim}
+node server/node_modules/tsx/dist/cli.mjs run/scripts/simulate-target.ts \
+  --url http://localhost:3001 --token mapper-secret-token \
+  --target sim-shop --scenario baseline --duration 200
+\end{verbatim}
+\emph{Say:} ``The mapper is learning what normal looks like. Everything is green.''
+\item \textbf{Show the map.} Open \emph{Architecture} (2D) then \emph{Spatial view} (3D, \emph{Islands}). Point at the platforms and the cables.
+\item \textbf{Break something.} Start the failure scenario:
+\begin{verbatim}
+node server/node_modules/tsx/dist/cli.mjs run/scripts/simulate-target.ts \
+  --url http://localhost:3001 --token mapper-secret-token \
+  --target sim-shop --scenario db-crash --duration 150
+\end{verbatim}
+\emph{Say:} ``I just killed the orders database. Watch the incident page.''
+\item \textbf{Show the incident.} Open \emph{Incidents \& cascade}. Read it top to bottom: root cause, confidence, affected services, next in line, why, next steps.
+\item \textbf{Show the three engines.} Open \emph{Detection engines}. Point at the three columns and the \emph{Peak against the alarm line} chart. Open it with the enlarge button.
+\item \textbf{Tell the ML story.} ``This is the page that shows why we corrected the ML.'' Point at the workload chip. ``If the traffic changes, the chip says so, and no service is judged until it is explained.''
+\item \textbf{Optional: the slow-payment scenario} shows Rules blaming the louder \code{orders}, while ML and Hybrid name \code{payment}.
+\end{enumerate}
+
+\begin{saybox}
+At step 4, resist the urge to say everything. Say three things: ``this is the root cause and how sure we are, these are the services already hurt, these are the next ones''. Then stop and let them ask.
+\end{saybox}
+
+\section{Option B: the live-bench demo}
+\begin{simplebox}
+This runs a real application (the ShopFlow shop) in Docker on your machine, with the mapper watching it over SSH and the Fault Lab breaking containers while the mapper does not know. It is more impressive and more fragile. Do it only if the machine is ready and you have rehearsed.
+\end{simplebox}
+
+\begin{techbox}
+The repository has a staged demonstration script: \code{npm run demo -- --bench ../bench-1 --subject shopflow}. Stages: (1) baseline (watch the running services so the mapper learns what normal is), (2) traffic (raise organic traffic $\times2$), (3) calm (random faults one at a time), (4) storm (faults more often, up to two at once), (5) score (compare the mapper's answers with the injector's private ledger into one HTML report). The mapper (\code{npm run local}) must already be running; the injector never talks to the mapper. Minutes are real time; use \code{--dry-run} to see the plan first.
+\end{techbox}
+
+\begin{warnbox}
+\begin{itemize}
+\item Allow thirty minutes of baseline in a real demo: the mapper needs about thirty readings per service before ML judges, and the learned rule model needs \code{MAPPER\_BASELINE\_MIN} (30) minutes.
+\item Switch auto-restart off (\code{MAPPER\_AUTO\_RESTART=off}) so the mapper does not heal the faults you are showing.
+\item On a laptop with little memory the benches are slow; check \code{docker ps} answers within a second or two before you start.
+\end{itemize}
+\end{warnbox}
+
+\section{What to do if something goes wrong on stage}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{What you see} & \textbf{What to do}\\
+\midrule
+Dashboard shows nothing & Check the server is on port 3001 (\code{curl localhost:3001/api/targets}). Run \code{npm run doctor}.\\
+``Learning baseline 5 of 30 min'' stays up & That is normal for a new project. Use the simulator, or say ``the learned rules need thirty minutes; container facts work from the start''.\\
+ML engine goes quiet during a slow fault & Expected: the two-minute drift rule absorbed a mild steady fault. Switch to Hybrid; say so.\\
+A service shows a dash instead of a number & Expected: unmeasured is shown as missing, not as zero.\\
+Host does not appear & Run \code{npm run check-host -- <ip> <key> <port>}; it says whether the host or the mapper is at fault.\\
+3D view is slow & Turn off the glow button; use the Studio theme.\\
+\bottomrule
+\end{tabularx}
+\end{center}

@@ -1,0 +1,47 @@
+\chapter{The map: building and trusting the call graph}
+\label{ch:graph}
+
+\section{Two sources, two levels of trust}
+\begin{simplebox}
+There are two ways to know that service A depends on service B. One is that someone \emph{wrote it down}: the configuration file says ``A depends on B''. The other is that we \emph{saw it happen}: A really opened a connection to B a moment ago. Written-down links can be stale. Seen links are real, but a connection that is only seen once might be a fluke.
+
+So we keep both, and we give every link a trust score between 0 and 1 based on how good its evidence is. A link we saw clearly, with a clear direction, gets 1.0. A link that exists only in the configuration file and never carried any traffic gets 0.4.
+\end{simplebox}
+
+\begin{techbox}
+Declared edges come from the Compose file (\code{depends\_on}); observed edges come from socket tables. Each edge has a confidence $c(e)$ equal to its strongest evidence: $1.0$ for a call seen in request logs or oriented by a listening port; $0.85$ when only the ephemeral-port range orients it; $0.70$ observed without direction evidence; $0.50$ direction unresolved; $0.40$ declared but never seen carrying traffic. The dependency share $d(e)$ of an edge leaving a caller is its slow-baseline traffic normalised over that caller's edges. The edge weight is
+\[
+w(e)=\operatorname{clip}\bigl(c(e)\,d(e)\,\phi,\ 0,\ 1\bigr),
+\]
+with $\phi$ discounting fire-and-forget telemetry edges to a tenth. An observed edge expires ten minutes after it was last seen.
+\end{techbox}
+
+\begin{examplebox}[Why use a \emph{slow} baseline for the share?]
+Suppose \code{orders} sends 90\% of its calls to \code{orders-db} and 10\% to \code{notifier}. Now \code{orders-db} dies. The traffic on that link drops to zero. If we weighted by the \emph{current} rate, the dead database would suddenly look unimportant to \code{orders} (0\% of traffic) at the exact moment it matters most. So the share is computed from a slow-moving average that remembers the link was important before it broke.
+\end{examplebox}
+
+\begin{warnbox}
+The offline benchmarks replay recordings that do \emph{not} keep edge evidence, so they use unit weights. That means the report does \textbf{not} measure how much the evidence weighting helps. If an evaluator asks ``does the confidence weighting improve accuracy?'', the honest answer is: we use it live and it is consistent with what we saw, but we did not isolate its effect offline. That is listed under limitations and future work.
+\end{warnbox}
+
+\section{When names help, and when they do not}
+\begin{simplebox}
+Sometimes the listening-port trick cannot decide who calls whom. In those cases a simple fallback is to read the names: a service called ``gateway'' probably calls ``orders'', and ``orders'' probably calls ``orders-db''. That works until someone names their services ``alpha'', ``bravo'', ``charlie''. So we also built a version that learns the direction from how the services \emph{behave} when something goes wrong, with no help from names. When names are useless, it still gets 27 of 31 pairs right, where the name-based rule gets none right. When names are informative, the name-based rule is just as good, and we say so.
+\end{simplebox}
+
+\begin{techbox}
+The collector sees most pairs from both ends (in the recorded runs 15 of 32 pairs in one system and 18 of 36 in the other), so direction must be recovered before a walk can follow it. The shipped heuristic reads names (an entry point calls a service, a service calls a datastore). Learned directions use four \emph{dynamic} signals (upward symptoms, downward traffic drops, implication $P(T_a\mid T_b)-P(T_b\mid T_a)$ with $T$ meaning ``in trouble'', and a Granger-style F-test on the symptom series) and two \emph{structural} signals (each service's depth from the entry point, and whether it reports request metrics of its own, which a datastore does not). The learned direction is the sign of $\sum_m\omega_m s_m(a,b)$ with weights $\omega_m\in\{0.5,1,2\}$ chosen by grid search on the tuning split; a pair stays undecided if the magnitude falls below $0.05$.
+\end{techbox}
+
+\begin{saybox}
+``Learned directions stay correct when service names carry no information, 27 of 31 pairs against none for the name rule. But we are not claiming they improve ranking when names exist. They do not. We report that.''
+\end{saybox}
+
+\section{Why direction decides everything downstream}
+\begin{simplebox}
+Think of a river map. If you draw the arrows backwards, ``what is downstream of the factory?'' gives you the towns upstream of it. Every question we ask later (which service is the likely origin, which services are next, what is the blast radius of this one failing) is a question about arrows. A wrong arrow does not make the answer slightly worse. It makes it the opposite.
+\end{simplebox}
+
+\begin{techbox}
+An edge $A\to B$ means $A$ calls $B$, so a failure at $B$ hits $A$: failure propagates \emph{against} the arrow. The random walk, the cascade risk and the blast radius all traverse the graph along or against edges. In the first version of the observation layer the graph was effectively undirected (every pair got a cycle), so ``downstream of $X$'' reached almost everything and blast radius and criticality saturated. A test now guards the orientation logic.
+\end{techbox}

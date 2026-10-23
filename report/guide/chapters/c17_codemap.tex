@@ -1,0 +1,99 @@
+\chapter{Where everything lives: a code map}
+\label{ch:codemap}
+
+Use this when someone says ``show me the code for X''. All paths are relative to the repository root (\cpath{microservice-mapper}).
+
+\section{Folders at a glance}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.5cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Folder} & \textbf{What is in it}\\
+\midrule
+\cpath{server/} & The mapper server (Node.js, Express 5, TypeScript): collection, graph, detection, ML, incidents, API.\\
+\cpath{client/} & The dashboard (React 19, Vite): all pages, the 3D scene, the charts.\\
+\cpath{run/} & Scripts, the evaluation harness, recorded runs, synthetic runs, the 339 tests.\\
+\cpath{v2/} & Research studies: learned directions, change-point onset, fault diagnosis, cached traces.\\
+\cpath{paper/} & Experiments and plotting code that produce the report's figures and data.\\
+\cpath{report/} & The evaluator report (LaTeX), figures, diagrams; \cpath{report/guide/} is this guide.\\
+\cpath{wiki/} & Written explanations; \cpath{wiki/44-ml-comparison.md} is the Rules / old ML / new ML comparison.\\
+\cpath{traffic-gen/} & The traffic generator used in experiments.\\
+\cpath{remote-collector/} & The optional standalone collector that pushes to the ingest endpoint.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{The core algorithms, file by file}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{6.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{File} & \textbf{What it does}\\
+\midrule
+\cpath{server/algorithms/ml/loadModel.ts} & \textbf{The load-aware residual model}: load factor, ridge slopes, two hypotheses, tail-aware spread, gate and two-speed drift.\\
+\cpath{server/algorithms/ml/mlEngine.ts} & The ML engine step: facts, model levels, walk, forecast, cascade; chooses the model (\cpath{levels:'load'} default).\\
+\cpath{server/algorithms/ml/pcaModel.ts} & The subspace-residual alternative (kept for the comparison).\\
+\cpath{server/algorithms/ml/isolationForest.ts}, \cpath{detectors.ts}, \cpath{serviceBaseline.ts} & The old forest-family models (kept for the comparison).\\
+\cpath{server/algorithms/ml/randomWalk.ts} & The personalised random walk for root cause.\\
+\cpath{server/algorithms/ml/propagation.ts} & Learned edge probabilities (Beta--Binomial) and noisy-OR risk.\\
+\cpath{server/algorithms/ml/hybrid.ts} & Fusion of rules and ML (the Hybrid alarm).\\
+\cpath{server/algorithms/ml/replay.ts} & Replays a recorded run through the engine (every reading is fed; the old version skipped repeats).\\
+\cpath{server/algorithms/detection/scoring.ts} & The rule layer's robust $z$-scores and rule score.\\
+\cpath{server/algorithms/detection/containerFacts.ts} & Container state to facts (down, paused, restarting, detached, benign).\\
+\cpath{server/algorithms/graph/EdgeWeights.ts} & Edge confidence and dependency share.\\
+\cpath{server/algorithms/graph/CascadeEngine.ts} & Risk, what-if failure and blast radius.\\
+\cpath{server/rca/IncidentManager.ts} & Runs the three engines each cycle and manages incidents; records each engine's verdict for the Detection engines page.\\
+\cpath{server/algorithms/rca/RCAEngine.ts} & Root-cause ranking and the evidence breakdown.\\
+\cpath{server/connection/RemoteCommand.ts} & The fixed command catalogue.\\
+\cpath{server/telemetry-platform/} & Connection manager, discovery, metric collector, parsers.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{The dashboard, file by file}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{6.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{File} & \textbf{What it is}\\
+\midrule
+\cpath{client/src/components/EnginesView.tsx} & The Detection engines page.\\
+\cpath{client/src/components/EngineCharts.tsx} & Its six charts with the enlarge pop-up.\\
+\cpath{client/src/components/RCAView.tsx} & The Incidents \& cascade page.\\
+\cpath{client/src/components/ReliabilityView.tsx} & Cascade risk.\\
+\cpath{client/src/components/3d/Scene3D.tsx} & The 3D scene and camera.\\
+\cpath{client/src/components/3d/Islands.tsx}, \cpath{site.ts}, \cpath{layouts.ts} & The Islands, Flow, Topology and Tiers arrangements.\\
+\cpath{client/src/components/3d/SceneHud.tsx} & The 3D toolbar (layout, cards, glow, theme).\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Commands to know}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Command} & \textbf{What it does}\\
+\midrule
+\cpath{npm start} & Install what is missing, start server (3001) and dashboard (5173).\\
+\cpath{npm test} & Run the 339 tests.\\
+\cpath{npm run doctor} & Check the machine.\\
+\cpath{npm run check-host -- <ip> <key> <port>} & Step-by-step host check.\\
+\cpath{npm run mapper-edges -- <project> <name>} & Print what the mapper holds for a service.\\
+\cpath{npm run eval} & Record a campaign and score the live mapper.\\
+\cpath{npm run ml:levels} & Compare all models of normal on all five data sets (writes \cpath{graphs/output/ml-levels.json}).\\
+\cpath{npm run ml:compare}, \cpath{ml:hybrid}, \cpath{ml:predict}, \cpath{ml:synth}, \cpath{ml:bench} & Detector comparison, fusion variants, early warning and cascade, the synthetic generator, cost.\\
+\cpath{npm run demo -- --bench ../bench-1 --subject shopflow} & The staged live demo.\\
+\cpath{report/build.sh}, \cpath{report/guide/build.sh} & Rebuild the evaluator report or this guide.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Reproducing the headline numbers}
+\begin{simplebox}
+Every number in the report is regenerated by a script. The shortest way to reproduce the main ML result is \cpath{npm run ml:levels}: it replays the real, live, synthetic and workload recordings through each model of normal and prints a table with caught-and-named, false alarms per hour, and time in alarm. The extra rules row is produced with the same script (\cpath{--variants rules}).
+\end{simplebox}
+
+\begin{saybox}
+If an evaluator asks ``can I reproduce this?'': ``Yes. The recordings are in the repository (\cpath{run/recorded-runs}, \cpath{run/synthetic-runs}), and \cpath{npm run ml:levels} regenerates the table; the plain run takes minutes and the parameter sweeps take longer.''
+\end{saybox}

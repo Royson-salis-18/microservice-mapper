@@ -1,0 +1,70 @@
+\chapter{The whole project as one story}
+\label{ch:story}
+
+Before any detail, learn the story. Every later part is one scene of it.
+
+\section{Act one: a failure that spreads}
+\begin{simplebox}
+Think of a restaurant. The kitchen cannot get vegetables from the supplier, so the cooks slow down, so the waiters wait, so customers wait, so the manager gets angry calls from every table. If you only listen to the angry calls, the loudest one is a table, not the supplier. The real problem is two steps away from where the noise is.
+
+Modern apps work like that restaurant. They are made of many small programs called \emph{services}. The checkout service calls the payment service, which calls the database. If the database gets slow, payment gets slow, then checkout gets slow, and the engineer on call sees alarms from all three. Which one is the cause? Usually not the loudest.
+\end{simplebox}
+
+\begin{techbox}
+A microservice application is a set of independently deployed services connected by a directed call graph. A failure at a callee propagates \emph{against} the edges to the callers that wait on it. Under timeouts and retries the load amplifies, so within a minute many services alarm together (an \emph{alert storm}), and severity-based ranking points at a victim rather than the origin. Root-cause analysis (RCA) is the problem of identifying the originating service from the telemetry.
+\end{techbox}
+
+\section{Act two: the tools that exist, and why they did not fit us}
+\begin{simplebox}
+There are two families of tools. The first is clever research that uses neural networks to find the broken service. It needs lots of examples of past failures with the answer written next to them, it needs a graphics card, and it gives an answer you cannot check. The second family is the normal monitoring products. They are reliable, but they only start working after you change your application: add code, add helpers, add extra containers.
+
+Small teams, and student projects like ours, often have neither the failure examples nor the permission to change the app. We wanted a tool that works from the \emph{outside}, learns what normal looks like by itself, and shows its working so a person can check it.
+\end{simplebox}
+
+\begin{techbox}
+Recent localisation methods fuse metrics, traces and logs with graph neural networks or autoencoders (DiagFusion, DeepHunt, Eadro). They need labelled failures, GPU inference, and produce output an engineer cannot audit against the dashboard. Observability products (metrics scraping, distributed tracing, APM agents) need instrumentation in the application or a sidecar in every pod. Our setting is an unmodified Docker Compose stack reached over SSH, with no labels and one CPU core.
+\end{techbox}
+
+\section{Act three: what we built}
+\begin{simplebox}
+We built a program (the \emph{mapper}) that logs into the machine over SSH and looks at the containers from outside, the way a doctor looks at a patient: pulse (CPU), breathing (memory), who the patient is talking to (network connections). From the connections it draws a live map of which service calls which. For each service it learns what ``normal'' looks like, and raises a flag when the service moves away from normal. When flags appear, it works out which service most likely started it, and which healthy services are next in line.
+
+It also has a 3D view, because a map of fifty services is easier to understand as a small city than as a tangle of lines.
+\end{simplebox}
+
+\begin{techbox}
+The platform is about 36\,000 lines of TypeScript with 339 automated tests. A collector reads \code{docker ps/inspect/stats} and each container's \code{/proc/<pid>/net/tcp} over one SSH session. An evidence-weighted graph orients each edge by the listening port. A hybrid detector (load-aware residual model plus a robust rule layer, with container state as hard facts) raises the alarm. A ranker decomposes deviations and runs a personalised random walk. A cascade model with learned Beta--Binomial edge probabilities predicts who falls next. A dashboard shows everything in 2D and 3D, and a Detection engines page runs Rules, ML and Hybrid in parallel.
+\end{techbox}
+
+\section{Act four: the day our ML embarrassed us}
+\begin{simplebox}
+This is the most important scene, and the one an evaluator will remember if you tell it well.
+
+Our first machine-learning engine learned, for each service, the pattern of its recent numbers. It worked fine on our fault experiments. Then, while testing the live tool, one of us stopped the traffic generator and switched to ML mode. \emph{Every service turned 100\% anomalous.} Nothing was broken. Traffic had simply stopped, so every number dropped, and the engine had never seen a quiet system and decided everything was wrong.
+
+The lesson is simple to say: \textbf{the engine could not tell ``everybody got quieter'' from ``one service is sick''.} A real operator has this problem constantly, because traffic goes up and down all day.
+\end{simplebox}
+
+\begin{techbox}
+The first engine kept two Isolation Forests per service, trained on a sliding window of its readings. A forest learns the shape of recent readings; a change of workload falls outside that shape for \emph{all} services at once. On our fault-free workload recordings it was in alarm 23\% (organic traffic on/off) and 52\% (closed-loop load stepped $2,8,2,0,20,2$ visitors) of the time. The other detectors we tried (k-NN, Mahalanobis, HBOS, the ensemble) did the same or worse, because they all model the readings themselves. The failure was hidden in our benchmarks by a replay bug (Part~\ref{ch:mlstory}) that deleted idle stretches from the recordings.
+\end{techbox}
+
+\section{Act five: the fix}
+\begin{simplebox}
+The fix is an idea, not a bigger model. Before judging any single service, ask: \emph{how much did the whole system's workload change in this moment?} If every busy service got twice as busy, that is a traffic change, and it is not a fault. Remove that shared change, and then judge each service on what is left. A real fault shows up in one service (or a few); a traffic change shows up in all of them by about the same amount. A median over many services is hard to move with one broken service, so it measures the shared part cleanly.
+
+On the same fault-free recordings the new engine was in alarm 0\% of the time, and on the injected faults it caught about as many as the old one.
+\end{simplebox}
+
+\begin{techbox}
+The load-aware residual model computes a load factor $L(t)$, the median log-shift of the signals that carry traffic (network in/out, request rate, CPU) over all busy services, then judges each service's signals against what $L(t)$ predicts: a robust $z$ under two hypotheses, ``ignores load'' ($b=0$) and ``follows load'' ($b=b_f$, a ridge-estimated slope), taking the smaller $z$. The spread is the larger of the MAD and the distance to the 90th percentile in the direction that matters. Only readings under the alarm line enter the training window, so a fault never becomes the baseline. Result: 0\% time in alarm on both workload recordings, with the same accuracy on injected faults (71\% against 69\% caught and named on the real faults).
+\end{techbox}
+
+\section{Act six: how we know any of it is true}
+\begin{simplebox}
+Anyone can say a tool works. We tried to prove it fairly. We built two realistic applications ourselves (an online shop and a bank), put them on cloud machines, and used a separate \emph{fault injector} that breaks containers at random times without telling the mapper. The injector writes the true answers in a private notebook that nobody reads until the end. Then we compare the mapper's answers with the notebook. We also ran 84 more faults live, 178 faults on simulated systems the tool had never seen, and fault-free recordings to count false alarms. We report the results with error bars, and we write down the things that did not work.
+\end{simplebox}
+
+\begin{saybox}
+End your story with the honesty point. ``We report what did not work: the random walk is not statistically better than ranking by anomaly alone on these benchmarks, learned directions do not beat the name rule when names exist, and our own measurement had two bugs that made the engines look better than they were. We fixed both.'' That makes everything else you said more believable.
+\end{saybox}

@@ -1,0 +1,61 @@
+\chapter{The problem, stated four ways}
+\label{ch:problem}
+
+\section{Why this problem is hard}
+\begin{simplebox}
+Four things make it hard, and each one is a reason a piece of our system exists.
+
+\begin{enumerate}
+\item \textbf{Nobody knows who calls whom.} The documentation says one thing, the running system does another. If you do not know the map, you cannot follow a failure along it. \emph{Our answer: read the real connections from each container.}
+\item \textbf{The loudest alarm is usually a victim.} Ranking by how bad a number looks points at the wrong service. \emph{Our answer: ask how much of a service's trouble is explained by the services it depends on.}
+\item \textbf{Nobody sees what is coming.} Operators find out a service is hurt only when it alarms. \emph{Our answer: learn how often trouble crosses each connection and warn about the next services.}
+\item \textbf{Black boxes are hard to trust at 3 a.m.} \emph{Our answer: every score is plain arithmetic and every part is shown on screen.}
+\end{enumerate}
+\end{simplebox}
+
+\begin{techbox}
+Formally: a system is a set $S$ of $N$ services with a directed call graph; an edge $u\to v$ means $u$ calls $v$. Every $\Delta=5$\,s the collector yields, for each service $s$, a reading $x_s(t)\in(\mathbb R\cup\{\varnothing\})^8$: CPU, memory, CPU throttling, network in and out, request rate, error share and 95th-percentile latency. $\varnothing$ marks a metric that was not reported and is \emph{never} replaced by zero, because a stopped container must be distinguishable from an idle one. Each reading comes with a container state (running, paused, restarting, exited, detached). At time $t$, using only readings up to $t$, the pipeline must decide (i) whether an incident is in progress, (ii) which service $r$ is its root cause, (iii) which healthy services will be affected before it ends, and (iv) what kind of fault it is --- without labelled failures, without changing any application, and well inside the 5\,s collection period.
+\end{techbox}
+
+\section{The four linked sub-problems and where we solve each}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4cm}}
+\toprule
+\textbf{Sub-problem} & \textbf{What it means} & \textbf{Where in this guide}\\
+\midrule
+Invisible dependencies & Recover the call graph and its direction without instrumentation & Parts~\ref{ch:observe} and~\ref{ch:graph}\\
+Alert storms & Decide who is abnormal, then who is the \emph{origin} among them & Parts~\ref{ch:detect}, \ref{ch:mlstory}, \ref{ch:rank}\\
+No view of the future & Predict the next affected services; warn early & Parts~\ref{ch:cascade}, \ref{ch:more}\\
+Black-box output & Show evidence for every number, in the UI and in the tests & Parts~\ref{ch:ui}, \ref{ch:system}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{What the project is \emph{not}}
+This matters in a viva, because evaluators like to test the edges of a claim.
+
+\begin{itemize}
+\item It is \textbf{not distributed tracing}. There are no request IDs and no spans. The ``Traces'' page shows sampled TCP connection snapshots, not requests. If someone asks ``can you follow one request across services?'', the honest answer is no.
+\item It does \textbf{not read application payloads} and does \textbf{not need code changes}.
+\item It does \textbf{not use a language model}. The ``assistant'' is a transparent composition of statistical models. A language-model agent on top of the structured evidence is listed as future work.
+\item It was \textbf{not tested on Kubernetes}. It targets Docker hosts reached over SSH.
+\item It is \textbf{not a replacement for an APM suite}. It is a first-line triage tool.
+\end{itemize}
+
+\begin{saybox}
+When asked ``is this AI?'': ``Yes, in the sense that it learns what normal looks like from data without labels, using robust statistics and a probabilistic cascade model. No, in the sense of a neural network or an LLM. We chose that on purpose, because the people who need it cannot supply labels or GPUs, and cannot audit a black box.''
+\end{saybox}
+
+\section{What ``agent-assisted'' means in the title}
+\begin{simplebox}
+The title says ``agent-assisted''. In our project there are two helpers. The \emph{collector agent} is the part that goes and looks at the machine. The \emph{diagnosis assistant} is the part that thinks about what it saw and tells the engineer: here is the likely cause, here is who is next, here is the type of fault, here is what to check. Neither one changes the application. Neither one uses a chat model.
+\end{simplebox}
+
+\begin{techbox}
+We describe the two agents with the PEAS scheme. \textbf{Collector agent:} performance = complete, timely, truthful readings with correct edges and directions; environment = a Docker host over SSH running an unknown stack; actuators = SSH commands from a fixed catalogue; sensors = Docker state and statistics, socket tables, logs, interface counters. \textbf{Diagnosis assistant:} performance = caught-and-named rate, alarm time and prediction calibration; environment = the evidence-weighted graph and the readings it holds; actuators = incidents, rankings, predictions, runbooks and explanations in the dashboard; sensors = readings, container facts, graph and learned directions.
+\end{techbox}
+
+\begin{warnbox}
+Do not say ``autonomous agent'' or ``agentic AI''. The only action the mapper takes on a host is restarting a container that exited with a non-zero code, a few times at most, and that can be switched off. Everything else is observation and advice.
+\end{warnbox}

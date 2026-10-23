@@ -1,0 +1,74 @@
+\chapter{What we cannot claim: limitations and honest answers}
+\label{ch:limits}
+
+An evaluator's best questions are about limits. If you have already said the limits yourself, those questions lose their sting. This part is the list, with a one-sentence reply for each.
+
+\section{The limitation list, in plain words}
+
+\begin{enumerate}
+\item \textbf{We only see eight numbers per service.} A brownout on a nearly idle service moves none of them enough to alarm. No engine here catches it. \emph{Reply:} ``Outside-in observation is coarse by design; that is the trade for touching nothing. Active probing is listed as future work.''
+
+\item \textbf{Two real systems.} We argue the method is architecture-independent from a cross-system check and from synthetic topologies, but we have not proved it. \emph{Reply:} ``Two systems we built, 217 minutes each, plus 16 random topologies. It is evidence, not proof.''
+
+\item \textbf{Real cascades were rare.} Learned propagation could not be tested on real data because real faults are mostly absorbed single-service outages. \emph{Reply:} ``On synthetic cascades it is better calibrated. On real data there were too few cascades to say.''
+
+\item \textbf{Edge evidence is not isolated offline.} The recordings do not keep it. \emph{Reply:} ``We use the evidence weighting live; we did not measure its isolated effect.''
+
+\item \textbf{Cost was measured on synthetic readings.} Random graphs of 10--320 services on a shared virtual machine. \emph{Reply:} ``About 0.37 ms per service per window, linear; we have not observed a real system of that size.''
+
+\item \textbf{Workload recordings are generated.} Traffic came from two generators, not real users, and a fault that begins during a very large change of load can be masked by the load-aware model. \emph{Reply:} ``That is why the Hybrid also lets the rules and container facts raise the alarm.''
+
+\item \textbf{We tuned the settings.} Real-system settings were not tuned on a held-out real system, so those numbers are optimistic by an unmeasured margin. The load-model settings were swept on all recordings together. \emph{Reply:} ``We chose the flat region of the sweep, not its maximum, and the synthetic numbers come from a split scored once.''
+
+\item \textbf{A mild fault longer than two minutes is absorbed by the ML.} The rules and container facts keep alarming. \emph{Reply:} ``A trade for not alarming forever on a service that really changed; we measured the alternative (4--20 minutes) and it doubled alarm time with no accuracy gain.''
+
+\item \textbf{Early warning is weak.} Warned before the alarm for 13 of 178 synthetic faults and none of the 62 real ones. \emph{Reply:} ``It is the weakest component and we say so.''
+
+\item \textbf{Auto-restart exists.} The mapper restarts crashed containers by default. \emph{Reply:} ``It had no measurable effect on our benches; switch it off when measuring detection.''
+
+\item \textbf{Not tested on Kubernetes.}
+
+\item \textbf{The ingest endpoint has a built-in token} for local use. \emph{Reply:} ``It must be changed when the server is reachable by others.''
+\end{enumerate}
+
+\section{The things that did not work (we reported them)}
+\begin{simplebox}
+An honest report lists failures. Ours does:
+
+\begin{itemize}
+\item The corrected ML engine is \emph{not} more accurate than the first at catching injected faults.
+\item Hybrid over Rules was significant in the first version ($p=0.032$); with the corrected engine it is not ($p=0.117$).
+\item The random walk is not significantly better than ranking by anomaly alone on our benchmarks.
+\item Learned directions do not beat the name rule when names exist.
+\item Onset-precedence re-ranking made no difference.
+\item The subspace residual (the principled multivariate alternative) is as good at discrimination but raises more false alarms on the load steps and costs more.
+\item Early warning does not fire on abrupt real faults.
+\item A range guard on the new model added false alarms and was dropped.
+\end{itemize}
+\end{simplebox}
+
+\section{Claims you should \emph{not} make}
+\begin{warnbox}
+\begin{itemize}
+\item ``Our model is more accurate than the old one at detecting faults.'' (Same accuracy; it is more \emph{robust}.)
+\item ``Hybrid is significantly better than rules.'' (Not significant.)
+\item ``It predicts failures.'' (It forecasts \emph{who falls next} given a failure; early warning for gradual faults is weak.)
+\item ``It works in production.'' (Two benches and a simulator; no production system.)
+\item ``It is distributed tracing.'' (It is not.)
+\item ``It is autonomous.'' (Its only action is a restart, which can be switched off.)
+\item ``Learned propagation works on real cascades.'' (Untested on real cascades.)
+\item ``We proved architecture independence.'' (Argued, not proven.)
+\end{itemize}
+\end{warnbox}
+
+\section{Claims you \emph{can} make with confidence}
+\begin{saybox}
+\begin{itemize}
+\item ``The first ML engine mistook a workload change for a fault: 23--52\% of the time in alarm on recordings with no faults. The corrected engine: 0\%.''
+\item ``Container facts are the most valuable single component: 18 points on the real systems.''
+\item ``The tool needs no labels, no GPU and no changes to the application; one decision costs about 0.37 ms per service.''
+\item ``Learned propagation is better calibrated than fixed edge probabilities: ECE 0.033 against 0.051 on 69 cascades.''
+\item ``Learned directions stay correct when names carry no information: 27 of 31 pairs, against none for the name rule.''
+\item ``Two measurement bugs inflated the engines in our own benchmark; we found and fixed both.''
+\end{itemize}
+\end{saybox}

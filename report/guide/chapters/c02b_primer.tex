@@ -1,0 +1,79 @@
+\chapter{The maths primer: every tool we use, from scratch}
+\label{ch:primer}
+
+You do not need to be a statistician to explain this project. You need to understand about ten small ideas. Each one below has a plain explanation, the formula, and a worked example with small numbers you can check on paper.
+
+\section{Median and why we prefer it to the average}
+\begin{simplebox}
+The average adds everything up and divides. The median lines everything up and takes the middle one. Imagine five services using CPU of 10, 11, 10, 12 and 95 per cent. The average is 27.6, which describes nobody. The median is 11, which describes the typical service. One crazy value drags the average and hardly touches the median. Because we are trying to \emph{detect} crazy values, we must not let them pollute the measure of normal. So we use the median.
+\end{simplebox}
+\begin{examplebox}[Check it]
+Values: $10,\ 11,\ 10,\ 12,\ 95$. Sorted: $10,10,11,12,95$. Middle (3rd) value: $11$. Average: $(10+11+10+12+95)/5=138/5=27.6$.
+\end{examplebox}
+
+\section{MAD: how spread out is ``normal''?}
+\begin{simplebox}
+To say a number is ``far from normal'' we need a ruler for how far is far. The ruler is the typical distance of values from the median. We take the distance of each value from the median, then take the median of those distances. That is the MAD (median absolute deviation). It ignores crazy values for the same reason the median does.
+\end{simplebox}
+\begin{examplebox}[Check it]
+Values $10,10,11,12,95$, median $11$. Distances from the median: $1,1,0,1,84$. Sorted: $0,1,1,1,84$. Median distance: $1$. So MAD $=1$. A standard deviation would be about 37, ruined by the 95. Multiplying MAD by $1.4826$ makes it comparable to a standard deviation for bell-shaped data, so the robust $z$-score is $(x-11)/(1.4826\times1)$. For $x=95$: $z=84/1.4826\approx56.7$, hugely abnormal. For $x=12$: $z\approx0.67$, normal.
+\end{examplebox}
+
+\section{The robust $z$-score and ``one-sided''}
+\begin{simplebox}
+A $z$-score says how many rulers away from normal a value is. We only care about the \emph{bad} direction for most signals. CPU going \emph{down} is not a problem; it goes down after every restart. CPU going up is. So for CPU, memory, throttling, errors and latency we count only increases (``one-sided''). For traffic we count both directions, because traffic collapsing to zero is also a sign of trouble.
+\end{simplebox}
+
+\section{Log scale: ``twice as much'' means the same thing everywhere}
+\begin{simplebox}
+Think of the difference between 10 and 20 requests, and between 10\,000 and 20\,000. Both are ``twice as busy''. On a normal scale the second is a bigger jump. On a log scale both are the same step (about 0.69). We use the log scale so a doubling means the same thing to every service. We add a small ``unit'' inside the log so that tiny flickers on idle services do not look like big events.
+\end{simplebox}
+\begin{examplebox}[Check it]
+$\ln 20-\ln 10=\ln 2\approx0.693$ and $\ln 20\,000-\ln 10\,000=\ln 2\approx0.693$. With a unit $u=0.1$ for requests: $x=\ln(v+0.1)$. For $v=0$: $x=\ln 0.1=-2.30$; for $v=0.1$: $x=\ln 0.2=-1.61$. A tiny flicker of $0.1$ requests per second moves the value by $0.69$, but the floor on the spread (0.3) keeps that from becoming an alarm.
+\end{examplebox}
+
+\section{Percentiles and the tail-aware spread}
+\begin{simplebox}
+The 90th percentile is the value that 90\% of readings are below. If a signal is quiet most of the time but jumps every few minutes, its median and MAD are tiny, so the ordinary jumps look like emergencies. We therefore make the ruler at least as long as the distance from the median to the 90th percentile. Jumps that happen regularly are then part of normal.
+\end{simplebox}
+\begin{examplebox}[Check it]
+A bursty signal with 100 readings: 90 are around $1.0$ (MAD 0.05) and 10 are around $3.0$. The median is $1.0$, the MAD-based spread is $0.074$, so a reading of $3.0$ gives $z\approx27$: a false alarm on an ordinary burst. The 90th percentile is about $3.0$ (the lower end of the jumps), so the tail spread is $(3.0-1.0)/1.2816\approx1.56$. Now $3.0$ gives $z\approx1.3$: normal.
+\end{examplebox}
+
+\section{Regression and the ridge idea}
+\begin{simplebox}
+Regression draws the best straight line through a cloud of points. Here the points are: on the horizontal axis, how much the whole system's load moved; on the vertical axis, how much one particular signal moved. The slope of the line says how strongly that signal follows the load: slope 1 means it moves one for one; slope 0 means it ignores the load. Ridge adds a gentle pull toward a sensible starting slope, so when we have almost no data the slope does not swing wildly.
+\end{simplebox}
+\begin{examplebox}[Check it]
+Slope formula with a prior: $b=\dfrac{\sum dL+\kappa b^0}{\sum L^2+\kappa}$. Suppose there are only three points: $L=(0.1,\,0.2,\,0.1)$ and $d=(0.1,\,0.25,\,0.12)$. Then $\sum dL=0.01+0.05+0.012=0.072$ and $\sum L^2=0.01+0.04+0.01=0.06$. With no prior the slope is $0.072/0.06=1.2$. With $\kappa=60$ and a prior slope $b^0=1$: $b=(0.072+60)/(0.06+60)=60.072/60.06\approx1.0002$. The data are too thin to move the slope, so it stays at the prior. After a big load swing, $\sum L^2$ becomes large and the data start to dominate.
+\end{examplebox}
+
+\section{Beta--Binomial: learning a probability from experience}
+\begin{simplebox}
+You want the chance that trouble crosses a link. Start with a mild guess (50\%), worth the evidence of two imaginary trials. Each time trouble reaches the caller, that is a success; each time it does not, a failure. The estimate is $(\text{successes}+1)/(\text{trials}+2)$ with our prior. More trials, and the estimate trusts the data more than the guess. (Part~\ref{ch:cascade} has a table of this.)
+\end{simplebox}
+
+\section{Noisy-OR: combining routes}
+\begin{simplebox}
+If there are two independent ways something can happen, the chance that it happens is: one minus the chance that \emph{neither} way works. If route A works 80\% of the time, route B works 40\% of the time, then neither works with probability $0.2\times0.6=0.12$, so at least one works with probability $0.88$.
+\end{simplebox}
+
+\section{PageRank and the random walk}
+\begin{simplebox}
+Picture a person wandering a city, choosing the next street at random but preferring busy streets. After wandering for a very long time, count the fraction of time spent in each neighbourhood. The neighbourhoods with the highest fraction are the most ``central'' to the walk. In our case, the walker prefers to move toward abnormal services and to stay on a service whose trouble nothing downstream explains. The service with the highest fraction is the best candidate for the origin. The ``restart'' means that with probability 0.15 the walker teleports back to an abnormal service, which stops it from wandering off to irrelevant parts of the map.
+\end{simplebox}
+
+\section{ROC, AUROC and average precision}
+\begin{simplebox}
+Suppose a detector gives every service-moment a score, and some of those moments really had a fault. Sort by score. A good detector has the faulted moments near the top. \textbf{AUROC} is the chance that a randomly chosen faulted moment scores higher than a randomly chosen healthy one: 1.0 is perfect, 0.5 is guessing. \textbf{Average precision} cares about how clean the top of the list is: if the top ten scores are all real faults, AP is high.
+\end{simplebox}
+
+\section{Confidence intervals and the bootstrap}
+\begin{simplebox}
+Any rate measured on a small number of faults wobbles. The bootstrap estimates the wobble by re-running the experiment many times on re-shuffled versions of the same data (picking faults with replacement) and looking at the spread of results. The middle 95\% of those results is the 95\% confidence interval. A comparison between two engines is trustworthy only when the interval for the \emph{difference} does not include zero.
+\end{simplebox}
+
+\section{Calibration}
+\begin{simplebox}
+A prediction is calibrated if it keeps its promises. If a forecaster says ``70\% chance'' on a hundred days, it should have rained on about seventy. We group predictions into bins by predicted probability and compare the average predicted probability with the actual fraction that came true in each bin. The expected calibration error (ECE) is the weighted average gap. Smaller is better.
+\end{simplebox}

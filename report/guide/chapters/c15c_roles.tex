@@ -1,0 +1,56 @@
+\chapter{Presenting as a team of four}
+\label{ch:roles}
+
+An evaluator will ask any of you anything. But a presentation goes best when each person owns a part and the hand-offs are clean. This is a suggested split by topic, not by who wrote which code. Change it to fit who knows what, but make sure \emph{every} part of this guide is owned by at least two people, so nobody is stranded if one of you is asked a question outside their part.
+
+\section{A suggested split}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Speaker} & \textbf{Owns} & \textbf{Guide parts}\\
+\midrule
+Speaker 1 & The problem and the big picture: story, why existing tools do not fit, what the system is, the architecture and the three engines. Also the opening and closing. & \ref{ch:howto}\ (how to use), \ref{ch:story}, \ref{ch:problem}, \ref{ch:system}\\
+Speaker 2 & Observation and the graph: SSH, sockets, direction, container facts, edge confidence, learned directions, the dashboard and the 3D tour. & \ref{ch:observe}, \ref{ch:graph}, \ref{ch:ui}\\
+Speaker 3 & The detection and ML story: rules, the old forest, why it failed, the load-aware model, the comparison, and the three-way table. & \ref{ch:primer}, \ref{ch:detect}, \ref{ch:mlstory}\\
+Speaker 4 & Ranking, cascade, evaluation and results: root cause, noisy-OR, the Fault Lab, the measures, the main table, ablation, limits. & \ref{ch:rank}, \ref{ch:cascade}, \ref{ch:more}, \ref{ch:eval}, \ref{ch:results}, \ref{ch:limits}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{A ten-minute talk with hand-offs}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.5cm}>{\raggedright\arraybackslash}p{1.8cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Minutes} & \textbf{Speaker} & \textbf{Content}\\
+\midrule
+0:00--1:30 & 1 & The restaurant story, the problem, why current tools do not fit. Hand-off line: ``To do this from outside, we first need to see the system. Over to \ldots''\\
+1:30--3:00 & 2 & SSH and sockets, who calls whom, container facts. Show the 3D Islands view. Hand-off: ``Seeing is not enough, we must decide what is wrong.''\\
+3:00--5:30 & 3 & Normal is personal; the first ML failed (23--52\%); the load-aware fix; the chart on the Detection engines page. Hand-off: ``Once we know something is wrong, who started it?''\\
+5:30--7:00 & 4 & The decomposition, the random walk, noisy-OR prediction, a live break in the simulator.\\
+7:00--9:00 & 4 then 1 & Evaluation: blind Fault Lab, the measures, the headline results with the honest caveat. Then back to 1.\\
+9:00--10:00 & 1 & Limits and future work, and the one-sentence takeaway: ``Test your detector when nothing is wrong.''\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Rules for the question time}
+\begin{enumerate}
+\item The person who owns the topic answers first. If they stumble, a teammate may add one sentence, not take over.
+\item Answer the question that was asked. Use the short version from Part~\ref{ch:qa} and stop.
+\item If you do not know, say ``we did not measure that; the closest thing we measured is \ldots''. Do not invent a number.
+\item Never argue with an evaluator about whether something is a limitation. Say ``agreed, it is listed under limitations''.
+\item If an evaluator finds a mistake in the report, thank them and say how you would check it. Do not defend an error.
+\item Keep these three honesty sentences ready: ``the 71 against 63 is not significant'', ``our first ML called every workload change a fault'', ``we found two bugs in our own measurement''.
+\end{enumerate}
+
+\section{The night-before checklist}
+\begin{itemize}
+\item Run the simulator demo end to end once on the machine you will present on.
+\item Open the PDF report and this guide on a second screen.
+\item Know your own five numbers (Part~\ref{ch:numbers}).
+\item Check that auto-restart is off if you plan to show a live fault on a bench.
+\item Charge the laptop and have the PDF on a USB stick.
+\item Sleep.
+\end{itemize}

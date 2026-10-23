@@ -1,0 +1,50 @@
+\chapter{The evaluator report, chapter by chapter}
+\label{ch:reportmap}
+
+The evaluator will hold the report (about 100 pages). This part tells you what is in each chapter, which pages of this guide explain it, and the one thing to say if they open that chapter.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.2cm}}
+\toprule
+\textbf{Report chapter} & \textbf{What it contains} & \textbf{Explained here}\\
+\midrule
+Abstract & Problem, what we built, the ML failure and fix, headline numbers. & Parts~\ref{ch:story}, \ref{ch:numbers}\\
+1 Introduction & Background, problem statement, motivation, objectives, scope, contribution, organisation. & Parts~\ref{ch:story}, \ref{ch:problem}\\
+2 Literature review & Anomaly detection, evaluation practice, root-cause localisation, cascade and change detection, benchmarks, observability tooling, comparison tables, the four gaps. & Part~\ref{ch:problem}\\
+3 Proposed system and scope & Formal problem, seven-step solution, requirements, architecture, the two agents, three engines, components, design principles, scope. & Parts~\ref{ch:problem}, \ref{ch:system}\\
+4 Methodology & Objective, measures, the models (graph, directions, load-aware model, hybrid, ranker, cascade, early warning), error sources, complexity, evaluation design, the two bugs. & Parts~\ref{ch:primer}--\ref{ch:more}, \ref{ch:eval}\\
+5 Implementation & Environment, modules, algorithms, API, configuration, prototype screenshots, security, testing, the two benches and their Fault Lab, diagnostic tools, harness. & Parts~\ref{ch:observe}, \ref{ch:ui}, \ref{ch:eval}, \ref{ch:codemap}\\
+6 Results & The ML correction, which model of normal, rules vs old vs new, detection and root cause, ablation, amplification, cascade, directions, early warning, cost, live campaigns, analysis, validity, comparison. & Parts~\ref{ch:mlstory}, \ref{ch:rank}--\ref{ch:more}, \ref{ch:results}, \ref{ch:limits}\\
+7 Conclusion & Summary, conclusions, contributions, utility, limitations, future work. & Parts~\ref{ch:limits}, \ref{ch:qa}\\
+Appendices & Engine constants, fault classes, user guide. & Parts~\ref{ch:demo}, \ref{ch:codemap}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{If they open a specific figure or table}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{They open\ldots} & \textbf{Say\ldots}\\
+\midrule
+Architecture figure & ``One SSH connection, fixed read-only commands, nothing installed. Three engines run on the same readings; the switch only chooses which one opens incidents.''\\
+Hybrid alarm figure & ``Alarm if a container fact holds, or the ML level is twice its line, or the rules are 25\% past theirs. The model and rule conditions must hold for two cycles.''\\
+Cascade example figure & ``Edge probabilities are learned from the system's own incidents. Risk at the gateway combines two routes with noisy-OR.''\\
+Workload figure (6.1) & ``Panel (a) is the traffic stepping up and down. Panel (b): the old forest alarms with the traffic, the new model does not. Panel (c) is the load factor the new model read.''\\
+Models table and figure (6.2) & ``Look at the last two columns: forest family 23--96\% of calm time in alarm, adopted model 0\%. The injected-fault columns are all close.''\\
+Rules vs old vs new table & ``Same recordings, same replay, three engines. New ML is slightly ahead on injected faults with far fewer false alarms, and clearly ahead when only the workload moves.''\\
+Main table (6.3) & ``Detection is 90\% for all engines on the real systems. ML and Hybrid name the right service more often. The difference is not significant with 62 faults.''\\
+Operating curves & ``Sweep the alarm threshold: the engines trace nearly overlapping curves, and Hybrid and ML sit on the upper edge.''\\
+Ablation & ``The stop fact is the single most valuable component, 18 points. The statistical mechanisms decide whether it stays quiet.''\\
+Amplification study & ``As victims get louder, severity ranking falls and the walk holds, but intervals include zero at every level.''\\
+Cascade calibration & ``Better calibrated than fixed probabilities on synthetic cascades; real cascades were too rare to test.''\\
+Early warning & ``The weakest part. Works for some gradual synthetic faults; did not fire on abrupt real ones.''\\
+Cost figure & ``Linear in the number of services, 0.37 ms per service; far below the 5-second period.''\\
+Live campaign table & ``Same plan, four runs, auto-restart on and off. Intervals overlap completely: no measurable effect.''\\
+3D figures & ``Islands, Flow, Topology and Tiers: four questions a developer asks. Shown without the cards because cards can cover units.''\\
+Engines page screenshot & ``Rules blame the louder victim; ML and Hybrid name the source and say why.''\\
+\bottomrule
+\end{tabularx}
+\end{center}

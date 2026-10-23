@@ -1,0 +1,73 @@
+\chapter{Glossary: every term in simple and in technical words}
+\label{ch:glossary}
+
+Each entry has a one-line simple meaning, then the technical one. Learn the simple line; know the technical line exists.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}p{5.6cm}}
+\toprule
+\textbf{Term} & \textbf{In simple words} & \textbf{In technical words}\\
+\midrule
+\endhead
+Microservice & One small program that does one job in a bigger application. & An independently deployable service that communicates with others over the network, usually in its own container.\\
+Container / Docker & A sealed box that holds a program and everything it needs. & An isolated process group with its own filesystem and network namespace, managed by the Docker runtime.\\
+Docker Compose & A file that lists all the boxes of an application and how they connect. & A YAML description of services, networks and volumes for a multi-container application.\\
+Call graph & A map of which service calls which. & A directed graph $G=(S,E)$ where $u\to v$ means $u$ calls $v$.\\
+Root cause & The first thing that broke. & The service whose fault originates an incident, as opposed to its victims.\\
+Cascade / alert storm & A failure spreading and many alarms firing at once. & Propagation of failure against call edges, amplified by timeouts and retries.\\
+SSH & A secure way to type commands on a remote machine. & The Secure Shell protocol; we use the \code{ssh2} library with a key pair.\\
+Telemetry & Numbers measured from a running system. & Time series of metrics (here eight per service every 5\,s).\\
+Socket table & A list of the open network connections of a container. & The contents of \code{/proc/<pid>/net/tcp}: local and remote address, port and state.\\
+Listening port & The fixed ``door number'' of a service. & The port a server socket binds to; identifies the callee end of a connection.\\
+Ephemeral port & A temporary random door number used by a caller. & A port from the OS's dynamic range used by a client socket.\\
+TIME\_WAIT & A connection that just closed but still shows. & A TCP state lasting about a minute after close; counted once by connection key.\\
+Container fact & A certain thing about a container's state, like ``stopped''. & Evidence from the runtime (down, paused, restarting, detached, crash-looping), ranked first.\\
+Declared / observed edge & Written down vs seen happening. & Compose \code{depends\_on} vs socket-table evidence; each has a confidence.\\
+Confidence $c(e)$ & How much we trust a link. & Strongest evidence behind the edge: 1.0, 0.85, 0.70, 0.50 or 0.40.\\
+Dependency share $d(e)$ & How much of a service's calls go to this dependency. & Slow-baseline traffic of an edge normalised over the caller's edges.\\
+Baseline / ``normal'' & What a service usually looks like. & The robust location and spread of a service's accepted recent readings.\\
+Median & The middle value when you line numbers up. & The 50th percentile; robust to outliers.\\
+MAD & How spread out numbers are, ignoring extremes. & Median absolute deviation; $1.4826\cdot$MAD estimates a standard deviation for Gaussian data.\\
+Robust $z$-score & How far from normal, measured in robust units. & $(x-\text{median})/(1.4826\,\text{MAD})$.\\
+Percentile & ``90\% of values are below this one''. & The $q$-quantile of a sample; $q_{0.90}$ is used in the tail spread.\\
+Isolation Forest & A method that finds odd points by how few cuts isolate them. & An ensemble of random trees; anomaly score from expected path length.\\
+Subspace / PCA residual & Describe the shared pattern of all signals, then look at what is left over. & Residual after projecting standardised readings on the top principal directions.\\
+Load factor $L(t)$ & How much the whole system's workload moved right now. & Median log-shift of the signals that carry traffic over busy services.\\
+Carrying signal & A number that rises and falls with traffic. & A signal whose reference is at least 0.4 above its idle level.\\
+Ridge regression & A fit that is pulled toward a sensible starting guess when data is thin. & Least squares with an L2 penalty; $\kappa=60$ toward the prior slope.\\
+Residual & What is left after you remove the expected part. & $x-bL-m$: the reading minus the load response and the baseline.\\
+Level & How many alarm lines away from normal. & $\max_f z_{s,f}/z_{\text{line}}$ with $z_{\text{line}}=4$; level 1 is the line, the hybrid uses 2.\\
+Gate / drift & Which readings are allowed to teach the model; when a new level becomes normal. & Only readings under level 1 join the window; mild shifts are accepted after 24 readings, large after 360.\\
+Persistence & The alarm must last two cycles in a row. & Two consecutive windows over the line.\\
+Rules engine & The simple threshold-style detector. & Robust one-sided $z$ per metric, alarm at the rule score line.\\
+ML engine & Our load-aware model plus the random walk. & Load-aware residual levels, walk ranking, forecast, learned cascade.\\
+Hybrid & Alarm if either engine alarms or a container fact holds. & $f=1$ or $\lambda\ge2$ or $\rho\ge1.25$.\\
+Random walk / PageRank & A walker that spends most time near the likely origin. & Personalised PageRank with restart probability 0.15 and a stay term.\\
+Own vs symptom level & Trouble from the service itself vs trouble that could be inherited. & Own = CPU, memory, throttling; symptom = traffic, errors, latency, network.\\
+Noisy-OR & Chance of being hit by at least one of several independent routes. & $P(c)=1-\prod_x(1-P(x)\hat p(c\leftarrow x))$.\\
+Beta--Binomial & A way to learn a probability from successes and failures. & Beta prior with mean $\pi_0$ and strength $m$; posterior mean $(k+m\pi_0)/(n+m)$.\\
+Calibration / ECE & Whether ``70\%'' really means 70\%. & Expected calibration error over equal-width probability bins.\\
+Brier score & How far predicted probabilities are from what happened. & $\frac1n\sum(p_i-y_i)^2$; lower is better.\\
+Change-point detection & Noticing that the average has shifted. & Page--Hinkley test on raw metrics.\\
+Early warning & A flag that a number is heading for the line. & Least-squares trend with $R^2\ge0.6$, projected two minutes.\\
+Fault Lab & The tool that breaks containers on purpose. & The blind, physical, reproducible injector with a private ledger.\\
+Ledger & The private notebook of what was really broken. & Per-fault true root cause and affectable services, read only at scoring.\\
+Blind injection & The tool under test is not told what is broken. & The injector never communicates with the mapper.\\
+Caught and named (C+N) & Found the fault and ranked the right service first. & Detected and the root cause ranked first, over all faults.\\
+A@1, A@3 & Among detected faults, how often the truth is first, or in the top three. & Top-1 and Top-3 root-cause accuracy over detected faults.\\
+False-alarm episode & One continuous wrong alarm. & An alarm episode outside every fault window; one unbroken alarm counts once.\\
+FA/h & False alarms per hour of calm. & False-alarm episodes per fault-free hour.\\
+Alarm time & Share of calm time spent in alarm. & Fraction of fault-free time with the engine in alarm.\\
+AUROC / AP & Scores of how well a detector separates faulted from healthy. & Area under the ROC curve (0.5 = chance); average precision.\\
+Bootstrap interval & The range where the true rate probably lies. & 95\% percentile interval from resampling faults with replacement.\\
+Paired bootstrap & A fair comparison of two engines on the same faults. & Bootstrap of per-fault differences; two-sided $p$ value.\\
+Ablation & Remove one part to see what it was worth. & Re-run with one mechanism disabled and compare.\\
+Amplification study & Make victims louder than the origin to test the graph logic. & Synthetic soft faults with amplification factor $A\in\{1,\dots,4\}$.\\
+Synthetic benchmark & A simulated set of faults for more data. & A generator writing runs in the recorded format over random topologies.\\
+Held-out split & Test data that was not used to choose settings. & The seed-2 synthetic split of 178 faults, scored once.\\
+Workload recording & A run with no fault where only the traffic changes. & Fault-free runs (organic on/off; stepped $2,8,2,0,20,2$ visitors); any alarm is false.\\
+Auto-restart & The mapper restarting crashed containers. & Optional write; \code{MAPPER\_AUTO\_RESTART=off} disables it.\\
+Runbook & A short checklist for a type of fault. & Two to four concrete checks attached per fault type.\\
+Ingest endpoint & Where outside tools push their readings. & \code{POST /api/ingest} with a bearer token.\\
+WebSocket & A live two-way channel to the browser. & Carries \code{graph-update} and \code{incident.updated}.\\
+\bottomrule
+\end{longtable}

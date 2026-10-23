@@ -1,0 +1,85 @@
+% Study guide for the team: everything in the evaluator report, explained twice (simple words, then technical words),
+% with what to say, worked examples and likely questions. Build: report/guide/build.sh
+\documentclass[11pt,a4paper,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage[scaled=0.9]{helvet}
+\usepackage{microtype}
+\usepackage[a4paper,left=1.15in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx,xcolor,booktabs,array,tabularx,longtable,enumitem,float}
+\usepackage{fancyhdr,titlesec,setspace}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+\usepackage{xurl}\urlstyle{tt}
+\newcommand{\cpath}[1]{{\footnotesize\path{#1}}}
+\graphicspath{{../figures/}{../diagrams/}}
+\setstretch{1.12}\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\setlist{itemsep=2pt,topsep=4pt,parsep=2pt}
+\setcounter{tocdepth}{2}
+
+\definecolor{simple}{HTML}{1B7F5C}
+\definecolor{tech}{HTML}{2F5DA8}
+\definecolor{say}{HTML}{B5651D}
+\definecolor{warn}{HTML}{A33B3B}
+\newtcolorbox{simplebox}{enhanced,breakable,colback=simple!6,colframe=simple,boxrule=0.7pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,title={In simple words},fonttitle=\bfseries\sffamily\small,coltitle=white,colbacktitle=simple}
+\newtcolorbox{techbox}{enhanced,breakable,colback=tech!5,colframe=tech,boxrule=0.7pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,title={In technical words},fonttitle=\bfseries\sffamily\small,coltitle=white,colbacktitle=tech}
+\newtcolorbox{saybox}{enhanced,breakable,colback=say!6,colframe=say,boxrule=0.7pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,title={What to say},fonttitle=\bfseries\sffamily\small,coltitle=white,colbacktitle=say}
+\newtcolorbox{warnbox}{enhanced,breakable,colback=warn!5,colframe=warn,boxrule=0.7pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,title={Be careful here},fonttitle=\bfseries\sffamily\small,coltitle=white,colbacktitle=warn}
+\newtcolorbox{examplebox}[1][]{enhanced,breakable,colback=gray!7,colframe=gray!60,boxrule=0.6pt,arc=2pt,left=7pt,right=7pt,top=5pt,bottom=5pt,title={#1},fonttitle=\bfseries\sffamily\small,coltitle=black,colbacktitle=gray!25}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\itshape\nouppercase{\leftmark}}
+\fancyhead[R]{\small Study guide: our project, explained}
+\fancyfoot[C]{\small Page \thepage}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small Page \thepage}}
+\titleformat{\chapter}[display]{\bfseries\Large}{Part \thechapter}{6pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-10pt}{16pt}
+\titleformat{\section}{\bfseries\Large\color{tech}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\bfseries\large}{\thesubsection}{0.6em}{}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\cn}{C+N}
+\newcommand{\q}[1]{\textbf{Q: #1}}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+\begin{document}
+\begin{titlepage}
+\centering
+{\Large\bfseries\color{tech} STUDY GUIDE}\\[10pt]
+{\Huge\bfseries Probabilistic Cascading Failure and\\Agent-Assisted Root Cause Analysis\\for Microservice Systems}\\[14pt]
+{\large What we built, why it works, what we measured, and what to say about it}\\[28pt]
+\begin{tcolorbox}[colback=gray!6,colframe=gray!50,width=0.82\textwidth,boxrule=0.5pt]
+\raggedright\small
+This guide is for the four of us, not for the evaluator. The evaluator gets the \textbf{project report} (about 100 pages, formal). This guide is the long, plain version of the same project. Every topic appears three ways: \textbf{in simple words}, \textbf{in technical words}, and as \textbf{what to say} when someone asks. Read the simple box first. If you can explain that without looking, move to the technical one.
+\end{tcolorbox}
+\vfill
+{\large Anish C \quad Royson Salis \quad Dhanush K Murthy \quad K Bharath Parmar}\\[4pt]
+{\small Department of Artificial Intelligence \& Machine Learning, MITE Mangalore \quad 2026--2027}
+\end{titlepage}
+\tableofcontents
+\input{chapters/c00_howto}
+\input{chapters/c01_story}
+\input{chapters/c02_problem}
+\input{chapters/c02b_primer}
+\input{chapters/c03_system}
+\input{chapters/c04_observe}
+\input{chapters/c05_graph}
+\input{chapters/c06_detect}
+\input{chapters/c07_mlstory}
+\input{chapters/c08_rank}
+\input{chapters/c09_cascade}
+\input{chapters/c10_more}
+\input{chapters/c11_ui}
+\input{chapters/c12_eval}
+\input{chapters/c13_results}
+\input{chapters/c14_limits}
+\input{chapters/c15_demo}
+\input{chapters/c15b_reportmap}
+\input{chapters/c15c_roles}
+\input{chapters/c16_qa}
+\input{chapters/c17_codemap}
+\input{chapters/c18_glossary}
+\input{chapters/c19_numbers}
+\end{document}

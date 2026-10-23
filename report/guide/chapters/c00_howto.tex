@@ -1,0 +1,63 @@
+\chapter{How to use this guide}
+\label{ch:howto}
+
+\section{Two documents, two jobs}
+We now have two documents about the same project, and they do different jobs.
+
+\begin{itemize}
+\item \textbf{The project report} (\code{report/main.pdf}, about 100 pages). This goes to the evaluator. It is formal, dense and complete. It has the equations, the tables, the screenshots, the references and the honest list of limits. People get tired of long reports, so we kept it close to 100 pages and cut everything that was not needed to support a claim.
+\item \textbf{This study guide} (\code{report/guide/main.pdf}). This is for us. It is long on purpose. Nothing in it is new science: every number comes from the report. What it adds is explanation. It tells you what each part \emph{means}, why we built it that way, what the number really says, and what to answer when someone pokes at it.
+\end{itemize}
+
+\begin{saybox}
+If an evaluator asks something and you do not remember the answer, the answer is in Part~\ref{ch:qa} (questions and answers). If you do not understand the answer, go to the part that explains the topic. Every part has a green box (simple words) and a blue box (technical words). Learn the green box first. The blue box is what you say when they want depth.
+\end{saybox}
+
+\section{How every part is built}
+Each part follows the same pattern, so you always know where to look.
+
+\begin{enumerate}
+\item A green box: \textbf{in simple words}. A friend with no computer-science background should follow it.
+\item A blue box: \textbf{in technical words}. The same idea with the proper terms, the numbers and the method.
+\item Worked examples in grey boxes, with small numbers you can check by hand.
+\item An orange box: \textbf{what to say}. Two or three sentences you can say out loud, in an order that works.
+\item A red box when there is a trap: a claim that sounds stronger than the evidence, or a number that is easy to misquote.
+\end{enumerate}
+
+\section{The pitch at four lengths}
+You need the same story at different lengths, depending on how much time the evaluator gives you. Practise all four.
+
+\subsection{Thirty seconds}
+\begin{saybox}
+In a microservice system one failure spreads to the services that depend on it, so the operator gets a flood of alarms and cannot tell which service broke first. Our tool watches the containers from outside, over SSH, so we change nothing in the application. It builds the call graph, decides which services are behaving abnormally, ranks the likely root cause and predicts which services fall next. It needs no labelled data and no GPU.
+\end{saybox}
+
+\subsection{Two minutes}
+\begin{saybox}
+Add three things to the thirty-second version. First, \emph{how}: we read Docker state, statistics and each container's socket table, work out who calls whom from the listening port, and judge every service against its own recent normal. Second, \emph{what went wrong and how we fixed it}: our first machine-learning engine, a per-service Isolation Forest, flagged every service as 100\% anomalous the moment traffic stopped, because it could not tell ``everyone is quieter'' from ``one service is broken''. We replaced it with a load-aware model that first estimates how much the whole system's workload moved and then judges only what is left. On recordings with no faults and only changing load, the old engine was in alarm 23 to 52\% of the time and the new one 0\%. Third, \emph{how we know}: we injected 62 faults blind into two real systems we built, plus 84 live and 178 synthetic ones, and we report the results with confidence intervals, including the ones that were not significant.
+\end{saybox}
+
+\subsection{Five minutes}
+Use the two-minute version, then add the cascade model (we learn, for each call edge, how often trouble crosses it, and use that to predict who falls next), the three engines you can switch between (Rules, ML, Hybrid) and the Detection engines page that shows all three side by side, and the honest limits (two real systems, no real users, brownouts of idle services are missed).
+
+\subsection{Ten minutes, with the demo}
+Run the demo in Part~\ref{ch:demo}: start the dashboard, show the 3D Islands view, break a container, show the incident page naming the root cause and the cascade, open the Detection engines page and show the three engines disagreeing in a useful way. Then finish on the results table.
+
+\section{The five numbers to remember}
+If you remember nothing else, remember these. They are all in the report.
+
+\begin{center}
+\begin{tabular}{@{}rl@{}}
+\toprule
+\textbf{23--52\%} & time the old ML was in alarm when only the load moved (no fault)\\
+\textbf{0\%} & the same for the new load-aware ML\\
+\textbf{71\% vs 63\%} & faults caught \emph{and} correctly named, Hybrid vs Rules, on 62 real faults\\
+\textbf{+8.1 points, $p=0.117$} & that difference, and it is \emph{not} statistically significant\\
+\textbf{0.37 ms} & cost of one decision per service on one CPU core\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warnbox}
+The 71\% against 63\% is the easiest number to overclaim. It is a real difference in our data, but with 62 faults it is not statistically significant. Say ``it points that way, and we say plainly that it is not significant''. Evaluators trust that sentence more than a bold claim. The \emph{strong} result is the 0\% against 23--52\%, which is large and clear.
+\end{warnbox}

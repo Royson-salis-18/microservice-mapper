@@ -1,0 +1,117 @@
+\chapter{The numbers cheat sheet}
+\label{ch:numbers}
+
+One page to glance at before you walk in. Every value is in the report.
+
+\section{System facts}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Lines of code & about 36\,000 (TypeScript)\\
+Automated tests & 339 in 19 suites\\
+REST endpoints & 64, plus one WebSocket\\
+Collection period & 5 seconds\\
+Metrics per service & 8\\
+Decision cost & about 0.37 ms per service per window; 4 ms (10 services), 119 ms (320)\\
+Real systems & ShopFlow (13 services), LedgerLine (12 services)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Data sets}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Real faults & 62 over 7 classes, 217 minutes each system\\
+Live faults & 84 (21 per run, both benches, auto-restart on/off)\\
+Synthetic held-out & 178 faults, 16 topologies, seed 2, scored once\\
+Synthetic tuning & 170 faults, 16 campaigns, seed 1\\
+Workload recordings & 62 min organic on/off; 72 min stepped $2\to8\to2\to0\to20\to2$ visitors\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The ML correction in six numbers}
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Old forest & New load-aware\\
+\midrule
+Time in alarm, traffic on/off (no fault) & 23\% & 0\%\\
+Time in alarm, stepped load (no fault) & 52\% & 0\%\\
+Real faults, caught and named & 69\% & 71\%\\
+Real faults, false alarms per hour & 4.6 & 2.3\\
+Live faults, false alarms per hour & 40.9 & 0.0\\
+Cost at 320 services & 296 ms & 119 ms\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Rules vs Hybrid (real faults)}
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Rules & Hybrid\\
+\midrule
+Detected & 90\% & 90\%\\
+Caught and named & 63\% [52, 74] & 71\% [60, 81]\\
+False alarms per hour & 9.2 & 6.2\\
+Time in alarm & 9\% & 8\%\\
+Paired difference in C+N & \multicolumn{2}{c}{$+8.1$ points, 95\% CI $[-1.6,+17.7]$, $p=0.117$}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Other results}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Removing the \code{docker stop} fact & $-18$ points (real), $-15$ (synthetic)\\
+Learned cascade vs fixed 0.7 & ECE 0.033 vs 0.051; AUROC 0.841 vs 0.827 (69 cascades)\\
+Learned directions, names hidden & 27 of 31 correct; name rule: none decided\\
+Change-point alarm & delay 11.3 s $\to$ 4.8 s; alarm time 8\% $\to$ 16\%\\
+Early warning & 13 of 178 synthetic faults warned; 0 of 62 real; median lead 25 s\\
+Fault typing with the true service & 99\% (synthetic, 60 s after alarm); 79\% on the engine's suspect\\
+Live campaigns & all but one fault detected; true cause in top 3 for 65--71\%\\
+Auto-restart & no measurable effect (down time $\approx$ 300 s both ways)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Settings of the load-aware model}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Alarm line $z_{\text{line}}$ & 4 robust spreads (level 1); hybrid uses level 2\\
+Training window & 120 readings (about 10 minutes)\\
+Slow reference & 360 readings (30 minutes)\\
+Warm-up before judging & 30 readings\\
+Mild drift / large drift & 24 readings (2 min) / 360 readings (30 min)\\
+Persistence & 2 consecutive windows\\
+Hybrid thresholds & $\tau_\lambda=2$, $\tau_\rho=1.25$\\
+Random walk restart & 0.15\\
+Cascade prior & mean 0.5, strength 2; trial window 12 windows (1 minute)\\
+Edge confidences & 1.0 / 0.85 / 0.70 / 0.50 / 0.40\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Ten sentences to be able to say without notes}
+\begin{enumerate}
+\item We watch containers from outside over SSH and change nothing.
+\item The listening port tells us who calls whom.
+\item A stopped container is a fact, not a degree of anomaly.
+\item Each service is judged against its own recent normal.
+\item Our first ML called every workload change a fault: 23--52\% of calm time in alarm.
+\item The fix estimates the shared workload change with a median and judges what is left: 0\%.
+\item A random walk over the call graph finds the likely origin.
+\item Learned edge probabilities and noisy-OR predict who falls next, with better calibration than fixed probabilities.
+\item 71\% against 63\% caught and named is real in our data but not statistically significant.
+\item We report what failed, including two measurement bugs we found ourselves.
+\end{enumerate}
