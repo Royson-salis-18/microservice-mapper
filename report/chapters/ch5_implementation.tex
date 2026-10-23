@@ -212,101 +212,48 @@ Four pages support the investigation (Figure~\ref{fig:ui-pages}). Telemetry show
 \end{figure}
 
 \subsection{The 3D spatial view}
-The 3D scene shows the same graph as a small city, and each arrangement answers a different question a developer asks while debugging. Services are units on platforms; links are cables whose thickness shows the dependency weight and whose colour shows the heat of the link, with pulses that move at a rate driven by the link's request rate. A floating card over each platform gives its role, how many services it holds and their state; the \emph{Cards} button hides the cards, which leaves the units, their names and the cables unobstructed. The figures were taken on the two live benches, each running on its own Docker daemon and registered as its own project, so that each scene holds only that project's services.
+The 3D scene shows the same graph as a small city, and each arrangement answers a different question a developer asks while debugging. Services are units on platforms; links are cables whose thickness shows the dependency weight and whose colour shows the heat of the link, with pulses that move at a rate driven by the link's request rate. A floating card over each platform gives its role, how many services it holds and their state, and carries a line on what a fault there would mean (callers reached, services depending on it, calls in and out of the layer). The \emph{Cards} button hides the cards; the figures use that setting because the cards cover units and cables. They were taken on the two live benches, each running on its own Docker daemon and registered as its own project, so that each scene holds only that project's services.
 \begin{itemize}
-\item \textbf{Islands} groups services by role (edge, services, messaging, data), each on its own raised platform. With every project shown (Figure~\ref{fig:3d-all}), each project is a district of its own.
+\item \textbf{Islands} groups services by role (edge, services, messaging, data), each on its own raised platform. With every project shown (Figure~\ref{fig:3d-all}a), each project is a district of its own.
 \item \textbf{Flow} lays the platforms out in the order a request travels: the entry points, then the services one hop away, two hops away and so on. Each card says how many callers a fault at that hop can reach, so the platform to look at first is the one whose card says the most.
 \item \textbf{Topology} sorts services by how much depends on them: the most depended-on, the depended-on, and those nothing depends on. It is the blast-radius view.
 \item \textbf{Tiers} stacks the architectural layers as terraces from edge (L4) down to data (L1), with the calls in and out of each layer on its card, so a call that skips a layer or goes up the stack stands out.
 \end{itemize}
-Figures~\ref{fig:3d-shopflow-islands} to~\ref{fig:3d-ledgerline-tiers} show the four arrangements for each bench, each with and without the cards. During a fault the failing unit is boxed in red with a callout naming it and its score, its platform is tinted, the card changes from ``all healthy'' to the count of degraded services, and the bell in the corner counts what needs attention (Figure~\ref{fig:3d-all}c).
+Figures~\ref{fig:3d-shopflow} and~\ref{fig:3d-ledgerline} show the four arrangements for each bench. During a fault the failing unit is boxed in red with a callout naming it and its score, its platform is tinted, and the bell in the corner counts what needs attention (Figure~\ref{fig:3d-all}b).
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_islands_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_islands_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[ShopFlow: Islands view]{ShopFlow (13 services and its load generator), Islands arrangement: the card on each platform gives the role and state of each platform. (a) With the cards, (b) without them.}
-\label{fig:3d-shopflow-islands}
+\includegraphics[width=0.78\textwidth]{ui3d_shopflow_islands_nocards.jpg}\\[-1pt]
+{\small (a) Islands}\\[3pt]
+\includegraphics[width=0.78\textwidth]{ui3d_shopflow_flow_nocards.jpg}\\[-1pt]
+{\small (b) Flow}\\[3pt]
+\includegraphics[width=0.78\textwidth]{ui3d_shopflow_topology_nocards.jpg}\\[-1pt]
+{\small (c) Topology}\\[3pt]
+\includegraphics[width=0.5\textwidth]{ui3d_shopflow_tiers_nocards.jpg}\\[-1pt]
+{\small (d) Tiers}\\[3pt]
+\caption[ShopFlow in the four 3D arrangements]{The live ShopFlow bench (13 services and its load generator) in the four 3D arrangements, shown without the section cards: (a) Islands, platforms by role; (b) Flow, platforms in request order from entry to data; (c) Topology, services grouped by how much depends on them; (d) Tiers, layers as terraces from edge (top) to data (bottom).}
+\label{fig:3d-shopflow}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_flow_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_flow_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[ShopFlow: Flow view]{ShopFlow (13 services and its load generator), Flow arrangement: the card on each platform gives how many callers a fault at each hop can reach. (a) With the cards, (b) without them.}
-\label{fig:3d-shopflow-flow}
+\includegraphics[width=0.78\textwidth]{ui3d_ledgerline_islands_nocards.jpg}\\[-1pt]
+{\small (a) Islands}\\[3pt]
+\includegraphics[width=0.78\textwidth]{ui3d_ledgerline_flow_nocards.jpg}\\[-1pt]
+{\small (b) Flow}\\[3pt]
+\includegraphics[width=0.78\textwidth]{ui3d_ledgerline_topology_nocards.jpg}\\[-1pt]
+{\small (c) Topology}\\[3pt]
+\includegraphics[width=0.5\textwidth]{ui3d_ledgerline_tiers_nocards.jpg}\\[-1pt]
+{\small (d) Tiers}\\[3pt]
+\caption[LedgerLine in the four 3D arrangements]{The live LedgerLine bench (12 services and its load generator) in the four 3D arrangements, shown without the section cards: (a) Islands, platforms by role; (b) Flow, platforms in request order from entry to data; (c) Topology, services grouped by how much depends on them; (d) Tiers, layers as terraces from edge (top) to data (bottom).}
+\label{fig:3d-ledgerline}
 \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_topology_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_shopflow_topology_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[ShopFlow: Topology view]{ShopFlow (13 services and its load generator), Topology arrangement: the card on each platform gives how many services depend on each group. (a) With the cards, (b) without them.}
-\label{fig:3d-shopflow-topology}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.6\textwidth]{ui3d_shopflow_tiers_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.6\textwidth]{ui3d_shopflow_tiers_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[ShopFlow: Tiers view]{ShopFlow (13 services and its load generator), Tiers arrangement: the card on each platform gives the calls in and out of each architectural layer. (a) With the cards, (b) without them.}
-\label{fig:3d-shopflow-tiers}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_islands_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_islands_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[LedgerLine: Islands view]{LedgerLine (12 services and its load generator), Islands arrangement: the card on each platform gives the role and state of each platform. (a) With the cards, (b) without them.}
-\label{fig:3d-ledgerline-islands}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_flow_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_flow_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[LedgerLine: Flow view]{LedgerLine (12 services and its load generator), Flow arrangement: the card on each platform gives how many callers a fault at each hop can reach. (a) With the cards, (b) without them.}
-\label{fig:3d-ledgerline-flow}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_topology_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.82\textwidth]{ui3d_ledgerline_topology_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[LedgerLine: Topology view]{LedgerLine (12 services and its load generator), Topology arrangement: the card on each platform gives how many services depend on each group. (a) With the cards, (b) without them.}
-\label{fig:3d-ledgerline-topology}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.6\textwidth]{ui3d_ledgerline_tiers_cards.jpg}\\[-1pt]
-{\small (a) With cards}\\[6pt]
-\includegraphics[width=0.6\textwidth]{ui3d_ledgerline_tiers_nocards.jpg}\\[-1pt]
-{\small (b) Without cards}
-\caption[LedgerLine: Tiers view]{LedgerLine (12 services and its load generator), Tiers arrangement: the card on each platform gives the calls in and out of each architectural layer. (a) With the cards, (b) without them.}
-\label{fig:3d-ledgerline-tiers}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{ui3d_all_cards.jpg}\\[-1pt]{\small (a) All projects, with cards}\\[5pt]
-\includegraphics[width=0.8\textwidth]{ui3d_all_nocards.jpg}\\[-1pt]{\small (b) All projects, without cards}\\[5pt]
-\includegraphics[width=0.8\textwidth]{ui3d_islands_fault.jpg}\\[-1pt]{\small (c) ShopFlow during a fault: \texttt{payments} paused}
-\caption[The Islands view of all projects, and ShopFlow during a fault]{The Islands view with every project shown: each bench is a district with its own role platforms, with the cards (a) and without them (b). (c) With \texttt{payments} paused, the unit is boxed in red with a callout naming it and its score, its platform is tinted and its card shows one degraded service.}
+\includegraphics[width=0.86\textwidth]{ui3d_all_nocards.jpg}\\[-1pt]{\small (a) All projects}\\[3pt]
+\includegraphics[width=0.86\textwidth]{ui3d_islands_fault.jpg}\\[-1pt]{\small (b) ShopFlow during a fault: \texttt{payments} paused}
+\caption[The Islands view of all projects, and ShopFlow during a fault]{(a) The Islands view with every project shown: each bench is a district with its own role platforms. (b) With \texttt{payments} paused, the unit is boxed in red with a callout naming it and its score, and its platform is tinted.}
 \label{fig:3d-all}
 \end{figure}
 
