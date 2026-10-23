@@ -281,20 +281,29 @@ When the alarm is raised the page shows the most likely root cause, the confiden
 \end{figure}
 
 \subsection{Detection engines}
-The Detection engines page (Figure~\ref{fig:ui-engines}) is the place to see that the engine switch does something. It explains the three engines, defines Hybrid, shows the three engines side by side on the same readings, and then lists the configuration of the rules and of the ML engine and the offline scores. When the system is quiet, all three columns read ``quiet''; during the fault in Figure~\ref{fig:ui-engines-alarm} all three alarm, and the table of every service shows each engine's number for each service.
+The Detection engines page (Figure~\ref{fig:ui-engines}) is where a developer checks what the engine switch actually changes. The top half explains the three engines in four short lines each (what decides, how the source is named, the strength, the weakness) and states the Hybrid rule as a formula. Below it the three engines run side by side on the same readings, every cycle, whichever one is active. Each column names its top suspect, and the ML column also says \emph{why}: in Figure~\ref{fig:ui-engines-alarm} it reads ``payment, cpu 10.3 spreads from what the load predicts''. A small chip next to the project name says whether the shared workload moved (``workload steady'' or ``traffic $\times$2.4, explained, not a fault''), so a user can see at a glance that a traffic swing was taken out before any service was judged.
+
+Under the columns are six charts: each engine's peak against its alarm line, a strip showing on which cycles the engines agreed, the level of every service under every engine, a source-or-victim scatter (own resources against symptoms), the share of blame from the random walk, and a trail for one chosen service. Every chart has an enlarge button; the enlarged view (Figure~\ref{fig:ui-engines-popup}) adds a time brush so a stretch of a few cycles can be zoomed into, and closes with Esc. The page ends with the configuration of both engines in plain words.
 
 \begin{figure}[p]
 \centering
 \includegraphics[width=0.96\textwidth,height=0.88\textheight,keepaspectratio]{ui_engines_quiet.png}
-\caption{The Detection engines page while the system is healthy: the three engines, the Hybrid definition, the parallel view, and the configuration.}
+\caption{Top of the Detection engines page: what each engine decides, how it names the source, its strength and weakness, and the Hybrid rule.}
 \label{fig:ui-engines}
 \end{figure}
 
 \begin{figure}[p]
 \centering
 \includegraphics[width=0.96\textwidth,height=0.88\textheight,keepaspectratio]{ui_engines_alarm.png}
-\caption{The same page during the \texttt{orders-db} fault: all three engines alarm; the chart shows each engine's peak against its own alarm line; the table lists every service for every engine.}
+\caption{The parallel view during a slow-payment fault. Rules blame \texttt{orders} (the louder victim); ML and Hybrid name \texttt{payment} and say which signal moved. Below: peak against the line, agreement strip, every service, source or victim, walk blame and one service's trail.}
 \label{fig:ui-engines-alarm}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{ui_engines_popup.png}
+\caption{An enlarged chart with its time brush and hover read-out. The ML peak crosses the line once and stays just above it; the rule score climbs higher but on the wrong service.}
+\label{fig:ui-engines-popup}
 \end{figure}
 
 \subsection{Cascade risk}

@@ -2,7 +2,7 @@ import { useEngineStatus } from '../hooks/useEngineStatus';
 
 const clean = (id: string) => id.includes(':') ? id.slice(id.indexOf(':') + 1) : id;
 
-/** Live view of the ML engine: what each service's forests say right now and where the random walk puts the blame. */
+/** Live view of the ML engine: what each service's load-adjusted level says right now and where the random walk puts the blame. */
 export function MLLivePanel({ selectedProject }: { selectedProject?: string | null }) {
   const { mode, targets } = useEngineStatus();
   const shown = targets.filter((t) => !selectedProject || t.targetId === selectedProject);

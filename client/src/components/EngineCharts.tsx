@@ -147,7 +147,7 @@ export function ServiceBars({ rows, expanded, onPick, picked }: { rows: Row[]; e
 }
 
 /**
- * The two ML forests of each service against each other. High own level
+ * The two halves of each service's ML level against each other (own resources vs symptoms). High own level
  * (its CPU, memory) points at a source; high symptom level alone (traffic,
  * errors, latency) points at a victim of something else.
  */
@@ -203,7 +203,7 @@ export function ServiceTrail({ trail, ids, picked, onPick, expanded }: { trail: 
   const data = id ? trail[id] : [];
   return (
     <div>
-      <select className="mm-input" value={id ?? ''} onChange={(e) => onPick(e.target.value)} style={{ fontSize: 12, padding: '4px 8px', marginBottom: 8 }} aria-label="Service to follow">
+      <select className="mm-input" value={id ?? ''} onChange={(e) => onPick(e.target.value)} style={{ fontSize: 12, padding: '4px 8px', marginBottom: 8, background: 'var(--color-bg-raised)', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', borderRadius: 6, colorScheme: 'dark' }} aria-label="Service to follow">
         {ids.map((x) => <option key={x} value={x}>{clean(x)}</option>)}
       </select>
       {data.length < 2 ? <Empty>This service needs a few cycles of history.</Empty> : (

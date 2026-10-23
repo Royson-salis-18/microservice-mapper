@@ -539,7 +539,8 @@ def fig_workload():
     save(fig, "fig_workload")
 
 
-MODELS = [("forest (old default)", "Isolation Forest (old default)"), ("forest ensemble (4 detectors)", "Ensemble of four (old)"), ("knn", "k-NN"), ("mahalanobis", "Mahalanobis"), ("hbos", "HBOS"),
+MODELS = [
+    ("rules (z-score)", "Rule engine (no model)"), ("forest (old default)", "Isolation Forest (old default)"), ("forest ensemble (4 detectors)", "Ensemble of four (old)"), ("knn", "k-NN"), ("mahalanobis", "Mahalanobis"), ("hbos", "HBOS"),
           ("control chart, tail spread", "Control chart, no load factor"), ("subspace residual, 1 component", "Subspace residual"), ("load factor, tail spread", "Load-aware residual (new)")]
 
 

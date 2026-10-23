@@ -184,7 +184,7 @@ function ParallelTarget({ t, mode }: { t: Target; mode: EngineMode | null }) {
               render={(x) => <AgreementStrip history={s.history} expanded={x} />} />
             <ChartCard title="Every service, every engine" about="Rules, ML level and Hybrid score per service against the same line. Click a service to follow it."
               render={(x) => <ServiceBars rows={s.services} expanded={x} onPick={setPicked} picked={picked} />} />
-            <ChartCard title="Source or victim" about="ML's two forests per service: high own level points at a source, high symptoms alone at a victim. Dot size is the walk blame."
+            <ChartCard title="Source or victim" about="Each service's own level (CPU, memory) against its symptom level (traffic, errors, latency), both after the load is taken out. High own level points at a source; symptoms alone point at a victim. Dot size is the walk blame."
               render={(x) => <SourceVictimScatter rows={s.services} expanded={x} onPick={setPicked} />}
               footer={<>red: container fact · amber: own resources over the line · blue: symptoms over the line · grey: calm</>} />
             <ChartCard title="Who the random walk blames" about="Share of the blame over the call graph right now; the top one is ML's named source."

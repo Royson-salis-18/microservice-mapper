@@ -34,6 +34,8 @@ Every candidate of Section~\ref{sec:candidates} runs inside the same engine and 
  & \multicolumn{2}{c}{Real (62)} & \multicolumn{2}{c}{Live (84)} & \multicolumn{2}{c}{Synthetic (125)} & \multicolumn{2}{c}{No faults, load moves}\\
 Model & \cn & FA/h & \cn & FA/h & \cn & FA/h & organic & steps\\
 \midrule
+Rule engine (z-score, no model) & 63 & 9.2 & 45 & 16.3 & 75 & 2.6 & 12 & 35 \\
+\midrule
 Isolation Forest (old default) & 69 & 4.6 & 46 & 40.9 & 76 & 0.2 & 23 & 52 \\
 Ensemble of four detectors & 71 & 20.0 & 44 & 81.7 & 78 & 2.6 & 47 & 88 \\
 k-NN & 69 & 13.8 & 44 & 57.2 & 72 & 5.2 & 73 & 96 \\
@@ -66,12 +68,52 @@ We therefore adopted the load factor with the tail spread. We report what it doe
 
 \paragraph{Sensitivity.} Figure~\ref{fig:zline} sweeps the alarm line. A looser line (2 spreads) raises detection to 94\% on the real faults but also the false alarms on the workload recordings (15.0 episodes per hour); a tighter one (6 or 8 spreads) removes all false alarms on the workload recordings but loses detection (87\% and 85\% on the real faults, 83\% and 75\% on the synthetic ones). The adopted line of 4 spreads is the loosest that keeps the workload recordings quiet. The training window (60, 120 or 240 readings) and the slow reference (120, 360 or 720) matter little once they are long enough; a window of 60 readings makes the workload recordings noisy again (10.4 false episodes per hour). We also tried carrying the range guard of the first model over to the residual (a value several floors beyond everything in the window counts as level one): it changed no result on any set of injected faults and added false alarms on the steady-load steps (4.8 episodes per hour at four floors, 1.0 without it), so the adopted model has none.
 
+\paragraph{How fast a mild shift becomes normal.} A deviation that stays between level one and three is accepted as the new normal after $24$ readings (two minutes). Waiting longer, $48$ to $240$ readings, changed nothing on the injected faults (\cn{} $71\%$ on the real ones and $78\%$ on the synthetic ones at every value; synthetic detection $88\%$ against $89$--$90\%$) and nothing on the workload recordings, but doubled the time in alarm on the real systems ($6\%$ to $13\%$) and raised their false alarms from $2.3$ to $3.1$ per hour, because a service whose footprint changes after a restart stays in alarm until it is accepted. The cost of the short setting is that a slow fault that stays only mildly above the line is absorbed after two minutes, as in the simulated slow \texttt{payment} of Section~\ref{sec:engineslive}; a larger shift (level three or more) still needs thirty minutes.
+
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_zline.pdf}
 \caption[Sensitivity of the adopted model to its alarm line]{Sensitivity of the load-aware model to its alarm line $z_{\mathrm{line}}$ (the engine alarms at level 2, that is, at $2 z_{\mathrm{line}}$ spreads). (a) Faults detected, and caught and named, on the real and synthetic sets. (b) False alarms per fault-free hour on the real and live sets, and the share of time in alarm on the workload recordings.}
 \label{fig:zline}
 \end{figure}
+
+\subsection{Rules, the old ML and the new ML side by side}
+\label{sec:threeway}
+Table~\ref{tab:threeway} puts the three engines a user can pick in the top bar next to each other, replayed by the same harness over the same recordings: the rule engine (robust z-score per metric, alarm at three spreads, no model), the first ML engine (per-service Isolation Forests) and the corrected ML engine (load-aware residual). Both ML engines name the source with the same random walk, so any difference between them comes from the model of normal. A longer version with the reasoning in plain words is kept in the repository as \code{wiki/44-ml-comparison.md}.
+
+\begin{table}[!htbp]
+\centering
+\caption[Rules, old ML and new ML on the same recordings]{The three engines on the same recordings. \cn: faults caught with the true cause named first (\%). FA/h: false-alarm episodes per fault-free hour. Workload columns: share of the fault-free workload recordings spent in alarm (\%). ROC: per-reading AUROC and average precision on the real run and the held-out synthetic set. Cost: mean milliseconds per decision window for 10 and 320 services.}
+\label{tab:threeway}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrr}
+\toprule
+ & Rules & Old ML (forest) & New ML (load-aware)\\
+\midrule
+\multicolumn{4}{l}{\emph{Injected faults}}\\
+Real, 62 faults: \cn{} / FA/h & 63\% / 9.2 & 69\% / 4.6 & \textbf{71\% / 2.3}\\
+Live, 84 faults: \cn{} / FA/h & 45\% / 16.3 & 46\% / 40.9 & \textbf{48\% / 0.0}\\
+Synthetic, 125 faults: \cn{} / FA/h & 75\% / 2.6 & 76\% / 0.2 & \textbf{78\% / 0.2}\\
+Detected, real / live / synthetic & 90\% / 96\% / 83\% & 87\% / 99\% / 87\% & 90\% / 99\% / 88\%\\
+Median delay, real & 15 s & 12 s & 12 s\\
+\midrule
+\multicolumn{4}{l}{\emph{No fault, only the workload moves}}\\
+Organic on/off: time in alarm & 12\% & 23\% & \textbf{0\%}\\
+Steps 2--8--2--0--20--2: time in alarm & 35\% & 52\% & \textbf{0\%}\\
+\midrule
+\multicolumn{4}{l}{\emph{Per-reading ranking}}\\
+AUROC / AP, real & 0.69 / 0.34 & 0.63 / 0.29 & 0.66 / 0.31\\
+AUROC / AP, synthetic test & 0.87 / 0.67 & 0.86 / 0.53 & 0.84 / 0.66\\
+\midrule
+Cost, 10 / 320 services (ms) & -- & 8.9 / 296 & 4.0 / 119\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table reads in three parts. On injected faults the rule engine catches about as many faults as the ML engines. With container facts ranked first it names the right service for 63\% of the real faults, against 69\% for the old ML and 71\% for the new one, and it raises four times as many false alarms as the new engine on the real run and more than ten times as many on the synthetic set: every swing of traffic is a deviation to it, and when no container fact is present the loudest service, often a victim, gets the blame. The two ML engines are close on the injected faults; the new one is two points ahead on each set, with fewer false alarms, mostly on the live campaigns, where restarts and traffic pauses are frequent. On the workload recordings the difference is the whole point of the correction: the old ML is in alarm for about half of the steady-load recording, the rule engine for a third of it, and the new ML not at all. Per reading, the rule z-score ranks best on both sets; a single high reading is cheap, and the rule engine loses only once alarms need persistence and a named source. Between the ML engines, the new one has the higher average precision on the held-out set and a slightly lower AUROC, and it is the cheaper of the two.
+
+Put simply, the new engine differs from the old one in five ways. It estimates how much the whole project's workload moved before it judges any service, and explains that move away. It still sees a fault during a load change, because the load is a median that one or two services cannot drag, and each signal must be explained by either ``ignore the load'' or ``follow it'' to count as normal. It gives bursty signals a fair spread. It does not learn from readings it alarmed on. And each alarm says which signal moved and by how much. It keeps the rules the mapper was built on: no labels, no agent on the hosts, only the telemetry the mapper already reads.
 
 \subsection{Detection and root cause}
 Table~\ref{tab:main} compares the engines in one harness, now with the corrected ML engine inside. On the real systems the hybrid and the ML engine name the true cause first for 71\% of all faults, against 63\% for the rule layer and 68\% for ranking by anomaly alone. The paired differences are in Figure~\ref{fig:forest} and Table~\ref{tab:paired}. They are smaller than in the first version of this report and no longer reach significance: hybrid over rules is $+8.1$ points on the real systems (95\% CI $[-1.6, +17.7]$, $p = 0.117$) and $+5.6$ on the synthetic set ($[-0.6, +11.8]$, $p = 0.093$); hybrid over the severity ranking is $+3.2$ and $+1.1$ points, and hybrid over the ML engine $0.0$ and $+0.6$. With 62 real faults a difference below about ten points cannot be resolved. What the corrected engine changes is the false-alarm column: the ML engine alarms 2.3 times per fault-free hour on the real systems and 0.2 on the synthetic set, the quietest row, and Section~\ref{sec:workloadres} shows that it stays quiet when only the load moves. The hybrid raises more episodes (6.2 and 0.9) because the rule layer may also trigger it.
@@ -291,9 +333,9 @@ To show what the Detection engines page adds, the simulator was run with a slow 
 \centering
 \caption{One simulated fault (slow \texttt{payment}): each engine's first suspect and its peak against its own alarm line, at three moments after the onset. The simulator reports every two seconds, so 24 readings are 48 s here (two minutes on a real host).}
 \label{tab:live}
-\small
+\footnotesize
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{lccc}
+\begin{tabular}{l>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.3\textwidth}>{\raggedright\arraybackslash}p{0.22\textwidth}}
 \toprule
 \textbf{Engine} & \textbf{+5 s: payment only} & \textbf{+20 to +70 s: both saturated} & \textbf{after +75 s}\\
 \midrule

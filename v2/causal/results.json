@@ -46,8 +46,8 @@
      },
      "online": {
       "right": 506,
-      "wrong": 141,
-      "unknown": 35
+      "wrong": 143,
+      "unknown": 33
      }
     },
     "name+ (name, else learned)": {
@@ -76,13 +76,13 @@
     },
     "method: up": {
      "end": {
-      "right": 23,
-      "wrong": 6,
+      "right": 22,
+      "wrong": 7,
       "unknown": 2
      },
      "online": {
-      "right": 347,
-      "wrong": 119,
+      "right": 341,
+      "wrong": 125,
       "unknown": 216
      }
     },
@@ -93,8 +93,8 @@
       "unknown": 1
      },
      "online": {
-      "right": 288,
-      "wrong": 182,
+      "right": 285,
+      "wrong": 185,
       "unknown": 212
      }
     },
@@ -129,8 +129,8 @@
       "unknown": 4
      },
      "online": {
-      "right": 282,
-      "wrong": 193,
+      "right": 280,
+      "wrong": 195,
       "unknown": 207
      }
     },
@@ -153,8 +153,8 @@
       "unknown": 0
      },
      "online": {
-      "right": 457,
-      "wrong": 205,
+      "right": 455,
+      "wrong": 207,
       "unknown": 20
      }
     },
@@ -252,8 +252,8 @@
      },
      "online": {
       "right": 466,
-      "wrong": 141,
-      "unknown": 35
+      "wrong": 143,
+      "unknown": 33
      }
     },
     "name+ (name, else learned)": {
@@ -282,13 +282,13 @@
     },
     "method: up": {
      "end": {
-      "right": 22,
-      "wrong": 6,
+      "right": 21,
+      "wrong": 7,
       "unknown": 2
      },
      "online": {
-      "right": 334,
-      "wrong": 108,
+      "right": 328,
+      "wrong": 114,
       "unknown": 200
      }
     },
@@ -299,8 +299,8 @@
       "unknown": 1
      },
      "online": {
-      "right": 266,
-      "wrong": 182,
+      "right": 263,
+      "wrong": 185,
       "unknown": 194
      }
     },
@@ -335,8 +335,8 @@
       "unknown": 4
      },
      "online": {
-      "right": 257,
-      "wrong": 187,
+      "right": 255,
+      "wrong": 189,
       "unknown": 198
      }
     },
@@ -359,8 +359,8 @@
       "unknown": 0
      },
      "online": {
-      "right": 424,
-      "wrong": 199,
+      "right": 422,
+      "wrong": 201,
       "unknown": 19
      }
     },
@@ -464,8 +464,8 @@
      },
      "online": {
       "right": 506,
-      "wrong": 141,
-      "unknown": 35
+      "wrong": 143,
+      "unknown": 33
      }
     },
     "name+ (name, else learned)": {
@@ -494,13 +494,13 @@
     },
     "method: up": {
      "end": {
-      "right": 23,
-      "wrong": 6,
+      "right": 22,
+      "wrong": 7,
       "unknown": 2
      },
      "online": {
-      "right": 347,
-      "wrong": 119,
+      "right": 341,
+      "wrong": 125,
       "unknown": 216
      }
     },
@@ -511,8 +511,8 @@
       "unknown": 1
      },
      "online": {
-      "right": 288,
-      "wrong": 182,
+      "right": 285,
+      "wrong": 185,
       "unknown": 212
      }
     },
@@ -547,8 +547,8 @@
       "unknown": 4
      },
      "online": {
-      "right": 282,
-      "wrong": 193,
+      "right": 280,
+      "wrong": 195,
       "unknown": 207
      }
     },
@@ -571,8 +571,8 @@
       "unknown": 0
      },
      "online": {
-      "right": 457,
-      "wrong": 205,
+      "right": 455,
+      "wrong": 207,
       "unknown": 20
      }
     },
@@ -670,8 +670,8 @@
      },
      "online": {
       "right": 466,
-      "wrong": 141,
-      "unknown": 35
+      "wrong": 143,
+      "unknown": 33
      }
     },
     "name+ (name, else learned)": {
@@ -700,13 +700,13 @@
     },
     "method: up": {
      "end": {
-      "right": 22,
-      "wrong": 6,
+      "right": 21,
+      "wrong": 7,
       "unknown": 2
      },
      "online": {
-      "right": 334,
-      "wrong": 108,
+      "right": 328,
+      "wrong": 114,
       "unknown": 200
      }
     },
@@ -717,8 +717,8 @@
       "unknown": 1
      },
      "online": {
-      "right": 266,
-      "wrong": 182,
+      "right": 263,
+      "wrong": 185,
       "unknown": 194
      }
     },
@@ -753,8 +753,8 @@
       "unknown": 4
      },
      "online": {
-      "right": 257,
-      "wrong": 187,
+      "right": 255,
+      "wrong": 189,
       "unknown": 198
      }
     },
@@ -777,8 +777,8 @@
       "unknown": 0
      },
      "online": {
-      "right": 424,
-      "wrong": 199,
+      "right": 422,
+      "wrong": 201,
       "unknown": 19
      }
     },
@@ -876,14 +876,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 446,
-      "wrong": 10,
+      "right": 445,
+      "wrong": 11,
       "unknown": 8
      },
      "online": {
-      "right": 4875,
+      "right": 4869,
       "wrong": 289,
-      "unknown": 404
+      "unknown": 410
      }
     },
     "name+ (name, else learned)": {
@@ -912,25 +912,25 @@
     },
     "method: up": {
      "end": {
-      "right": 249,
-      "wrong": 59,
+      "right": 248,
+      "wrong": 60,
       "unknown": 156
      },
      "online": {
-      "right": 1691,
-      "wrong": 415,
+      "right": 1693,
+      "wrong": 413,
       "unknown": 3462
      }
     },
     "method: down": {
      "end": {
-      "right": 261,
-      "wrong": 61,
+      "right": 257,
+      "wrong": 65,
       "unknown": 142
      },
      "online": {
-      "right": 1612,
-      "wrong": 429,
+      "right": 1602,
+      "wrong": 439,
       "unknown": 3527
      }
     },
@@ -960,14 +960,14 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 244,
-      "wrong": 182,
-      "unknown": 38
+      "right": 239,
+      "wrong": 186,
+      "unknown": 39
      },
      "online": {
-      "right": 2337,
-      "wrong": 1907,
-      "unknown": 1324
+      "right": 2306,
+      "wrong": 1930,
+      "unknown": 1332
      }
     },
     "method: xcorr-symptom": {
@@ -984,13 +984,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 260,
-      "wrong": 204,
+      "right": 255,
+      "wrong": 209,
       "unknown": 0
      },
      "online": {
-      "right": 3064,
-      "wrong": 2419,
+      "right": 3039,
+      "wrong": 2444,
       "unknown": 85
      }
     },
@@ -1082,14 +1082,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 225,
-      "wrong": 10,
+      "right": 224,
+      "wrong": 11,
       "unknown": 8
      },
      "online": {
-      "right": 2223,
+      "right": 2217,
       "wrong": 289,
-      "unknown": 404
+      "unknown": 410
      }
     },
     "name+ (name, else learned)": {
@@ -1118,25 +1118,25 @@
     },
     "method: up": {
      "end": {
-      "right": 134,
-      "wrong": 26,
+      "right": 133,
+      "wrong": 27,
       "unknown": 83
      },
      "online": {
-      "right": 936,
-      "wrong": 191,
+      "right": 933,
+      "wrong": 194,
       "unknown": 1789
      }
     },
     "method: down": {
      "end": {
-      "right": 138,
-      "wrong": 27,
+      "right": 135,
+      "wrong": 30,
       "unknown": 78
      },
      "online": {
-      "right": 837,
-      "wrong": 208,
+      "right": 831,
+      "wrong": 214,
       "unknown": 1871
      }
     },
@@ -1167,13 +1167,13 @@
     "method: xcorr-anomaly": {
      "end": {
       "right": 123,
-      "wrong": 98,
-      "unknown": 22
+      "wrong": 97,
+      "unknown": 23
      },
      "online": {
-      "right": 1135,
-      "wrong": 1023,
-      "unknown": 758
+      "right": 1133,
+      "wrong": 1020,
+      "unknown": 763
      }
     },
     "method: xcorr-symptom": {
@@ -1190,13 +1190,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 137,
-      "wrong": 106,
+      "right": 135,
+      "wrong": 108,
       "unknown": 0
      },
      "online": {
-      "right": 1632,
-      "wrong": 1237,
+      "right": 1622,
+      "wrong": 1247,
       "unknown": 47
      }
     },
@@ -1294,14 +1294,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 446,
-      "wrong": 10,
+      "right": 445,
+      "wrong": 11,
       "unknown": 8
      },
      "online": {
-      "right": 4875,
+      "right": 4869,
       "wrong": 289,
-      "unknown": 404
+      "unknown": 410
      }
     },
     "name+ (name, else learned)": {
@@ -1330,25 +1330,25 @@
     },
     "method: up": {
      "end": {
-      "right": 249,
-      "wrong": 59,
+      "right": 248,
+      "wrong": 60,
       "unknown": 156
      },
      "online": {
-      "right": 1691,
-      "wrong": 415,
+      "right": 1693,
+      "wrong": 413,
       "unknown": 3462
      }
     },
     "method: down": {
      "end": {
-      "right": 261,
-      "wrong": 61,
+      "right": 257,
+      "wrong": 65,
       "unknown": 142
      },
      "online": {
-      "right": 1612,
-      "wrong": 429,
+      "right": 1602,
+      "wrong": 439,
       "unknown": 3527
      }
     },
@@ -1378,14 +1378,14 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 244,
-      "wrong": 182,
-      "unknown": 38
+      "right": 239,
+      "wrong": 186,
+      "unknown": 39
      },
      "online": {
-      "right": 2337,
-      "wrong": 1907,
-      "unknown": 1324
+      "right": 2306,
+      "wrong": 1930,
+      "unknown": 1332
      }
     },
     "method: xcorr-symptom": {
@@ -1402,13 +1402,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 260,
-      "wrong": 204,
+      "right": 255,
+      "wrong": 209,
       "unknown": 0
      },
      "online": {
-      "right": 3064,
-      "wrong": 2419,
+      "right": 3039,
+      "wrong": 2444,
       "unknown": 85
      }
     },
@@ -1500,14 +1500,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 225,
-      "wrong": 10,
+      "right": 224,
+      "wrong": 11,
       "unknown": 8
      },
      "online": {
-      "right": 2223,
+      "right": 2217,
       "wrong": 289,
-      "unknown": 404
+      "unknown": 410
      }
     },
     "name+ (name, else learned)": {
@@ -1536,25 +1536,25 @@
     },
     "method: up": {
      "end": {
-      "right": 134,
-      "wrong": 26,
+      "right": 133,
+      "wrong": 27,
       "unknown": 83
      },
      "online": {
-      "right": 936,
-      "wrong": 191,
+      "right": 933,
+      "wrong": 194,
       "unknown": 1789
      }
     },
     "method: down": {
      "end": {
-      "right": 138,
-      "wrong": 27,
+      "right": 135,
+      "wrong": 30,
       "unknown": 78
      },
      "online": {
-      "right": 837,
-      "wrong": 208,
+      "right": 831,
+      "wrong": 214,
       "unknown": 1871
      }
     },
@@ -1585,13 +1585,13 @@
     "method: xcorr-anomaly": {
      "end": {
       "right": 123,
-      "wrong": 98,
-      "unknown": 22
+      "wrong": 97,
+      "unknown": 23
      },
      "online": {
-      "right": 1135,
-      "wrong": 1023,
-      "unknown": 758
+      "right": 1133,
+      "wrong": 1020,
+      "unknown": 763
      }
     },
     "method: xcorr-symptom": {
@@ -1608,13 +1608,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 137,
-      "wrong": 106,
+      "right": 135,
+      "wrong": 108,
       "unknown": 0
      },
      "online": {
-      "right": 1632,
-      "wrong": 1237,
+      "right": 1622,
+      "wrong": 1247,
       "unknown": 47
      }
     },
@@ -1712,14 +1712,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 191,
+      "right": 192,
       "wrong": 9,
-      "unknown": 4
+      "unknown": 3
      },
      "online": {
-      "right": 2190,
+      "right": 2191,
       "wrong": 131,
-      "unknown": 127
+      "unknown": 126
      }
     },
     "name+ (name, else learned)": {
@@ -1748,14 +1748,14 @@
     },
     "method: up": {
      "end": {
-      "right": 122,
-      "wrong": 20,
+      "right": 120,
+      "wrong": 22,
       "unknown": 62
      },
      "online": {
-      "right": 917,
-      "wrong": 172,
-      "unknown": 1359
+      "right": 916,
+      "wrong": 174,
+      "unknown": 1358
      }
     },
     "method: down": {
@@ -1796,13 +1796,13 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 124,
-      "wrong": 61,
+      "right": 127,
+      "wrong": 58,
       "unknown": 19
      },
      "online": {
-      "right": 1195,
-      "wrong": 690,
+      "right": 1200,
+      "wrong": 685,
       "unknown": 563
      }
     },
@@ -1820,13 +1820,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 129,
-      "wrong": 75,
+      "right": 131,
+      "wrong": 73,
       "unknown": 0
      },
      "online": {
-      "right": 1497,
-      "wrong": 916,
+      "right": 1508,
+      "wrong": 905,
       "unknown": 35
      }
     },
@@ -1918,14 +1918,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 96,
+      "right": 97,
       "wrong": 9,
-      "unknown": 4
+      "unknown": 3
      },
      "online": {
-      "right": 1050,
+      "right": 1051,
       "wrong": 131,
-      "unknown": 127
+      "unknown": 126
      }
     },
     "name+ (name, else learned)": {
@@ -1959,9 +1959,9 @@
       "unknown": 34
      },
      "online": {
-      "right": 516,
-      "wrong": 67,
-      "unknown": 725
+      "right": 525,
+      "wrong": 59,
+      "unknown": 724
      }
     },
     "method: down": {
@@ -2002,13 +2002,13 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 64,
-      "wrong": 37,
+      "right": 67,
+      "wrong": 34,
       "unknown": 8
      },
      "online": {
-      "right": 625,
-      "wrong": 396,
+      "right": 635,
+      "wrong": 386,
       "unknown": 287
      }
     },
@@ -2026,13 +2026,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 71,
-      "wrong": 38,
+      "right": 72,
+      "wrong": 37,
       "unknown": 0
      },
      "online": {
-      "right": 806,
-      "wrong": 479,
+      "right": 812,
+      "wrong": 473,
       "unknown": 23
      }
     },
@@ -2130,14 +2130,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 191,
+      "right": 192,
       "wrong": 9,
-      "unknown": 4
+      "unknown": 3
      },
      "online": {
-      "right": 2190,
+      "right": 2191,
       "wrong": 131,
-      "unknown": 127
+      "unknown": 126
      }
     },
     "name+ (name, else learned)": {
@@ -2166,14 +2166,14 @@
     },
     "method: up": {
      "end": {
-      "right": 122,
-      "wrong": 20,
+      "right": 120,
+      "wrong": 22,
       "unknown": 62
      },
      "online": {
-      "right": 917,
-      "wrong": 172,
-      "unknown": 1359
+      "right": 916,
+      "wrong": 174,
+      "unknown": 1358
      }
     },
     "method: down": {
@@ -2214,13 +2214,13 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 124,
-      "wrong": 61,
+      "right": 127,
+      "wrong": 58,
       "unknown": 19
      },
      "online": {
-      "right": 1195,
-      "wrong": 690,
+      "right": 1200,
+      "wrong": 685,
       "unknown": 563
      }
     },
@@ -2238,13 +2238,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 129,
-      "wrong": 75,
+      "right": 131,
+      "wrong": 73,
       "unknown": 0
      },
      "online": {
-      "right": 1497,
-      "wrong": 916,
+      "right": 1508,
+      "wrong": 905,
       "unknown": 35
      }
     },
@@ -2336,14 +2336,14 @@
     },
     "dynamic": {
      "end": {
-      "right": 96,
+      "right": 97,
       "wrong": 9,
-      "unknown": 4
+      "unknown": 3
      },
      "online": {
-      "right": 1050,
+      "right": 1051,
       "wrong": 131,
-      "unknown": 127
+      "unknown": 126
      }
     },
     "name+ (name, else learned)": {
@@ -2377,9 +2377,9 @@
       "unknown": 34
      },
      "online": {
-      "right": 516,
-      "wrong": 67,
-      "unknown": 725
+      "right": 525,
+      "wrong": 59,
+      "unknown": 724
      }
     },
     "method: down": {
@@ -2420,13 +2420,13 @@
     },
     "method: xcorr-anomaly": {
      "end": {
-      "right": 64,
-      "wrong": 37,
+      "right": 67,
+      "wrong": 34,
       "unknown": 8
      },
      "online": {
-      "right": 625,
-      "wrong": 396,
+      "right": 635,
+      "wrong": 386,
       "unknown": 287
      }
     },
@@ -2444,13 +2444,13 @@
     },
     "method: granger-anomaly": {
      "end": {
-      "right": 71,
-      "wrong": 38,
+      "right": 72,
+      "wrong": 37,
       "unknown": 0
      },
      "online": {
-      "right": 806,
-      "wrong": 479,
+      "right": 812,
+      "wrong": 473,
       "unknown": 23
      }
     },
@@ -2517,7 +2517,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2565,7 +2565,7 @@
     "top1OfDetected": 0.7321428571428571,
     "caughtAndNamed": 0.6612903225806451,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2613,7 +2613,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2661,7 +2661,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2709,7 +2709,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2757,7 +2757,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2805,7 +2805,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2853,7 +2853,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2903,7 +2903,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2951,7 +2951,7 @@
     "top1OfDetected": 0.7321428571428571,
     "caughtAndNamed": 0.6612903225806451,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -2999,7 +2999,7 @@
     "top1OfDetected": 0.7321428571428571,
     "caughtAndNamed": 0.6612903225806451,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3047,7 +3047,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3095,7 +3095,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3143,7 +3143,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3191,7 +3191,7 @@
     "top1OfDetected": 0.7857142857142857,
     "caughtAndNamed": 0.7096774193548387,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3239,7 +3239,7 @@
     "top1OfDetected": 0.75,
     "caughtAndNamed": 0.6774193548387096,
     "falseAlarmsPerHour": 6.150530387143854,
-    "alarmShare": 0.14118884199821335,
+    "alarmShare": 0.07594004343384965,
     "byClass": {
      "flap": {
       "n": 2,
@@ -3285,21 +3285,21 @@
   "tune (tune+tune2)": {
    "v1 hybrid": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 14
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 47
+      "named": 48
      },
      "memory": {
       "n": 57,
@@ -3337,27 +3337,27 @@
       "named": 21
      }
     },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, no directions (all mutual)": {
     "faults": 332,
-    "detected": 0.9337349397590361,
-    "top1OfDetected": 0.8709677419354839,
-    "caughtAndNamed": 0.8132530120481928,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.9307228915662651,
+    "top1OfDetected": 0.8770226537216829,
+    "caughtAndNamed": 0.8162650602409639,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 35,
+      "detected": 34,
       "named": 13
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 48
+      "named": 49
      },
      "memory": {
       "n": 57,
@@ -3395,22 +3395,80 @@
       "named": 21
      }
     },
-    "named": 270,
+    "named": 271,
     "gained": 0,
     "lost": 2
    },
    "walk, v1 name rule (replica)": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 14
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 48
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 54
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 37
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 26
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 269,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned directions": {
+    "faults": 332,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 33,
+      "named": 15
      },
      "brownout": {
       "n": 58,
@@ -3453,85 +3511,27 @@
       "named": 21
      }
     },
-    "named": 268,
-    "gained": 0,
-    "lost": 0
-   },
-   "walk, learned directions": {
-    "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 34,
-      "named": 15
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 46
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 54
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 37
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 26
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 23
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, dynamic-only directions": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 15
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -3569,27 +3569,27 @@
       "named": 21
      }
     },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, name rule else learned": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 15
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -3627,17 +3627,75 @@
       "named": 21
      }
     },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, TRUE directions (ceiling)": {
     "faults": 332,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 33,
+      "named": 15
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 47
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 54
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 37
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 26
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 269,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned + learned weights": {
+    "faults": 332,
     "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "top1OfDetected": 0.8705501618122977,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
@@ -3647,7 +3705,7 @@
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -3685,65 +3743,7 @@
       "named": 21
      }
     },
-    "named": 268,
-    "gained": 0,
-    "lost": 0
-   },
-   "walk, learned + learned weights": {
-    "faults": 332,
-    "detected": 0.9337349397590361,
-    "top1OfDetected": 0.864516129032258,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 35,
-      "named": 15
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 46
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 54
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 37
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 26
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 23
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    }
@@ -3751,16 +3751,190 @@
   "tune (tune+tune2), name-blind": {
    "v1 hybrid": {
     "faults": 332,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 33,
+      "named": 14
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 48
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 54
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 37
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 26
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 269,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, no directions (all mutual)": {
+    "faults": 332,
     "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "top1OfDetected": 0.8770226537216829,
+    "caughtAndNamed": 0.8162650602409639,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
       "detected": 34,
-      "named": 14
+      "named": 13
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 49
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 55
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 38
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 25
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 24
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 271,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, v1 name rule (replica)": {
+    "faults": 332,
+    "detected": 0.9307228915662651,
+    "top1OfDetected": 0.8770226537216829,
+    "caughtAndNamed": 0.8162650602409639,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 34,
+      "named": 13
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 49
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 55
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 38
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 25
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 24
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 271,
+    "gained": 0,
+    "lost": 2
+   },
+   "walk, learned directions": {
+    "faults": 332,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 33,
+      "named": 15
      },
      "brownout": {
       "n": 58,
@@ -3803,201 +3977,27 @@
       "named": 21
      }
     },
-    "named": 268,
-    "gained": 0,
-    "lost": 0
-   },
-   "walk, no directions (all mutual)": {
-    "faults": 332,
-    "detected": 0.9337349397590361,
-    "top1OfDetected": 0.8709677419354839,
-    "caughtAndNamed": 0.8132530120481928,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 35,
-      "named": 13
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 48
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 55
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 38
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 25
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 24
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 270,
-    "gained": 0,
-    "lost": 2
-   },
-   "walk, v1 name rule (replica)": {
-    "faults": 332,
-    "detected": 0.9337349397590361,
-    "top1OfDetected": 0.8709677419354839,
-    "caughtAndNamed": 0.8132530120481928,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 35,
-      "named": 13
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 48
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 55
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 38
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 25
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 24
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 270,
-    "gained": 0,
-    "lost": 2
-   },
-   "walk, learned directions": {
-    "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 34,
-      "named": 15
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 46
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 54
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 37
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 26
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 23
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, dynamic-only directions": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 15
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -4035,27 +4035,27 @@
       "named": 21
      }
     },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, name rule else learned": {
     "faults": 332,
-    "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
-      "detected": 34,
+      "detected": 33,
       "named": 15
      },
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -4093,17 +4093,75 @@
       "named": 21
      }
     },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    },
    "walk, TRUE directions (ceiling)": {
     "faults": 332,
+    "detected": 0.927710843373494,
+    "top1OfDetected": 0.8733766233766234,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
+    "byClass": {
+     "latency": {
+      "n": 57,
+      "detected": 33,
+      "named": 15
+     },
+     "brownout": {
+      "n": 58,
+      "detected": 58,
+      "named": 47
+     },
+     "memory": {
+      "n": 57,
+      "detected": 57,
+      "named": 54
+     },
+     "crash": {
+      "n": 42,
+      "detected": 42,
+      "named": 37
+     },
+     "flap": {
+      "n": 26,
+      "detected": 26,
+      "named": 26
+     },
+     "pause": {
+      "n": 22,
+      "detected": 22,
+      "named": 21
+     },
+     "stop": {
+      "n": 25,
+      "detected": 25,
+      "named": 25
+     },
+     "partition": {
+      "n": 24,
+      "detected": 24,
+      "named": 23
+     },
+     "crash-loop": {
+      "n": 21,
+      "detected": 21,
+      "named": 21
+     }
+    },
+    "named": 269,
+    "gained": 0,
+    "lost": 0
+   },
+   "walk, learned + learned weights": {
+    "faults": 332,
     "detected": 0.9307228915662651,
-    "top1OfDetected": 0.8673139158576052,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
+    "top1OfDetected": 0.8705501618122977,
+    "caughtAndNamed": 0.8102409638554217,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmShare": 0.04531851218469432,
     "byClass": {
      "latency": {
       "n": 57,
@@ -4113,7 +4171,7 @@
      "brownout": {
       "n": 58,
       "detected": 58,
-      "named": 46
+      "named": 47
      },
      "memory": {
       "n": 57,
@@ -4151,65 +4209,7 @@
       "named": 21
      }
     },
-    "named": 268,
-    "gained": 0,
-    "lost": 0
-   },
-   "walk, learned + learned weights": {
-    "faults": 332,
-    "detected": 0.9337349397590361,
-    "top1OfDetected": 0.864516129032258,
-    "caughtAndNamed": 0.8072289156626506,
-    "falseAlarmsPerHour": 1.000427533133818,
-    "alarmShare": 0.09843950406156476,
-    "byClass": {
-     "latency": {
-      "n": 57,
-      "detected": 35,
-      "named": 15
-     },
-     "brownout": {
-      "n": 58,
-      "detected": 58,
-      "named": 46
-     },
-     "memory": {
-      "n": 57,
-      "detected": 57,
-      "named": 54
-     },
-     "crash": {
-      "n": 42,
-      "detected": 42,
-      "named": 37
-     },
-     "flap": {
-      "n": 26,
-      "detected": 26,
-      "named": 26
-     },
-     "pause": {
-      "n": 22,
-      "detected": 22,
-      "named": 21
-     },
-     "stop": {
-      "n": 25,
-      "detected": 25,
-      "named": 25
-     },
-     "partition": {
-      "n": 24,
-      "detected": 24,
-      "named": 23
-     },
-     "crash-loop": {
-      "n": 21,
-      "detected": 21,
-      "named": 21
-     }
-    },
-    "named": 268,
+    "named": 269,
     "gained": 0,
     "lost": 0
    }
@@ -4220,8 +4220,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4241,7 +4241,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4256,7 +4256,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4278,8 +4278,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4299,7 +4299,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4314,7 +4314,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4336,8 +4336,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4357,7 +4357,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4372,7 +4372,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4394,8 +4394,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4415,7 +4415,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4430,7 +4430,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4452,8 +4452,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4473,7 +4473,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4488,7 +4488,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4510,8 +4510,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4531,7 +4531,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4546,7 +4546,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4568,8 +4568,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4589,7 +4589,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4604,7 +4604,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4626,8 +4626,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4647,7 +4647,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4662,7 +4662,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4686,8 +4686,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4707,7 +4707,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4722,7 +4722,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4744,8 +4744,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4765,7 +4765,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4780,7 +4780,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4802,8 +4802,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4823,7 +4823,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4838,7 +4838,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4860,8 +4860,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4881,7 +4881,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4896,7 +4896,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4918,8 +4918,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4939,7 +4939,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -4954,7 +4954,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -4976,8 +4976,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -4997,7 +4997,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -5012,7 +5012,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -5034,8 +5034,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8132530120481928,
     "caughtAndNamed": 0.7584269662921348,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -5055,7 +5055,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -5070,7 +5070,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,
@@ -5092,8 +5092,8 @@
     "detected": 0.9325842696629213,
     "top1OfDetected": 0.8072289156626506,
     "caughtAndNamed": 0.7528089887640449,
-    "falseAlarmsPerHour": 1.4179431072210065,
-    "alarmShare": 0.06258205689277899,
+    "falseAlarmsPerHour": 0.9452954048140043,
+    "alarmShare": 0.047483588621444195,
     "byClass": {
      "stop": {
       "n": 24,
@@ -5113,7 +5113,7 @@
      "latency": {
       "n": 25,
       "detected": 13,
-      "named": 5
+      "named": 4
      },
      "crash-loop": {
       "n": 16,
@@ -5128,7 +5128,7 @@
      "memory": {
       "n": 18,
       "detected": 18,
-      "named": 15
+      "named": 16
      },
      "partition": {
       "n": 15,

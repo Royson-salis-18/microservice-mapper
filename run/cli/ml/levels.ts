@@ -16,9 +16,10 @@ import { buildRun, type Run } from '../../../server/algorithms/learning/dataset.
 import { replayTop } from '../../../server/algorithms/ml/replay.ts';
 import type { EngineParams } from '../../../server/algorithms/ml/mlEngine.ts';
 import { evaluatePrepared, type EventResult } from '../../../server/algorithms/learning/evaluate.ts';
-import { summarise, scorer, RULES_FIXED_THRESHOLD } from '../../../server/algorithms/learning/experiment.ts';
-import { prepare } from '../../../server/algorithms/learning/evaluate.ts';
-import { rulesScore } from '../../../server/algorithms/detection/scoring.ts';
+import { summarise } from '../../../server/algorithms/learning/experiment.ts';
+import { rulesScore, RULES_LINE } from '../../../server/algorithms/detection/scoring.ts';
+import { replayEach } from '../../../server/algorithms/ml/replay.ts';
+import { fuseMoment } from '../../../server/algorithms/ml/hybrid.ts';
 
 const args = process.argv.slice(2);
 const sweep = args.includes('--sweep');
@@ -57,9 +58,21 @@ function top(set: string, i: number, p: P) {
   if (!cache.has(key)) cache.set(key, replayTop(SETS[set][i].observed, SETS[set][i].subject, p as Partial<EngineParams>));
   return cache.get(key)!;
 }
+function rulesTop(l: (typeof SETS)[string][number]) {
+  const out: { max: number; ranked: string[]; scores: number[] }[] = [];
+  replayEach(l.observed, l.subject, {}, (r) => {
+    const m = l.run.moments[out.length];
+    if (!m) return;
+    const rules = new Map(m.services.map((id, i) => [id, rulesScore(m.X[i]) / RULES_LINE] as [string, number]));
+    const hard = new Set([...r.services].filter(([, v]) => v.hard).map(([id]) => id));
+    const f = fuseMoment({ services: m.services, rules, level: new Map(), hard, walk: new Map(), mlRanked: [] }, { detection: 'rules', ranking: 'rules' });
+    out.push({ max: f.max, ranked: f.ranked, scores: f.scores });
+  });
+  return out;
+}
 function evalSet(set: string, p: P, threshold = 1): EventResult[] {
-  // the rule engine: robust z-score per metric, alarm at three robust spreads, ranked by the rule score
-  if ((p as any).rulesEngine) return SETS[set].map((l) => evaluatePrepared(prepare([l.run], scorer([l.run], rulesScore)), null, RULES_FIXED_THRESHOLD));
+  // the rule engine as the mapper runs it: robust z-score per metric (alarm at its line), container facts first, then the rule score
+  if ((p as any).rulesEngine) return SETS[set].map((l) => evaluatePrepared({ runs: [l.run], top: [rulesTop(l)] }, null, 1));
   return SETS[set].map((l, i) => evaluatePrepared({ runs: [l.run], top: [top(set, i, p)] }, null, threshold));
 }
 const byClass = (rs: EventResult[]) => { const o = rs.flatMap((r) => r.faults); return Object.fromEntries([...new Set(o.map((f) => f.class))].sort().map((c) => { const x = o.filter((f) => f.class === c); return [c, { n: x.length, detected: x.filter((f) => f.detected).length, named: x.filter((f) => f.detected && f.top1).length, delay: median(x.filter((f) => f.detected).map((f) => f.delaySec!)) }]; })); };

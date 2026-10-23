@@ -6,6 +6,7 @@ Open **wiki/visualizer/index.html`** in a browser for the readable version (diag
 |---|---|---|---|
 | Prepare for the evaluation in one hour | Evaluation guide | `wiki/00-evaluation-guide.md` | Presenters |
 | Understand the ML engine (Rules / ML switch) and its results | The ML engine | `wiki/43-ml-engine.md` | Everyone |
+| Compare Rules, the old ML and the new ML, and see why the ML was corrected | Rules vs. old ML vs. new ML | `wiki/44-ml-comparison.md` | Everyone |
 | Read the simple Python version of the logic | algorithms | `algorithms/README.md` | Presenters |
 | Understand what each page of the app shows and how to read it | How each page works | `wiki/37-app-pages-guide.md` | Operator |
 | Run everything on my own machine | Run it on your machine | `wiki/RUN_LOCAL.md` | Anyone |
