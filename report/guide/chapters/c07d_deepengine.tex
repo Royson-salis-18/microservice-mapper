@@ -1,0 +1,129 @@
+\chapter{ML deep dive C: the engine around the model}
+\label{ch:deepengine}
+
+The load-aware model gives each service a \emph{level}. That is only the first third of the ML engine. This part follows the level through the rest of the engine: from level to anomaly, to the random walk, to the ranking, to the cascade, to the alarm. It follows \code{mlEngine.ts}, \code{randomWalk.ts}, \code{propagation.ts} and \code{hybrid.ts}.
+
+\section{The engine's step in three passes}
+\begin{simplebox}
+Every five seconds the engine does three passes over the services.
+
+\begin{enumerate}
+\item \textbf{Pass 1: facts.} For every service, look at the container state first. Is it stopped, paused, restarting, detached from the network, or has it restarted since last time? Is it crash-looping (two or more outages in the last three minutes without being stable since)? These need no statistics.
+\item \textbf{Pass 2: the model.} Services that are \emph{not} in a hard state send their new readings to the load-aware model, which returns a level per service. (Services in a hard state are left out: their readings are not trustworthy teaching material.)
+\item \textbf{Pass 3: decide.} Turn levels into anomalies, add the facts, run the walk, rank, spread risk, and decide the alarm.
+\end{enumerate}
+\end{simplebox}
+
+\begin{techbox}
+In Pass 1 the engine also converts \code{docker stop} (exit code 0 after at least 12 readings of running) into a \emph{stopped} fact. In Pass 2 the model is called once per round of readings (usually one). In Pass 3 each service's streak of consecutive readings with level $\ge1$ is maintained.
+\end{techbox}
+
+\section{From level to ``anomaly'': persistence and the floor}
+\begin{simplebox}
+A level of 1.2 for one single reading is not yet a verdict. Noise can do that. So the engine only believes a level once it has held for \textbf{two readings in a row}. Until then the level is capped at 0.99. After that, the level is turned into an \emph{anomaly} between 0 and 1 that the walk uses: anything below 0.5 counts as 0 (healthy), and a level of 2 or more counts as 1 (fully anomalous). In between it is proportional.
+\end{simplebox}
+
+\begin{techbox}
+\code{persistent = streak >= servicePersist (2)}; \code{lvl = hard ? 10 : persistent ? level : min(level, 0.99)}; \code{anomaly = hard ? 1 : (lvl < anomalyFloor (0.5) ? 0 : min(1, lvl/anomalySat (2)))}. The own anomaly (from the own level: CPU, memory, throttling) is computed the same way but is 0 unless the service is persistent. A sweep of \code{anomalySat} (2, 3, 4, 6, 10) showed no benefit from changing it.
+\end{techbox}
+
+\begin{examplebox}[From level to anomaly]
+\begin{center}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Level (held 2+ readings) & 0.3 & 0.5 & 1.0 & 1.16 & $\ge2$\\
+Anomaly & 0 & 0.25 & 0.5 & 0.58 & 1\\
+\bottomrule
+\end{tabular}
+\end{center}
+Hard facts have level 10 and anomaly 1 regardless. So the \code{payments} fault of the earlier example (level 1.16 held) has an anomaly of $0.58$, enough for the walk to take it seriously, but not enough to open an incident on its own in the Hybrid (which needs level 2).
+\end{examplebox}
+
+\section{The random walk in detail}
+\begin{simplebox}
+The walker lives on the call graph. Each service has an anomaly number. At each step the walker, standing on service $u$, chooses where to go by weighted dice:
+
+\begin{itemize}
+\item \textbf{Forward, to something $u$ calls}: weight = (edge weight) $\times$ (how anomalous the callee is). The more anomalous a callee, the more attractive. This follows trouble \emph{down} toward its source.
+\item \textbf{Backward, to something that calls $u$}: weight = $0.2\times$ (how anomalous that caller is). A small chance to step back up, so the walker can escape a dead end.
+\item \textbf{Stay}: weight = the larger of (a) $u$'s anomaly minus the anomaly of its most anomalous callee, and (b) $u$'s own-resource anomaly. In words: stay if you are sicker than everything you call, or if your own CPU and memory are off, which nothing downstream can cause.
+\end{itemize}
+
+At each step, with probability 0.15 the walker teleports back to a random anomalous service (more likely to a very anomalous one). Run 60 rounds. The fraction of time on each service is its root-cause score.
+\end{simplebox}
+
+\begin{techbox}
+\code{rootCauseWalk}: for each node $i$ build a row of moves: for each callee $j$ with edge weight $w$, $p=w\,a_j$ (and $j$ updates \code{worstCallee} unless the direction is unknown/mutual); for each caller $k$, $p=\rho\,a_k$ with $\rho=0.2$; stay $p=\max(0,\ a_i-\text{worstCallee},\ o_i)$. Normalise each row (if the row sums to zero, stay with probability 1). Restart distribution $r_i=a_i/\sum a$. Iterate $\pi\leftarrow\alpha r+(1-\alpha)\pi P$ for 60 iterations with $\alpha=0.15$. Output $\pi/\sum\pi$.
+\end{techbox}
+
+\subsection{Three toy cases with real output}
+Chain: \code{checkout}\,$\to$\,\code{orders}\,$\to$\,\code{orders-db}, all edge weights 1.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.6cm}}
+\toprule
+\textbf{Case} & \textbf{Inputs (anomaly $a$; own $o$)} & \textbf{Walk score: checkout / orders / orders-db}\\
+\midrule
+1. The database is the real cause & $a$: 0.6 / 0.8 / 1.0; own: 0 / 0 / 1 & 5\% / 19\% / \textbf{76\%}\\
+2. A victim is louder than the cause & $a$: 0.9 / 1.0 / 0.5; own: 0 / 0 / 0.5 & 11\% / 42\% / \textbf{47\%}\\
+3. \code{orders}' own CPU is the cause, nobody downstream is sick & $a$: 0 / 1 / 0; own: 0 / 1 / 0 & 0\% / \textbf{100\%} / 0\%\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{simplebox}
+\textbf{Case 1} is the easy one: the database is the most anomalous and has its own trouble. The walker spends three quarters of its time there. \textbf{Case 3} shows the ``stay'' rule at work: \code{orders} has its own CPU problem and nothing it calls is sick, so the walker stays on it.
+
+\textbf{Case 2} is the hard case, the one the graph logic exists for. The victim \code{orders} is louder (anomaly 1.0) than the true cause \code{orders-db} (0.5). Ranking by loudness alone would pick \code{orders} (and \code{checkout} next). The walk picks \code{orders-db} (47\%), but narrowly over \code{orders} (42\%). That is honest: with weak evidence at the source, the walk is not a miracle.
+\end{simplebox}
+
+\begin{warnbox}
+Do not claim the walk is magic. On this toy case the plain PageRank variant (MicroRCA style, no stay term and no own-resource term) gives \code{orders-db} \textbf{83\%} (and \code{orders} 11\%), more decisive than our walk's 47\%. The stay and own-resource terms matter in case 3 (a fault with no sick dependency) and protect sources that are sick on their own. In the benchmarks the walk was \emph{not} significantly better than ranking by anomaly alone; both walk variants are compared in the code (\code{rca: 'walk' | 'pagerank' | 'onset' | 'depth'}). If an evaluator asks ``why this walk and not plain PageRank?'', say: ``it is the MonitorRank form, which has the explaining-away stay term; we compared the alternatives and the difference on our data is within the noise.''
+\end{warnbox}
+
+\section{The final ranking: facts first, then the walk}
+\begin{techbox}
+The engine sorts services by: (1) hard fact first (\code{hardFirst}), (2) walk share, (3) level, (4) name. So a stopped container is always at the top; among the statistically anomalous services the walk decides; level breaks ties. The alternatives (\code{rca}) are: \emph{pagerank} (plain personalised PageRank), \emph{onset} (the walk weighted by who turned abnormal first, half weight per 30 seconds of delay) and \emph{depth} (the deepest anomalous service, down-weighting those that have an anomalous callee of known direction). All are in the code for comparison; \emph{walk} is the default.
+\end{techbox}
+
+\begin{saybox}
+``Facts first, because a stopped container is a certainty. Among the statistical anomalies, a random walk on the call graph with an explaining-away term decides, and the level breaks ties. We also implemented plain PageRank, an onset-time variant and a depth variant, and found no significant difference on our data, so we kept the walk.''
+\end{saybox}
+
+\section{From a suspect to ``who is next''}
+\begin{simplebox}
+Two things happen in the cascade model every cycle. \textbf{Learning:} whenever a service \emph{newly} turns abnormal, each of its healthy callers is recorded as a trial: ``within the next minute, does this caller turn abnormal too?'' If yes, that is a success for that edge; if the minute passes, a failure. \textbf{Predicting:} when the alarm is on, take the top suspect, treat it as certain (risk 1), and spread risk up the callers using the learned edge probabilities and the noisy-OR rule (Part~\ref{ch:cascade}). Services already abnormal are removed from the answer, so the list only contains healthy services at risk.
+\end{simplebox}
+
+\begin{techbox}
+\code{PropagationModel.update(step, onsets, abnormal, callersOf)}: settle open trials (success the moment the caller is abnormal; failure when \code{until} passes), then for each onset $x$ and each caller not already abnormal and without an open trial, open a trial with \code{until = step + 12}. \code{risk(root, \ldots)}: four sweeps of breadth-first propagation up the callers; $\text{risk}(c)=1-\prod_{y\in\text{callees}(c)}(1-\text{risk}(y)\,p(c\leftarrow y))$ over callees with a risk; delete the root and every abnormal service. Probability \code{prob(caller, callee)} $=(k+2\cdot0.5)/(n+2)$.
+\end{techbox}
+
+\section{The Hybrid: the exact fusion}
+\begin{simplebox}
+The Hybrid is a tiny piece of code that takes three numbers per moment and decides. Detection (should we alarm?): \emph{or-strict}, meaning ML over its line, or the rules clearly over theirs (25\% past), or a fact. Ranking (who is first?): the ML order, facts first. We also tested other ways to fuse them: plain ``or'', ``and'', ``agree'' (the same service over the line in both engines), a weighted blend, and reciprocal-rank fusion. The one we use balances catching things the ML absorbs against the rules' false alarms.
+\end{simplebox}
+
+\begin{techbox}
+\code{fuseMoment}: \code{fact = 10 if any hard else 0}. Detection: \code{or-strict}: $\max=\max(\max_s\lambda_s,\ \max_s\rho_s/1.25)$ and the project alarms when this reaches the line (1 after scaling; the engine's own line is level 2, so ML needs level 2 and rules need $1.25\times$ their three-sigma line). Ranking \code{ml}: ML rank order after facts. Alternatives: \code{blend} $=0.5\cdot\text{walk}/\max+0.5\cdot\text{rule}/\max$; \code{rrf} $=1/(60+r_{ML})+1/(60+r_{rules})$ (reciprocal-rank fusion). The live system requires the ML and rule conditions to hold for two consecutive windows and lets a fact raise the alarm at once.
+\end{techbox}
+
+\section{Everything the engine returns per cycle}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Output} & \textbf{Meaning (and where you see it)}\\
+\midrule
+\code{services[id]} & level, anomaly, own and symptom levels, fact, forecast, strongest signal (\code{top}): the numbers on the Detection engines page.\\
+\code{rank}, \code{ranked} & random-walk shares and the ordered suspect list: the ranking panel.\\
+\code{maxLevel}, \code{hot} & the strongest level (a fact counts as 10) and whether it reaches the alarm level 2.\\
+\code{learnedServices} & how many services have a model yet: ``ML has learned 10 of 10 services''.\\
+\code{warnings} & early warnings: a service not at the alarm level whose trend will reach it, held two readings.\\
+\code{atRisk} & the cascade risk of each healthy service from the top suspect: the ``next in line'' list.\\
+\code{workload} & the load factor $L$, how many services contributed, whether $|L|\ge1$: the workload chip.\\
+\bottomrule
+\end{tabularx}
+\end{center}

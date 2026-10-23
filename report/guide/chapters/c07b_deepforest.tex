@@ -1,0 +1,136 @@
+\chapter{ML deep dive A: the old model, step by step}
+\label{ch:deepforest}
+
+This part opens the old engine completely. You need it for two reasons. An evaluator who hears ``we replaced our Isolation Forest'' will ask ``what exactly did it do, and why did it fail?'' And understanding the old model is the fastest way to understand the new one, because every design choice in the new model answers a specific weakness here.
+
+Everything below is taken from the source files \code{isolationForest.ts}, \code{serviceBaseline.ts} and \code{detectors.ts}.
+
+\section{What the old engine did, in one paragraph}
+\begin{simplebox}
+For \emph{each service separately}, the engine kept a window of that service's recent ``normal'' readings (the last 120 that did not look wrong). Every ten new normal readings it trained fresh Isolation Forests on that window. A new reading was scored by the forests: ``how unlike the recent normal readings is this one?'' The score was turned into a level, where 0 means typical, 1 means ``on the alarm line'' and 2 means ``twice as far out as the line''. If a service's level stayed at or above 1 for two readings in a row, it counted as anomalous, and its level fed the random walk that picks the root cause.
+\end{simplebox}
+
+\section{The Isolation Forest, with a tiny worked example}
+\begin{simplebox}
+Take a dozen people standing in a room, and ask each person their height. Now play the ``twenty questions'' game with random questions: pick a random cut, say ``are you taller than 1.63\,m?'', and split the room. Keep asking random questions to each half until every person stands alone. A very tall person (2.10\,m) is likely to be alone after one or two random cuts. A person of ordinary height needs many more cuts before they are alone, because many others look like them. \emph{The number of cuts needed to isolate a point is a measure of how unusual the point is.} An Isolation Forest repeats this with many random trees and averages the number of cuts.
+\end{simplebox}
+
+\begin{techbox}
+Each tree is grown on a random sample of $\psi=64$ readings. At each node, among the features that still vary, one is chosen at random, and a random cut value is drawn uniformly between the minimum and maximum of that feature among the points at the node. The tree stops at depth $\lceil\log_2\psi\rceil=6$ or when one point is left. For a new reading $x$, the path length $h(x)$ is the depth at which it lands, plus a correction $c(n)$ for the number of points left at that leaf. The anomaly score is
+\[
+s(x)=2^{-\,E[h(x)]/c(\psi)},\qquad c(n)=2\bigl(\ln(n-1)+0.5772\bigr)-\frac{2(n-1)}{n}.
+\]
+$E[h(x)]$ is the average path over 100 trees. Here $c(64)=7.47$.
+\end{techbox}
+
+\begin{examplebox}[Check the formula]
+With $\psi=64$ we have $c(64)=7.47$. If a reading is isolated after an average of only 2 cuts, its score is $2^{-2/7.47}=0.83$ (isolated fast: anomalous). If it takes about 7.47 cuts (an ordinary reading), the score is $2^{-1}=0.50$. If it takes 10 cuts, the score is $0.40$ (deep in the crowd).
+
+\begin{center}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+Average cuts $E[h]$ & 2 & 3 & 4 & 6 & 7.47 & 10\\
+Score $s=2^{-E[h]/7.47}$ & 0.83 & 0.76 & 0.69 & 0.57 & 0.50 & 0.40\\
+\bottomrule
+\end{tabular}
+\end{center}
+So scores near 0.5 or below are ordinary and scores near 1 are anomalous.
+\end{examplebox}
+
+\section{From a raw score to a ``level''}
+\begin{simplebox}
+The raw score has no universal meaning: a quiet service and a busy service have different typical scores. So the engine learns each service's own scale. It scores all 120 of that service's own training readings. The median of those scores is ``typical''. The spread of those scores (the MAD, from Part~\ref{ch:primer}) is the natural wobble. The alarm line is set at ``typical plus three wobbles''. A new reading's level is how far its score is from typical, measured in units of the gap between typical and the line.
+\end{simplebox}
+
+\begin{techbox}
+For each group of features: $\text{typical}=\operatorname{median}(s_i)$, $\text{spread}=1.4826\cdot\operatorname{MAD}(s_i)$, $\text{line}=\max(\text{typical}+3\cdot\text{spread},\ \text{typical}+0.02)$ for the forest (the margin of $0.02$ stops a perfectly flat series from alarming on noise). The level of a reading is $\max\bigl(0,\ (s-\text{typical})/(\text{line}-\text{typical})\bigr)$.
+\end{techbox}
+
+\begin{examplebox}[Worked example of a level]
+Suppose the service's training scores have median $0.50$ and spread $0.02$. The line is $0.50+3\times0.02=0.56$. Now a new reading arrives:
+
+\begin{center}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Score of the new reading & 0.50 & 0.52 & 0.56 & 0.62 & 0.70\\
+Level $=(s-0.50)/0.06$ & 0.00 & 0.33 & 1.00 & 2.00 & 3.33\\
+\bottomrule
+\end{tabular}
+\end{center}
+A level of 1 is the alarm line. A level of 2 is what the Hybrid needs to alarm.
+\end{examplebox}
+
+\section{The details that made the old engine behave the way it did}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.7cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Detail} & \textbf{What it was and why it mattered}\\
+\midrule
+Two forests per service & One over the ``own'' signals (CPU, memory, throttling) and one over the ``symptom'' signals (network in/out, requests, errors, latency). The service's level was the larger of the two. This is the origin of the own/symptom split that the ranker still uses.\\
+Window of 120, retrain every 10 & The forests were rebuilt on the newest 120 accepted readings every ten accepted readings. That is the source of the cost spikes: every service refits at once.\\
+Scored against the previous window & A reading was scored by the forest trained \emph{before} it, so it never judged itself.\\
+Gate & Only readings under the line joined the training window, so a fault did not become normal.\\
+Jitter & The training copy got a little Gaussian noise (half the feature's floor), so a feature that never moved still gave the trees something to cut.\\
+Floors & The smallest change worth noticing per feature (for example $0.15$ log units for traffic, $3$ points for throttling).\\
+One-sided features & CPU, memory, errors, latency and throttling can only be anomalous by being \emph{high}; a low value is replaced by the usual value before scoring.\\
+Range guard & A value far outside anything seen in training would be cut off at the root of every tree, but the forest scores it \emph{no higher than its most extreme training point}. So the engine added a rule: a value $k$ floors beyond the training range counts as level 1 (with $k=5$). The final level was $\max(\text{model level},\text{range level})$.\\
+Drift escape & A mild shift (level below 3) that stayed for 24 readings was accepted as the new normal; any larger one only after 360 readings (thirty minutes).\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Why it failed: the mechanism, with real numbers}
+\begin{simplebox}
+Put these details together and the failure is predictable. Traffic stops. Every service's network and request numbers fall to near zero, far outside the range they have shown in the last ten minutes. Two things happen at once. The forest scores these values as unusual, because they are in a region with no training points. And the range guard fires, because the values are many floors beyond the training range. Both push every service's level up \emph{simultaneously}. The model has no concept of ``everyone changed together, so it is the load''; it only knows each service's own history.
+\end{simplebox}
+
+We reproduced this on a tiny, fully specified system so you can see it directly. Four services with steady network traffic (gateway 40\,kB/s, orders 12\,kB/s, payments 6\,kB/s, catalog 20\,kB/s with a few per cent of noise). Both the old and the new model learn it for 90 steps, then the traffic changes for everyone at once. This is real output of the real code (\code{serviceBaseline.ts} and \code{loadModel.ts}); nothing is invented.
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Level (1 = alarm line)} & gateway & orders & payments & catalog\\
+\midrule
+Old forest, normal traffic & 0.00 & 0.00 & 0.00 & 0.00\\
+Old forest, \textbf{everyone doubles} & 1.78 & 1.45 & 1.61 & 1.48\\
+Old forest, \textbf{traffic stops} ($\times0.1$) & 2.52 & 1.91 & 1.46 & 2.23\\
+\midrule
+New model, everyone doubles & 0.06 & 0.02 & 0.03 & 0.02\\
+New model, traffic stops & 0.31 & 0.10 & 0.38 & 0.10\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{saybox}
+``Four healthy services. Traffic doubles for all of them: the old forest puts every service above the alarm line, at 1.5 to 1.8. Traffic stops: the old forest puts every service at 1.5 to 2.5, which is at or above the Hybrid's alarm level of 2. The new model stays below 0.4 in both cases. The only thing that changed between the two models is that the new one first asks how much the whole project moved.''
+\end{saybox}
+
+\section{The other detectors in the family, in simple words}
+\begin{simplebox}
+We did not pick the forest because it was the only choice. We tried four ``learn the shape of recent readings'' detectors, and an ensemble of all four. They differ in how they define ``unusual'':
+
+\begin{itemize}
+\item \textbf{k-NN} (nearest neighbours): a reading is unusual if the closest five readings from the past are far away. Like asking ``has anyone ever seen a day like this?''
+\item \textbf{Mahalanobis} (a multivariate control chart): a reading is unusual if it is far from the average \emph{in the units of how the features normally vary together}. If CPU and network normally rise together, a reading with high CPU and low network is more unusual than the same distances in the normal direction.
+\item \textbf{HBOS} (histogram-based): for each feature separately, count how rare the reading's value is, using a histogram of the past. Fast, but blind to combinations.
+\item \textbf{Ensemble}: average the four levels.
+\end{itemize}
+
+All four fail the same way, for the same reason as the forest: they model the readings themselves, so a new workload is a value they have never seen.
+\end{simplebox}
+
+\begin{techbox}
+Implementation: features are standardised with a floor on the spread. k-NN scores the mean distance to the 5 nearest training readings. Mahalanobis uses the covariance shrunk by $0.3$ towards the identity (so it stays invertible with few readings), a Cholesky factorisation, and the distance $\sqrt{(x-\mu)^\top\Sigma^{-1}(x-\mu)}$. HBOS builds 10-bin histograms and sums $\ln(n/\text{count})$ over features, counting an empty bin as half a reading. Each detector gets its own typical value and line from its training scores, with minimum margins ($0.02$ forest, $0.3$ k-NN, $0.5$ Mahalanobis, $1$ HBOS). Results on workload recordings: ensemble 47\%/88\% of time in alarm, k-NN 73\%/96\%, Mahalanobis 38\%/76\%, HBOS 75\%/82\%, forest 23\%/52\%.
+\end{techbox}
+
+\begin{examplebox}[A one-line way to see why all four fail]
+Imagine each service's recent history as a cloud of points. Everyone stopping their traffic moves \emph{all} the new points to the far-left corner, a region that none of the clouds touch. k-NN: the nearest neighbours are far away, so a big score. Mahalanobis: far from the mean, a big score. HBOS: the bin is empty, a big score. Forest: isolated in one cut, a big score. Four different methods, one blind spot.
+\end{examplebox}
+
+\begin{warnbox}
+Do not say ``the forest was a bad model''. Say ``it is a good model of the shape of recent readings, and our problem is not about the shape of readings: it is about the part of the readings that moves with the workload. No model of the readings alone handles that''. That sentence is the whole insight of the correction.
+\end{warnbox}

@@ -1,0 +1,189 @@
+\chapter{ML deep dive B: the new model, line by line}
+\label{ch:deepload}
+
+This part walks through \code{loadModel.ts} in the order the code runs. Read it with the file open next to you. Everything numeric in this part is real output of the real code on a small system you can rebuild.
+
+\section{The experimental system we use for all examples}
+\begin{simplebox}
+To keep numbers checkable we use a toy project of four services that only report one signal, how many bytes per second come in over the network. The true values are steady, with a few per cent of random wobble:
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+ & gateway & orders & payments & catalog\\
+\midrule
+Normal network in (B/s) & 40\,000 & 12\,000 & 6\,000 & 20\,000\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each model first watches 60 steps of this. Then we change the world in four different ways and look at what the model says. (The real system has eight signals per service; one signal is enough to follow every step.)
+\end{simplebox}
+
+\section{Step 0: how one reading is prepared (\code{vectorize})}
+\begin{simplebox}
+Each raw reading is a list of eight numbers. Before the model sees them, each positive quantity is put on a log scale with a small ``unit'' added inside. So a network reading of 40\,000 bytes per second becomes $\ln(40\,000+2000)=10.65$. Two special cases: error share and latency are replaced by ``missing'' if the service handled fewer than five requests in that interval (a share of five requests tells you nothing), and a missing metric stays missing.
+\end{simplebox}
+
+\begin{techbox}
+\code{vectorize(h, p)} returns $[\ln(\mathrm{cpu}+5),\ \ln(\mathrm{mem}+1),\ \ln(\mathrm{rx}+2000),\ \ln(\mathrm{tx}+2000),\ \ln(\mathrm{rps}+0.1),\ \mathrm{err},\ \ln(\mathrm{p95}+1),\ \mathrm{throttle}]$ with \code{null} where a value is missing or (for errors and latency) the request count is under \code{minRequests}$=5$. Error share and throttling stay on their natural scale because they are already ratios/percentages.
+\end{techbox}
+
+\begin{examplebox}[Why the unit matters: the log of ``twice as much'' is not exactly 0.693]
+Take the gateway at 40\,000 B/s. $\ln(40\,000+2000)=10.645$. After doubling, $\ln(80\,000+2000)=11.314$. The shift is $0.669$, not $\ln2=0.693$, because of the $+2000$ inside. For the quiet payments service (6\,000 B/s): $\ln 8000=8.987$ and $\ln 14\,000=9.547$, a shift of $0.560$. The unit makes small flows count a little less. That is intended: a 100 B/s change on a service that moves 6 kB/s should not look like a doubling.
+\end{examplebox}
+
+\section{Step 1: each service's slow reference}
+\begin{simplebox}
+For every signal of every service the model keeps the last 360 raw readings (half an hour), \emph{all} of them, even alarming ones. The reference is their median: ``what this signal is usually, over the last half hour''. A service gets a reference only after at least 30 readings. The shift of the current reading is how far it is above or below the reference.
+\end{simplebox}
+
+\begin{techbox}
+\code{reference(s)}: if \code{slow.length < minTrain} return null, else for each feature take the median of the non-null values, provided at least half of the slow buffer has that feature. Note the two different buffers per service: \code{slow} (everything, 360 readings, used only for the reference) and \code{win} (accepted readings only, 120, used for baseline and spread). The reference includes alarming readings on purpose, so that after a long absence of normal data the reference still moves.
+\end{techbox}
+
+\section{Step 2: the load factor $L$}
+\begin{simplebox}
+Now the model asks the one question that fixes the old failure: \emph{how far has the whole project moved?} It looks at the traffic-carrying signals (network in, network out, request rate, CPU) of every service, computes each one's shift from its own reference, and takes the \emph{median}. That median is $L$. If $L=0.6$, the project's traffic is about $e^{0.6}\approx1.8$ times what it was.
+
+Two protections make this safe. First, a signal only counts if it \emph{carries traffic}: its reference is at least 0.4 above its ``idle'' value. An idle database reads zeros whatever the load, so it must not vote ``no change'' in a way that drowns the others. Second, $L$ is only computed if at least two services contribute; otherwise it stays 0.
+\end{simplebox}
+
+\begin{techbox}
+In code: for each service with a reference, for each load feature $f\in\{\text{netIn},\text{netOut},\text{requests},\text{cpu}\}$ with $x_f$ and $r_f$ both present and $r_f-\text{idle}_f\ge0.4$, push $x_f-r_f$ into \code{shifts}; count the service as \emph{contributing} if it pushed at least one. $L=\operatorname{median}(\text{shifts})$ if \code{contributing}$\ge$\code{minServices}$=2$, else $0$. The UI chip ``traffic $\times$k explained'' appears when $|L|\ge1$ (an $e$-fold change).
+\end{techbox}
+
+\begin{examplebox}[Computing $L$ by hand for the scenario ``everyone doubles'']
+Shifts of the four network-in signals (noise-free): gateway $0.669$, orders $0.619$, payments $0.560$, catalog $0.646$. Sorted: $0.560,\,0.619,\,0.646,\,0.669$. The median of four numbers is the average of the middle two: $(0.619+0.646)/2=0.6325$. The model reported $L=0.605$ on the run with noise. So the project's traffic changed by a factor of $e^{0.605}=1.83$ (not exactly 2, because of the unit and the noise).
+\end{examplebox}
+
+\section{Step 3: the response slope $b_f$}
+\begin{simplebox}
+Does each signal follow the load one-for-one? The model starts from a sensible belief (network and request rate follow the load exactly, slope 1; CPU follows weakly, slope 0.4; memory, errors, latency and throttling are not expected to follow it at all, slope 0) and corrects the belief from the readings it has seen. If the load has hardly ever varied, the data say nothing, and the model keeps the belief. If the load has varied a lot, the data take over.
+\end{simplebox}
+
+\begin{techbox}
+Pooled ridge estimate over all services and all stored window entries: $b_f=\bigl(\sum d\,L+\kappa\,b^0_f\bigr)/\bigl(\sum L^2+\kappa\bigr)$, with $d$ the stored shift from the service's reference, $L$ the load stored with that entry, $\kappa=60$ (\code{ridge}), and only services whose reference for $f$ is active. In the toy system the slope for network-in came out at exactly $1.00$ in every scenario: the data agree with the prior.
+\end{techbox}
+
+\section{Step 4: each service against what the load predicts}
+\begin{simplebox}
+This is the heart of it. For every signal of every service, the model tries two excuses, and then takes the \emph{better} one.
+
+\begin{enumerate}
+\item \textbf{Excuse A: ``this signal ignores the load''.} The baseline is the median of the service's own accepted readings, and the ruler is their spread. The deviation is how far the current reading is from that baseline.
+\item \textbf{Excuse B: ``this signal follows the load with slope $b$''.} First subtract $b\times L$ from every stored reading and from the current one, then compute the baseline and the spread of those adjusted values, and the deviation of the adjusted current reading.
+\end{enumerate}
+
+The signal's score is the \emph{smaller} of the two deviations. If either excuse explains it, it is not unusual. The service's level is the largest score over its signals, divided by the alarm line (4 spreads).
+\end{simplebox}
+
+\begin{techbox}
+For $f$ and each $b\in\{0,\ b_f\}$ (just $\{0\}$ if $b_f=0$): residuals $\rho_\tau=x_f(\tau)-b\,L_\tau$ over the window; baseline $m=\operatorname{median}(\rho)$; spread from \code{mad} and, in \code{tail} mode, at least $(q_{0.9}-m)/1.2816$ for upper-only signals or $\max$ of the up and down tail distances otherwise; spread floored at $\phi_f$. Then $z_b=(x_f-bL-m)/\text{spread}$, clipped at $0$ for upper-only signals, and $z_f=\min_b|z_b|$. Level $=\max_f z_f/z_{\text{line}}$ with $z_{\text{line}}=4$. Baselines are cached per signal and hypothesis and recomputed every 4 readings (or if the window length has changed by more than 20).
+\end{techbox}
+
+\subsection{The four scenarios, with the real numbers}
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.6cm}>{\centering\arraybackslash}p{2.7cm}cccc}
+\toprule
+\textbf{Scenario} & $L$ (factor) & gateway & orders & payments & catalog\\
+\midrule
+A. Everyone doubles & 0.605 ($\times1.83$) & 0.06 & 0.02 & 0.03 & 0.02\\
+B. Only \code{payments} $\times5$ & 0.023 ($\times1.02$) & 0.01 & 0.00 & \textbf{1.16} & 0.00\\
+C. Everyone doubles, \code{payments} also $\times5$ & 0.647 ($\times1.91$) & 0.03 & 0.04 & \textbf{1.17} & 0.02\\
+D. Traffic stops (everyone $\times0.1$) & $-1.591$ ($\times0.20$) & 0.31 & 0.10 & 0.38 & 0.10\\
+\bottomrule
+\end{tabular}
+\end{center}
+(The columns are each service's \emph{level}; 1.0 is the alarm line, 2.0 is what the Hybrid needs.)
+
+\begin{simplebox}
+Read the table row by row.
+
+\textbf{A:} the whole project doubled. $L$ moves to about 0.6. Every service follows it, so every service's leftover is about zero. All levels are tiny. A traffic surge is not a fault.
+
+\textbf{B:} only \code{payments} jumps fivefold. The median of the four shifts $(0,0,0,1.39)$ is about 0, so $L\approx0$: the project did not move. \code{payments}' leftover is the whole jump, so its level is 1.16, over the alarm line. The others are untouched. The model has pointed at the right service.
+
+\textbf{C:} both at once: everyone doubles \emph{and} \code{payments} is 5 times worse than everyone else. $L$ moves to 0.647. The surge is removed, and \code{payments} still shows 1.17, almost the same as in B. This is the case the whole design is for: a fault \emph{during} a load change is still visible.
+
+\textbf{D:} the traffic stops. $L$ falls to $-1.59$. Every service follows it down. All levels stay below 0.4. (The old forest put all four at 1.5 to 2.5 here, Part~\ref{ch:deepforest}.)
+\end{simplebox}
+
+\begin{warnbox}
+Notice that a fivefold jump in a \emph{single network signal} gives only a level of about 1.16, not the 2.0 needed to alarm the Hybrid. That is by design: one noisy-looking signal is weak evidence. With the floor of $0.3$ log units, a fivefold change is $\ln5=1.39$ log units, $z\approx1.39/0.3=4.6$. To reach level 2 (z = 8) a single network signal needs a shift of about $8\times0.3=2.4$ log units, an eleven-fold change. Faults that stop or starve a service (CPU saturation, memory, throttling, errors, a stopped container) move several signals at once or are container facts, so they are not weak in practice. If an evaluator asks ``why did a fivefold jump not alarm?'', this is the answer.
+\end{warnbox}
+
+\section{Step 5: which readings may teach the model (the gate)}
+\begin{simplebox}
+After judging a reading, the model decides whether to let it into the training window. The default answer is: only if the service's level is below 1. This is how the model avoids learning from its own alarms. There is one escape hatch, with two speeds: if the level stays between 1 and 3 for 24 readings in a row (two minutes), the new state is accepted as normal; if the level was at 3 or more, it takes 360 readings (half an hour).
+\end{simplebox}
+
+\begin{techbox}
+\code{normal = !ready || level < 1}. \code{rejectedRun} counts consecutive non-normal readings; \code{mildRun} counts consecutive non-normal readings with level $<3$. \code{accepted = normal || rejectedRun >= driftAfter(360) || mildRun >= mildDriftAfter(24)}. The raw reading always enters \code{slow}; only accepted readings enter \code{win} (kept to the newest 120).
+\end{techbox}
+
+\begin{examplebox}[Real output: a mild fault is accepted after exactly 24 readings]
+In the toy system, \code{payments} jumps fivefold and \emph{stays} there. The model reports:
+
+\begin{center}
+\small
+\begin{tabular}{>{\raggedleft\arraybackslash}p{2.6cm}>{\centering\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{6cm}}
+\toprule
+Reading after the jump & Level & Taught to the model?\\
+\midrule
+1, 2, 3 & 1.15, 1.16, 1.13 & no\\
+10 & 1.15 & no\\
+20, 23 & 1.12, 1.11 & no\\
+\textbf{24} & 1.11 & \textbf{yes: accepted as the new normal}\\
+25, 26, 30 & 1.14, 1.11, 1.11 & yes\\
+40 & 0.33 & yes (the window now contains enough of the new level that the baseline has moved)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+So: the alarm lasts two minutes (24 readings of 5 seconds), after which the ML engine stops alarming on it. The rules and container facts are unaffected, which is why the Hybrid keeps its alarm. This is the limitation from Part~\ref{ch:limits}, now with the exact number.
+\end{examplebox}
+
+\section{Step 6: the floors and what ``level 1'' means in each signal}
+\begin{simplebox}
+Every signal has a ``floor'': the smallest change we refuse to ignore. If a signal is perfectly flat, its spread would be zero and any tiny change would be infinite standard deviations away. The floor prevents that. It also sets the \emph{sensitivity}: level 1 equals four floors above the baseline in the worst case.
+\end{simplebox}
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Signal & Unit $u$ & Floor $\phi$ & Counts & Slope prior $b^0$\\
+\midrule
+CPU & 5 & 0.2 & up only & 0.4\\
+Memory & 1 & 0.05 & up only & 0\\
+Network in & 2000 & 0.3 & both ways & 1\\
+Network out & 2000 & 0.3 & both ways & 1\\
+Requests & 0.1 & 0.3 & both ways & 1\\
+Errors & -- & 0.02 & up only & 0\\
+Latency & 1 & 0.2 & up only & 0\\
+Throttling & -- & 3 & up only & 0\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{techbox}
+Level 1 (z = 4) in a signal with floor $\phi$ is at least $4\phi$ in its log (or natural) unit when the data are very flat. For memory $4\times0.05=0.2$ log units (about a 22\% rise); for network $4\times0.3=1.2$ log units (a 3.3-fold change); for errors $4\times0.02=0.08$ (8 percentage points of error share); for throttling 12 points. In noisier signals the actual spread is larger than the floor and the threshold is correspondingly higher.
+\end{techbox}
+
+\section{Step 7: the early-warning trend}
+\begin{simplebox}
+Alongside the level, the model keeps the last 24 values of each rising-only signal's deviation and fits a straight line through them. If the line slopes upwards, is a good fit, and will reach the alarm line within the next 24 readings (two minutes), it reports a forecast. The mapper only shows a warning when the trend holds for two readings in a row and the service is not already alarming.
+\end{simplebox}
+
+\begin{techbox}
+For each upper-only feature, with at least $\max(8,12)=12$ points: least-squares slope $b$ and $R^2=s_{xy}^2/(s_{xx}s_{yy})$; require $b>0$ and $R^2\ge0.6$; projected level in 24 steps $=(\bar y+b(\text{last}+24-\bar x))/4$; crossing time $(4-\bar y)/b+\bar x$. The engine warns when the projected level is at least \code{warnAt}, the service is below the alarm level, and the condition has held two steps in a row.
+\end{techbox}
+
+\section{Putting Steps 1--5 in one paragraph you can say}
+\begin{saybox}
+``For every signal, we keep a half-hour reference and take the median shift of all busy services; that median is the load factor. Each service's signal is then judged against its own accepted history after removing what the load predicts, under two excuses, ignore the load or follow it, and we keep the smaller deviation. Only readings below the alarm line may teach the model, with a two-minute escape for mild shifts. So the model says: this signal is z spreads above what the current load predicts, and here is the signal.''
+\end{saybox}
