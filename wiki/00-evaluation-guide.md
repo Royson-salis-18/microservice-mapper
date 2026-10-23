@@ -138,7 +138,7 @@ Be honest about this one: the 0.7 and the weights are modelling choices, not mea
 
 The same questions can be answered by a learned engine, or by both engines together (details: `wiki/43-ml-engine.md`, Python version: `algorithms/ml_engine.py`):
 
-1. **Learn normal.** Each service gets two Isolation Forests, one for its own resources (CPU, memory) and one for symptoms (traffic, errors, latency).
+1. **Learn normal.** Each service is compared with what the current load predicts for it, in two groups: its own resources (CPU, memory) and its symptoms (traffic, errors, latency). The load every service shares is estimated and explained away, so a change of traffic is not a fault.
    - They are trained on a sliding window of the last 120 *normal* readings. A new reading is scored by the models built before it arrived.
    - Small steady shifts are learned as the new normal after 2 minutes; big ones are not, so a fault never becomes "normal".
    - Less CPU or memory than usual never counts as a fault.
@@ -245,9 +245,9 @@ Limits to state yourself before they ask: 34 faults is a small sample; two bench
 
 **Why is it written in TypeScript and not Python?** The product is a web application: the dashboard must be JavaScript, so using TypeScript for the server and collector too gives one language and one set of data types (service, link, incident) that every part checks against. The logic runs every 5 seconds inside the live server, so keeping it in the same language avoids running a second program and passing data to it. Docker, SSH and WebSocket libraries are strong in Node. The same files are reused by the tests and the scoring tools. The maths itself is language independent, and every file has a simplified Python version in `algorithms/`. Python is used where it is the better tool: the machine learning experiments in `ml/`.
 
-**Where is the machine learning?** Two places. The ML and hybrid engines behind the Rules / Hybrid / ML switch learn each service's normal with Isolation Forests on a sliding window of normal readings, rank the cause with a random walk on the call graph, forecast trends and learn how failures spread. Separately, we tested a supervised logistic model against the rules (it lost, so it is not used).
+**Where is the machine learning?** Two places. The ML and hybrid engines behind the Rules / Hybrid / ML switch learn each service's normal as what the current load predicts for it (a robust residual model on a sliding window of normal readings; it replaced a per-service Isolation Forest that mistook a change of traffic for a fault), rank the cause with a random walk on the call graph, forecast trends and learn how failures spread. Separately, we tested a supervised logistic model against the rules (it lost, so it is not used).
 
-**Why does the forest only learn from normal readings?** If it learned during a fault, the fault would slowly become the new normal and stop being flagged. A long-lasting change with nothing broken (about half an hour) is accepted as a new normal.
+**Why does the model only learn from normal readings?** If it learned during a fault, the fault would slowly become the new normal and stop being flagged. A long-lasting change with nothing broken (about half an hour) is accepted as a new normal.
 
 **Why PageRank for the root cause?** Several services look bad at once. A walker that follows the trouble towards the services they depend on ends up spending most of its time where the trouble starts; victims pass it on.
 

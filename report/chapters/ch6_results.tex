@@ -4,6 +4,75 @@
 
 \section{Results}\label{sec:resultsmain}
 
+\subsection{A change of workload is not a fault: the ML correction}
+\label{sec:workloadres}
+The first ML engine judged each service with two Isolation Forests fitted on that service's recent readings. On the benchmark faults it looked fine, but an operator who stopped the traffic generator and switched to the ML engine saw every service with an anomaly score of 100\%. We reproduced it on recordings made for the purpose. Both benches ran live in Docker, reached by the mapper over SSH, with \emph{no fault at all}; only the work changed (\code{run/scripts/workload-shift-experiment.sh} and \code{workload-steps-experiment.sh}). In the first pair of recordings (two benches, 62 minutes) the organic traffic generator ran, stopped, ran, stopped longer and ran again. In the second pair (two benches, 72 minutes) a closed-loop generator held a constant number of visitors and stepped it $2 \to 8 \to 2 \to 0 \to 20 \to 2$, which moved the entry service's network traffic between 0 and about $3 \times 10^{5}$\,B/s (Figure~\ref{fig:workload}a). Every alarm in these recordings is a false alarm by construction.
+
+The forest was in alarm for 23\% of the organic recording and for 52\% of the steady-load recording (Figure~\ref{fig:workload}b, Table~\ref{tab:models}). The other workload-blind detectors do the same or worse, from 38\% to 75\% on the organic recording and from 76\% to 96\% on the steady one, because all of them model the readings themselves and a new workload is outside what they were fitted on. It is not a tuning matter: a forest scores a value beyond its training range no higher than its most extreme training point, so the old engine had added a range guard, which fires at once for every service when the traffic changes for all of them, and a large shift needed thirty minutes to be accepted as the new normal. On the fault-free stretches of the live fault campaigns the same engine raised 40.9 alarm episodes per hour.
+
+The corrected engine (Section~\ref{sec:load}) does not alarm on either recording (0\% and 0\% of the time; one false episode in 72 minutes of steady-load steps, none in 62 minutes of organic traffic). Figure~\ref{fig:workload}c shows the load factor it read: it follows the steps of Figure~\ref{fig:workload}a, rising to about $+2$ at the twenty-visitor step (traffic about seven times the reference) and falling to about $-1.2$ when the traffic stops (the log scale saturates at the network unit), which is how the shift is explained rather than judged. The model finds the change by itself: no setting names the load generator, and nothing is installed on the hosts.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_workload.pdf}
+\caption[Fault-free recordings with the load stepped]{Two fault-free recordings with the load stepped (left ShopFlow, right LedgerLine; dotted lines mark a new level of concurrent visitors). (a) Network traffic into the entry service. (b) The strongest service level of the old per-service forest and of the load-aware model; the dashed line is the alarm level. (c) The load factor $L(t)$ the new model read, as a logarithmic change from its reference.}
+\label{fig:workload}
+\end{figure}
+
+\subsection{Which model of normal}
+\label{sec:whichmodel}
+Every candidate of Section~\ref{sec:candidates} runs inside the same engine and is judged on four kinds of recording (Table~\ref{tab:models}, Figure~\ref{fig:models}): the 62 real faults, the 84 faults of the live Fault Lab campaigns (Section~\ref{sec:live}), 125 synthetic faults, and the two fault-free workload recordings. The replay feeds every recorded moment to the engine as one reading, as the live server does; the earlier replay dropped consecutive identical readings, which removed the idle stretches from the data (Section~\ref{sec:bug2}).
+
+\begin{table}[!htbp]
+\centering
+\caption[Models of normal compared on faults and on workload shifts]{Models of normal compared inside the same engine. For each set of injected faults: share of faults caught with the true cause first (\cn, \%) and false-alarm episodes per fault-free hour. Last two columns: share of the time in alarm in the fault-free recordings of organic traffic and of steady-load steps (\%); every alarm there is false.}
+\label{tab:models}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & \multicolumn{2}{c}{Real (62)} & \multicolumn{2}{c}{Live (84)} & \multicolumn{2}{c}{Synthetic (125)} & \multicolumn{2}{c}{No faults, load moves}\\
+Model & \cn & FA/h & \cn & FA/h & \cn & FA/h & organic & steps\\
+\midrule
+Isolation Forest (old default) & 69 & 4.6 & 46 & 40.9 & 76 & 0.2 & 23 & 52 \\
+Ensemble of four detectors & 71 & 20.0 & 44 & 81.7 & 78 & 2.6 & 47 & 88 \\
+k-NN & 69 & 13.8 & 44 & 57.2 & 72 & 5.2 & 73 & 96 \\
+Mahalanobis & 71 & 23.8 & 45 & 65.4 & 84 & 2.6 & 38 & 76 \\
+HBOS & 69 & 34.6 & 44 & 57.2 & 77 & 1.4 & 75 & 82 \\
+Control chart, MAD spread & 73 & 10.0 & 44 & 24.5 & 79 & 0.6 & 13 & 31 \\
+Control chart, tail spread & 71 & 2.3 & 46 & 0.0 & 78 & 0.2 & 0 & 0 \\
+Subspace residual, 1 component & 68 & 3.1 & 50 & 8.2 & 78 & 0.4 & 1 & 3 \\
+Subspace residual, 2 components & 68 & 3.8 & 50 & 0.0 & 77 & 0.2 & 1 & 4 \\
+Load factor, MAD spread & 71 & 3.8 & 43 & 16.3 & 79 & 0.6 & 10 & 6 \\
+\textbf{Load factor, tail spread (adopted)} & 71 & 2.3 & 48 & 0.0 & 78 & 0.2 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_models.pdf}
+\caption[The candidate models on fault-free workload shifts and on injected faults]{The candidate models. (a) Share of fault-free time in alarm on the two workload recordings (lower is better). (b) Share of injected faults caught with the true cause first on the real, live and synthetic sets (higher is better).}
+\label{fig:models}
+\end{figure}
+
+Three results stand out.
+\begin{enumerate}
+\item \textbf{On injected faults the models are alike.} The caught-and-named rate is $68$--$73\%$ on the real faults, $43$--$50\%$ on the live ones and $72$--$84\%$ on the synthetic ones for every candidate; differences of a few points are inside the noise of 62 to 125 faults (the intervals of Table~\ref{tab:main} are $\pm 10$ points). The workload-blind models differ in false alarms: the forest-family detectors raise 4.6 to 34.6 episodes per hour on the real systems and 40.9 to 81.7 on the live ones, against 2.3 and 0.0 for the adopted model.
+\item \textbf{On workload shifts they are not alike.} The adopted model is in alarm for 0\% of both recordings; the workload-blind family for 23--75\% and 52--96\%. Replacing the forests by a robust residual with the tail-aware spread is the larger part of the improvement (control chart: 0\% and 0\%); the MAD spread alone is not enough (13\% and 31\%), because it treats bursty signals as Gaussian.
+\item \textbf{The load factor removes what is left.} The control chart without it still raises 1.2 and 1.9 false episodes per hour on the two recordings; with it 0.0 and 1.0, and it is the better of the two on the live faults (47.6\% against 46.4\% caught and named). The subspace residual is the strongest alternative (3\% and 4\% of the steady recording in alarm; 50\% caught and named on the live faults) but raises 7.7 to 10.7 false episodes per hour on the steady steps, is slower to adapt, and its cost grows faster than linearly (Section~\ref{sec:cost}).
+\end{enumerate}
+We therefore adopted the load factor with the tail spread. We report what it does not do: it is not more accurate than the forest on the injected faults (71\% against 69\% on the real ones, inside the noise), and a fault that begins during a large change of load can be masked because the model then accepts a deviation that either hypothesis about the load explains. Brownouts of nearly idle services remain the open problem for every model (no signal moves), as in the earlier version.
+
+\paragraph{Sensitivity.} Figure~\ref{fig:zline} sweeps the alarm line. A looser line (2 spreads) raises detection to 94\% on the real faults but also the false alarms on the workload recordings (15.0 episodes per hour); a tighter one (6 or 8 spreads) removes all false alarms on the workload recordings but loses detection (87\% and 85\% on the real faults, 83\% and 75\% on the synthetic ones). The adopted line of 4 spreads is the loosest that keeps the workload recordings quiet. The training window (60, 120 or 240 readings) and the slow reference (120, 360 or 720) matter little once they are long enough; a window of 60 readings makes the workload recordings noisy again (10.4 false episodes per hour).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_zline.pdf}
+\caption[Sensitivity of the adopted model to its alarm line]{Sensitivity of the load-aware model to its alarm line $z_{\mathrm{line}}$ (the engine alarms at level 2, that is, at $2 z_{\mathrm{line}}$ spreads). (a) Faults detected, and caught and named, on the real and synthetic sets. (b) False alarms per fault-free hour on the real and live sets, and the share of time in alarm on the workload recordings.}
+\label{fig:zline}
+\end{figure}
+
 \subsection{Detection and root cause}
 Table~\ref{tab:main} compares the engines in one harness. On the real systems the hybrid names the true cause first for 74\% of all faults, against 65\% for the rule layer, 71\% for ranking by anomaly alone and 73\% for the ML engine. The paired differences are in Figure~\ref{fig:forest} and Table~\ref{tab:paired}. Hybrid over rules is significant on the real systems ($+9.7$ points, 95\% CI $[+1.6, +17.7]$, $p = 0.032$) but not on the synthetic set ($+2.2$, $[-3.9, +8.4]$); hybrid over the severity ranking is positive but not significant in either set ($+3.2$ and $+1.1$ points).
 
@@ -192,7 +261,15 @@ The trend forecast warns before the alarm for 16 of 178 synthetic faults (7 of 1
 \end{figure}
 
 \subsection{Cost}
-The pipeline is unsupervised, needs no GPU and runs on one core. In a single replay of the two real systems (12 and 13 services) one decision window, covering the per-service forests, facts, random walk and cascade risk, took about 6 to 7\,ms on average, far below the 5\,s collection period. How the cost grows with the number of services beyond these sizes was not measured, so no scaling claim is made: the per-service forests are independent and the walk is linear in edges times iterations, but this was not benchmarked.
+\label{sec:cost}
+The pipeline is unsupervised, needs no GPU and runs on one core. Figure~\ref{fig:scale} times one complete decision window (container facts, the model of normal, random walk, forecast) on random call graphs of 10 to 320 services, after a warm-up long enough for every service to have a model. The adopted load-aware model costs about $0.37$\,ms per service per window and grows linearly: 4.0\,ms for 10 services, 26.8\,ms for 80 and 119\,ms for 320 (95th percentile 356\,ms), always far below the 5\,s collection period. The old forest cost about $0.9$\,ms per service (296\,ms for 320) with 95th-percentile windows nine times the mean, because every service refits at once every ten readings; the load-aware model refreshes its baselines every four readings with a much smaller peak (about three times the mean). The subspace residual grows faster than linearly (1.2\,s for 320 services, with 11\,s windows at the 95th percentile) because its covariance has one row per service-signal pair. On the two benches (12 and 13 services) a window takes about 5\,ms. These are wall-clock times on one core of a shared four-core virtual machine, not a tuned benchmark.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_scale.pdf}
+\caption[Cost of one decision window against the number of services]{Cost of one decision window against the number of services (single core, logarithmic axes; the dashed line is the 5\,s collection period). (a) Mean milliseconds per window for each model of normal, the random walk and the cascade risk alone. (b) Milliseconds per service per window.}
+\label{fig:scale}
+\end{figure}
 
 \subsection{Case studies}
 Figure~\ref{fig:case} shows three real incidents, chosen by class before looking at the outcome. In (a) a memory leak overlaps several outages: the engine names the stopped containers first, as it should, and only a model of concurrent faults could do better. In (b) a crash loop is named correctly about 30\,s after its first kill and stays named between kills. In (c) a brownout on an almost idle service never raises an alarm, which is the open problem of Figure~\ref{fig:class}.

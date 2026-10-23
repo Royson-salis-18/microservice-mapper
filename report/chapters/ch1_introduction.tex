@@ -34,7 +34,7 @@ Three observations shaped the work. First, much of what an operator needs is alr
 \begin{enumerate}[label=\arabic*.]
 \item To build a platform that connects to Docker hosts over SSH, discovers the service topology, and shows live health, metrics and dependencies in a 2D and a 3D view, without changing the monitored applications.
 \item To recover call \emph{directions} from observed sockets and, where names carry no information, from the services' own behaviour.
-\item To detect trouble per service against its own recent history with a hybrid of a learned detector (Isolation Forest) and a robust statistical rule layer, treating container facts such as ``stopped'' or ``crash-looping'' as evidence rather than degree.
+\item To detect trouble per service against its own recent history with a hybrid of a load-aware learned model and a robust statistical rule layer, treating container facts such as ``stopped'' or ``crash-looping'' as evidence rather than degree.
 \item To rank the root cause of an incident by separating a service's own deviation from what its neighbours explain, and by running a random walk over the call graph.
 \item To model cascading failure with learned per-edge propagation probabilities, predict which services are next, and warn early about gradual faults.
 \item To classify the fault type and attach a short runbook, so the output is something an engineer can act on.
@@ -60,7 +60,7 @@ The project shows that useful root-cause analysis does not need instrumentation,
 \begin{itemize}
 \item an \textbf{instrumentation-free observation layer} that recovers topology and call direction from container sockets and Docker state;
 \item a \textbf{probabilistic cascading-failure model} whose per-edge propagation probabilities are Beta--Binomial posteriors learned online from the system's own incidents, with risk flowing over the graph by noisy-OR;
-\item a \textbf{hybrid detector} in which a per-service Isolation Forest and a robust rule layer jointly raise the alarm and container facts count as evidence, with an operating contract that reports alarm \emph{time} as well as false-alarm episodes;
+\item a \textbf{load-aware model of normal} that explains away the workload every service shares and judges only what is left, so a change of traffic is not mistaken for a fault (it replaced a per-service Isolation Forest that was in alarm for most of a load test), and a \textbf{hybrid detector} in which that model and a robust rule layer jointly raise the alarm and container facts count as evidence, with an operating contract that reports alarm \emph{time} as well as false-alarm episodes;
 \item a \textbf{fact-aware, decomposition-based ranker} for the root cause, and \textbf{call directions learned from telemetry};
 \item a \textbf{Detection engines page} that runs Rules, ML and Hybrid in parallel and shows what each detected, computed and predicted;
 \item a \textbf{reproducible evaluation} with a blind fault injector, a held-out synthetic benchmark, bootstrap intervals, paired tests, an ablation and an amplification study, together with the results that did not help and a measurement bug that had hidden half of the real faults;

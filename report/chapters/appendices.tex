@@ -194,7 +194,7 @@ Open \texttt{http://localhost:5173}. Node.js 20.19 or 22.12 and later is require
 Click ``Add project'' and fill in the target identifier, display name, the host's public IPv4 address, the SSH user and the path to the key file. The key stays on your machine. \texttt{npm run hosts} lists the configured hosts and tests port 22; \texttt{npm run hosts -- set <target> <ip>} changes an address.
 
 \section*{Read an incident}
-Open \emph{Incidents and cascade}. The headline names the most likely root cause with its confidence. The ranking shows what each service's score is made of; ``Why'' shows the own-forest, symptom-forest and walk parts and the evidence; the cascade panel shows who is already affected and who is next; the next steps are commands to run on the host.
+Open \emph{Incidents and cascade}. The headline names the most likely root cause with its confidence. The ranking shows what each service's score is made of; ``Why'' shows the own, symptom and walk parts and the evidence; the cascade panel shows who is already affected and who is next; the next steps are commands to run on the host.
 
 \section*{Compare the three engines}
 Open \emph{Detection engines}. The three columns show, for the same readings, what each engine detected, its ranked suspects and what it predicts. The switch in the top bar (or the ``Use'' buttons) chooses which engine decides the incident.

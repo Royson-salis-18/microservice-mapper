@@ -64,9 +64,11 @@ const pool = (rs: EventResult[]) => summarise({ faults: rs.flatMap((r) => r.faul
 const pc = (x: number) => `${Math.round(x * 100)}%`.padStart(4);
 
 export const VARIANTS: Record<string, P> = {
-  'forest (current)': {},
-  'forest ensemble (4 detectors)': { baseline: { detector: 'ensemble' } },
-  'hbos': { baseline: { detector: 'hbos' } },
+  'forest (old default)': { levels: 'forest' },
+  'forest ensemble (4 detectors)': { levels: 'forest', baseline: { detector: 'ensemble' } },
+  'knn': { levels: 'forest', baseline: { detector: 'knn' } },
+  'mahalanobis': { levels: 'forest', baseline: { detector: 'mahalanobis' } },
+  'hbos': { levels: 'forest', baseline: { detector: 'hbos' } },
   'control chart, MAD spread': { levels: 'load', load: { mode: 'control', scale: 'mad' } },
   'control chart, tail spread': { levels: 'load', load: { mode: 'control', scale: 'tail' } },
   'subspace residual, 1 component': { levels: 'pca', pca: { components: 1 } },
@@ -90,6 +92,10 @@ console.log(Object.entries(SETS).map(([k, v]) => `${k}: ${v.length} runs${k !== 
 const result: any = { generatedAt: new Date().toISOString(), sets: Object.fromEntries(Object.entries(SETS).map(([k, v]) => [k, v.map((x) => ({ name: x.run.name, faults: x.run.faults.length, moments: x.run.moments.length }))])), variants: [] as any[], sweeps: {} };
 for (const [name, p] of Object.entries(VARIANTS)) if (!onlyVariants || onlyVariants.some((v) => name.includes(v))) result.variants.push(row(name, p));
 
+if (args.includes('--sat')) {
+  console.log('\nload model: level at which a service counts as fully anomalous for the walk');
+  result.sweeps.anomalySat = [2, 3, 4, 6, 10].map((v) => ({ value: v, ...row(`anomalySat ${v}`, { levels: 'load', anomalySat: v }) }));
+}
 if (sweep) {
   console.log('\nload model, learned slopes: zLine (alarm at level 2 = twice the line)');
   result.sweeps.zLine = [2, 3, 4, 5, 6, 8].map((z) => ({ value: z, ...row(`zLine ${z}`, { levels: 'load', load: { mode: 'pooled', zLine: z } }) }));

@@ -7,6 +7,7 @@
  * Every (service, moment) is one example. Positive: the service is the target of a fault that is active at that moment (services that
  * could merely be affected are left out: whether they visibly change depends on protection the ledger does not record). Negative: no fault is active anywhere (and none ended in the last minute). Examples where a
  * container fact holds are left out: facts are identical for every detector, so they would only inflate every curve equally.
+ * Detectors: iforest, knn, mahalanobis, hbos, ensemble (the old per-service forest family), load, control, pca (the load-aware models), rules.
  * The score is the service's level. Writes paper/data/roc_<detector>_<set>.json.
  */
 import fs from 'node:fs';
@@ -17,8 +18,9 @@ import { loadTraces } from '../../v2/core/trace.ts';
 
 const [det, setName] = process.argv.slice(2);
 const root = path.resolve(import.meta.dirname, '..', '..');
-const dirs = setName === 'real' ? [path.join(root, 'run/recorded-runs/runC')] : fs.readdirSync('/tmp/claude-0/test').sort().map((d) => path.join('/tmp/claude-0/test', d));
-const seeds = det === 'rules' ? [0] : [0, 1, 2];
+const dirs = setName === 'real' ? [path.join(root, 'run/recorded-runs/runC')] : fs.readdirSync(path.join(root, 'run/synthetic-runs/test')).sort().map((d) => path.join(root, 'run/synthetic-runs/test', d));
+const DETERMINISTIC = new Set(['rules', 'load', 'control', 'pca']);      // no random trees: one pass is the whole answer
+const seeds = DETERMINISTIC.has(det) ? [0] : [0, 1, 2];
 
 type Ex = { s: number; y: number };
 function curve(ex: Ex[]) {
@@ -53,8 +55,10 @@ for (const seed of seeds) {
       });
       return;
     }
-    const baseline: any = det === 'ensemble' ? { detector: 'ensemble', seed } : { detector: det, seed };
-    replayEach(texts[ri].observed, texts[ri].subject, { baseline } as any, (r, services, s) => {
+    // the four forest-family detectors run on the old per-service forest; load, control and pca are the load-aware models
+    const params: any = det === 'load' ? { levels: 'load' } : det === 'control' ? { levels: 'load', load: { mode: 'control' } } : det === 'pca' ? { levels: 'pca' }
+      : { levels: 'forest', baseline: { detector: det, seed } };
+    replayEach(texts[ri].observed, texts[ri].subject, params, (r, services, s) => {
       if (s.ts < run.t0 + 300000) return;
       for (const id of services) { const v = r.services.get(id); if (!v || v.hard || !v.ready) continue; const y = involved(id, s.ts) ? 1 : 0; if (y || (clean(s.ts) && !active(s.ts))) ex.push({ s: Math.min(v.level, 20), y }); }
     });

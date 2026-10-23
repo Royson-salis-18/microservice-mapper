@@ -12,7 +12,7 @@ The project built an instrumentation-free platform that watches containerised mi
 \item Learned propagation discriminates better than fixed edge probabilities on 80 observed cascades (AUROC 0.847 against 0.784), with a lower Brier score and a lower expected calibration error. On the real systems the experiment is uninformative because almost no real fault cascaded.
 \item Learned directions stay correct when service names carry no information (28 of 31 real pairs against none for the name rule), but they do not improve ranking when names exist.
 \item Change-point alarms roughly halve the median detection delay on the real systems (10.5\,s to 4.9\,s), at the price of more alarm time (7\% to 16\%).
-\item The simple rule $z$-score is a strong detector on its own; the Isolation Forest earns its place through quietness and by complementing the rules.
+\item The simple rule $z$-score is a strong detector on its own; the load-aware model earns its place through quietness, by surviving changes of workload, and by complementing the rules.
 \item The pipeline costs about 6 to 7\,ms per five-second window on the systems tested, on one core, with no GPU.
 \item A host too small for its workload looks like a mapper fault; the diagnostic tools separate the two.
 \end{enumerate}

@@ -172,7 +172,7 @@ def fig_forest():
 
 
 # ------------------------------------------------------------------ ablation
-ABL_NAMES = [("- docker-stop fact", "no docker-stop fact"), ("- crash-loop fact", "no crash-loop fact"), ("- range guard", "no range guard"), ("- random walk", "no random walk (rank by anomaly)"),
+ABL_NAMES = [("- docker-stop fact", "no docker-stop fact"), ("- crash-loop fact", "no crash-loop fact"), ("- load factor", "no load factor"), ("- tail-aware spread", "MAD spread only"), ("- random walk", "no random walk (rank by anomaly)"),
              ("- one-sided features", "two-sided features"), ("- two-speed drift", "no two-speed drift"), ("- alarm at level 2 (alarm at 1)", "alarm at level 1 (not 2)")]
 
 
@@ -418,8 +418,9 @@ def fig_amp():
 
 
 # ------------------------------------------------------------------ detector ROC / PR
-DET = [("rules", "Rule z-score", C["grey"], "--"), ("iforest", "Isolation Forest", C["blue"], "-"), ("knn", "k-NN", C["orange"], "-."), ("mahalanobis", "Mahalanobis", C["green"], ":"),
-       ("hbos", "HBOS", C["pink"], "--"), ("ensemble", "Ensemble of four", C["amber"], "-")]
+DET = [("rules", "Rule z-score", C["grey"], "--"), ("iforest", "Isolation Forest (old)", C["blue"], "-"), ("knn", "k-NN", C["orange"], "-."), ("mahalanobis", "Mahalanobis", C["green"], ":"),
+       ("hbos", "HBOS", C["pink"], "--"), ("ensemble", "Ensemble of four", C["amber"], "-"), ("control", "Control chart (no load factor)", C["sky"], "-."), ("pca", "Subspace residual", "#7f3fbf", ":"),
+       ("load", "Load-aware residual (new)", "#d62728", "-")]
 
 
 @figure
@@ -481,9 +482,9 @@ def fig_sweep():
 @figure
 def fig_scale():
     d = load("scale.json")
-    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE, 2.45))
+    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE, 3.0))
     ax = axes[0]
-    for key, lab, col, mk, ls in [("iforest", "Isolation Forest (default)", C["blue"], "o", "-"), ("knn", "k-NN", C["orange"], "^", "-."), ("mahalanobis", "Mahalanobis", C["green"], "s", ":"), ("hbos", "HBOS", C["pink"], "D", "--"), ("ensemble", "Ensemble", C["amber"], "v", "-")]:
+    for key, lab, col, mk, ls in [("iforest", "Isolation Forest (old default)", C["blue"], "o", "-"), ("knn", "k-NN", C["orange"], "^", "-."), ("mahalanobis", "Mahalanobis", C["green"], "s", ":"), ("hbos", "HBOS", C["pink"], "D", "--"), ("ensemble", "Ensemble", C["amber"], "v", "-"), ("pca", "Subspace residual", "#7f3fbf", "P", ":"), ("load", "Load-aware residual (new)", "#d62728", "*", "-")]:
         if key not in d["detectors"]: continue
         ns = [n for n in d["sizes"] if str(n) in d["detectors"][key]]
         ax.plot(ns, [d["detectors"][key][str(n)]["mean"] for n in ns], color=col, marker=mk, ls=ls, label=lab)
@@ -492,19 +493,101 @@ def fig_scale():
     ns = np.array(d["sizes"], float); ref = d["detectors"]["iforest"][str(d["sizes"][0])]["mean"] * ns / ns[0]
     ax.plot(ns, ref, color="black", lw=0.5, ls=":", label="linear in N")
     ax.axhline(5000, color=C["orange"], lw=0.8, ls="--"); ax.text(ns[0], 5000 * 0.62, "5 s collection period", fontsize=6, color=C["orange"])
-    ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("Services N"); ax.set_ylabel("Milliseconds per decision window (single core)")
-    ax.set_xticks(d["sizes"]); ax.set_xticklabels([str(n) for n in d["sizes"]]); ax.legend(fontsize=5.8, loc="upper left", ncol=1); panel_label(ax, "(a)", dx=-0.16)
+    ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("Services N"); ax.set_ylabel("ms per decision window (one core)")
+    ax.set_xticks(d["sizes"]); ax.set_xticklabels([str(n) for n in d["sizes"]]); ax.legend(fontsize=5.4, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3); panel_label(ax, "(a)", dx=-0.16)
     ax = axes[1]
     ns2 = [n for n in d["sizes"]]
     ax.plot(ns2, [d["detectors"]["iforest"][str(n)]["mean"] / n for n in ns2], color=C["blue"], marker="o", label="Isolation Forest, per service")
-    for key, col, mk in [("knn", C["orange"], "^"), ("mahalanobis", C["green"], "s")]:
+    for key, col, mk in [("knn", C["orange"], "^"), ("mahalanobis", C["green"], "s"), ("load", "#d62728", "*")]:
         if key in d["detectors"]:
             nn = [n for n in d["sizes"] if str(n) in d["detectors"][key]]
             ax.plot(nn, [d["detectors"][key][str(n)]["mean"] / n for n in nn], color=col, marker=mk, ls="--", label=f"{key}, per service")
-    ax.set_xscale("log"); ax.set_xlabel("Services N"); ax.set_ylabel("Milliseconds per service per window"); ax.set_xticks(ns2); ax.set_xticklabels([str(n) for n in ns2]); ax.legend(fontsize=6, loc="upper left")
+    ax.set_xscale("log"); ax.set_xlabel("Services N"); ax.set_ylabel("Milliseconds per service per window"); ax.set_xticks(ns2); ax.set_xticklabels([str(n) for n in ns2]); ax.legend(fontsize=5.8, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
     panel_label(ax, "(b)", dx=-0.18)
     fig.tight_layout(w_pad=1.2)
     save(fig, "fig_scale")
+
+
+# ------------------------------------------------------------------ the ML correction: workload shifts and model comparison
+@figure
+def fig_workload():
+    """Fault-free recordings with the load stepped: the entry service's traffic, the strongest level of the old and the new model, and the load factor the new model read."""
+    d = load("workload.json")["recordings"]
+    recs = [r for r in d if r["kind"] == "steps"]
+    fig, axes = plt.subplots(3, len(recs), figsize=(DOUBLE, 4.6), sharex="col", squeeze=False)
+    for j, r in enumerate(recs):
+        t = np.array(r["t"])
+        ax = axes[0, j]
+        ax.plot(t, r["entry"], color=C["black"], lw=0.8)
+        ax.set_ylabel("entry traffic\n(log$_{10}$ B/s)" if j == 0 else "")
+        ax.set_title(f"{'ShopFlow' if r['subject'] == 'shopflow' else 'LedgerLine'}: no fault, load stepped")
+        for ph in r["phases"]:
+            ax.axvline(ph["min"], color=C["grey"], lw=0.5, ls=":")
+            ax.text(ph["min"] + 0.3, ax.get_ylim()[1] * 0.97, f"{ph['level']}", fontsize=5.5, va="top", color=C["grey"])
+        ax = axes[1, j]
+        ax.plot(t, r["models"]["forest"]["max"], color=C["blue"], lw=0.9, label="per-service forest (old)")
+        ax.plot(t, r["models"]["load"]["max"], color="#d62728", lw=0.9, label="load-aware (new)")
+        ax.axhline(2, color=C["black"], lw=0.6, ls="--"); ax.text(t[-1], 2.1, "alarm level", fontsize=5.8, ha="right")
+        ax.set_ylabel("strongest level" if j == 0 else ""); ax.set_ylim(0, 8.3)
+        if j == 0: ax.legend(loc="upper left", fontsize=5.8)
+        ax = axes[2, j]
+        ax.plot(t, r["models"]["load"]["load"], color="#d62728", lw=0.9)
+        ax.axhline(0, color=C["grey"], lw=0.5)
+        ax.set_ylabel("load factor\n(log change)" if j == 0 else ""); ax.set_xlabel("minutes")
+    for ax, tt in zip(axes[:, 0], "abc"): panel_label(ax, f"({tt})", dx=-0.22)
+    fig.tight_layout(h_pad=0.6, w_pad=1.0)
+    save(fig, "fig_workload")
+
+
+MODELS = [("forest (old default)", "Isolation Forest (old default)"), ("forest ensemble (4 detectors)", "Ensemble of four (old)"), ("knn", "k-NN"), ("mahalanobis", "Mahalanobis"), ("hbos", "HBOS"),
+          ("control chart, tail spread", "Control chart, no load factor"), ("subspace residual, 1 component", "Subspace residual"), ("load factor, tail spread", "Load-aware residual (new)")]
+
+
+@figure
+def fig_models():
+    """Every candidate on the four kinds of recording: time in alarm when nothing is broken, and faults caught and named."""
+    d = {v["name"]: v for v in load("ml-levels.json")["variants"]}
+    rows = [(lab, d[k]) for k, lab in MODELS if k in d]
+    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE, 3.3), gridspec_kw=dict(width_ratios=[1, 1]))
+    y = np.arange(len(rows))[::-1]
+    ax = axes[0]
+    h = 0.34
+    ax.barh(y + h / 2, [100 * (v["workload"]["alarmShare"] or 0) for _, v in rows], h, color=C["sky"], label="organic traffic with quiet spells")
+    ax.barh(y - h / 2, [100 * (v["steps"]["alarmShare"] or 0) for _, v in rows], h, color=C["orange"], label="steady load stepped 2, 8, 2, 0, 20, 2")
+    ax.set_yticks(y); ax.set_yticklabels([lab for lab, _ in rows]); ax.set_xlabel("share of fault-free time in alarm (%)")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.2), ncol=1, fontsize=5.8)
+    ax.set_title("Nothing is broken: lower is better")
+    ax = axes[1]
+    w = 0.26
+    for set_, col, lab, off in [("real", C["blue"], "real (62 faults)", w), ("live", C["green"], "live (84 faults)", 0), ("synthetic", C["amber"], "synthetic (125 faults)", -w)]:
+        vals = [100 * v[set_]["caughtAndNamed"] for _, v in rows]
+        ax.barh(y + off, vals, w, color=col, label=lab)
+    ax.set_yticks(y); ax.set_yticklabels([]); ax.set_xlabel("faults caught with the true cause first (%)")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=1, fontsize=5.8)
+    ax.set_title("Faults injected: higher is better")
+    for ax, tt in zip(axes, "ab"): panel_label(ax, f"({tt})", dx=-0.5 if tt == "a" else -0.06)
+    fig.tight_layout(w_pad=0.8)
+    save(fig, "fig_models")
+
+
+@figure
+def fig_zline():
+    d = load("ml-levels.json")["sweeps"]["zLine"]
+    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE, 2.2))
+    z = [r["value"] for r in d]
+    ax = axes[0]
+    for set_, col, lab, mk in [("real", C["blue"], "real", "o"), ("synthetic", C["amber"], "synthetic", "s")]:
+        ax.plot(z, [100 * r[set_]["detected"] for r in d], color=col, marker=mk, label=f"detected, {lab}")
+        ax.plot(z, [100 * r[set_]["caughtAndNamed"] for r in d], color=col, marker=mk, ls="--", label=f"caught and named, {lab}")
+    ax.set_xlabel("alarm line $z_\\mathrm{line}$ (robust spreads)"); ax.set_ylabel("% of faults"); ax.legend(fontsize=5.6, loc="lower left")
+    ax = axes[1]
+    ax.plot(z, [r["real"]["falseAlarmsPerHour"] for r in d], color=C["blue"], marker="o", label="real, fault-free time")
+    ax.plot(z, [r["live"]["falseAlarmsPerHour"] for r in d], color=C["green"], marker="^", label="live, fault-free time")
+    ax.plot(z, [100 * (r["workload"]["alarmShare"] or 0) for r in d], color=C["orange"], marker="s", ls="--", label="workload: % of time in alarm")
+    ax.set_xlabel("alarm line $z_\\mathrm{line}$ (robust spreads)"); ax.set_ylabel("false alarms per hour"); ax.legend(fontsize=5.6)
+    for ax, tt in zip(axes, "ab"): panel_label(ax, f"({tt})", dx=-0.16)
+    fig.tight_layout(w_pad=1.0)
+    save(fig, "fig_zline")
 
 # ------------------------------------------------------------------ LaTeX tables generated from the data
 def fmt_ci(v, lo, hi, d=0):

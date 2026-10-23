@@ -45,10 +45,11 @@ Listing~\ref{lst:facts} turns the container runtime's state into one of a few fa
 
 \lstinputlisting[language=TS,caption={Container state as a fact (containerFacts.ts).},label={lst:facts}]{listings/facts.ts}
 
-\subsection{The Isolation Forest level}
-Listing~\ref{lst:judge} is the judgement of one reading by a fitted forest: the one-sided guard, the level relative to the line, and the range guard.
+\subsection{The load factor and the load-aware level}
+Listing~\ref{lst:loadfactor} reads the project's load and the slope of each signal on it: the median shift of the signals that carry traffic, and a ridge estimate pulled towards the prior. Listing~\ref{lst:judge} is the judgement of one reading: a signal is tried under both hypotheses about how it follows the load, and counts as unusual only if neither explains it; the strongest signal sets the service's level and is kept as the evidence.
 
-\lstinputlisting[language=TS,caption={Judging a reading (serviceBaseline.ts).},label={lst:judge}]{listings/judge.ts}
+\lstinputlisting[language=TS,caption={The load factor and its slopes (loadModel.ts).},label={lst:loadfactor}]{listings/load_factor.ts}
+\lstinputlisting[language=TS,caption={Judging a reading against what the load predicts (loadModel.ts).},label={lst:judge}]{listings/load_level.ts}
 
 \subsection{Ranking by random walk}
 Listing~\ref{lst:walk} is the personalised random walk. The ``stay'' weight is what lets the true source keep the walker: a service whose trouble nothing downstream explains collects the most time.
@@ -85,7 +86,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \Require readings $x_s(t)$, container states, graph $G$ with learned directions
 \Ensure alarm, ranked causes, likely-next set, fault type, runbook
 \State \textbf{facts}: mark each service stopped, paused, restarting, detached or crash-looping
-\State \textbf{score}: forest levels $\lambda_s$ (own and symptom), rule scores $\rho_s$, anomalies $a_s$
+\State \textbf{score}: model levels $\lambda_s$ (own and symptom), rule scores $\rho_s$, anomalies $a_s$
 \State \textbf{alarm}: apply the hybrid rule; if no alarm, update the propagation counts and stop
 \State \textbf{rank}: services with a fact first, then by the walk share $\pi_s$ over $G$
 \State \textbf{explain}: report own versus symptom evidence and what the neighbours explain
@@ -139,7 +140,7 @@ Algorithm~\ref{alg:window} is one decision window. Algorithms~\ref{alg:orient}, 
 \begin{algorithmic}[1]
 \Require nodes, edges, new readings since the last cycle
 \Ensure a verdict for Rules, ML and Hybrid; the incident for the active engine
-\State step the ML engine with the new readings (forests, facts, walk, forecast, cascade)
+\State step the ML engine with the new readings (load factor, residual levels, facts, walk, forecast, cascade)
 \State score the same moment with the rule layer and divide by its line
 \State fuse: Hybrid maximum $= \max(\text{ML level}, \text{rules}/1.25)$, facts $\to 10$; ranking by the ML order, facts first
 \State for each engine record: alarm (over its line now \textbf{and} on the previous cycle), peak against its line, top five suspects
@@ -214,12 +215,15 @@ A host is added in the dashboard with its address, SSH user and key path. The co
 \toprule
 \textbf{Parameter} & \textbf{Value} & \textbf{Meaning}\\
 \midrule
-Trees per forest / sample size & 100 / 64 & Isolation Forest size\\
 Training window & 120 readings & About ten minutes of normal behaviour\\
-Readings before judging & 30 & First fit\\
-Refit every & 10 readings & Sliding-window refit\\
-Alarm line & median + 3 robust spreads & Level 1\\
-Alarm level / persistence & 2 / 2 windows & Forest condition of the hybrid alarm\\
+Slow reference & 360 readings & Median that shifts are measured from (half an hour)\\
+Readings before judging & 30 & First baseline\\
+Baseline refresh & every 4 readings & Median and spread per signal and hypothesis\\
+Signal units $u_f$ & CPU 5, memory 1, network 2000, requests 0.1 & Below about one unit a change is noise\\
+Carrying signal & 0.4 above idle & A signal that says something about the load\\
+Slope prior / ridge weight & 1 (network, requests), 0.4 (CPU) / 60 & Load response before any load change has been seen\\
+Alarm line $z_{\mathrm{line}}$ & 4 robust spreads & Level 1; spread is the larger of MAD and the 90th-percentile distance\\
+Alarm level / persistence & 2 / 2 windows & Model condition of the hybrid alarm\\
 Rules alone trusted at & 1.25 $\times$ line & Rule condition of the hybrid alarm\\
 Drift & 24 or 360 readings & Mild shift accepted in two minutes; large one quarantined for thirty\\
 Walk restart / iterations & 0.15 / 60 & Random walk\\
@@ -404,7 +408,7 @@ The suite has 329 tests in 19 suites and runs in under a minute with \texttt{npm
 \textbf{Suite(s)} & \textbf{What is held}\\
 \midrule
 \texttt{logic}, \texttt{riskEngine}, \texttt{rca} & Layouts (2D and 3D), edge heat scale, risk, cascade, what-if, root-cause scoring\\
-\texttt{ml-engine}, \texttt{ml}, \texttt{rca-research} & Isolation Forest, walk, propagation, hybrid fusion, learned directions, change points\\
+\texttt{ml-engine}, \texttt{ml}, \texttt{load-model}, \texttt{rca-research} & Load-aware model (workload invariance, a fault seen during a load change), walk, propagation, hybrid fusion, learned directions, change points\\
 \texttt{pipeline}, \texttt{eval}, \texttt{purity} & End-to-end replay, scoring against a ledger, purity of algorithm modules\\
 \texttt{telemetry-platform.*} (eight files) & SSH connection, command catalogue, Docker parsers, CPU, units, service identity, storage, discovery, metric collector\\
 \texttt{sockets}, \texttt{requestStats}, \texttt{freshness} & Socket direction and recently closed sockets, request statistics, staleness\\

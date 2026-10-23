@@ -7,7 +7,7 @@ The top bar has a small **Rules · Hybrid · ML** switch. It decides which engin
 
 | | Rules | ML | Hybrid (default) |
 |---|---|---|---|
-| Is a service abnormal? | robust z-score per metric (median, MAD) | two **Isolation Forests** per service, trained on a sliding window of its normal readings | both: either engine can raise the alarm |
+| Is a service abnormal? | robust z-score per metric (median, MAD) | each service against **what the current load predicts for it**, from a sliding window of its normal readings (the *load-aware* model) | both: either engine can raise the alarm |
 | Which service is the cause? | `max(own, symptom − explained)` | **random walk** (personalised PageRank) on the call graph | the ML engine's ranking |
 | What comes next? | callers of the root | **learned cascade**: how often trouble moved along each call edge before | the learned cascade, plus a **trend forecast** (early warning) |
 | Code | `server/algorithms/detection`, `rca` | `server/algorithms/ml` | `server/algorithms/ml/hybrid.ts` |
@@ -40,46 +40,59 @@ then, for the whole project
   hybrid:       alarm if either says so;  ranking by the random walk;  early warning from the trend;  likely-next from the learned cascade
 ```
 
-### 1. Learn normal: two models per service
+### 1. Learn normal: the load-aware model
 
-Each reading becomes 8 numbers: CPU, memory, throttling, network in, network out, request rate, error share and p95 latency. Positive quantities are on a log scale. They are split into two groups, each with its own model:
+Each reading becomes 8 numbers: CPU, memory, throttling, network in, network out, request rate, error share and p95 latency. Positive quantities are on a log scale, with a unit below which a change is noise (CPU 5 points, memory 1, network 2000 B/s, requests 0.1/s). A missing signal stays missing.
+
+They are split into two groups, as before:
 
 - **own**: CPU, memory, throttling. A broken dependency cannot cause these.
 - **symptom**: traffic, errors, latency, network. These can be inherited from a broken dependency.
 
-**Isolation Forest** (the default). 100 random trees each keep cutting the data at random values until every point is alone. An unusual reading gets isolated after only a few cuts.
+**Why the model changed.** The first ML engine kept two Isolation Forests per service. A forest learns the *shape of recent readings*, so a change of workload is outside the shape: stop the traffic and every service reads as anomalous at once (anomaly score 100% for all of them). On fault-free recordings where only the load moved, that engine was in alarm for 23% to 52% of the time (see `report`, section "A change of workload is not a fault"). The k-NN, Mahalanobis and HBOS detectors, and their ensemble, fail the same way.
+
+**What it does now.** A service is not unusual because it is busier; it is unusual because it is out of proportion with the others.
 
 ```
-s(x) = 2 ^ ( −E[h(x)] / c(ψ) )       E[h(x)] = average number of cuts,  c(ψ) = 2·(ln(ψ−1) + 0.5772) − 2(ψ−1)/ψ
-level = (s − typical) / (line − typical),     line = typical + 3 × 1.4826 × MAD(training scores)
+reference r      = median of the service's last 360 readings, per signal            (half an hour)
+carrying signal  = a signal whose reference is 0.4 above its idle level             (an idle database says nothing about load)
+load factor L(t) = median over the carrying signals of all services of  x(t) - r    (a fault in a few services cannot move a median)
+slope b          = ridge estimate of how a signal follows L, pulled towards 1 for network and requests, 0.4 for CPU, 0 for the rest
+for each signal, under both hypotheses  b = 0  (ignores the load)  and  b = slope  (follows it):
+    baseline m = median of  x(tau) - b L(tau)  over the window,
+    spread   s = max( 1.4826 MAD,  (q90 - m) / 1.2816,  floor )                     (the tail term keeps bursty signals quiet)
+    z        = | x(t) - b L(t) - m | / s
+z of the signal = the smaller of the two          (unusual only if NEITHER explains it)
+level of the service = its largest z / 4          (level 1 = its own line, the project alarms at level 2)
 ```
 
-**Fixes found by bench testing:**
+Only increases of CPU, memory, throttling, errors and latency count (less of them happens after every restart); traffic counts both ways. The strongest signal and its z are kept, so a verdict reads "cpu 9.3 spreads from what the load predicts", and the Detection engines page shows the workload factor ("workload moved: traffic x0.31, explained, not a fault").
 
-1. **Constant features.** Training copies get a little noise at each feature's smallest meaningful change (its floor), so a feature that never moved can still show a jump.
-2. **Range guard.** A forest scores a value far outside anything it has seen no higher than its most extreme training point. The engine also counts how many floors a value is beyond the training range (5 floors = level 1).
-3. **One-sided features.** Less CPU, memory, throttling, errors or latency than usual is never a fault of the service itself. It happens after every restart: memory starts low again. These features only count when they rise. Traffic and network count both ways, because a drop matters.
-4. **Two-speed drift.**
-   - A small steady shift (level under 3 for 2 minutes) is learned as the new normal: a restart that settled at a new memory level, a deploy.
-   - A big shift is only accepted after 30 minutes, so a real fault is not learned.
-5. **Alarm at level 2.** A project of a dozen services always has one hovering near its own line. The project alarms when some service reaches twice its line.
+Only readings under level 1 join the window (120 readings), so a fault never becomes normal. A small steady shift (level under 3 for 2 minutes) is accepted as the new normal; a big one after 30 minutes. A service is judged after 30 readings.
 
-### 2. Other detectors that were tried
+Code: `server/algorithms/ml/loadModel.ts` (the model), `mlEngine.ts` (facts, persistence, walk, forecast), tests in `run/tests/load-model.test.ts`.
 
-All plug into the same window, line and range guard (`server/algorithms/ml/detectors.ts`, setting `baseline.detector`):
+### 2. What was compared, and why this one
 
-| Detector | Idea | Caught and named first, recorded runs | Same, synthetic tuning set |
-|---|---|---|---|
-| **Isolation Forest** (default) | few random cuts isolate an odd point (Liu, Ting and Zhou 2008) | 74% | 72% |
-| Mahalanobis (Hotelling T²) | distance from the mean in units of the covariance, shrunk to stay invertible | 71% | 75% |
-| k-nearest neighbours | mean distance to the 5 nearest normal readings (Ramaswamy et al. 2000) | 68% | 72% (but 3× the false alarms) |
-| HBOS | how rare each feature's histogram bin is (Goldstein and Dengel 2012) | 68% | 72% (but 4× the false alarms) |
-| Ensemble of all four | mean of the four levels | 71% | 76% |
-| Isolation Forest + Mahalanobis | mean of the two levels | 71% | 76% |
+Every candidate is unsupervised, learns from the telemetry the mapper already collects, and runs inside the same engine (`npm run ml:levels`). Recordings: 62 real faults, 84 live Fault Lab faults, 125 synthetic faults, and two recordings with **no fault at all** where only the load moves (organic traffic started and stopped; steady load stepped 2, 8, 2, 0, 20, 2 visitors). On the last two every alarm is false, so the number is the share of time in alarm.
 
-On the recorded faults one fault is a few points, so the top four are a tie. Isolation Forest stays the default because it had the fewest false alarms on the recorded runs. The others are one setting away.
+| Model | Real (62) caught+named / FA per h | Synthetic (125) | No faults: organic traffic, time in alarm | No faults: steady steps, time in alarm |
+|---|---|---|---|---|
+| Isolation Forest (old default) | 69% / 4.6 | 76% / 0.2 | 23% | 52% |
+| Ensemble of four detectors | 71% / 20.0 | 78% / 2.6 | 47% | 88% |
+| k-NN | 69% / 13.8 | 72% / 5.2 | 73% | 96% |
+| Mahalanobis | 71% / 23.8 | 84% / 2.6 | 38% | 76% |
+| HBOS | 69% / 34.6 | 77% / 1.4 | 75% | 82% |
+| Control chart, MAD spread | 73% / 10.0 | 79% / 0.6 | 13% | 31% |
+| Control chart, tail spread | 71% / 2.3 | 78% / 0.2 | 0% | 0% |
+| Subspace residual (PCA), 1 component | 68% / 3.1 | 78% / 0.4 | 1% | 3% |
+| **Load factor, tail spread (adopted)** | **71% / 2.3** | **78% / 0.2** | **0%** | **0%** |
 
-These numbers were measured before fixes 3 to 5 above, and before the ledger correction below (on 34 of the 62 recorded faults).
+Reading it: on injected faults the models are alike (a few points are noise at 62 to 125 faults). On workload shifts they are not. The robust residual with the tail-aware spread does most of the work; the load factor removes the last false episodes (1.2 and 1.9 per hour without it, 0.0 and 1.0 with it). The adopted line of 4 spreads is the loosest that keeps the workload recordings quiet; 2 spreads detects more (94% on real faults) but alarms on the workload.
+
+What it does *not* do: it is not more accurate than the forest on the injected faults, a fault that begins during a big load change can be masked, and a brownout on a nearly idle service moves no signal for any model.
+
+Cost: about 0.37 ms per service per window, linear (4 ms for 10 services, 119 ms for 320). The old forest cost about 0.9 ms per service.
 
 ### 3. Facts first: stopped and crash-looping containers
 
@@ -257,6 +270,8 @@ Caught and named first, by class:
 - A new project needs about 30 readings per service (2 to 3 minutes) before the models exist. Until then only container facts and the rules can raise an incident.
 
 ## Files
+
+- `server/algorithms/ml/loadModel.ts`: the load-aware model (default). `pcaModel.ts`: the subspace alternative. `serviceBaseline.ts`: the old per-service forest (`levels: 'forest'`), kept for the comparison.
 
 ```
 server/algorithms/ml/isolationForest.ts   the forest (seeded, no dependencies)

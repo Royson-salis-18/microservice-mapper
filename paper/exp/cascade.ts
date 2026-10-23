@@ -21,7 +21,7 @@ import { PropagationModel } from '../../server/algorithms/ml/propagation.ts';
 const root = path.resolve(import.meta.dirname, '..', '..');
 const SETS: Record<string, string[]> = {
   real: [path.join(root, 'run/recorded-runs/runC')],
-  test: fs.readdirSync('/tmp/claude-0/test').sort().map((d) => path.join('/tmp/claude-0/test', d)),
+  test: fs.readdirSync(path.join(root, 'run/synthetic-runs/test')).sort().map((d) => path.join(root, 'run/synthetic-runs/test', d)),
 };
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 const fixed = new PropagationModel({ windowSteps: 12, prior: 0.7, priorWeight: 1e9 });   // never moves off 0.7

@@ -26,7 +26,7 @@ The solution has seven steps, each described in Chapter~\ref{ch:method}:
 \item \textbf{Observe.} Read container state, statistics and socket tables over SSH; install nothing on the host.
 \item \textbf{Build the graph.} Merge declared dependencies (from the Compose file) with observed ones; orient each observed socket by the listening port; give each edge a confidence and a dependency share.
 \item \textbf{Learn directions.} Where the heuristic cannot tell who calls whom, vote over dynamic and structural signals.
-\item \textbf{Detect.} Judge every service against its own recent past with two Isolation Forests and a robust rule layer; treat container facts as evidence.
+\item \textbf{Detect.} Judge every service against what the current load predicts for it, from its own recent past, with a robust rule layer beside it; treat container facts as evidence.
 \item \textbf{Rank.} Split each service's deviation into what its callees explain and what they do not; run a personalised random walk over the call graph; put facts first.
 \item \textbf{Predict.} Spread risk over the graph by noisy-OR with edge probabilities learned from the system's own incidents; warn early about gradual faults.
 \item \textbf{Diagnose and explain.} Classify the fault type, attach a short runbook and show the evidence behind every number.
@@ -148,7 +148,7 @@ Sensors & Docker state and statistics, socket tables, logs, interface counters &
 \subsection{Decision logic of the diagnosis assistant}
 The assistant runs one decision window per cycle. Its alarm rule is shown in Figure~\ref{fig:detect}; its ranking is shown in Figure~\ref{fig:rca}. An incident moves through the states in Figure~\ref{fig:states}.
 
-\figdiagram{d_detection_flow.pdf}{The hybrid alarm rule. A container fact raises the alarm at once; the forest and rule conditions must hold for two windows in a row.}{fig:detect}
+\figdiagram{d_detection_flow.pdf}{The hybrid alarm rule. A container fact raises the alarm at once; the model and rule conditions must hold for two windows in a row.}{fig:detect}
 \figdiagram{d_rca_flow.pdf}{Root-cause ranking: split each deviation into own and explained parts, run the random walk, put facts first.}{fig:rca}
 \figdiagram{d_incident_states.pdf}{Incident lifecycle as implemented in the incident manager.}{fig:states}
 
@@ -198,7 +198,7 @@ GraphStore & Nodes, edges, targets; merges declared and observed edges; prunes s
 EdgeWeights & Evidence confidence and dependency share per edge & {\ttfamily\scriptsize server/graph}\\
 MetricStore, TraceStore & Ring buffers of readings; connection events with a 24-hour window & {\ttfamily\scriptsize server/telemetry}, {\ttfamily\scriptsize server/traces}\\
 Detection algorithms & Rule scores, container facts, features, thresholds & {\ttfamily\scriptsize server/algorithms/detection}\\
-ML engine & Isolation Forests, random walk, forecast, learned cascade, hybrid fusion & {\ttfamily\scriptsize server/algorithms/ml}\\
+ML engine & Load-aware residual model, random walk, forecast, learned cascade, hybrid fusion & {\ttfamily\scriptsize server/algorithms/ml}\\
 RCAEngine, IncidentManager & Ranking, explanation, incident lifecycle & {\ttfamily\scriptsize server/algorithms/rca}, {\ttfamily\scriptsize server/rca}\\
 RiskEngine, CascadeEngine & Per-service risk, what-if failure, blast radius & {\ttfamily\scriptsize server/graph}\\
 TrafficController & Starts and stops load; resolves the target URL; any project is accepted & {\ttfamily\scriptsize server/traffic}\\

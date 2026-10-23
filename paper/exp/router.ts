@@ -6,7 +6,7 @@
 import { loadTraces, type Trace } from '../../v2/core/trace.ts';
 import { score, V1, line, HEADER, type Engine } from '../../v2/core/score.ts';
 
-const root = '/home/user/Downloads/profesional-ui-final-/v2/.cache/';
+const root = new URL('../../v2/.cache/', import.meta.url).pathname;
 const tune = [...loadTraces(root + 'tune.json'), ...loadTraces(root + 'tune2.json')], test = loadTraces(root + 'test.json'), real = loadTraces(root + 'real.json');
 
 /** Ranking by the rule score alone (facts first). */

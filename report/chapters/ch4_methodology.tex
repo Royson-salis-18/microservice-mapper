@@ -10,7 +10,7 @@ The approach is a pipeline of small, separately testable models rather than one 
 \begin{enumerate}
 \item an \textbf{evidence-weighted graph} from observed sockets and declared dependencies;
 \item \textbf{learned call directions} for pairs the heuristic cannot orient;
-\item a \textbf{hybrid detector} of per-service Isolation Forests and a robust rule layer, with container facts;
+\item a \textbf{hybrid detector} of a load-aware residual model and a robust rule layer, with container facts;
 \item a \textbf{ranker} built on a deviation decomposition and a personalised random walk;
 \item a \textbf{cascade model} with Beta--Binomial edge probabilities and noisy-OR risk, plus trend-based early warning and change-point alarms;
 \item a \textbf{fault-type classifier} and runbook.
@@ -115,26 +115,59 @@ Declared in the Compose file, never seen carrying traffic & 0.40\\
 \label{sec:dirs}
 The collector sees most pairs from both ends (in the recorded runs 15 of 32 pairs in one system and 18 of 36 in the other), so direction must be recovered before a walk can follow it. The shipped heuristic reads names (an entry point calls a service, a service calls a datastore) and fails when names carry no role. We instead learn the direction of each observed pair online from the services' own histories, with no labels and no names. Four \emph{dynamic} signals use what services do during trouble: upward symptoms, downward traffic drops, implication ($P(T_a \mid T_b) - P(T_b \mid T_a)$, with $T$ meaning ``in trouble''), and a Granger-style F-test on the symptom series. Two \emph{structural} signals use the observed graph: the depth of each service from the entry point, and whether a service reports request metrics of its own (a datastore does not). The learned direction is the sign of $\sum_m \omega_m s_m(a,b)$ with weights $\omega_m \in \{0.5, 1, 2\}$ chosen by grid search on the tuning split. A pair is left undecided if the magnitude is below $0.05$.
 
-\subsection{Per-service Isolation Forests}
+\subsection{A load-aware model of normal}
 \label{sec:forest}
-A service is judged against its own recent past, never against a global threshold, because services differ by orders of magnitude in every metric. The eight features are split into two groups, each with its own forest of 100 trees trained on a sliding window of the last $W = 120$ readings judged normal: \emph{own} (CPU, memory, throttling), which a dependency cannot cause, and \emph{symptom} (traffic, errors, latency, network), which can be inherited. A reading is scored by the forest built \emph{before} it arrived. With $\E[h(x)]$ the mean path length and $c(\psi)$ the usual normaliser, the raw score $s(x) = 2^{-\E[h(x)]/c(\psi)}$ becomes a level
+\label{sec:load}
+A service is judged against its own recent past, never against a global threshold, because services differ by orders of magnitude in every metric. That alone is not enough. The CPU and network of a service follow the work it is given, so a model of ``normal readings'' fitted on a quiet stretch calls a busy stretch anomalous, and the reverse. The first version of this engine used a per-service Isolation Forest and made exactly this mistake: when the traffic stopped, every service read as anomalous at once (Section~\ref{sec:workloadres}). The model below removes the part of ``unusual'' that is only ``busier'' or ``quieter'' and judges what is left. A fault in one service changes that service, not all of them by the same amount.
+
+\paragraph{Readings.} Each signal is put on a log scale with a unit below which a change is noise, $x_{s,f} = \log(v_{s,f} + u_f)$, with $u_f = 5$ for CPU (so a one-point blip on an idle service is not an event), $1$ for memory, $2000$\,B/s for network and $0.1$ for request rate. A missing signal stays missing; it is never replaced by zero.
+
+\paragraph{Reference and load factor.} The reference $r_{s,f}$ is the median of a service's last $360$ readings (half an hour), so a short quiet spell does not move it. A signal \emph{carries traffic} if its reference is at least $0.4$ above its idle level, $r_{s,f} - \log u_f \ge 0.4$; an idle database reads the same zeros whatever the load, so it says nothing about it. Over the carrying signals of network in and out, request rate and CPU, the \emph{load factor} is their median shift,
 \begin{equation}
-\operatorname{level}(x) = \frac{s(x) - \tilde s}{\ell - \tilde s}, \qquad \ell = \tilde s + \kappa \cdot 1.4826 \cdot \operatorname{MAD}(s_{\mathrm{train}}),
+L(t) = \operatorname*{median}_{(s,f)\,\in\,\mathcal A(t)} \bigl( x_{s,f}(t) - r_{s,f} \bigr),
+\label{eq:load}
+\end{equation}
+where $\mathcal A(t)$ is the set of carrying signals, taken only when at least two services contribute. A median cannot be moved by a fault in a few services. $e^{L}$ is the factor by which the project's traffic changed; the Detection engines page shows it.
+
+\paragraph{Response.} A signal may ignore the load (a message bus idling at the same rate) or follow it (a gateway). The slope $b_f$ that the project shows is estimated from the stored window as a ridge regression of the shifts $d_{s,f}(\tau) = x_{s,f}(\tau) - r_{s,f}$ on $L(\tau)$ over the carrying signals,
+\begin{equation}
+b_f = \frac{\sum_{s,\tau} d_{s,f}(\tau)\,L(\tau) + \kappa\, b^{0}_f}{\sum_{s,\tau} L(\tau)^2 + \kappa},\qquad \kappa = 60,
+\end{equation}
+pulled towards a prior $b^0_f$ ($1$ for network and requests, $0.4$ for CPU, $0$ for memory, errors, latency and throttling) while the load has barely varied, so it is usable before any load change has been seen.
+
+\paragraph{Residual and level.} A signal is judged under both hypotheses, $b = 0$ and $b = b_f$. For each, the window of the service's accepted readings gives a baseline $m^{(b)}$ (the median of $x_{s,f}(\tau) - b L(\tau)$) and a robust spread
+\begin{equation}
+\sigma^{(b)} = \max\Bigl\{ 1.4826\operatorname{MAD},\ \tfrac{q_{0.9} - m^{(b)}}{1.2816},\ \phi_f \Bigr\},
+\end{equation}
+the larger of the usual MAD spread and the distance to the 90th percentile in the direction that matters (both directions for traffic), with a floor $\phi_f$ of the smallest change worth noticing. The MAD alone treats a bursty signal as Gaussian and alarms on its ordinary bursts; the tail term is what keeps the alarm quiet (Section~\ref{sec:workloadres}). The deviation is
+\begin{equation}
+z_{s,f}(t) = \min_{b \in \{0,\, b_f\}} \frac{\bigl|\, x_{s,f}(t) - b L(t) - m^{(b)} \bigr|}{\sigma^{(b)}},
+\end{equation}
+so a signal counts as unusual only if \emph{neither} way of following the load explains it. When the load is unchanged both hypotheses agree and nothing is lost. Only increases of CPU, memory, throttling, errors and latency count (less of them is never a fault of the service itself; it happens after every restart); traffic counts both ways. The service's level is
+\begin{equation}
+\operatorname{level}(s,t) = \max_f z_{s,f}(t) \,/\, z_{\mathrm{line}}, \qquad z_{\mathrm{line}} = 4,
 \label{eq:level}
 \end{equation}
-where $\tilde s$ is the median training score and $\kappa = 3$. Level $1$ is the service's own alarm line. Only readings with level below one join the training window, so a fault never becomes the baseline. Four refinements were each found by testing and are ablated in Section~\ref{sec:ablation}:
+so level $1$ is the service's own alarm line, as before, and the hybrid alarm uses level $2$ ($z = 8$). The signals split into \emph{own} (CPU, memory, throttling), which a dependency cannot cause, and \emph{symptom} (traffic, errors, latency, network), which can be inherited; the ranker uses the two levels separately. The strongest signal and its $z$ are kept, so a verdict reads ``CPU 9.3 spreads from what the load predicts''.
+
+\paragraph{Gate and drift.} Only readings under level $1$ join the window of $W = 120$ readings, so a fault never becomes the baseline. A small steady shift (level below $3$) is accepted as the new normal after two minutes, a large one after thirty. A service is judged only after $30$ readings. The model needs no labels, nothing installed on the target and one pass over the readings the collector already gathers; the dominant cost is a median and a sort per signal, refreshed every four readings.
+
+\subsection{Why the first model failed, and what was compared}
+\label{sec:candidates}
+The first engine kept two Isolation Forests per service, trained on a sliding window of that service's readings. They learn the shape of a service's recent readings, and a change of workload is outside that shape. Stopping the traffic made every service alarm together, and bringing it back did so again; the three other detectors of the study (k-NN, Mahalanobis, HBOS) and their ensemble fail in the same way, because all of them model the readings themselves. We therefore compared families of model that treat the workload explicitly, all unsupervised, all computed from the telemetry the mapper already collects:
 \begin{itemize}
-\item \textbf{training jitter} at each feature's floor, so that a feature that never moved can still register a later jump;
-\item a \textbf{range guard} counting floors beyond the training range, because a forest scores an out-of-range value no higher than its most extreme training point;
-\item \textbf{one-sided features}: less CPU, memory, throttling, error or latency than usual is never a fault of the service itself (it happens after every restart);
-\item \textbf{two-speed drift}: a small steady shift (level $<3$) is accepted as the new normal within two minutes, a large one is quarantined for thirty.
+\item the old per-service forest, the ensemble of four detectors, k-NN, Mahalanobis and HBOS (\emph{the workload-blind family});
+\item a \textbf{control chart}: the robust residual model above without a load factor (MAD spread, or the tail spread);
+\item a \textbf{subspace residual} model: the standardised readings of all services together, the top one or two principal directions of recent healthy readings taken as the shared causes, and the residual off that subspace scored (the multivariate process-monitoring approach \cite{lakhina2004diagnosing,jackson1979control});
+\item the \textbf{load-aware residual model}: the control chart with the load factor, with either the MAD spread or the tail spread.
 \end{itemize}
+Every candidate runs inside the same engine (container facts, persistence, random walk, forecast) so that only the model of normal changes.
 
 \subsection{Rules and container facts}
 A robust one-sided $z$-score per metric (median and MAD, bad direction only) gives a rule score $\rho_s$ normalised so that $1$ is its three-sigma line. A container that is exited, paused, restarting or network-detached is a \emph{fact}: evidence, not degree. Two facts that raw container state misses were added after inspecting the real runs. A \code{docker stop} exits with code zero, which looks like a finished job, so a service that had been running and then exits is \emph{stopped}. A crash loop looks healthy between kills, so two outages within three minutes mark it.
 
 \subsection{The hybrid alarm}
-Let $\lambda_s$ be a service's forest level and $f_s \in \{0,1\}$ its fact flag. The hybrid alarms at window $t$ if
+Let $\lambda_s$ be a service's model level and $f_s \in \{0,1\}$ its fact flag. The hybrid alarms at window $t$ if
 \begin{equation}
 \max_s f_s = 1 \quad\text{or}\quad \max_s \lambda_s \ge \tau_\lambda \quad\text{or}\quad \max_s \rho_s \ge \tau_\rho,
 \end{equation}
@@ -216,8 +249,9 @@ Table~\ref{tab:complexity} states the cost of one decision window in terms of $N
 \textbf{Step} & \textbf{Cost} & \textbf{Note}\\
 \midrule
 Orient sockets & $O(K)$ & One pass over the socket rows of all containers\\
-Score a reading with the forests & $O(N \cdot T \cdot \log\psi)$ & $T = 100$ trees, sample size $\psi = 64$, two forests per service\\
-Refit the forests & $O(N \cdot T\,\psi\log\psi)$ every 10 readings & Independent per service, so it parallelises\\
+Load factor and slopes & $O(N F W)$ & $F = 8$ signals, window $W = 120$; one median over the carrying signals, one ridge sum per slope\\
+Score a reading & $O(N F)$ & Two hypotheses per signal against cached baselines\\
+Refresh the baselines & $O(N F\, W \log W)$ every 4 readings & A median and a sort per signal and hypothesis; independent per service\\
 Rule scores & $O(N)$ & Median and MAD over a short window\\
 Random walk & $O\bigl(I\,(N+E)\bigr)$ & $I = 60$ iterations\\
 Noisy-OR risk & $O(\text{sweeps}\cdot E)$ & Four sweeps\\
@@ -239,15 +273,22 @@ Faults arrive by a non-homogeneous Poisson process whose rate follows the load, 
 \subsection{Synthetic benchmark}
 To enlarge the sample a generator writes runs in the identical recorded format: the two topologies with their measured per-service baselines plus random topologies, nine fault classes that propagate up and down the graph, overlapping faults and unlabelled noise (noisy neighbours, deploys, missing readings). Settings were chosen on a 16-campaign tuning split (170 faults, seed 1), and every reported synthetic number comes from a disjoint 16-campaign split (178 faults, seed 2) scored once. The generator also takes an \emph{amplification factor} $A$ that scales how strongly callers feel a fault (retry storms), and a class filter; it underlies the amplification study.
 
+\subsection{Live runs and fault-free workload recordings}
+\label{sec:livedesign}
+Two kinds of recording were added to test the corrected engine. \emph{Live campaigns}: both benches ran in Docker on the same machine, the mapper reached them over SSH exactly as it reaches a remote host, and the Fault Lab replayed one plan (seed 11, 21 faults of four classes) four times (Section~\ref{sec:live}); the observer recorded what the mapper's API showed, with the metrics of every service. \emph{Workload recordings}: the same setup with \emph{no fault at all}, while the amount of work changed, either with the organic traffic generator started and stopped or with a closed-loop generator holding $2, 8, 2, 0, 20, 2$ concurrent visitors for several minutes each. Every alarm in these recordings is a false alarm by construction, so the measure is the share of the time spent in alarm (Table~\ref{tab:measures}). Neither the plan nor the phases are known to the engine.
+
 \subsection{Questions the evaluation answers}
 \begin{enumerate}[label=Q\arabic*.]
 \item Does the hybrid name the true cause more often than the rule layer, and how does it compare with ranking by anomaly alone and with the ML engine?
-\item Which detector separates faulted from healthy services best, and is the Isolation Forest worth keeping?
+\item Which model of normal separates faulted from healthy services best, and which one does not mistake a change of workload for a fault?
 \item How much does each mechanism contribute (ablation), and does graph-aware ranking help when victims are louder than the cause (amplification)?
 \item Do learned propagation probabilities predict cascades better than fixed ones, and are they calibrated?
 \item Do learned directions stay correct when names carry no information, and do change-point alarms cut detection delay?
 \end{enumerate}
 
-\subsection{A measurement bug}
+\subsection{Two measurement bugs}
 \label{sec:bug}
 Each recorded run contains two fault campaigns that both number their faults from one. The ledger reader kept only the second, hiding 14 of 31 faults per system for every engine and counting their outages as false alarms. We fixed the reader, added a regression test, and every number in this report uses all 62 faults.
+
+\label{sec:bug2}
+The second bug hid the failure that this chapter's correction fixes. The replay that feeds recorded runs to the engine skipped a service's reading whenever it was identical to the previous one. An idle service reports the same zeros again and again, so the replay removed exactly the idle stretches from the data, and the old forest looked well behaved when the traffic stopped. The live server does not skip readings (the collector reports every cycle). The replay now feeds every recorded moment as one reading, and the numbers of the first version of this report that depended on it were recomputed.

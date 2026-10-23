@@ -36,9 +36,10 @@ export interface EngineParams {
   rca: 'walk' | 'pagerank' | 'onset' | 'depth';   // how the root cause is ranked among anomalous services
   alarmLevel: number;       // the project alarms when some service holds at least this level (1 = its own line)
   warnAt: number;           // early warning when a service's trend reaches this level within the forecast horizon
+  anomalySat: number;       // the level at which a service counts as fully anomalous for the walk (anomaly = level / this, at most 1)
   stoppedIsDown: boolean;   // exit code 0 after a minute of running counts as down (docker stop), not as a finished job
 }
-export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, levels: 'load', load: LOAD_DEFAULTS, pca: PCA_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, stoppedIsDown: true };
+export const ENGINE_DEFAULTS: EngineParams = { baseline: BASELINE_DEFAULTS, walk: WALK_DEFAULTS, levels: 'load', load: LOAD_DEFAULTS, pca: PCA_DEFAULTS, anomalyFloor: 0.5, servicePersist: 2, hardFirst: true, useWalk: true, useOwn: true, loopWindow: 36, loopHold: 12, rca: 'walk', alarmLevel: 2, warnAt: 2, anomalySat: 2, stoppedIsDown: true };
 
 export interface EngineNode { id: string; name: string; type?: string; status?: string; metadata?: Record<string, any> }
 export interface EngineEdge { source: string; target: string; weight?: number }
@@ -185,7 +186,7 @@ export class MLEngine {
       // wobble is not evidence
       const persistent = (this.streak.get(n.id) ?? 0) >= this.p.servicePersist;
       const lvl = hard ? HARD_LEVEL : persistent ? view.level : Math.min(view.level, 0.99);
-      const toA = (x: number) => (x < this.p.anomalyFloor ? 0 : Math.min(1, x / 2));
+      const toA = (x: number) => (x < this.p.anomalyFloor ? 0 : Math.min(1, x / this.p.anomalySat));
       const anomaly = hard ? 1 : toA(lvl);
       const own = hard ? 1 : persistent ? toA(view.ownLevel) : 0;
       const label = looping ? 'crash loop' : stopped ? 'stopped' : restarted && !fact ? 'restarted' : hardNow ? fact ?? undefined : undefined;

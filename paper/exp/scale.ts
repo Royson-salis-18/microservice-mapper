@@ -19,7 +19,7 @@ import { rng } from '../../server/algorithms/ml/isolationForest.ts';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
 const SIZES = [10, 20, 40, 80, 160, 320];
-const DETECTORS = ['iforest', 'knn', 'mahalanobis', 'hbos', 'ensemble'] as const;
+const DETECTORS = ['iforest', 'knn', 'mahalanobis', 'hbos', 'ensemble', 'load', 'pca'] as const;      // the first five are the old per-service forest family; load and pca are the load-aware models
 
 function topology(n: number, seed: number) {
   const r = rng(seed);
@@ -49,9 +49,9 @@ for (const n of SIZES) {
   for (let k = 0; k < 50; k++) { const t0 = performance.now(); pm.risk(ids[1], ab, callersOf, calleesOf); ct.push(performance.now() - t0); }
   out.cascade[n] = { mean: mean(ct), p95: p95(ct) };
   for (const det of DETECTORS) {
-    if (det !== 'iforest' && n > 160) continue;                               // the distance-based detectors are not meant for this size
+    if (!['iforest', 'load', 'pca'].includes(det) && n > 160) continue;                               // the distance-based detectors are not meant for this size
     const r = rng(11 + n);
-    const engine = new MLEngine({ ...ENGINE_DEFAULTS, baseline: { ...ENGINE_DEFAULTS.baseline, detector: det } } as any);
+    const engine = new MLEngine(det === 'load' || det === 'pca' ? { ...ENGINE_DEFAULTS, levels: det } as any : { ...ENGINE_DEFAULTS, levels: 'forest', baseline: { ...ENGINE_DEFAULTS.baseline, detector: det } } as any);
     const reading = (i: number) => ({ timestamp: '', cpu: 10 + gauss(r) * 0.5, memoryPercent: 30 + gauss(r) * 0.3, networkRxRate: 5000 * (1 + 0.1 * gauss(r)), networkTxRate: 4000 * (1 + 0.1 * gauss(r)), requestRate: 20 + gauss(r), requestCount: 200, errorRate: 0, p95Latency: 40 + gauss(r), cpuThrottledPct: 0, restartDelta: 0 });
     const step = () => engine.step(nodes, edges, new Map(ids.map((id, i) => [id, [reading(i)]])) as any);
     const warm = 45; for (let k = 0; k < warm; k++) step();
