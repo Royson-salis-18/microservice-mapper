@@ -440,14 +440,16 @@ for t in body.iter(W('t')):
 # page setup (A4, margins from the template's checklist: left 1.25in, right 1in, top/bottom 0.75in)
 sp = final_sect
 pgsz = sp.find(W('pgSz')); pgsz.set(W('w'), '11906'); pgsz.set(W('h'), '16838')
-# same double page border as the template's front pages, on every body page too
-for old in sp.findall(W('pgBorders')): sp.remove(old)
-pgb = OxmlElement('w:pgBorders'); pgb.set(W('offsetFrom'), 'page')
-for side in ('top', 'left', 'bottom', 'right'):
-    e_ = OxmlElement('w:' + side)
-    for k_, v_ in (('val', 'double'), ('sz', '4'), ('space', '24'), ('color', '000000')): e_.set(W(k_), v_)
-    pgb.append(e_)
-sp.find(W('pgMar')).addnext(pgb)
+# bold single-line frame on every section (front matter included), measured from the text area so Word always draws it
+def frame(sectPr):
+    for old in sectPr.findall(W('pgBorders')): sectPr.remove(old)
+    pgb = OxmlElement('w:pgBorders'); pgb.set(W('offsetFrom'), 'text')
+    for side in ('top', 'left', 'bottom', 'right'):
+        e_ = OxmlElement('w:' + side)
+        for k_, v_ in (('val', 'single'), ('sz', '12'), ('space', '14'), ('color', '000000')): e_.set(W(k_), v_)
+        pgb.append(e_)
+    sectPr.find(W('pgMar')).addnext(pgb)
+for sct in T.element.body.iter(W('sectPr')): frame(sct)
 json.dump({'chapters': CHAPTERS, 'figs': FIGS, 'tabs': TABS}, open(f'{B}/index.json', 'w'), indent=1)
 for n_, dp in enumerate(T.element.body.iter('{%s}docPr' % NS['wp']), 1): dp.set('id', str(n_))
 for n_, cp in enumerate(T.element.body.iter('{http://schemas.openxmlformats.org/drawingml/2006/picture}cNvPr'), 1): cp.set('id', str(n_))
