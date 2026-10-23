@@ -77,11 +77,11 @@ Every score can be audited & \checkmark & \checkmark & -- & $\sim$ & \checkmark\
 \section{Research and Design Gap}
 Four gaps motivate the design.
 \begin{enumerate}
-\item \textbf{Observation without instrumentation.} The graph that random-walk and causal methods assume is usually given. Recovering it, with direction, from the host alone is rarely addressed, and the observation noise that results (a socket is seen from both ends) changes what the downstream methods must tolerate.
+\item \textbf{Observation without instrumentation.} The graph that random-walk and causal methods assume is usually given; recovering it, with direction, from the host alone is rarely addressed.
 \item \textbf{Facts are not degrees.} A stopped container is not ``very anomalous''; it is a fact. Methods that fold container state into one score lose the most reliable signal there is, and our ablation shows how much that costs.
 \item \textbf{Propagation is assumed, not learned.} Cascade prediction normally uses fixed edge probabilities. Learning them from the system's own incidents, with a prior that makes rarely used edges behave sensibly, is cheap and measurable.
-\item \textbf{Evaluation is optimistic.} Point-adjusted scoring, tuned thresholds and a single data set make results look better than they are. We use event-level scoring, a held-out split, paired tests, and we publish what failed.
+\item \textbf{Evaluation is optimistic.} Point-adjusted scoring, tuned thresholds and a single data set flatter results; we use event-level scoring, a held-out split and paired tests, and report what failed.
 \end{enumerate}
 
 \section{Summary}
-Existing root-cause methods are strong on accuracy but assume instrumentation, labels or hardware that small teams do not have, and they are usually evaluated optimistically. The proposed system occupies a different point in the design space: instrumentation-free, unsupervised, auditable and honest about its limits. The next chapter formulates the problem and describes the system.
+Existing root-cause methods are accurate but assume instrumentation, labels or hardware that small teams do not have, and are often evaluated optimistically. The proposed system, described next, is instrumentation-free, unsupervised and auditable.

@@ -13,9 +13,8 @@ The project built an instrumentation-free platform that watches containerised mi
 \item Learned propagation is better calibrated than fixed edge probabilities on 69 observed cascades (expected calibration error 0.033 against 0.051; AUROC 0.841 against 0.827), with a lower Brier score. On the real systems the experiment is uninformative because almost no real fault cascaded.
 \item Learned directions stay correct when service names carry no information (27 of 31 real pairs against none for the name rule), but they do not improve ranking when names exist.
 \item Change-point alarms cut the median detection delay on the real systems from 11.3\,s to 4.8\,s, at the price of more alarm time (8\% to 16\%).
-\item The simple rule $z$-score is a strong detector on its own; the load-aware model earns its place through quietness, by surviving changes of workload, and by complementing the rules.
+\item The simple rule $z$-score is a strong detector on its own; the load-aware model earns its place through quietness and by surviving changes of workload.
 \item The pipeline costs about 0.37\,ms per service per five-second window (about 5\,ms for the systems tested, 119\,ms for 320 services), linear in the number of services, on one core, with no GPU.
-\item A host too small for its workload looks like a mapper fault; the diagnostic tools separate the two.
 \end{enumerate}
 
 \section{Contributions}
@@ -30,7 +29,7 @@ The project built an instrumentation-free platform that watches containerised mi
 \end{itemize}
 
 \section{Utility and Applications}
-The platform gives a small team a first-line diagnosis tool for Docker-based systems that nobody wants to instrument, a teaching and benchmarking harness for cascading failure, and a triage layer in front of heavier observability products (Chapter~\ref{ch:results}, Potential Applications).
+The platform can serve as on-call support for small teams running Docker Compose stacks that nobody wants to instrument; as a first-line triage layer in front of heavier observability products, giving a ranked suspect and a runbook; as a lab for teaching cascading failure, with a blind injector and replayable recordings; for resilience reviews through its what-if and blast-radius views; and as a benchmark harness for new detectors and rankers, with ground truth the detector never sees.
 
 \section{Limitations}
 \begin{itemize}
@@ -41,15 +40,13 @@ The platform gives a small team a first-line diagnosis tool for Docker-based sys
 \item \textbf{Workload recordings are generated.} The load changes of the workload recordings come from two traffic generators on two benches, not from real users; a fault that begins during a large change of load can be masked by the load-aware model.
 \item \textbf{Tuned by the authors.} Real-system settings were not tuned on a held-out system, so those numbers are optimistic by an unmeasured margin.
 \item \textbf{Auto-restart.} The mapper restarts crashed containers by default (switch off with \texttt{MAPPER\_AUTO\_RESTART=off}); live runs with it on and off (Section~\ref{sec:live}) showed no difference on the two benches, but it should still be switched off when measuring detection.
-\item \textbf{Default ingest token.} The push endpoint has a built-in token; it must be changed when the server is reachable by others.
-\item \textbf{Not tested on Kubernetes}, and the dashboard views were checked on a simulated target, not on every benchmark host.
+\item \textbf{Not tested on Kubernetes}, and the push endpoint's built-in token must be changed when the server is reachable by others.
 \end{itemize}
 
 \section{Scope for Future Work}
 \begin{itemize}
-\item A larger measured campaign on more real systems, and a public labelled data set for comparability.
-\item Real multi-service cascades, to test learned propagation where it matters; promotion of learned directions and change-point alarms into the live system behind its operator switch.
-\item Retention of edge evidence in the recordings, so that the evidence weighting can be isolated and measured.
+\item A larger campaign on more real systems with real multi-service cascades, a public labelled data set, and edge evidence kept in the recordings so that its weighting can be measured.
+\item Promotion of learned directions and change-point alarms into the live system behind its operator switch.
 \item A language-model agent on top of the structured evidence (cause, evidence, runbook) to answer follow-up questions or draft a change, with the evidence as its only grounding, evaluated with a user study; any action it proposes would go through an approval gate.
 \item Support for Kubernetes through the same observation idea (node-level access to container sockets), and a scaling measurement on a real large system.
 \item Workload recordings from a production-like day (a daily wave, a release, a flash crowd) and a model of a fault that begins during a load change.
