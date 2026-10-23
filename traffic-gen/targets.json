@@ -24,43 +24,40 @@
     "targetId": "death-star",
     "baseUrl": "http://15.252.17.211:8080",
     "settings": {
-      "profile": "HEAVY",
-      "endpointPaths": [
-        "/"
-      ],
-      "users": 10
+      "profile": "MODERATE",
+      "endpointPaths": [],
+      "users": 20,
+      "durationSec": 90
     }
   },
   "open-telemetry": {
     "targetId": "open-telemetry",
     "baseUrl": "http://13.201.78.55:8080",
     "settings": {
-      "profile": "BASELINE",
+      "profile": "HEAVY",
       "endpointPaths": [],
-      "users": 5,
-      "durationSec": 90
+      "users": 60,
+      "durationSec": 60
     }
   },
-  "shopflowbench": {
-    "targetId": "shopflowbench",
-    "baseUrl": "http://65.2.83.79",
+  "ledgerline": {
+    "targetId": "ledgerline",
+    "baseUrl": "http://35.154.167.16:8081",
     "settings": {
-      "profile": "BASELINE",
-      "endpointPaths": [
-        "/"
-      ],
-      "users": 1
+      "profile": "MODERATE",
+      "users": 20,
+      "durationSec": 40,
+      "endpointPaths": []
     }
   },
-  "bench-1": {
-    "targetId": "bench-1",
-    "baseUrl": "http://65.2.83.79",
+  "shopflow": {
+    "targetId": "shopflow",
+    "baseUrl": "http://13.203.76.186:8080",
     "settings": {
-      "profile": "BASELINE",
-      "endpointPaths": [
-        "/"
-      ],
-      "users": 1
+      "profile": "MODERATE",
+      "users": 20,
+      "durationSec": 40,
+      "endpointPaths": []
     }
   }
 }

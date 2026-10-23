@@ -140,9 +140,15 @@ export class EndpointRegistry {
     // OFFERED as the default; any endpoint can still be chosen explicitly.
     const APP_ENTRY_PORTS = [80, 443, 8080, 8000, 3000];
 
+    // By name first: a stack that publishes every service port (LedgerLine's accounts :3101 ... edge :8081) has one front door and
+    // many internals, and port order alone put `accounts` ahead of the `edge` gateway, so traffic went to a backend with no workflow.
+    const FRONT_DOOR = /(^|[-_])(gateway|edge|frontend|front|proxy|nginx|ingress|storefront)([-_]|$)/i;
+    const BACKEND = /(db|database|redis|mongo|postgres|mysql|memcache|nats|kafka|rabbit|event-bus|queue|worker|exporter|state-store)/i;
     const rank = (e: DiscoveredEndpoint) => {
       if (e.type !== 'PUBLIC') return 40;
       if (isObservabilityService(e.serviceName || '')) return 30; // last, but still listed
+      if (FRONT_DOOR.test(e.serviceName || '')) return -1;
+      if (BACKEND.test(e.serviceName || '')) return 25;
       if (e.port === 80 || e.port === 443) return 0;
       const idx = APP_ENTRY_PORTS.indexOf(e.port);
       return idx >= 0 ? idx : 20;
