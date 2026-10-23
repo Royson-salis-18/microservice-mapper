@@ -68,7 +68,7 @@ level of the service = its largest z / 4          (level 1 = its own line, the p
 
 Only increases of CPU, memory, throttling, errors and latency count (less of them happens after every restart); traffic counts both ways. The strongest signal and its z are kept, so a verdict reads "cpu 9.3 spreads from what the load predicts", and the Detection engines page shows the workload factor ("workload moved: traffic x0.31, explained, not a fault").
 
-Only readings under level 1 join the window (120 readings), so a fault never becomes normal. A small steady shift (level under 3 for 2 minutes) is accepted as the new normal; a big one after 30 minutes. A service is judged after 30 readings.
+Only readings under level 1 join the window (120 readings), so a fault never becomes normal. A small steady shift (level under 3 for 2 minutes, 24 readings) is accepted as the new normal; a big one after 30 minutes. A service is judged after 30 readings.
 
 Code: `server/algorithms/ml/loadModel.ts` (the model), `mlEngine.ts` (facts, persistence, walk, forecast), tests in `run/tests/load-model.test.ts`.
 

@@ -16,14 +16,16 @@ import { buildRun, type Run } from '../../../server/algorithms/learning/dataset.
 import { replayTop } from '../../../server/algorithms/ml/replay.ts';
 import type { EngineParams } from '../../../server/algorithms/ml/mlEngine.ts';
 import { evaluatePrepared, type EventResult } from '../../../server/algorithms/learning/evaluate.ts';
-import { summarise } from '../../../server/algorithms/learning/experiment.ts';
+import { summarise, scorer, RULES_FIXED_THRESHOLD } from '../../../server/algorithms/learning/experiment.ts';
+import { prepare } from '../../../server/algorithms/learning/evaluate.ts';
+import { rulesScore } from '../../../server/algorithms/detection/scoring.ts';
 
 const args = process.argv.slice(2);
 const sweep = args.includes('--sweep');
 const onlySets = args.includes('--sets') ? args[args.indexOf('--sets') + 1].split(',') : null;
 const onlyVariants = args.includes('--variants') ? args[args.indexOf('--variants') + 1].split(',') : null;
 const REC = path.resolve(import.meta.dirname, '..', '..', 'recorded-runs');
-const OUT = path.resolve(import.meta.dirname, '..', '..', '..', 'graphs', 'output', 'ml-levels.json');
+const OUT = process.env.ML_LEVELS_OUT ?? path.resolve(import.meta.dirname, '..', '..', '..', 'graphs', 'output', 'ml-levels.json');
 
 export interface Loaded { run: Run; observed: string; subject: string }
 function load(dir: string, requireFaults: boolean): Loaded[] {
@@ -56,6 +58,8 @@ function top(set: string, i: number, p: P) {
   return cache.get(key)!;
 }
 function evalSet(set: string, p: P, threshold = 1): EventResult[] {
+  // the rule engine: robust z-score per metric, alarm at three robust spreads, ranked by the rule score
+  if ((p as any).rulesEngine) return SETS[set].map((l) => evaluatePrepared(prepare([l.run], scorer([l.run], rulesScore)), null, RULES_FIXED_THRESHOLD));
   return SETS[set].map((l, i) => evaluatePrepared({ runs: [l.run], top: [top(set, i, p)] }, null, threshold));
 }
 const byClass = (rs: EventResult[]) => { const o = rs.flatMap((r) => r.faults); return Object.fromEntries([...new Set(o.map((f) => f.class))].sort().map((c) => { const x = o.filter((f) => f.class === c); return [c, { n: x.length, detected: x.filter((f) => f.detected).length, named: x.filter((f) => f.detected && f.top1).length, delay: median(x.filter((f) => f.detected).map((f) => f.delaySec!)) }]; })); };
@@ -64,6 +68,7 @@ const pool = (rs: EventResult[]) => summarise({ faults: rs.flatMap((r) => r.faul
 const pc = (x: number) => `${Math.round(x * 100)}%`.padStart(4);
 
 export const VARIANTS: Record<string, P> = {
+  'rules (z-score)': { rulesEngine: true } as any,
   'forest (old default)': { levels: 'forest' },
   'forest ensemble (4 detectors)': { levels: 'forest', baseline: { detector: 'ensemble' } },
   'knn': { levels: 'forest', baseline: { detector: 'knn' } },
@@ -92,6 +97,14 @@ console.log(Object.entries(SETS).map(([k, v]) => `${k}: ${v.length} runs${k !== 
 const result: any = { generatedAt: new Date().toISOString(), sets: Object.fromEntries(Object.entries(SETS).map(([k, v]) => [k, v.map((x) => ({ name: x.run.name, faults: x.run.faults.length, moments: x.run.moments.length }))])), variants: [] as any[], sweeps: {} };
 for (const [name, p] of Object.entries(VARIANTS)) if (!onlyVariants || onlyVariants.some((v) => name.includes(v))) result.variants.push(row(name, p));
 
+if (args.includes('--drift')) {
+  console.log('\nload model: readings of a mild deviation before it is accepted as the new normal (5 s each)');
+  result.sweeps.mildDriftAfter = [24, 48, 72, 120, 240].map((v) => ({ value: v, ...row(`mildDriftAfter ${v}`, { levels: 'load', load: { mildDriftAfter: v } }) }));
+}
+if (args.includes('--range')) {
+  console.log('\nload model: range guard on the residual (floors beyond the window range that count as level 1)');
+  result.sweeps.rangeK = [0, 4, 6, 10].map((v) => ({ value: v, ...row(`rangeK ${v}`, { levels: 'load', load: { rangeK: v } }) }));
+}
 if (args.includes('--sat')) {
   console.log('\nload model: level at which a service counts as fully anomalous for the walk');
   result.sweeps.anomalySat = [2, 3, 4, 6, 10].map((v) => ({ value: v, ...row(`anomalySat ${v}`, { levels: 'load', anomalySat: v }) }));

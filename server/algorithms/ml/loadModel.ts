@@ -52,6 +52,8 @@ export interface LoadParams {
   forecastWindow: number; forecastHorizon: number; forecastR2: number;
   minRequests: number;
   refresh: number;         // readings between recomputations of a signal's baseline
+  /** Range guard: a value this many floors beyond everything in the window counts as level 1 (0: off). The spread-based z alone under-scores a huge jump on a noisy signal. */
+  rangeK: number;
   /** Unit of each feature before the log: log(x + unit). Below about one unit a change is noise (a 1% CPU blip on an idle service). */
   units: number[];
   /** 'mad': spread from the median absolute deviation. 'tail': at least the distance to the 90th percentile in the direction that matters, so bursty signals are not scored as if they were Gaussian. */
@@ -65,7 +67,7 @@ export const LOAD_DEFAULTS: LoadParams = {
   prior: [0.4, 0, 1, 1, 1, 0, 0, 0],
   ridge: 60, loadFeatures: [F.netIn, F.netOut, F.requests, F.cpu], minServices: 2, oneSided: true,
   idle: [Math.log(5), 0, Math.log(2000), Math.log(2000), Math.log(0.1), 0, 0, 0], active: 0.4,
-  mildLevel: 3, mildDriftAfter: 24, driftAfter: 360, forecastWindow: 24, forecastHorizon: 24, forecastR2: 0.6, minRequests: 5, refresh: 4, scale: 'tail',
+  mildLevel: 3, mildDriftAfter: 24, driftAfter: 360, forecastWindow: 24, forecastHorizon: 24, forecastR2: 0.6, minRequests: 5, refresh: 4, rangeK: 0, scale: 'tail',
 };
 
 const UPPER_ONLY = new Set<number>([F.cpu, F.memory, F.errors, F.latency, F.throttle]);
@@ -87,7 +89,7 @@ interface Svc {
   rejectedRun: number;
   mildRun: number;
   recent: number[][];       // residual z per feature, for the trend
-  cache: Map<string, { base: number; spread: number; at: number; n: number }>;   // baseline per signal and hypothesis, refreshed every few readings
+  cache: Map<string, { base: number; spread: number; hi: number; lo: number; at: number; n: number }>;   // baseline per signal and hypothesis, refreshed every few readings
 }
 
 /** One reading as the model sees it: positive quantities on a log scale (ratios matter, not differences), a missing signal as null. */
@@ -190,13 +192,19 @@ export class LoadModel {
                 const up = (q(0.9) - base0) / 1.2816, down = (base0 - q(0.1)) / 1.2816;
                 spread0 = Math.max(spread0, p.oneSided && UPPER_ONLY.has(f) ? up : Math.max(up, down));
               }
-              c = { base: base0, spread: Math.max(spread0, p.floors[f]), at: this.tick, n: s.win.length };
+              c = { base: base0, spread: Math.max(spread0, p.floors[f]), hi: Math.max(...rho), lo: Math.min(...rho), at: this.tick, n: s.win.length };
               s.cache.set(ck, c);
             }
             const base = c.base, spread = c.spread;
-            let zb = ((xf - b * load) - base) / spread;
+            const adj = xf - b * load;
+            let zb = (adj - base) / spread;
             if (p.oneSided && UPPER_ONLY.has(f)) zb = Math.max(0, zb);
-            zBest = Math.min(zBest, Math.abs(zb));
+            let zAbs = Math.abs(zb);
+            if (p.rangeK > 0) {
+              const excess = p.oneSided && UPPER_ONLY.has(f) ? Math.max(0, adj - c.hi) : Math.max(0, adj - c.hi, c.lo - adj);
+              zAbs = Math.max(zAbs, (excess / (p.floors[f] * p.rangeK)) * p.zLine);
+            }
+            zBest = Math.min(zBest, zAbs);
           }
           if (!Number.isFinite(zBest)) continue;
           let z = zBest;

@@ -3,1716 +3,1891 @@
  "grids": {
   "ranking": [
    {
-    "name": "ph earliest mag>=2 age<=600",
-    "caughtNamed": 0.8058823529411765,
-    "rightFirst": 0.8616352201257862
-   },
-   {
-    "name": "cusum earliest mag>=2 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8607594936708861
-   },
-   {
-    "name": "cusum decay tau=5 mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8607594936708861
-   },
-   {
-    "name": "cusum rrf beta=2 mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8607594936708861
-   },
-   {
-    "name": "cusum earliest mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8607594936708861
-   },
-   {
-    "name": "ph decay tau=5 mag>=2 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8553459119496856
-   },
-   {
-    "name": "ph rrf beta=2 mag>=2 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8553459119496856
-   },
-   {
-    "name": "ph decay tau=5 mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8553459119496856
-   },
-   {
-    "name": "ph rrf beta=2 mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8553459119496856
-   },
-   {
-    "name": "ph earliest mag>=3 age<=600",
-    "caughtNamed": 0.8,
-    "rightFirst": 0.8553459119496856
-   },
-   {
-    "name": "cusum decay tau=5 mag>=2 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8544303797468354
-   },
-   {
-    "name": "cusum rrf beta=2 mag>=2 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8544303797468354
-   },
-   {
-    "name": "cusum decay tau=15 mag>=3 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8544303797468354
-   },
-   {
-    "name": "cusum decay tau=45 mag>=3 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8544303797468354
-   },
-   {
-    "name": "ph decay tau=15 mag>=2 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8490566037735849
-   },
-   {
-    "name": "ph decay tau=45 mag>=2 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8490566037735849
-   },
-   {
-    "name": "ph rrf beta=1 mag>=2 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8490566037735849
-   },
-   {
-    "name": "ph decay tau=15 mag>=3 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8490566037735849
-   },
-   {
-    "name": "ph decay tau=45 mag>=3 age<=600",
-    "caughtNamed": 0.7941176470588235,
-    "rightFirst": 0.8490566037735849
-   },
-   {
-    "name": "cusum decay tau=15 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum decay tau=45 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum rrf beta=1 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
     "name": "cusum decay tau=45 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum rrf beta=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum rrf beta=1 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
+    "caughtNamed": 0.8192771084337349,
+    "rightFirst": 0.8774193548387097
    },
    {
     "name": "ph decay tau=45 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd rrf beta=2 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=5 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=15 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=45 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd rrf beta=2 mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd earliest mag>=3 age<=120",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=5 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=15 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd decay tau=45 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd rrf beta=2 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "bocpd earliest mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8481012658227848
-   },
-   {
-    "name": "ph rrf beta=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8427672955974843
-   },
-   {
-    "name": "ph rrf beta=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8427672955974843
-   },
-   {
-    "name": "ph rrf beta=1 mag>=3 age<=600",
-    "caughtNamed": 0.788235294117647,
-    "rightFirst": 0.8427672955974843
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum rrf beta=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum decay tau=5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
+    "caughtNamed": 0.8192771084337349,
+    "rightFirst": 0.8774193548387097
    },
    {
     "name": "cusum decay tau=15 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum rrf beta=2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum earliest mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=5,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph decay tau=45 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph decay tau=5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph decay tau=15 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph rrf beta=2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph earliest mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=5,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=15 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=45 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=2 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd earliest mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=15 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd decay tau=45 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=1 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd earliest mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=1 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.2 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd rrf beta=1 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=5,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.2 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "bocpd gate gap=15,ratio=0.5 mag>=3 age<=600",
-    "caughtNamed": 0.7823529411764706,
-    "rightFirst": 0.8417721518987342
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "cusum gate gap=15,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "cusum rrf beta=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
+    "caughtNamed": 0.8162650602409639,
+    "rightFirst": 0.8741935483870967
    },
    {
     "name": "cusum rrf beta=1 mag>=3 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
+    "caughtNamed": 0.8162650602409639,
+    "rightFirst": 0.8741935483870967
    },
    {
-    "name": "ph gate gap=15,ratio=0.2 mag>=2 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.2 mag>=2 age<=600",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "ph gate gap=15,ratio=0.5 mag>=2 age<=600",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
-   },
-   {
-    "name": "ph rrf beta=0.5 mag>=3 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
+    "name": "ph decay tau=15 mag>=3 age<=120",
+    "caughtNamed": 0.8162650602409639,
+    "rightFirst": 0.8741935483870967
    },
    {
     "name": "ph rrf beta=1 mag>=3 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
+    "caughtNamed": 0.8162650602409639,
+    "rightFirst": 0.8741935483870967
    },
    {
-    "name": "bocpd rrf beta=1 mag>=2 age<=120",
-    "caughtNamed": 0.7764705882352941,
-    "rightFirst": 0.8354430379746836
+    "name": "bocpd decay tau=45 mag>=3 age<=120",
+    "caughtNamed": 0.8162650602409639,
+    "rightFirst": 0.8741935483870967
    },
    {
     "name": "cusum decay tau=45 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph decay tau=5 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "cusum decay tau=15 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph decay tau=15 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "cusum decay tau=45 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph rrf beta=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "cusum rrf beta=1 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph rrf beta=1 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "cusum earliest mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph rrf beta=2 mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "ph decay tau=15 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
    },
    {
-    "name": "ph earliest mag>=2 age<=120",
-    "caughtNamed": 0.7705882352941177,
-    "rightFirst": 0.8291139240506329
+    "name": "ph decay tau=45 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
+   },
+   {
+    "name": "ph rrf beta=1 mag>=2 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8766233766233766
+   },
+   {
+    "name": "cusum earliest mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8737864077669902
+   },
+   {
+    "name": "ph earliest mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8737864077669902
+   },
+   {
+    "name": "cusum decay tau=5 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "cusum rrf beta=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "cusum rrf beta=2 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "cusum decay tau=45 mag>=3 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "ph decay tau=5 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "ph rrf beta=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "ph rrf beta=2 mag>=3 age<=120",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "ph decay tau=45 mag>=3 age<=600",
+    "caughtNamed": 0.8132530120481928,
+    "rightFirst": 0.8709677419354839
+   },
+   {
+    "name": "cusum decay tau=5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "cusum rrf beta=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "cusum rrf beta=2 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "ph decay tau=45 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "ph rrf beta=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "ph earliest mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8733766233766234
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum gate gap=15,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "ph gate gap=15,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd decay tau=45 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.8705501618122977
+   },
+   {
+    "name": "cusum decay tau=15 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "cusum rrf beta=1 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "ph decay tau=15 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "ph rrf beta=1 mag>=3 age<=600",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "bocpd decay tau=15 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "bocpd rrf beta=0.5 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "bocpd rrf beta=1 mag>=3 age<=120",
+    "caughtNamed": 0.8102409638554217,
+    "rightFirst": 0.867741935483871
+   },
+   {
+    "name": "ph decay tau=5 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8701298701298701
+   },
+   {
+    "name": "ph rrf beta=2 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8701298701298701
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "cusum earliest mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "cusum gate gap=5,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "ph earliest mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "ph gate gap=5,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd decay tau=45 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd rrf beta=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd rrf beta=1 mag>=2 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.8673139158576052
+   },
+   {
+    "name": "cusum rrf beta=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "ph rrf beta=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "bocpd decay tau=15 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "bocpd decay tau=45 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "bocpd rrf beta=0.5 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "bocpd rrf beta=1 mag>=3 age<=600",
+    "caughtNamed": 0.8072289156626506,
+    "rightFirst": 0.864516129032258
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.5 mag>=2 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8640776699029126
+   },
+   {
+    "name": "bocpd gate gap=15,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8640776699029126
+   },
+   {
+    "name": "bocpd earliest mag>=3 age<=120",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8640776699029126
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.2 mag>=3 age<=120",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8640776699029126
+   },
+   {
+    "name": "cusum decay tau=5 mag>=3 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
+   },
+   {
+    "name": "cusum rrf beta=2 mag>=3 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
+   },
+   {
+    "name": "ph decay tau=5 mag>=3 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
+   },
+   {
+    "name": "ph rrf beta=2 mag>=3 age<=600",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
+   },
+   {
+    "name": "bocpd decay tau=5 mag>=3 age<=120",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
+   },
+   {
+    "name": "bocpd rrf beta=2 mag>=3 age<=120",
+    "caughtNamed": 0.8042168674698795,
+    "rightFirst": 0.8612903225806452
    },
    {
     "name": "cusum rrf beta=0.5 mag>=2 age<=120",
-    "caughtNamed": 0.7647058823529411,
-    "rightFirst": 0.8227848101265823
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.8636363636363636
+   },
+   {
+    "name": "ph decay tau=15 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.8636363636363636
+   },
+   {
+    "name": "ph rrf beta=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.8636363636363636
+   },
+   {
+    "name": "ph rrf beta=1 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.8636363636363636
+   },
+   {
+    "name": "bocpd rrf beta=0.5 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.86084142394822
+   },
+   {
+    "name": "bocpd rrf beta=1 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.86084142394822
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.2 mag>=2 age<=120",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.86084142394822
+   },
+   {
+    "name": "bocpd decay tau=15 mag>=2 age<=600",
+    "caughtNamed": 0.8012048192771084,
+    "rightFirst": 0.86084142394822
    },
    {
     "name": "cusum decay tau=5 mag>=2 age<=120",
-    "caughtNamed": 0.7588235294117647,
-    "rightFirst": 0.8164556962025317
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
    },
    {
     "name": "cusum decay tau=15 mag>=2 age<=120",
-    "caughtNamed": 0.7588235294117647,
-    "rightFirst": 0.8164556962025317
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
    },
    {
     "name": "cusum rrf beta=1 mag>=2 age<=120",
-    "caughtNamed": 0.7588235294117647,
-    "rightFirst": 0.8164556962025317
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
    },
    {
     "name": "cusum rrf beta=2 mag>=2 age<=120",
-    "caughtNamed": 0.7588235294117647,
-    "rightFirst": 0.8164556962025317
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
    },
    {
     "name": "cusum earliest mag>=2 age<=120",
-    "caughtNamed": 0.7588235294117647,
-    "rightFirst": 0.8164556962025317
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
+   },
+   {
+    "name": "ph decay tau=5 mag>=2 age<=120",
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
+   },
+   {
+    "name": "ph rrf beta=2 mag>=2 age<=120",
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
+   },
+   {
+    "name": "ph earliest mag>=2 age<=120",
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8603896103896104
+   },
+   {
+    "name": "bocpd decay tau=15 mag>=2 age<=120",
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8576051779935275
+   },
+   {
+    "name": "bocpd decay tau=5 mag>=3 age<=600",
+    "caughtNamed": 0.7981927710843374,
+    "rightFirst": 0.8548387096774194
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.2 mag>=3 age<=600",
+    "caughtNamed": 0.7951807228915663,
+    "rightFirst": 0.8543689320388349
+   },
+   {
+    "name": "bocpd earliest mag>=2 age<=120",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8538961038961039
+   },
+   {
+    "name": "bocpd decay tau=5 mag>=2 age<=120",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8511326860841424
+   },
+   {
+    "name": "bocpd rrf beta=2 mag>=2 age<=120",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8511326860841424
+   },
+   {
+    "name": "bocpd decay tau=5 mag>=2 age<=600",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8511326860841424
+   },
+   {
+    "name": "bocpd earliest mag>=3 age<=600",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8511326860841424
+   },
+   {
+    "name": "bocpd rrf beta=2 mag>=3 age<=600",
+    "caughtNamed": 0.7921686746987951,
+    "rightFirst": 0.8483870967741935
+   },
+   {
+    "name": "bocpd gate gap=5,ratio=0.2 mag>=2 age<=600",
+    "caughtNamed": 0.7891566265060241,
+    "rightFirst": 0.8478964401294499
+   },
+   {
+    "name": "bocpd earliest mag>=2 age<=600",
+    "caughtNamed": 0.786144578313253,
+    "rightFirst": 0.8474025974025974
+   },
+   {
+    "name": "bocpd rrf beta=2 mag>=2 age<=600",
+    "caughtNamed": 0.786144578313253,
+    "rightFirst": 0.8446601941747572
    }
   ],
   "detection": [
    {
     "name": "cusum mag>=3 persist=2 age<=60 n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 1.8737800910865325,
-    "alarmTime": 0.11732812838863588,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9819277108433735,
+    "falseAlarmsPerHour": 2.61650277896537,
+    "alarmTime": 0.12526720820863618,
+    "medianDelaySec": 8.596870849609376
    },
    {
     "name": "cusum mag>=3 persist=2 age<=60 n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 1.093038386467144,
-    "alarmTime": 0.09152027759705054,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 1.5391192817443353,
+    "alarmTime": 0.10335613510047029,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=3 persist=2 age<=180 n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 2.02992843201041,
-    "alarmTime": 0.19084797224029498,
-    "medianDelaySec": 7.54180126953125
+    "detected": 0.9939759036144579,
+    "falseAlarmsPerHour": 2.231722958529286,
+    "alarmTime": 0.18768704574604536,
+    "medianDelaySec": 7.99030322265625
    },
    {
     "name": "cusum mag>=3 persist=2 age<=180 n>=2",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.10084580351333769,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.8469431380932024,
+    "alarmTime": 0.11222744762719111,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=3 persist=2 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.4743005855562785,
-    "medianDelaySec": 4.672751220703125
+    "detected": 0.9969879518072289,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.3744121419410005,
+    "medianDelaySec": 5.7907734375
    },
    {
     "name": "cusum mag>=3 persist=2 age<=Infinity n>=2",
-    "detected": 0.9647058823529412,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.18477553675992195,
-    "medianDelaySec": 8.2168291015625
+    "detected": 0.9698795180722891,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.14888841385207355,
+    "medianDelaySec": 8.43780322265625
    },
    {
     "name": "cusum mag>=3 persist=4 age<=60 n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 2.186076772934288,
-    "alarmTime": 0.11277380177835612,
-    "medianDelaySec": 8.932684326171875
+    "detected": 0.9789156626506024,
+    "falseAlarmsPerHour": 2.61650277896537,
+    "alarmTime": 0.12099187687045747,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=3 persist=4 age<=60 n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09065278681414012,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 1.5391192817443353,
+    "alarmTime": 0.10207353569901667,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "cusum mag>=3 persist=4 age<=180 n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 2.3422251138581656,
-    "alarmTime": 0.1862936456300152,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9909638554216867,
+    "falseAlarmsPerHour": 2.231722958529286,
+    "alarmTime": 0.18341171440786663,
+    "medianDelaySec": 8.110552734375
    },
    {
     "name": "cusum mag>=3 persist=4 age<=180 n>=2",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.09997831273042725,
-    "medianDelaySec": 9.350046875
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.923899102180419,
+    "alarmTime": 0.1109448482257375,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "cusum mag>=3 persist=4 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.4714812405118196,
-    "medianDelaySec": 4.672751220703125
+    "detected": 0.9939759036144579,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.3713125267208209,
+    "medianDelaySec": 5.796861328125
    },
    {
     "name": "cusum mag>=3 persist=4 age<=Infinity n>=2",
-    "detected": 0.9647058823529412,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.1828236824983735,
-    "medianDelaySec": 8.2168291015625
+    "detected": 0.9698795180722891,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.1470713980333476,
+    "medianDelaySec": 8.440368896484374
    },
    {
     "name": "cusum mag>=5 persist=2 age<=60 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.098460203860334,
-    "medianDelaySec": 9.199715576171876
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 1.308251389482685,
+    "alarmTime": 0.10624198375374092,
+    "medianDelaySec": 8.674917724609376
    },
    {
     "name": "cusum mag>=5 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=5 persist=2 age<=180 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.11862936456300152,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 0.8465156049593844,
+    "alarmTime": 0.12345019238991023,
+    "medianDelaySec": 8.4479013671875
    },
    {
     "name": "cusum mag>=5 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=5 persist=2 age<=Infinity n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.2817176317501627,
-    "medianDelaySec": 7.32209619140625
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 0.8465156049593844,
+    "alarmTime": 0.21462163317657118,
+    "medianDelaySec": 7.99030322265625
    },
    {
     "name": "cusum mag>=5 persist=2 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09889394925178921,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.1043180846515605,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=5 persist=4 age<=60 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.09629147690305792,
-    "medianDelaySec": 9.199715576171876
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 1.308251389482685,
+    "alarmTime": 0.10485250106883284,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "cusum mag>=5 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=5 persist=4 age<=180 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.11646063760572546,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 0.8465156049593844,
+    "alarmTime": 0.12206070970500214,
+    "medianDelaySec": 8.45377099609375
    },
    {
     "name": "cusum mag>=5 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=5 persist=4 age<=Infinity n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.2799826501843418,
-    "medianDelaySec": 7.32209619140625
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 0.8465156049593844,
+    "alarmTime": 0.21344591705857208,
+    "medianDelaySec": 8.0128701171875
    },
    {
     "name": "cusum mag>=5 persist=4 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.098460203860334,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10410431808465158,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=7 persist=2 age<=60 n>=1",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.0932552591628714,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.10153911928174433,
+    "medianDelaySec": 8.932684326171875
    },
    {
     "name": "cusum mag>=7 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=2 age<=180 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.1010626762090653,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.10634886703719539,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "cusum mag>=7 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=2 age<=Infinity n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.1617870310127955,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.12558785805899958,
+    "medianDelaySec": 8.571340087890626
    },
    {
     "name": "cusum mag>=7 persist=2 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.08870093255259164,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=4 age<=60 n>=1",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09217089568423337,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.10089781958101754,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=4 age<=180 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09997831273042725,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.10570756733646858,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "cusum mag>=7 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "cusum mag>=7 persist=4 age<=Infinity n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.16070266753415746,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.12494655835827277,
+    "medianDelaySec": 8.596870849609376
    },
    {
     "name": "cusum mag>=7 persist=4 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.08870093255259164,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=3 persist=2 age<=60 n>=1",
-    "detected": 0.9764705882352941,
-    "falseAlarmsPerHour": 2.3422251138581656,
-    "alarmTime": 0.11776187378009109,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9789156626506024,
+    "falseAlarmsPerHour": 2.7704147071398033,
+    "alarmTime": 0.12601539119281746,
+    "medianDelaySec": 8.614308837890626
    },
    {
     "name": "ph mag>=3 persist=2 age<=60 n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.08870093255259164,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.9457831325301205,
+    "falseAlarmsPerHour": 1.6930312099187688,
+    "alarmTime": 0.10314236853356135,
+    "medianDelaySec": 8.932684326171875
    },
    {
     "name": "ph mag>=3 persist=2 age<=180 n>=1",
-    "detected": 0.9882352941176471,
-    "falseAlarmsPerHour": 1.8737800910865325,
-    "alarmTime": 0.19583604424202994,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9879518072289156,
+    "falseAlarmsPerHour": 2.1547669944420695,
+    "alarmTime": 0.18929029499786235,
+    "medianDelaySec": 8.219942138671875
    },
    {
     "name": "ph mag>=3 persist=2 age<=180 n>=2",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 1.561483409238777,
-    "alarmTime": 0.09217089568423337,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 2.0778110303548525,
+    "alarmTime": 0.10859341598973922,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "ph mag>=3 persist=2 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.4576013879852527,
-    "medianDelaySec": 4.9529130859375
+    "detected": 0.9969879518072289,
+    "falseAlarmsPerHour": 1.308251389482685,
+    "alarmTime": 0.3744121419410005,
+    "medianDelaySec": 5.7824287109375
    },
    {
     "name": "ph mag>=3 persist=2 age<=Infinity n>=2",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 1.561483409238777,
-    "alarmTime": 0.1860767729342876,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.5391192817443353,
+    "alarmTime": 0.14942283026934589,
+    "medianDelaySec": 8.45377099609375
    },
    {
     "name": "ph mag>=3 persist=4 age<=60 n>=1",
-    "detected": 0.9764705882352941,
-    "falseAlarmsPerHour": 2.186076772934288,
-    "alarmTime": 0.11277380177835612,
+    "detected": 0.9759036144578314,
+    "falseAlarmsPerHour": 2.61650277896537,
+    "alarmTime": 0.1218469431380932,
     "medianDelaySec": 8.932684326171875
    },
    {
     "name": "ph mag>=3 persist=4 age<=60 n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08848405985686403,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.9457831325301205,
+    "falseAlarmsPerHour": 1.5391192817443353,
+    "alarmTime": 0.10207353569901667,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "ph mag>=3 persist=4 age<=180 n>=1",
-    "detected": 0.9882352941176471,
-    "falseAlarmsPerHour": 1.8737800910865325,
-    "alarmTime": 0.1910648449360226,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9849397590361446,
+    "falseAlarmsPerHour": 2.0778110303548525,
+    "alarmTime": 0.1852287302265926,
+    "medianDelaySec": 8.338853515625
    },
    {
     "name": "ph mag>=3 persist=4 age<=180 n>=2",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.09173715029277815,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.8469431380932024,
+    "alarmTime": 0.10741769987174006,
+    "medianDelaySec": 9.341972900390624
    },
    {
     "name": "ph mag>=3 persist=4 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.4536976794621558,
-    "medianDelaySec": 4.9529130859375
+    "detected": 0.9939759036144579,
+    "falseAlarmsPerHour": 1.1543394613082514,
+    "alarmTime": 0.37174005985463876,
+    "medianDelaySec": 5.7907734375
    },
    {
     "name": "ph mag>=3 persist=4 age<=Infinity n>=2",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 1.4053350683148993,
-    "alarmTime": 0.18477553675992195,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.3852073535699017,
+    "alarmTime": 0.14717828131680208,
+    "medianDelaySec": 8.571340087890626
    },
    {
     "name": "ph mag>=5 persist=2 age<=60 n>=1",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.0986770765560616,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.10581445061992305,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "ph mag>=5 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=5 persist=2 age<=180 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.1181956191715463,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 0.6156477126977341,
+    "alarmTime": 0.12761864044463447,
+    "medianDelaySec": 8.45377099609375
    },
    {
     "name": "ph mag>=5 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=5 persist=2 age<=Infinity n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.2702233788765995,
-    "medianDelaySec": 7.421766845703125
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 0.5386917486105174,
+    "alarmTime": 0.230119709277469,
+    "medianDelaySec": 7.57092626953125
    },
    {
     "name": "ph mag>=5 persist=2 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09607460420733031,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10602821718683199,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=5 persist=4 age<=60 n>=1",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.09672522229451314,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.10453185121846945,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "ph mag>=5 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=5 persist=4 age<=180 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.11624376490999785,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9427710843373494,
+    "falseAlarmsPerHour": 0.6156477126977341,
+    "alarmTime": 0.12633604104318086,
+    "medianDelaySec": 8.571340087890626
    },
    {
     "name": "ph mag>=5 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=5 persist=4 age<=Infinity n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.268271524615051,
-    "medianDelaySec": 7.421766845703125
+    "detected": 0.9487951807228916,
+    "falseAlarmsPerHour": 0.5386917486105174,
+    "alarmTime": 0.22905087644292432,
+    "medianDelaySec": 7.71325439453125
    },
    {
     "name": "ph mag>=5 persist=4 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09607460420733031,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10581445061992305,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=2 age<=60 n>=1",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.0932552591628714,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10292860196665242,
+    "medianDelaySec": 8.932684326171875
    },
    {
     "name": "ph mag>=7 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=2 age<=180 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.1010626762090653,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.11308251389482686,
+    "medianDelaySec": 8.596870849609376
    },
    {
     "name": "ph mag>=7 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=2 age<=Infinity n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.16243764909997835,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.1527362120564344,
+    "medianDelaySec": 8.338853515625
    },
    {
     "name": "ph mag>=7 persist=2 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.08870093255259164,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=4 age<=60 n>=1",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09217089568423337,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10207353569901667,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=4 age<=180 n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09997831273042725,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.11222744762719111,
+    "medianDelaySec": 8.614308837890626
    },
    {
     "name": "ph mag>=7 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "ph mag>=7 persist=4 age<=Infinity n>=1",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.1613532856213403,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.38477982043608383,
+    "alarmTime": 0.15188114578879866,
+    "medianDelaySec": 8.426096435546874
    },
    {
     "name": "ph mag>=7 persist=4 age<=Infinity n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.08870093255259164,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=60 n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 2.498373454782043,
-    "alarmTime": 0.12968987204510954,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9879518072289156,
+    "falseAlarmsPerHour": 3.001282599401454,
+    "alarmTime": 0.1404446344591706,
+    "medianDelaySec": 8.614308837890626
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=60 n>=2",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.8737800910865325,
-    "alarmTime": 0.10084580351333769,
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 2.0778110303548525,
+    "alarmTime": 0.10955536554082942,
     "medianDelaySec": 9.350046875
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=180 n>=1",
-    "detected": 0.9882352941176471,
-    "falseAlarmsPerHour": 1.4053350683148993,
-    "alarmTime": 0.19778789850357842,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9879518072289156,
+    "falseAlarmsPerHour": 1.6930312099187688,
+    "alarmTime": 0.20991876870457463,
+    "medianDelaySec": 8.07548876953125
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=180 n>=2",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.8737800910865325,
-    "alarmTime": 0.1121231836911733,
-    "medianDelaySec": 9.199715576171876
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.8469431380932024,
+    "alarmTime": 0.12099187687045747,
+    "medianDelaySec": 9.298275390625
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.4435046627629582,
-    "medianDelaySec": 4.9529130859375
+    "detected": 0.9969879518072289,
+    "falseAlarmsPerHour": 0.9234715690466012,
+    "alarmTime": 0.4322359982898675,
+    "medianDelaySec": 4.752384033203125
    },
    {
     "name": "bocpd mag>=3 persist=2 age<=Infinity n>=2",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 2.02992843201041,
-    "alarmTime": 0.1674257211017133,
-    "medianDelaySec": 8.43780322265625
+    "detected": 0.9698795180722891,
+    "falseAlarmsPerHour": 1.923899102180419,
+    "alarmTime": 0.1732578024796922,
+    "medianDelaySec": 8.45377099609375
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=60 n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 2.3422251138581656,
-    "alarmTime": 0.1234005638690089,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9879518072289156,
+    "falseAlarmsPerHour": 3.001282599401454,
+    "alarmTime": 0.1347798204360838,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=60 n>=2",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.561483409238777,
-    "alarmTime": 0.09780958577315117,
-    "medianDelaySec": 9.400406982421876
+    "detected": 0.9608433734939759,
+    "falseAlarmsPerHour": 2.000855066267636,
+    "alarmTime": 0.1069901667379222,
+    "medianDelaySec": 9.350046875
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=180 n>=1",
-    "detected": 0.9882352941176471,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.19193233571893303,
-    "medianDelaySec": 8.0128701171875
+    "detected": 0.9879518072289156,
+    "falseAlarmsPerHour": 1.6930312099187688,
+    "alarmTime": 0.20446772124839677,
+    "medianDelaySec": 8.219942138671875
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=180 n>=2",
-    "detected": 0.9470588235294117,
-    "falseAlarmsPerHour": 1.561483409238777,
-    "alarmTime": 0.10930383864671439,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.7699871740059856,
+    "alarmTime": 0.11853356135100472,
+    "medianDelaySec": 9.341972900390624
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=Infinity n>=1",
-    "detected": 0.9941176470588236,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.4400346996313165,
-    "medianDelaySec": 5.411720703125
+    "detected": 0.9969879518072289,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.4279606669516888,
+    "medianDelaySec": 4.9529130859375
    },
    {
     "name": "bocpd mag>=3 persist=4 age<=Infinity n>=2",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.7176317501626548,
-    "alarmTime": 0.16287139449143356,
-    "medianDelaySec": 8.437969970703126
+    "detected": 0.9698795180722891,
+    "falseAlarmsPerHour": 1.8469431380932024,
+    "alarmTime": 0.16983753740914923,
+    "medianDelaySec": 8.455927734375
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=60 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.10149642160052051,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9548192771084337,
+    "falseAlarmsPerHour": 1.4621633176571185,
+    "alarmTime": 0.11051731509191963,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=180 n>=1",
-    "detected": 0.9705882352941176,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.13597918022121017,
-    "medianDelaySec": 8.437969970703126
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.14065840102607952,
+    "medianDelaySec": 8.4479013671875
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09065278681414012,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.099401453612655,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=Infinity n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 0.6245933636955108,
-    "alarmTime": 0.32552591628713945,
-    "medianDelaySec": 6.98383935546875
+    "detected": 0.9789156626506024,
+    "falseAlarmsPerHour": 0.9234715690466012,
+    "alarmTime": 0.326100897819581,
+    "medianDelaySec": 6.481009521484375
    },
    {
     "name": "bocpd mag>=5 persist=2 age<=Infinity n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.6245933636955108,
-    "alarmTime": 0.12166558230318804,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 1.1543394613082514,
+    "alarmTime": 0.11821291150064131,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=60 n>=1",
-    "detected": 0.9588235294117647,
-    "falseAlarmsPerHour": 1.2491867273910215,
-    "alarmTime": 0.09911082194751682,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9548192771084337,
+    "falseAlarmsPerHour": 1.4621633176571185,
+    "alarmTime": 0.10837964942283028,
+    "medianDelaySec": 9.158033935546875
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=180 n>=1",
-    "detected": 0.9705882352941176,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.13359358056820647,
-    "medianDelaySec": 8.437969970703126
+    "detected": 0.963855421686747,
+    "falseAlarmsPerHour": 1.2312954253954682,
+    "alarmTime": 0.13852073535699017,
+    "medianDelaySec": 8.571340087890626
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.9368900455432663,
-    "alarmTime": 0.09065278681414012,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.099401453612655,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=Infinity n>=1",
-    "detected": 0.9823529411764705,
-    "falseAlarmsPerHour": 0.6245933636955108,
-    "alarmTime": 0.32400780741704627,
-    "medianDelaySec": 6.98383935546875
+    "detected": 0.9789156626506024,
+    "falseAlarmsPerHour": 0.9234715690466012,
+    "alarmTime": 0.32439076528430955,
+    "medianDelaySec": 6.55361181640625
    },
    {
     "name": "bocpd mag>=5 persist=4 age<=Infinity n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.6245933636955108,
-    "alarmTime": 0.12079809152027761,
-    "medianDelaySec": 8.674917724609376
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 1.1543394613082514,
+    "alarmTime": 0.11778537836682343,
+    "medianDelaySec": 8.812083984375
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=60 n>=1",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 1.093038386467144,
-    "alarmTime": 0.09672522229451314,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10453185121846945,
+    "medianDelaySec": 8.911595458984374
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=180 n>=1",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 0.46844502277163313,
-    "alarmTime": 0.11255692908262852,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.30782385634886705,
+    "alarmTime": 0.11554082941427961,
+    "medianDelaySec": 8.614308837890626
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=Infinity n>=1",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 0.46844502277163313,
-    "alarmTime": 0.21383647798742142,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 0.4617357845233006,
+    "alarmTime": 0.20040615647712698,
+    "medianDelaySec": 7.910607177734375
    },
    {
     "name": "bocpd mag>=7 persist=2 age<=Infinity n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09043591411841251,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09876015391192819,
+    "medianDelaySec": 8.932684326171875
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=60 n>=1",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 1.093038386467144,
-    "alarmTime": 0.09520711342441988,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 1.0773834972210348,
+    "alarmTime": 0.10346301838392477,
+    "medianDelaySec": 8.932684326171875
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=60 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=180 n>=1",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 0.46844502277163313,
-    "alarmTime": 0.11103882021253526,
-    "medianDelaySec": 8.812083984375
+    "detected": 0.9367469879518072,
+    "falseAlarmsPerHour": 0.30782385634886705,
+    "alarmTime": 0.11447199657973495,
+    "medianDelaySec": 8.674917724609376
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=180 n>=2",
-    "detected": 0.9352941176470588,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.08826718716113642,
-    "medianDelaySec": 9.350046875
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09843950406156476,
+    "medianDelaySec": 9.148224609375
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=Infinity n>=1",
-    "detected": 0.9529411764705882,
-    "falseAlarmsPerHour": 0.46844502277163313,
-    "alarmTime": 0.21231836911732815,
-    "medianDelaySec": 7.988464111328125
+    "detected": 0.9397590361445783,
+    "falseAlarmsPerHour": 0.4617357845233006,
+    "alarmTime": 0.1993373236425823,
+    "medianDelaySec": 7.99030322265625
    },
    {
     "name": "bocpd mag>=7 persist=4 age<=Infinity n>=2",
-    "detected": 0.9411764705882353,
-    "falseAlarmsPerHour": 0.7807417046193885,
-    "alarmTime": 0.09043591411841251,
-    "medianDelaySec": 9.298275390625
+    "detected": 0.9337349397590361,
+    "falseAlarmsPerHour": 1.000427533133818,
+    "alarmTime": 0.09876015391192819,
+    "medianDelaySec": 8.932684326171875
    }
   ]
  },
  "chosen": {
   "ranking": {
-   "name": "ph earliest mag>=2 age<=600",
+   "name": "cusum decay tau=45 mag>=3 age<=120",
    "cp": {
-    "kind": "ph",
-    "magMin": 2
+    "kind": "cusum",
+    "magMin": 3
    },
    "rank": {
-    "form": "earliest"
+    "form": "decay",
+    "tau": 45
    },
    "anom": {
-    "maxAge": 600,
+    "maxAge": 120,
     "requireV1": true
    }
   },
   "detection": {
-   "name": "ph mag>=7 persist=2 age<=180 n>=1",
+   "name": "bocpd mag>=5 persist=2 age<=Infinity n>=2",
    "cp": {
-    "kind": "ph"
+    "kind": "bocpd"
    },
    "early": {
-    "magAlarm": 7,
+    "magAlarm": 5,
     "persist": 2,
-    "maxAlarmAge": 180,
-    "minServices": 1
+    "maxAlarmAge": "Infinity",
+    "minServices": 2
    }
   },
-  "detectionWithinBudget": true
+  "detectionWithinBudget": true,
+  "fastDetection": {
+   "name": "bocpd mag>=3 persist=2 age<=Infinity n>=1",
+   "cp": {
+    "kind": "bocpd"
+   },
+   "early": {
+    "magAlarm": 3,
+    "persist": 2,
+    "maxAlarmAge": "Infinity",
+    "minServices": 1
+   }
+  }
  },
  "sets": {
   "tune": {
    "engines": {
     "v1 hybrid": {
-     "faults": 170,
-     "detected": 0.9294117647058824,
-     "rightFirst": 0.8354430379746836,
-     "caughtNamed": 0.7764705882352941,
-     "caughtNamedCount": 132,
-     "falseAlarmsPerHour": 0.7807417046193885,
-     "alarmTime": 0.08826718716113642,
-     "medianDelaySec": 9.350046875,
+     "faults": 332,
+     "detected": 0.9307228915662651,
+     "rightFirst": 0.8673139158576052,
+     "caughtNamed": 0.8072289156626506,
+     "caughtNamedCount": 268,
+     "falseAlarmsPerHour": 1.000427533133818,
+     "alarmTime": 0.09843950406156476,
+     "medianDelaySec": 8.932684326171875,
      "byClass": {
       "latency": {
-       "n": 27,
-       "detected": 17,
-       "named": 5
+       "n": 57,
+       "detected": 34,
+       "named": 14
       },
       "brownout": {
-       "n": 28,
-       "detected": 28,
-       "named": 20
+       "n": 58,
+       "detected": 58,
+       "named": 47
       },
       "memory": {
-       "n": 30,
-       "detected": 28,
-       "named": 25
+       "n": 57,
+       "detected": 57,
+       "named": 54
       },
       "crash": {
-       "n": 21,
-       "detected": 21,
-       "named": 20
+       "n": 42,
+       "detected": 42,
+       "named": 37
       },
       "flap": {
-       "n": 13,
-       "detected": 13,
-       "named": 13
+       "n": 26,
+       "detected": 26,
+       "named": 26
       },
       "pause": {
-       "n": 10,
-       "detected": 10,
-       "named": 9
+       "n": 22,
+       "detected": 22,
+       "named": 21
       },
       "stop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 25,
+       "detected": 25,
+       "named": 25
       },
       "partition": {
-       "n": 13,
-       "detected": 13,
-       "named": 12
+       "n": 24,
+       "detected": 24,
+       "named": 23
       },
       "crash-loop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 21,
+       "detected": 21,
+       "named": 21
       }
      }
     },
     "onset ranking": {
-     "faults": 170,
-     "detected": 0.9352941176470588,
-     "rightFirst": 0.8616352201257862,
-     "caughtNamed": 0.8058823529411765,
-     "caughtNamedCount": 137,
-     "falseAlarmsPerHour": 0.7807417046193885,
-     "alarmTime": 0.08826718716113642,
-     "medianDelaySec": 9.350046875,
+     "faults": 332,
+     "detected": 0.9337349397590361,
+     "rightFirst": 0.8774193548387097,
+     "caughtNamed": 0.8192771084337349,
+     "caughtNamedCount": 272,
+     "falseAlarmsPerHour": 1.000427533133818,
+     "alarmTime": 0.09843950406156476,
+     "medianDelaySec": 9.148224609375,
      "byClass": {
       "latency": {
-       "n": 27,
-       "detected": 17,
-       "named": 8
+       "n": 57,
+       "detected": 35,
+       "named": 15
       },
       "brownout": {
-       "n": 28,
-       "detected": 28,
-       "named": 20
+       "n": 58,
+       "detected": 58,
+       "named": 50
       },
       "memory": {
-       "n": 30,
-       "detected": 29,
-       "named": 27
+       "n": 57,
+       "detected": 57,
+       "named": 54
       },
       "crash": {
-       "n": 21,
-       "detected": 21,
-       "named": 20
+       "n": 42,
+       "detected": 42,
+       "named": 37
       },
       "flap": {
-       "n": 13,
-       "detected": 13,
-       "named": 13
+       "n": 26,
+       "detected": 26,
+       "named": 26
       },
       "pause": {
-       "n": 10,
-       "detected": 10,
-       "named": 9
+       "n": 22,
+       "detected": 22,
+       "named": 21
       },
       "stop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 25,
+       "detected": 25,
+       "named": 25
       },
       "partition": {
-       "n": 13,
-       "detected": 13,
-       "named": 12
+       "n": 24,
+       "detected": 24,
+       "named": 23
       },
       "crash-loop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 21,
+       "detected": 21,
+       "named": 21
       }
      }
     },
     "onset ranking + cp alarm": {
-     "faults": 170,
-     "detected": 0.9470588235294117,
-     "rightFirst": 0.8571428571428571,
-     "caughtNamed": 0.8117647058823529,
-     "caughtNamedCount": 138,
-     "falseAlarmsPerHour": 0.7807417046193885,
-     "alarmTime": 0.1010626762090653,
-     "medianDelaySec": 9.298275390625,
+     "faults": 332,
+     "detected": 0.9397590361445783,
+     "rightFirst": 0.8685897435897436,
+     "caughtNamed": 0.8162650602409639,
+     "caughtNamedCount": 271,
+     "falseAlarmsPerHour": 1.1543394613082514,
+     "alarmTime": 0.11821291150064131,
+     "medianDelaySec": 8.812083984375,
      "byClass": {
       "latency": {
-       "n": 27,
-       "detected": 18,
-       "named": 7
+       "n": 57,
+       "detected": 37,
+       "named": 15
       },
       "brownout": {
-       "n": 28,
-       "detected": 28,
-       "named": 20
+       "n": 58,
+       "detected": 58,
+       "named": 50
       },
       "memory": {
-       "n": 30,
-       "detected": 30,
-       "named": 29
+       "n": 57,
+       "detected": 57,
+       "named": 54
       },
       "crash": {
-       "n": 21,
-       "detected": 21,
-       "named": 20
+       "n": 42,
+       "detected": 42,
+       "named": 36
       },
       "flap": {
-       "n": 13,
-       "detected": 13,
-       "named": 13
+       "n": 26,
+       "detected": 26,
+       "named": 26
       },
       "pause": {
-       "n": 10,
-       "detected": 10,
-       "named": 9
+       "n": 22,
+       "detected": 22,
+       "named": 21
       },
       "stop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 25,
+       "detected": 25,
+       "named": 25
       },
       "partition": {
-       "n": 13,
-       "detected": 13,
-       "named": 12
+       "n": 24,
+       "detected": 24,
+       "named": 23
       },
       "crash-loop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 21,
+       "detected": 21,
+       "named": 21
       }
      }
     },
     "v1 ranking + cp alarm": {
-     "faults": 170,
-     "detected": 0.9470588235294117,
-     "rightFirst": 0.8136645962732919,
-     "caughtNamed": 0.7705882352941177,
-     "caughtNamedCount": 131,
-     "falseAlarmsPerHour": 0.7807417046193885,
-     "alarmTime": 0.1010626762090653,
-     "medianDelaySec": 9.199715576171876,
+     "faults": 332,
+     "detected": 0.9367469879518072,
+     "rightFirst": 0.8585209003215434,
+     "caughtNamed": 0.8042168674698795,
+     "caughtNamedCount": 267,
+     "falseAlarmsPerHour": 1.1543394613082514,
+     "alarmTime": 0.11821291150064131,
+     "medianDelaySec": 8.674917724609376,
      "byClass": {
       "latency": {
-       "n": 27,
-       "detected": 18,
-       "named": 4
+       "n": 57,
+       "detected": 36,
+       "named": 14
       },
       "brownout": {
-       "n": 28,
-       "detected": 28,
-       "named": 20
+       "n": 58,
+       "detected": 58,
+       "named": 47
       },
       "memory": {
-       "n": 30,
-       "detected": 30,
-       "named": 25
+       "n": 57,
+       "detected": 57,
+       "named": 54
       },
       "crash": {
-       "n": 21,
-       "detected": 21,
-       "named": 20
+       "n": 42,
+       "detected": 42,
+       "named": 36
       },
       "flap": {
-       "n": 13,
-       "detected": 13,
-       "named": 13
+       "n": 26,
+       "detected": 26,
+       "named": 26
       },
       "pause": {
-       "n": 10,
-       "detected": 10,
-       "named": 9
+       "n": 22,
+       "detected": 22,
+       "named": 21
       },
       "stop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 25,
+       "detected": 25,
+       "named": 25
       },
       "partition": {
-       "n": 13,
-       "detected": 13,
-       "named": 12
+       "n": 24,
+       "detected": 24,
+       "named": 23
       },
       "crash-loop": {
-       "n": 14,
-       "detected": 14,
-       "named": 14
+       "n": 21,
+       "detected": 21,
+       "named": 21
+      }
+     }
+    },
+    "onset ranking + fast cp alarm": {
+     "faults": 332,
+     "detected": 0.9969879518072289,
+     "rightFirst": 0.8096676737160121,
+     "caughtNamed": 0.8072289156626506,
+     "caughtNamedCount": 268,
+     "falseAlarmsPerHour": 0.9234715690466012,
+     "alarmTime": 0.4322359982898675,
+     "medianDelaySec": 4.752384033203125,
+     "byClass": {
+      "latency": {
+       "n": 57,
+       "detected": 56,
+       "named": 18
+      },
+      "brownout": {
+       "n": 58,
+       "detected": 58,
+       "named": 50
+      },
+      "memory": {
+       "n": 57,
+       "detected": 57,
+       "named": 54
+      },
+      "crash": {
+       "n": 42,
+       "detected": 42,
+       "named": 30
+      },
+      "flap": {
+       "n": 26,
+       "detected": 26,
+       "named": 26
+      },
+      "pause": {
+       "n": 22,
+       "detected": 22,
+       "named": 21
+      },
+      "stop": {
+       "n": 25,
+       "detected": 25,
+       "named": 25
+      },
+      "partition": {
+       "n": 24,
+       "detected": 24,
+       "named": 23
+      },
+      "crash-loop": {
+       "n": 21,
+       "detected": 21,
+       "named": 21
       }
      }
     }
    },
    "rankingFlips": {
     "fixed": [
-     "memory:fx-rates",
+     "memory:fx-provider",
+     "partition:fx-provider",
+     "flap:pricing",
+     "flap:shipping",
+     "stop:auth",
+     "brownout:orders",
      "latency:reviews",
-     "latency:auth",
-     "latency:fx-provider",
+     "partition:billing",
+     "partition:checkout-db",
+     "memory:profile",
+     "brownout:catalog-cache",
+     "crash-loop:billing",
+     "crash:cache",
+     "crash-loop:reviews",
+     "latency:gateway",
+     "memory:shipping",
+     "pause:shipping",
+     "flap:shipping",
+     "brownout:cache",
      "brownout:tax-provider",
-     "memory:checkout"
+     "stop:checkout",
+     "stop:orders",
+     "crash:auth",
+     "memory:checkout-db",
+     "brownout:statements-worker",
+     "latency:auth",
+     "brownout:recommend"
     ],
     "broken": [
-     "brownout:shipping-db(-> auth)"
+     "latency:catalog-db(-> null)",
+     "latency:orders-db(-> cart-store)",
+     "latency:orders(-> orders-db)",
+     "partition:gateway(-> checkout)",
+     "latency:cache(-> null)",
+     "latency:checkout-db(-> gateway)",
+     "brownout:billing(-> auth)",
+     "latency:cache(-> auth)",
+     "brownout:recommend-db(-> recommend)",
+     "latency:auth(-> shipping-db)",
+     "latency:gateway(-> checkout)",
+     "crash:auth-db(-> auth)",
+     "latency:search(-> search-db)",
+     "brownout:cart-store(-> cart)",
+     "latency:pricing(-> cache)",
+     "latency:gateway(-> null)",
+     "latency:checkout-db(-> null)",
+     "pause:shipping(-> shipping-db)",
+     "latency:billing(-> null)",
+     "brownout:shipping-db(-> shipping)",
+     "brownout:gateway(-> recommend)",
+     "latency:cache(-> checkout-db)",
+     "latency:cache(-> null)"
     ]
    },
    "pairedDelay": {
-    "n": 158,
-    "base": 9.350046875,
-    "engine": 9.298275390625
-   }
+    "n": 298,
+    "base": 9.400406982421876,
+    "engine": 8.812083984375
+   },
+   "pairedDelayFast": {
+    "n": 305,
+    "base": 9.400406982421876,
+    "engine": 4.752384033203125
+   },
+   "isolation": [
+    {
+     "engine": "v1 hybrid",
+     "isolated": {
+      "n": 204,
+      "named": 177
+     },
+     "overlapping": {
+      "n": 128,
+      "named": 91
+     }
+    },
+    {
+     "engine": "onset ranking",
+     "isolated": {
+      "n": 204,
+      "named": 179
+     },
+     "overlapping": {
+      "n": 128,
+      "named": 93
+     }
+    },
+    {
+     "engine": "onset ranking + cp alarm",
+     "isolated": {
+      "n": 204,
+      "named": 178
+     },
+     "overlapping": {
+      "n": 128,
+      "named": 93
+     }
+    },
+    {
+     "engine": "v1 ranking + cp alarm",
+     "isolated": {
+      "n": 204,
+      "named": 176
+     },
+     "overlapping": {
+      "n": 128,
+      "named": 91
+     }
+    },
+    {
+     "engine": "onset ranking + fast cp alarm",
+     "isolated": {
+      "n": 204,
+      "named": 177
+     },
+     "overlapping": {
+      "n": 128,
+      "named": 91
+     }
+    }
+   ]
   },
   "test.json": {
    "engines": {
     "v1 hybrid": {
      "faults": 178,
-     "detected": 0.9157303370786517,
-     "rightFirst": 0.7852760736196319,
-     "caughtNamed": 0.7191011235955056,
-     "caughtNamedCount": 128,
-     "falseAlarmsPerHour": 0.787746170678337,
-     "alarmTime": 0.05820568927789935,
-     "medianDelaySec": 8.183615966796875,
+     "detected": 0.9325842696629213,
+     "rightFirst": 0.8072289156626506,
+     "caughtNamed": 0.7528089887640449,
+     "caughtNamedCount": 134,
+     "falseAlarmsPerHour": 1.4179431072210065,
+     "alarmTime": 0.06258205689277899,
+     "medianDelaySec": 8.343546142578125,
      "byClass": {
       "stop": {
        "n": 24,
@@ -1722,22 +1897,22 @@
       "crash": {
        "n": 27,
        "detected": 27,
-       "named": 21
+       "named": 23
       },
       "brownout": {
        "n": 26,
        "detected": 26,
-       "named": 18
+       "named": 16
       },
       "latency": {
        "n": 25,
        "detected": 13,
-       "named": 2
+       "named": 5
       },
       "crash-loop": {
        "n": 16,
        "detected": 16,
-       "named": 14
+       "named": 13
       },
       "flap": {
        "n": 12,
@@ -1746,13 +1921,13 @@
       },
       "memory": {
        "n": 18,
-       "detected": 15,
-       "named": 12
+       "detected": 18,
+       "named": 15
       },
       "partition": {
        "n": 15,
        "detected": 15,
-       "named": 13
+       "named": 14
       },
       "pause": {
        "n": 15,
@@ -1763,13 +1938,13 @@
     },
     "onset ranking": {
      "faults": 178,
-     "detected": 0.9157303370786517,
-     "rightFirst": 0.7852760736196319,
-     "caughtNamed": 0.7191011235955056,
-     "caughtNamedCount": 128,
-     "falseAlarmsPerHour": 0.787746170678337,
-     "alarmTime": 0.05820568927789935,
-     "medianDelaySec": 8.18892138671875,
+     "detected": 0.9325842696629213,
+     "rightFirst": 0.8012048192771084,
+     "caughtNamed": 0.7471910112359551,
+     "caughtNamedCount": 133,
+     "falseAlarmsPerHour": 1.4179431072210065,
+     "alarmTime": 0.06258205689277899,
+     "medianDelaySec": 8.2914814453125,
      "byClass": {
       "stop": {
        "n": 24,
@@ -1779,7 +1954,7 @@
       "crash": {
        "n": 27,
        "detected": 27,
-       "named": 21
+       "named": 23
       },
       "brownout": {
        "n": 26,
@@ -1794,7 +1969,7 @@
       "crash-loop": {
        "n": 16,
        "detected": 16,
-       "named": 14
+       "named": 13
       },
       "flap": {
        "n": 12,
@@ -1803,13 +1978,13 @@
       },
       "memory": {
        "n": 18,
-       "detected": 15,
-       "named": 12
+       "detected": 18,
+       "named": 15
       },
       "partition": {
        "n": 15,
        "detected": 15,
-       "named": 13
+       "named": 14
       },
       "pause": {
        "n": 15,
@@ -1820,13 +1995,13 @@
     },
     "onset ranking + cp alarm": {
      "faults": 178,
-     "detected": 0.9325842696629213,
-     "rightFirst": 0.7771084337349398,
-     "caughtNamed": 0.7247191011235955,
-     "caughtNamedCount": 129,
-     "falseAlarmsPerHour": 0.6301969365426696,
-     "alarmTime": 0.06805251641137856,
-     "medianDelaySec": 8.183615966796875,
+     "detected": 0.9550561797752809,
+     "rightFirst": 0.7941176470588235,
+     "caughtNamed": 0.7584269662921348,
+     "caughtNamedCount": 135,
+     "falseAlarmsPerHour": 1.1028446389496718,
+     "alarmTime": 0.1087527352297593,
+     "medianDelaySec": 8.1358056640625,
      "byClass": {
       "stop": {
        "n": 24,
@@ -1836,7 +2011,7 @@
       "crash": {
        "n": 27,
        "detected": 27,
-       "named": 21
+       "named": 23
       },
       "brownout": {
        "n": 26,
@@ -1845,13 +2020,13 @@
       },
       "latency": {
        "n": 25,
-       "detected": 15,
-       "named": 4
+       "detected": 17,
+       "named": 6
       },
       "crash-loop": {
        "n": 16,
        "detected": 16,
-       "named": 14
+       "named": 13
       },
       "flap": {
        "n": 12,
@@ -1860,13 +2035,13 @@
       },
       "memory": {
        "n": 18,
-       "detected": 16,
-       "named": 13
+       "detected": 18,
+       "named": 15
       },
       "partition": {
        "n": 15,
        "detected": 15,
-       "named": 13
+       "named": 14
       },
       "pause": {
        "n": 15,
@@ -1877,12 +2052,12 @@
     },
     "v1 ranking + cp alarm": {
      "faults": 178,
-     "detected": 0.9325842696629213,
-     "rightFirst": 0.7771084337349398,
-     "caughtNamed": 0.7247191011235955,
-     "caughtNamedCount": 129,
-     "falseAlarmsPerHour": 0.6301969365426696,
-     "alarmTime": 0.06805251641137856,
+     "detected": 0.9550561797752809,
+     "rightFirst": 0.8058823529411765,
+     "caughtNamed": 0.7696629213483146,
+     "caughtNamedCount": 137,
+     "falseAlarmsPerHour": 1.1028446389496718,
+     "alarmTime": 0.1087527352297593,
      "medianDelaySec": 8.164716064453126,
      "byClass": {
       "stop": {
@@ -1893,22 +2068,22 @@
       "crash": {
        "n": 27,
        "detected": 27,
-       "named": 21
+       "named": 23
       },
       "brownout": {
        "n": 26,
        "detected": 26,
-       "named": 18
+       "named": 16
       },
       "latency": {
        "n": 25,
-       "detected": 15,
-       "named": 2
+       "detected": 17,
+       "named": 8
       },
       "crash-loop": {
        "n": 16,
        "detected": 16,
-       "named": 14
+       "named": 13
       },
       "flap": {
        "n": 12,
@@ -1917,13 +2092,70 @@
       },
       "memory": {
        "n": 18,
-       "detected": 16,
-       "named": 13
+       "detected": 18,
+       "named": 15
       },
       "partition": {
        "n": 15,
        "detected": 15,
+       "named": 14
+      },
+      "pause": {
+       "n": 15,
+       "detected": 15,
        "named": 13
+      }
+     }
+    },
+    "onset ranking + fast cp alarm": {
+     "faults": 178,
+     "detected": 0.9887640449438202,
+     "rightFirst": 0.7670454545454546,
+     "caughtNamed": 0.7584269662921348,
+     "caughtNamedCount": 135,
+     "falseAlarmsPerHour": 1.1028446389496718,
+     "alarmTime": 0.38599562363238515,
+     "medianDelaySec": 4.8388017578125,
+     "byClass": {
+      "stop": {
+       "n": 24,
+       "detected": 24,
+       "named": 23
+      },
+      "crash": {
+       "n": 27,
+       "detected": 27,
+       "named": 22
+      },
+      "brownout": {
+       "n": 26,
+       "detected": 26,
+       "named": 16
+      },
+      "latency": {
+       "n": 25,
+       "detected": 23,
+       "named": 6
+      },
+      "crash-loop": {
+       "n": 16,
+       "detected": 16,
+       "named": 13
+      },
+      "flap": {
+       "n": 12,
+       "detected": 12,
+       "named": 12
+      },
+      "memory": {
+       "n": 18,
+       "detected": 18,
+       "named": 16
+      },
+      "partition": {
+       "n": 15,
+       "detected": 15,
+       "named": 14
       },
       "pause": {
        "n": 15,
@@ -1935,32 +2167,91 @@
    },
    "rankingFlips": {
     "fixed": [
-     "brownout:api-gateway",
-     "latency:orders",
-     "latency:shipping"
+     "brownout:orders"
     ],
     "broken": [
-     "brownout:cache(-> billing)",
-     "brownout:orders(-> profile)",
-     "brownout:orders-db(-> orders)"
+     "brownout:fx-provider(-> fx-rates)",
+     "latency:shipping(-> gateway)"
     ]
    },
    "pairedDelay": {
-    "n": 163,
-    "base": 8.183615966796875,
-    "engine": 8.1358056640625
-   }
+    "n": 166,
+    "base": 8.343546142578125,
+    "engine": 8.12477880859375
+   },
+   "pairedDelayFast": {
+    "n": 166,
+    "base": 8.343546142578125,
+    "engine": 4.8388017578125
+   },
+   "isolation": [
+    {
+     "engine": "v1 hybrid",
+     "isolated": {
+      "n": 103,
+      "named": 87
+     },
+     "overlapping": {
+      "n": 75,
+      "named": 47
+     }
+    },
+    {
+     "engine": "onset ranking",
+     "isolated": {
+      "n": 103,
+      "named": 88
+     },
+     "overlapping": {
+      "n": 75,
+      "named": 45
+     }
+    },
+    {
+     "engine": "onset ranking + cp alarm",
+     "isolated": {
+      "n": 103,
+      "named": 90
+     },
+     "overlapping": {
+      "n": 75,
+      "named": 45
+     }
+    },
+    {
+     "engine": "v1 ranking + cp alarm",
+     "isolated": {
+      "n": 103,
+      "named": 89
+     },
+     "overlapping": {
+      "n": 75,
+      "named": 48
+     }
+    },
+    {
+     "engine": "onset ranking + fast cp alarm",
+     "isolated": {
+      "n": 103,
+      "named": 90
+     },
+     "overlapping": {
+      "n": 75,
+      "named": 45
+     }
+    }
+   ]
   },
   "real.json": {
    "engines": {
     "v1 hybrid": {
      "faults": 62,
      "detected": 0.9032258064516129,
-     "rightFirst": 0.8214285714285714,
-     "caughtNamed": 0.7419354838709677,
-     "caughtNamedCount": 46,
+     "rightFirst": 0.7857142857142857,
+     "caughtNamed": 0.7096774193548387,
+     "caughtNamedCount": 44,
      "falseAlarmsPerHour": 6.150530387143854,
-     "alarmTime": 0.0673873892343935,
+     "alarmTime": 0.14118884199821335,
      "medianDelaySec": 10.517,
      "byClass": {
       "flap": {
@@ -1976,7 +2267,7 @@
       "crash": {
        "n": 16,
        "detected": 16,
-       "named": 16
+       "named": 15
       },
       "stop": {
        "n": 16,
@@ -1996,19 +2287,19 @@
       "memory": {
        "n": 6,
        "detected": 6,
-       "named": 4
+       "named": 3
       }
      }
     },
     "onset ranking": {
      "faults": 62,
      "detected": 0.9032258064516129,
-     "rightFirst": 0.8214285714285714,
-     "caughtNamed": 0.7419354838709677,
-     "caughtNamedCount": 46,
+     "rightFirst": 0.7857142857142857,
+     "caughtNamed": 0.7096774193548387,
+     "caughtNamedCount": 44,
      "falseAlarmsPerHour": 6.150530387143854,
-     "alarmTime": 0.0673873892343935,
-     "medianDelaySec": 12.264,
+     "alarmTime": 0.14118884199821335,
+     "medianDelaySec": 10.542,
      "byClass": {
       "flap": {
        "n": 2,
@@ -2023,7 +2314,7 @@
       "crash": {
        "n": 16,
        "detected": 16,
-       "named": 16
+       "named": 15
       },
       "stop": {
        "n": 16,
@@ -2043,19 +2334,19 @@
       "memory": {
        "n": 6,
        "detected": 6,
-       "named": 4
+       "named": 3
       }
      }
     },
     "onset ranking + cp alarm": {
      "faults": 62,
-     "detected": 0.9516129032258065,
-     "rightFirst": 0.7796610169491526,
-     "caughtNamed": 0.7419354838709677,
-     "caughtNamedCount": 46,
-     "falseAlarmsPerHour": 7.688162983929817,
-     "alarmTime": 0.20642568119793536,
-     "medianDelaySec": 4.852,
+     "detected": 1,
+     "rightFirst": 0.7258064516129032,
+     "caughtNamed": 0.7258064516129032,
+     "caughtNamedCount": 45,
+     "falseAlarmsPerHour": 5.381714088750872,
+     "alarmTime": 0.8823570113804031,
+     "medianDelaySec": 3.908,
      "byClass": {
       "flap": {
        "n": 2,
@@ -2070,7 +2361,7 @@
       "crash": {
        "n": 16,
        "detected": 16,
-       "named": 16
+       "named": 15
       },
       "stop": {
        "n": 16,
@@ -2079,8 +2370,8 @@
       },
       "brownout": {
        "n": 14,
-       "detected": 11,
-       "named": 1
+       "detected": 14,
+       "named": 2
       },
       "pause": {
        "n": 4,
@@ -2090,19 +2381,19 @@
       "memory": {
        "n": 6,
        "detected": 6,
-       "named": 4
+       "named": 3
       }
      }
     },
     "v1 ranking + cp alarm": {
      "faults": 62,
-     "detected": 0.9516129032258065,
-     "rightFirst": 0.7796610169491526,
-     "caughtNamed": 0.7419354838709677,
-     "caughtNamedCount": 46,
-     "falseAlarmsPerHour": 7.688162983929817,
-     "alarmTime": 0.20642568119793536,
-     "medianDelaySec": 4.733,
+     "detected": 1,
+     "rightFirst": 0.7258064516129032,
+     "caughtNamed": 0.7258064516129032,
+     "caughtNamedCount": 45,
+     "falseAlarmsPerHour": 5.381714088750872,
+     "alarmTime": 0.8823570113804031,
+     "medianDelaySec": 3.906,
      "byClass": {
       "flap": {
        "n": 2,
@@ -2117,7 +2408,7 @@
       "crash": {
        "n": 16,
        "detected": 16,
-       "named": 16
+       "named": 15
       },
       "stop": {
        "n": 16,
@@ -2126,8 +2417,8 @@
       },
       "brownout": {
        "n": 14,
-       "detected": 11,
-       "named": 1
+       "detected": 14,
+       "named": 2
       },
       "pause": {
        "n": 4,
@@ -2137,7 +2428,54 @@
       "memory": {
        "n": 6,
        "detected": 6,
+       "named": 3
+      }
+     }
+    },
+    "onset ranking + fast cp alarm": {
+     "faults": 62,
+     "detected": 1,
+     "rightFirst": 0.7258064516129032,
+     "caughtNamed": 0.7258064516129032,
+     "caughtNamedCount": 45,
+     "falseAlarmsPerHour": 0,
+     "alarmTime": 1,
+     "medianDelaySec": 3.801,
+     "byClass": {
+      "flap": {
+       "n": 2,
+       "detected": 2,
+       "named": 2
+      },
+      "crash-loop": {
+       "n": 4,
+       "detected": 4,
+       "named": 3
+      },
+      "crash": {
+       "n": 16,
+       "detected": 16,
+       "named": 15
+      },
+      "stop": {
+       "n": 16,
+       "detected": 16,
+       "named": 16
+      },
+      "brownout": {
+       "n": 14,
+       "detected": 14,
+       "named": 2
+      },
+      "pause": {
+       "n": 4,
+       "detected": 4,
        "named": 4
+      },
+      "memory": {
+       "n": 6,
+       "detected": 6,
+       "named": 3
       }
      }
     }
@@ -2149,8 +2487,70 @@
    "pairedDelay": {
     "n": 56,
     "base": 10.517,
-    "engine": 4.852
-   }
+    "engine": 3.906
+   },
+   "pairedDelayFast": {
+    "n": 56,
+    "base": 10.517,
+    "engine": 3.648
+   },
+   "isolation": [
+    {
+     "engine": "v1 hybrid",
+     "isolated": {
+      "n": 26,
+      "named": 19
+     },
+     "overlapping": {
+      "n": 36,
+      "named": 25
+     }
+    },
+    {
+     "engine": "onset ranking",
+     "isolated": {
+      "n": 26,
+      "named": 19
+     },
+     "overlapping": {
+      "n": 36,
+      "named": 25
+     }
+    },
+    {
+     "engine": "onset ranking + cp alarm",
+     "isolated": {
+      "n": 26,
+      "named": 20
+     },
+     "overlapping": {
+      "n": 36,
+      "named": 25
+     }
+    },
+    {
+     "engine": "v1 ranking + cp alarm",
+     "isolated": {
+      "n": 26,
+      "named": 20
+     },
+     "overlapping": {
+      "n": 36,
+      "named": 25
+     }
+    },
+    {
+     "engine": "onset ranking + fast cp alarm",
+     "isolated": {
+      "n": 26,
+      "named": 20
+     },
+     "overlapping": {
+      "n": 36,
+      "named": 25
+     }
+    }
+   ]
   }
  }
 }

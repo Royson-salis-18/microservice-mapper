@@ -5,7 +5,7 @@ flowchart TB
     r1["robust z-score per metric<br/>median and MAD, bad direction only"] --> r2["rule score / 3 = x line"]
   end
   subgraph MLs["ML engine"]
-    m1["two Isolation Forests per service<br/>own and symptom"] --> m2["level, facts, random walk"]
+    m1["each service against what the<br/>load predicts: own and symptom"] --> m2["level, facts, random walk"]
     m2 --> m3["trend forecast, learned cascade"]
   end
   r2 --> HY

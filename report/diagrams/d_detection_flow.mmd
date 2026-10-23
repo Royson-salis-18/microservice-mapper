@@ -1,7 +1,7 @@
 flowchart TD
   X["Window t: readings of every service"] --> F{"Container fact?<br/>stopped, paused, restarting,<br/>detached, crash-looping"}
   F -- yes --> A["ALARM at once"]
-  F -- no --> L{"Forest level of any service<br/>at least 2 on two windows in a row?"}
+  F -- no --> L{"Model level of any service<br/>at least 2 on two windows in a row?"}
   L -- yes --> A
   L -- no --> R{"Rule score of any service<br/>at least 1.25 x its line<br/>on two windows in a row?"}
   R -- yes --> A

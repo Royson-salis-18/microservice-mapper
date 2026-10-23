@@ -65,7 +65,7 @@ Optional ML sidecar & Python~3 with scikit-learn (Isolation Forest, LOF, one-cla
 Applications under test & ShopFlow (13 services), LedgerLine (12 services), Sock Shop, a DeathStarBench social network (27 containers), the OpenTelemetry demo\\
 Load and faults & \texttt{traffic-gen} (workflows and profiles), a blind fault injector (kill, pause, cgroup limits, network detach)\\
 Analysis and typesetting & Python with matplotlib for figures; \LaTeX\ and Mermaid for this report\\
-Test tooling & Node's built-in test runner; 329 tests in 19 suites\\
+Test tooling & Node's built-in test runner; 339 tests in 19 suites\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -150,7 +150,7 @@ so a signal counts as unusual only if \emph{neither} way of following the load e
 \end{equation}
 so level $1$ is the service's own alarm line, as before, and the hybrid alarm uses level $2$ ($z = 8$). The signals split into \emph{own} (CPU, memory, throttling), which a dependency cannot cause, and \emph{symptom} (traffic, errors, latency, network), which can be inherited; the ranker uses the two levels separately. The strongest signal and its $z$ are kept, so a verdict reads ``CPU 9.3 spreads from what the load predicts''.
 
-\paragraph{Gate and drift.} Only readings under level $1$ join the window of $W = 120$ readings, so a fault never becomes the baseline. A small steady shift (level below $3$) is accepted as the new normal after two minutes, a large one after thirty. A service is judged only after $30$ readings. The model needs no labels, nothing installed on the target and one pass over the readings the collector already gathers; the dominant cost is a median and a sort per signal, refreshed every four readings.
+\paragraph{Gate and drift.} Only readings under level $1$ join the window of $W = 120$ readings, so a fault never becomes the baseline. A small steady shift (level below $3$) is accepted as the new normal after two minutes (24 readings), a large one after thirty. The price is that a mild fault lasting longer than two minutes is eventually absorbed and the model stops alarming on it (Section~\ref{sec:whichmodel}); the rule layer and the container facts of the hybrid keep alarming. A service is judged only after $30$ readings. The model needs no labels, nothing installed on the target and one pass over the readings the collector already gathers; the dominant cost is a median and a sort per signal, refreshed every four readings.
 
 \subsection{Why the first model failed, and what was compared}
 \label{sec:candidates}
@@ -236,7 +236,7 @@ Readings keep missing values as missing. Each recorded trace stores, per window,
 
 \section{Computational Cost and Complexity}
 \label{sec:complexity}
-Table~\ref{tab:complexity} states the cost of one decision window in terms of $N$ services, $E$ edges and $K$ open sockets. Only the measured total (6 to 7\,ms at 12 and 13 services) is an experimental result; the growth rates are read off the algorithms, and the cost beyond 13 services was not benchmarked.
+Table~\ref{tab:complexity} states the cost of one decision window in terms of $N$ services, $E$ edges and $K$ open sockets. The growth rates are read off the algorithms and checked by timing on random graphs of 10 to 320 services (Section~\ref{sec:cost}): about $0.37$\,ms per service per window, linear in $N$, on synthetic readings.
 
 \begin{table}[!htbp]
 \centering

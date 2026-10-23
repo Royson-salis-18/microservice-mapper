@@ -18,7 +18,7 @@ Server & Express~5, \texttt{ws} for WebSocket, \texttt{ssh2} for SSH (no \texttt
 Dashboard & React~19, Vite~8, \texttt{@xyflow/react} for the 2D graph, Three.js with react-three-fiber for the 3D scene, Recharts, Framer Motion\\
 Persistence & JSON files under \texttt{server/data} (graph state, remote configuration, per-target connection events); metric ring buffers in memory\\
 Source size & About 18\,400 lines of TypeScript in the server and 17\,200 in the dashboard; 5\,400 in the evaluation tools; 2\,500 in the \texttt{v2} studies\\
-Tests & 329 automated tests in 19 suites, run with Node's built-in test runner\\
+Tests & 339 automated tests in 19 suites, run with Node's built-in test runner\\
 Version control & Git, with GitHub as the remote\\
 \bottomrule
 \end{tabularx}
@@ -395,7 +395,7 @@ The tool holds SSH access to hosts, so it was built to expose as little as it ca
 \end{itemize}
 
 \section{Testing and Validation}
-The suite has 329 tests in 19 suites and runs in under a minute with \texttt{npm test}. Table~\ref{tab:tests} groups them by area. Three kinds of test deserve a note. \emph{Purity tests} check that algorithm modules do not touch the filesystem or the network, so they can be replayed. \emph{Regression tests} hold each bug that was found (for example the ledger-reader bug and the tier layout). \emph{Security tests} check that the command catalogue refuses unsafe identifiers.
+The suite has 339 tests in 19 suites and runs in under a minute with \texttt{npm test}. Table~\ref{tab:tests} groups them by area. Three kinds of test deserve a note. \emph{Purity tests} check that algorithm modules do not touch the filesystem or the network, so they can be replayed. \emph{Regression tests} hold each bug that was found (for example the ledger-reader bug and the tier layout). \emph{Security tests} check that the command catalogue refuses unsafe identifiers.
 
 \begin{table}[!htbp]
 \centering
